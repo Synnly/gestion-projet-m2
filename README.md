@@ -32,11 +32,11 @@ Forum stages
 │   │   │           ├── module.dto
 │   │   │           └── createModule.dto
 │   │   └── test/
-│   │       └── unit/
-│   │           ├── module/
-│   │           │   ├── module.controller.spec
-│   │           │   └── module.service.spec
-│   │           └── integration/
+│   │       ├── unit/
+│   │       │    └── module/
+│   │       │      ├── module.controller.spec
+│   │       │      └── module.service.spec
+│   │       └── integration/
 │   │               └── module.spec
 │   └── client/
 │       ├── .env
@@ -50,3 +50,20 @@ Forum stages
 ├── .gitignore
 └── package.json
 ```
+
+### Branches
+1 feature = 1 branche, puis fusion vers dev avec un pull request, puis merge vers main en fin de sprint
+```
+  │
+  ├──────────────┐ 
+  │              ├──────┐
+  │       ┌──────┤      │
+  │       │      │      │
+main  feature2  dev  feature1
+
+```
+
+### Pull request
+Les fusions vers `dev` et `main` sont protégés. Pour mettre à jour les banches, il faut ouvrir un pull request en expliquant
+les modifications de la branche. La branche ne peut être fusionnée avec `dev` uniquement que si deux personnes non autrices
+des modifications les ont validées et que les conflits ont étés résolus. Idem pour la branche `main`.
