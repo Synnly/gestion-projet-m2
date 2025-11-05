@@ -51,7 +51,22 @@ Forum stages
 └── package.json
 ```
 
-### Branches
+### API
+- `module.controller` : gestion des requêtes entrantes
+- `module.service` : logique métier
+- `module.schema` : schéma de la base de données
+- `module.module` : gestion des dépendances et exports
+- `dto/` : objets de transfert de données pour valider les entrées utilisateur
+- `test/unit/` : tests unitaires des modules
+- `test/integration/` : tests d'intégration des modules
+
+### Client
+- `compoenents/` : composants réutilisables des pages
+- `hooks/` : hooks réutilisables des pages
+- `modules/` : modules de l'application (ex: auth, profile, forum, etc) contenant la logique métier
+- `pages/` : pages de l'application assemblant les composants et modules
+
+## Branches
 1 feature = 1 branche, puis fusion vers dev avec un pull request, puis merge vers main en fin de sprint
 ```
   │
@@ -63,7 +78,7 @@ main  feature2  dev  feature1
 
 ```
 
-### Pull request
+## Pull request
 Les fusions vers `dev` et `main` sont protégés. Pour mettre à jour les banches, il faut ouvrir un pull request en expliquant
 les modifications de la branche. La branche ne peut être fusionnée avec `dev` uniquement que si deux personnes non autrices
 des modifications les ont validées et que les conflits ont étés résolus. Idem pour la branche `main`.

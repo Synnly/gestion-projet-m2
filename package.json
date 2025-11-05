@@ -1,0 +1,19 @@
+{
+    "devDependencies": {
+        "prettier": "^3.6.2"
+    },
+    "workspaces": [
+        "apps/api",
+        "apps/client"
+    ],
+    "scripts": {
+        "api": "npm run start:dev --workspace=apps/api",
+        "client": "npm run dev --workspace=apps/client",
+        "dev": "npm-run-all --parallel api client",
+        "postinstall": "node scripts/setup-env.js",
+        "test": "npm run test --workspace=apps/api",
+        "test:seq": "npm run test:seq --workspace=apps/api",
+        "build": "npm run build --workspace=apps/client && npm run build --workspace=apps/api",
+        "start": "NODE_ENV=production npm run start --workspace=apps/api"
+    }
+}

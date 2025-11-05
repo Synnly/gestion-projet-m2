@@ -1,16 +1,26 @@
+## Formatage
+Formatage **OBLIGATOIRE** avec Prettier avec la configuration `.prettierrc` à la racine du projet
+
+---
 
 ## Largeur max d'une ligne
 Max ~120 caractères sauf spécifiques à discuter avec le reste de l'équipe
 
+---
 
 ## Langue
 Écrire le code en **anglais**, commentaires compris
 
 ---
 
+## Indentation
+Utiliser des tabulations (4 espaces) par niveau d'indentation
+
+---
+
 ## Typage
-Toute fonction, paramètre, propriété et variable doit être typée. Le type `any` doit être évité le plus possible et réservé à 
-des cas très spécifiques à discuter avec le reste de l'équipe
+Toute fonction, paramètre, propriété et variable doit être typée. Le type `any` est **proscrit** sauf dans des cas très 
+spécifiques à discuter avec le reste de l'équipe.
 
 ---
 
