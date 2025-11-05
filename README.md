@@ -69,12 +69,15 @@ les modifications de la branche. La branche ne peut être fusionnée avec `dev` 
 des modifications les ont validées et que les conflits ont étés résolus. Idem pour la branche `main`.
 
 ## Format des pull request
+```
 Titre
+
 Description courte des changements
 - Liste
 - des
 - changements
 - importants
+```
 
 
 ## Format des commits
