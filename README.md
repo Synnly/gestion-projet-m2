@@ -105,3 +105,10 @@ Description courte des changements
 - test : ajout ou modification de tests
 - chore : modification des tâches de build ou des dépendances
 
+## Utilisation
+
+- `npm run dev` pour lancer l'application en mode développement (client et API)
+- `npm run api` pour lancer uniquement l'API
+- `npm run client` pour lancer uniquement le client
+- `npm run test` pour lancer les tests
+- `npm run test:seq` pour lancer les tests en séquence (conseillé)
