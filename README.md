@@ -67,3 +67,23 @@ main  feature2  dev  feature1
 Les fusions vers `dev` et `main` sont protégés. Pour mettre à jour les banches, il faut ouvrir un pull request en expliquant
 les modifications de la branche. La branche ne peut être fusionnée avec `dev` uniquement que si deux personnes non autrices
 des modifications les ont validées et que les conflits ont étés résolus. Idem pour la branche `main`.
+
+## Format des pull request
+Titre
+Description courte des changements
+- Liste
+- des
+- changements
+- importants
+
+
+## Format des commits
+`type: description courte des changements` avec `type` dans :
+- feat : nouvelle fonctionnalité
+- fix : correction de bug
+- docs : modification de la documentation
+- style : modification de style (formatage, point-virgule, etc.) sans impact sur le code
+- refactor : modification du code sans ajout de fonctionnalité ou correction de bug
+- test : ajout ou modification de tests
+- chore : modification des tâches de build ou des dépendances
+

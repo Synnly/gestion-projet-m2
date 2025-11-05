@@ -35,7 +35,7 @@ Utiliser le **camelCase** avec le format `module.typeDeFichier.ts`
 Max ~80 lignes sauf cas spécifiques à discuter avec le reste de l'équipe
 
 ### Nomenclature
-Utiliser le camel case avec un nom relativement concis. Si le nom est trop verbeux, la fonction a probablement trop de
+Utiliser le **camelCase** avec un nom relativement concis. Si le nom est trop verbeux, la fonction a probablement trop de
 responsabilités. Dans ce cas, il faut segmenter la fonction en plusieurs parties.
 
 ### TSDoc
@@ -54,6 +54,9 @@ Toutes les fonctions doivent avoir une TSDoc qui décrit brièvement la fonction
 >  */
 > async getUserById(id: number) : Promise<User> { ... }
 >```
+
+### Espacement
+Espacer les fonctions de **deux** lignes vides
 
 ---
 
@@ -78,7 +81,7 @@ Utiliser le format "Given When Then"
 > - When = Quand je prends 2 pommes de mon panier
 > - Then = J'ai 3 pommes dans mon panier
 >```ts
->it('should take 2 apples from the basket when 5 apples are in the basket and then have 3 apples in the basket', () => {
+>it('should take 2 apples from the basket when 5 apples are in the basket resulting in 3 apples in the basket', () => {
 >    ...
 >}
 >```
