@@ -20,7 +20,7 @@ import { ParseObjectIdPipe } from '../../src/validators/parse-objectid.pipe';
 import { RolesGuard } from '../../src/common/roles/roles.guard';
 import { Roles } from '../../src/common/roles/roles.decorator';
 import { Role } from '../../src/common/roles/roles.enum';
-import { AuthGuard } from 'src/common/auth/auth.guard';
+import { AuthGuard } from '../../src/common/auth/auth.guard';
 
 @UseGuards(RolesGuard)
 @Controller('/api/companies')

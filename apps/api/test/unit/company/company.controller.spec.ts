@@ -10,6 +10,8 @@ import { RolesGuard } from '../../../src/common/roles/roles.guard';
 import { Reflector } from '@nestjs/core';
 import { Role } from '../../../src/common/roles/roles.enum';
 import { ExecutionContext } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 describe('CompanyController', () => {
     let controller: CompanyController;
@@ -27,6 +29,19 @@ describe('CompanyController', () => {
 
     const mockReflector = {
         getAllAndOverride: jest.fn(),
+    };
+
+    const mockJwtService = {
+        sign: jest.fn(),
+        verify: jest.fn(),
+        decode: jest.fn(),
+    };
+
+    const mockConfigService = {
+        get: jest.fn((key: string) => {
+            if (key === 'JWT_SECRET') return 'test-secret';
+            return null;
+        }),
     };
 
     const createMockExecutionContext = (user?: any): ExecutionContext => {
@@ -50,6 +65,14 @@ describe('CompanyController', () => {
                 {
                     provide: Reflector,
                     useValue: mockReflector,
+                },
+                {
+                    provide: JwtService,
+                    useValue: mockJwtService,
+                },
+                {
+                    provide: ConfigService,
+                    useValue: mockConfigService,
                 },
                 RolesGuard,
             ],
