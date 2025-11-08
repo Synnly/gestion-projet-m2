@@ -19,7 +19,7 @@ import { AuthGuard } from './auth.guard';
                 return {
                     secret: secret || 'default-secret-change-in-production',
                     signOptions: {
-                        expiresIn: expiresIn as any,
+                        expiresIn: Number(expiresIn),
                     },
                 };
             },
