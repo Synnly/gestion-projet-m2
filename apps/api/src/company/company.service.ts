@@ -49,16 +49,20 @@ export class CompanyService {
      * @param dto The updated company data
      */
     async update(id: string, dto: UpdateCompanyDto): Promise<void> {
+        let updateData = { ...dto };
         if (dto.password) {
-            dto.password = await bcrypt.hash(dto.password, 10);
+            updateData.password = await bcrypt.hash(dto.password, 10);
         }
         const updated = await this.companyModel
             .findOneAndUpdate(
                 { _id: id, deletedAt: { $exists: false } },
-                { $set: { ...dto, updatedAt: new Date() } },
+                { $set: { ...updateData, updatedAt: new Date() } },
                 { new: true },
             )
             .exec();
+        if (!updated) {
+            throw new NotFoundException(`Company with id ${id} not found or already deleted`);
+        }
         return;
     }
 
