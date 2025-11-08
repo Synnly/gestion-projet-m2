@@ -1,0 +1,88 @@
+name: Notify Discord on PR open
+
+on:
+    pull_request:
+        types: [ready_for_review]
+        branches: [dev]
+
+jobs:
+    notify:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Post PR info to Discord
+              env:
+                  WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+                  PR_NUMBER: ${{ github.event.pull_request.number }}
+                  PR_TITLE: ${{ github.event.pull_request.title }}
+                  PR_URL: ${{ github.event.pull_request.html_url }}
+                  PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+                  PR_BODY: ${{ github.event.pull_request.body }}
+                  REPO: ${{ github.repository }}
+                  BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+                  HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+              shell: bash
+              run: |
+                  python3 - <<'PY'
+                  import json, os, sys, time, urllib.request
+
+                  webhook = os.environ["WEBHOOK_URL"]
+                  author = os.environ.get("PR_AUTHOR","")
+                  pr_number = os.environ.get("PR_NUMBER","")
+                  pr_title = os.environ.get("PR_TITLE","")
+                  pr_url = os.environ.get("PR_URL","")
+                  repo = os.environ.get("REPO","")
+                  head = os.environ.get("HEAD_BRANCH","")
+                  base = os.environ.get("BASE_BRANCH","")
+                  body = os.environ.get("PR_BODY") or ""
+
+                  # --- Troncatures sécurisées (Discord limits) ---
+                  if len(pr_title) > 250:
+                      pr_title = pr_title[:250] + "…"
+                  body = body.strip()
+                  if len(body) > 4000:
+                      body = body[:4000] + "…"
+                  content = f"**{author}** a ouvert une pull request"
+                  if len(content) > 1900:
+                      content = content[:1900] + "…"
+
+                  # --- Création de l'embed Discord ---
+                  embed = {
+                      "title": f"PR #{pr_number}: {pr_title}",
+                      "url": pr_url,
+                      "description": body or "_(aucune description)_",
+                      "fields": [
+                          {"name": "Auteur", "value": author or "—", "inline": True},
+                          {"name": "Repo", "value": repo or "—", "inline": True},
+                          {"name": "Branches", "value": f"`{head}` → `{base}`", "inline": False},
+                      ],
+                  }
+
+                  payload = {
+                      "content": content,
+                      "allowed_mentions": {"parse": []},  # bloque @everyone/@here
+                      "embeds": [embed],
+                  }
+
+                  data = json.dumps(payload).encode("utf-8")
+                  req = urllib.request.Request(
+                      webhook,
+                      data=data,
+                      headers={"Content-Type": "application/json"},
+                      method="POST",
+                  )
+
+                  # --- Envoi avec retry exponentiel ---
+                  for attempt in range(5):
+                      try:
+                          with urllib.request.urlopen(req, timeout=10) as resp:
+                              status = resp.getcode()
+                              if 200 <= status < 300:
+                                  print(f"Notification Discord envoyée ({status})")
+                                  sys.exit(0)
+                              else:
+                                  print(f"Discord HTTP {status}")
+                      except Exception as e:
+                          print(f"Tentative {attempt+1}/5 échouée: {e}")
+                      time.sleep(min(2 ** attempt, 10))  # 1,2,4,8,10s
+                  sys.exit(1)
+                  PY
