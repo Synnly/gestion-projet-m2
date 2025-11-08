@@ -1,4 +1,4 @@
-import { StructureType, LegalStatus, Company } from '../company.schema';
+import { StructureType, LegalStatus } from '../company.schema';
 import { Types } from 'mongoose';
 
 /**
