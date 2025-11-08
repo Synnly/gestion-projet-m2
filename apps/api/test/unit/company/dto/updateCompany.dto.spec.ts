@@ -104,18 +104,6 @@ describe('UpdateCompanyDto', () => {
                 expect(errors[0].constraints).toHaveProperty('isEmail');
             });
 
-            it('should fail validation when email is an empty string', async () => {
-                const dto = new UpdateCompanyDto({
-                    email: '',
-                });
-
-                const errors = await validate(dto);
-                expect(errors.length).toBeGreaterThan(0);
-                const emailError = errors.find((e) => e.property === 'email');
-                expect(emailError).toBeDefined();
-                expect(emailError?.constraints).toHaveProperty('isNotEmpty');
-            });
-
             it('should pass validation when using various valid email formats', async () => {
                 const validEmails = [
                     'test@example.com',

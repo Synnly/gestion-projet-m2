@@ -17,7 +17,6 @@ export class UpdateCompanyDto {
     /** Email address of the company (must be valid email format if provided) */
     @IsOptional()
     @IsEmail()
-    @IsNotEmpty()
     email?: string;
 
     /** Password (must be at least 8 characters with uppercase, lowercase, number, and symbol if provided) */

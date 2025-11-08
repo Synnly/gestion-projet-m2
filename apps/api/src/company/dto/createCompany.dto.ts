@@ -16,7 +16,6 @@ import { StructureType, LegalStatus } from '../company.schema';
 export class CreateCompanyDto {
     /** Email address of the company (must be valid email format) */
     @IsEmail()
-    @IsNotEmpty()
     email: string;
 
     /** Password (must be at least 8 characters with uppercase, lowercase, number, and symbol) */
