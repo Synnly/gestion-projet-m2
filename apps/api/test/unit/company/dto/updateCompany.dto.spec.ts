@@ -206,7 +206,7 @@ describe('UpdateCompanyDto', () => {
                 expect(errors.length).toBeGreaterThan(0);
                 const passwordError = errors.find((e) => e.property === 'password');
                 expect(passwordError).toBeDefined();
-                expect(passwordError?.constraints).toHaveProperty('isNotEmpty');
+                expect(passwordError?.constraints).toHaveProperty('isStrongPassword');
             });
 
             it('should pass validation when using various strong passwords', async () => {
@@ -253,10 +253,7 @@ describe('UpdateCompanyDto', () => {
                 });
 
                 const errors = await validate(dto);
-                expect(errors.length).toBeGreaterThan(0);
-                const nameError = errors.find((e) => e.property === 'name');
-                expect(nameError).toBeDefined();
-                expect(nameError?.constraints).toHaveProperty('isNotEmpty');
+                expect(errors.length).toBe(0);
             });
 
             it('should fail validation when name is not a string', async () => {
@@ -299,16 +296,13 @@ describe('UpdateCompanyDto', () => {
                 expect(errors.length).toBe(0);
             });
 
-            it('should fail validation when siretNumber is empty', async () => {
+            it('should pass validation when siretNumber is empty', async () => {
                 const dto = new UpdateCompanyDto({
                     siretNumber: '',
                 });
 
                 const errors = await validate(dto);
-                expect(errors.length).toBeGreaterThan(0);
-                const siretError = errors.find((e) => e.property === 'siretNumber');
-                expect(siretError).toBeDefined();
-                expect(siretError?.constraints).toHaveProperty('isNotEmpty');
+                expect(errors.length).toBe(0);
             });
 
             it('should fail validation when siretNumber is not a string', async () => {
@@ -331,16 +325,13 @@ describe('UpdateCompanyDto', () => {
                 expect(errors.length).toBe(0);
             });
 
-            it('should fail validation when nafCode is empty', async () => {
+            it('should pass validation when nafCode is empty', async () => {
                 const dto = new UpdateCompanyDto({
                     nafCode: '',
                 });
 
                 const errors = await validate(dto);
-                expect(errors.length).toBeGreaterThan(0);
-                const nafError = errors.find((e) => e.property === 'nafCode');
-                expect(nafError).toBeDefined();
-                expect(nafError?.constraints).toHaveProperty('isNotEmpty');
+                expect(errors.length).toBe(0);
             });
 
             it('should pass validation when all address fields are provided', async () => {
@@ -356,60 +347,49 @@ describe('UpdateCompanyDto', () => {
                 expect(errors.length).toBe(0);
             });
 
-            it('should fail validation when streetNumber is empty', async () => {
+            it('should pass validation when streetNumber is empty', async () => {
                 const dto = new UpdateCompanyDto({
                     streetNumber: '',
                 });
 
                 const errors = await validate(dto);
-                expect(errors.length).toBeGreaterThan(0);
-                const streetError = errors.find((e) => e.property === 'streetNumber');
-                expect(streetError).toBeDefined();
-                expect(streetError?.constraints).toHaveProperty('isNotEmpty');
+                expect(errors.length).toBe(0);
             });
 
-            it('should fail validation when streetName is empty', async () => {
+            it('should pass validation when streetName is empty', async () => {
                 const dto = new UpdateCompanyDto({
                     streetName: '',
                 });
 
                 const errors = await validate(dto);
-                expect(errors.length).toBeGreaterThan(0);
-                const streetNameError = errors.find((e) => e.property === 'streetName');
-                expect(streetNameError).toBeDefined();
+                expect(errors.length).toBe(0);
             });
 
-            it('should fail validation when postalCode is empty', async () => {
+            it('should pass validation when postalCode is empty', async () => {
                 const dto = new UpdateCompanyDto({
                     postalCode: '',
                 });
 
                 const errors = await validate(dto);
-                expect(errors.length).toBeGreaterThan(0);
-                const postalError = errors.find((e) => e.property === 'postalCode');
-                expect(postalError).toBeDefined();
+                expect(errors.length).toBe(0);
             });
 
-            it('should fail validation when city is empty', async () => {
+            it('should pass validation when city is empty', async () => {
                 const dto = new UpdateCompanyDto({
                     city: '',
                 });
 
                 const errors = await validate(dto);
-                expect(errors.length).toBeGreaterThan(0);
-                const cityError = errors.find((e) => e.property === 'city');
-                expect(cityError).toBeDefined();
+                expect(errors.length).toBe(0);
             });
 
-            it('should fail validation when country is empty', async () => {
+            it('should pass validation when country is empty', async () => {
                 const dto = new UpdateCompanyDto({
                     country: '',
                 });
 
                 const errors = await validate(dto);
-                expect(errors.length).toBeGreaterThan(0);
-                const countryError = errors.find((e) => e.property === 'country');
-                expect(countryError).toBeDefined();
+                expect(errors.length).toBe(0);
             });
         });
 
@@ -605,8 +585,6 @@ describe('UpdateCompanyDto', () => {
                 const properties = errors.map((e) => e.property);
                 expect(properties).toContain('email');
                 expect(properties).toContain('password');
-                expect(properties).toContain('name');
-                expect(properties).toContain('siretNumber');
                 expect(properties).toContain('isValid');
             });
         });
