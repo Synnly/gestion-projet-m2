@@ -25,9 +25,9 @@ import { UserMiddleware } from './common/middleware/user.middleware';
 })
 export class AppModule implements NestModule {
     configure(consumer: MiddlewareConsumer) {
-        // Applique le UserMiddleware sur toutes les routes
-        // Il tentera d'extraire et de vérifier le JWT sur chaque requête
-        // mais ne bloquera pas la requête si le token est absent ou invalide
+        // Applies the UserMiddleware to all routes
+        // It will attempt to extract and verify the JWT on each request
+        // but will not block the request if the token is missing or invalid
         consumer.apply(UserMiddleware).forRoutes('*');
     }
 }
