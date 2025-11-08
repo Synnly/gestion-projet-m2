@@ -5,7 +5,6 @@ import {
     IsEnum,
     IsBoolean,
     IsStrongPassword,
-    IsNotEmpty,
 } from 'class-validator';
 import { StructureType, LegalStatus } from '../company.schema';
 
