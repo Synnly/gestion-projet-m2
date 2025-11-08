@@ -5,6 +5,7 @@ import { CompanyService } from '../../../src/company/company.service';
 import { Company, CompanyDocument, StructureType, LegalStatus } from '../../../src/company/company.schema';
 import { CreateCompanyDto } from '../../../src/company/dto/createCompany.dto';
 import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
+import * as bcrypt from 'bcrypt';
 
 describe('CompanyService', () => {
     let service: CompanyService;
@@ -324,8 +325,17 @@ describe('CompanyService', () => {
 
             await service.create(createDto);
 
-            expect(mockCompanyModel.create).toHaveBeenCalledWith(createDto);
             expect(mockCompanyModel.create).toHaveBeenCalledTimes(1);
+            const createdArg = mockCompanyModel.create.mock.calls[0][0];
+            expect(createdArg).toEqual(expect.objectContaining({
+                email: createDto.email,
+                name: createDto.name,
+                isValid: createDto.isValid,
+            }));
+            expect(typeof createdArg.password).toBe('string');
+            expect(createdArg.password).not.toBe(createDto.password);
+            const matches = await bcrypt.compare(createDto.password, createdArg.password);
+            expect(matches).toBe(true);
         });
 
     it('should create a company when create is called with all fields provided', async () => {
@@ -352,7 +362,14 @@ describe('CompanyService', () => {
 
             await service.create(createDto);
 
-            expect(mockCompanyModel.create).toHaveBeenCalledWith(createDto);
+            const createdArg = mockCompanyModel.create.mock.calls[0][0];
+            expect(createdArg).toEqual(expect.objectContaining({
+                email: createDto.email,
+                name: createDto.name,
+                isValid: createDto.isValid,
+            }));
+            const matches = await bcrypt.compare(createDto.password, createdArg.password);
+            expect(matches).toBe(true);
         });
 
     it('should return void after successful creation when create resolves', async () => {
@@ -371,6 +388,9 @@ describe('CompanyService', () => {
             const result = await service.create(createDto);
 
             expect(result).toBeUndefined();
+            const createdArg = mockCompanyModel.create.mock.calls[0][0];
+            const matches = await bcrypt.compare(createDto.password, createdArg.password);
+            expect(matches).toBe(true);
         });
 
     it('should create company with each StructureType when create is called for each enum value', async () => {
@@ -390,7 +410,10 @@ describe('CompanyService', () => {
 
                 await service.create(createDto);
 
-                expect(mockCompanyModel.create).toHaveBeenCalledWith(expect.objectContaining({ structureType }));
+                const createdArg = mockCompanyModel.create.mock.calls[mockCompanyModel.create.mock.calls.length - 1][0];
+                expect(createdArg).toEqual(expect.objectContaining({ structureType }));
+                const matches = await bcrypt.compare(createDto.password, createdArg.password);
+                expect(matches).toBe(true);
             }
         });
 
@@ -411,7 +434,10 @@ describe('CompanyService', () => {
 
                 await service.create(createDto);
 
-                expect(mockCompanyModel.create).toHaveBeenCalledWith(expect.objectContaining({ legalStatus }));
+                const createdArg = mockCompanyModel.create.mock.calls[mockCompanyModel.create.mock.calls.length - 1][0];
+                expect(createdArg).toEqual(expect.objectContaining({ legalStatus }));
+                const matches = await bcrypt.compare(createDto.password, createdArg.password);
+                expect(matches).toBe(true);
             }
         });
 
@@ -430,7 +456,10 @@ describe('CompanyService', () => {
 
             await service.create(createDto);
 
-            expect(mockCompanyModel.create).toHaveBeenCalledWith(expect.objectContaining({ isValid: true }));
+            const createdArg = mockCompanyModel.create.mock.calls[0][0];
+            expect(createdArg).toEqual(expect.objectContaining({ isValid: true }));
+            const matches = await bcrypt.compare(createDto.password, createdArg.password);
+            expect(matches).toBe(true);
         });
 
     it('should create company with isValid false when create is called with isValid false', async () => {
@@ -448,7 +477,10 @@ describe('CompanyService', () => {
 
             await service.create(createDto);
 
-            expect(mockCompanyModel.create).toHaveBeenCalledWith(expect.objectContaining({ isValid: false }));
+            const createdArg = mockCompanyModel.create.mock.calls[0][0];
+            expect(createdArg).toEqual(expect.objectContaining({ isValid: false }));
+            const matches = await bcrypt.compare(createDto.password, createdArg.password);
+            expect(matches).toBe(true);
         });
 
     it('should throw when create encounters a database error', async () => {
@@ -497,12 +529,10 @@ describe('CompanyService', () => {
 
             await service.create(createDto);
 
-            expect(mockCompanyModel.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    city: 'Paris',
-                    country: 'France',
-                }),
-            );
+            const createdArg = mockCompanyModel.create.mock.calls[0][0];
+            expect(createdArg).toEqual(expect.objectContaining({ city: 'Paris', country: 'France' }));
+            const matches = await bcrypt.compare(createDto.password, createdArg.password);
+            expect(matches).toBe(true);
         });
 
     it('should create company when create is called with a complete address', async () => {
@@ -525,7 +555,16 @@ describe('CompanyService', () => {
 
             await service.create(createDto);
 
-            expect(mockCompanyModel.create).toHaveBeenCalledWith(createDto);
+            const createdArg = mockCompanyModel.create.mock.calls[0][0];
+            expect(createdArg).toEqual(expect.objectContaining({
+                streetNumber: '10',
+                streetName: 'Rue de Test',
+                postalCode: '75001',
+                city: 'Paris',
+                country: 'France',
+            }));
+            const matches = await bcrypt.compare(createDto.password, createdArg.password);
+            expect(matches).toBe(true);
         });
     });
 
@@ -625,11 +664,12 @@ describe('CompanyService', () => {
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
-                expect.any(Object),
-                { $set: { password: 'NewPassword123!', updatedAt: expect.any(Date) } },
-                expect.any(Object),
-            );
+            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
+            const callArg = mockCompanyModel.findOneAndUpdate.mock.calls[0][1].$set;
+            expect(callArg.password).toBeDefined();
+            expect(callArg.password).not.toBe(updateDto.password);
+            const matches = await bcrypt.compare(updateDto.password, callArg.password);
+            expect(matches).toBe(true);
         });
 
     it('should update company structureType when update is called with a new structureType', async () => {
@@ -741,11 +781,20 @@ describe('CompanyService', () => {
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
-                expect.any(Object),
-                { $set: { ...updateDto, updatedAt: expect.any(Date) } },
-                expect.any(Object),
-            );
+            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
+            const callArg = mockCompanyModel.findOneAndUpdate.mock.calls[0][1].$set;
+            // verify a subset of fields were passed
+            expect(callArg.email).toBe(updateDto.email);
+            expect(callArg.name).toBe(updateDto.name);
+            expect(callArg.siretNumber).toBe(updateDto.siretNumber);
+            expect(callArg.nafCode).toBe(updateDto.nafCode);
+            expect(callArg.structureType).toBe(updateDto.structureType);
+            expect(callArg.legalStatus).toBe(updateDto.legalStatus);
+            // password must be hashed
+            expect(callArg.password).toBeDefined();
+            expect(callArg.password).not.toBe(updateDto.password);
+            const matches = await bcrypt.compare(updateDto.password, callArg.password);
+            expect(matches).toBe(true);
         });
 
     it('should include updatedAt timestamp when update is performed', async () => {
@@ -776,8 +825,7 @@ describe('CompanyService', () => {
                 exec: mockExec,
             });
 
-            await service.update('507f1f77bcf86cd799439011', updateDto);
-
+            await expect(service.update('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow('Company with id 507f1f77bcf86cd799439011 not found or already deleted');
             expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
                 { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
                 expect.any(Object),
@@ -1066,7 +1114,14 @@ describe('CompanyService', () => {
 
             await service.create(createDto);
 
-            expect(mockCompanyModel.create).toHaveBeenCalledWith(createDto);
+            const createdArg = mockCompanyModel.create.mock.calls[0][0];
+            expect(createdArg).toEqual(expect.objectContaining({
+                email: createDto.email,
+                name: createDto.name,
+                isValid: createDto.isValid,
+            }));
+            const matches = await bcrypt.compare(createDto.password, createdArg.password);
+            expect(matches).toBe(true);
         });
 
     it('should handle concurrent operations when multiple create calls are executed concurrently', async () => {

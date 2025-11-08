@@ -250,6 +250,16 @@ describe('Company Integration Tests', () => {
                 .expect(403);
         });
 
+    it('should return 404 when updating a non-existent company', async () => {
+        const nonExistentId = new Types.ObjectId();
+
+        await request(app.getHttpServer())
+        .patch(`/api/companies/${nonExistentId}`)
+        .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+        .send({ name: 'Won\'t Exist' })
+        .expect(404);
+    });
+
         it('should reject unknown fields (forbidNonWhitelisted)', async () => {
             const dto = {
                 email: 'test@company.com',

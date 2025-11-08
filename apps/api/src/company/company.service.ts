@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateCompanyDto } from './dto/createCompany.dto';
@@ -38,8 +38,9 @@ export class CompanyService {
      * @param dto The company data for creation
      */
     async create(dto: CreateCompanyDto): Promise<void> {
-        dto.password = await bcrypt.hash(dto.password, 10);
-        await this.companyModel.create({ ...dto });
+        let data = { ...dto };
+        data.password = await bcrypt.hash(dto.password, 10);
+        await this.companyModel.create({ ...data });
         return;
     }
 
@@ -47,6 +48,7 @@ export class CompanyService {
      * Updates an existing company's data
      * @param id The company identifier
      * @param dto The updated company data
+     * @throws {NotFoundException} if the company does not exist or is deleted
      */
     async update(id: string, dto: UpdateCompanyDto): Promise<void> {
         let updateData = { ...dto };
