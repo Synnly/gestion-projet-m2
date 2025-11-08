@@ -1,13 +1,14 @@
 import { CompanyDto } from '../../../../src/company/dto/company.dto';
 import { StructureType, LegalStatus } from '../../../../src/company/company.schema';
+import { Types } from 'mongoose';
 
 describe('CompanyDto', () => {
     describe('constructor', () => {
 
 
         it('should create instance successfully when constructor is called with all fields', () => {
-            const data = {
-                _id: '507f1f77bcf86cd799439011',
+            const data: any = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
                 name: 'Test Company',
                 siretNumber: '12345678901234',
@@ -24,7 +25,7 @@ describe('CompanyDto', () => {
 
             const dto = new CompanyDto(data);
 
-            expect(dto._id).toBe('507f1f77bcf86cd799439011');
+            expect(dto._id.toHexString()).toBe('507f1f77bcf86cd799439011');
             expect(dto.email).toBe('test@example.com');
             expect(dto.name).toBe('Test Company');
             expect(dto.siretNumber).toBe('12345678901234');
@@ -40,15 +41,15 @@ describe('CompanyDto', () => {
         });
 
     it('should create instance successfully when constructor is called with minimal fields', () => {
-            const data = {
-                _id: '507f1f77bcf86cd799439011',
+            const data: any = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
                 name: 'Test Company',
             };
 
             const dto = new CompanyDto(data);
 
-            expect(dto._id).toBe('507f1f77bcf86cd799439011');
+            expect(dto._id.toHexString()).toBe('507f1f77bcf86cd799439011');
             expect(dto.email).toBe('test@example.com');
             expect(dto.name).toBe('Test Company');
             expect(dto.siretNumber).toBeUndefined();
@@ -82,8 +83,8 @@ describe('CompanyDto', () => {
         });
 
     it('should create instance successfully when constructor is called with null values', () => {
-            const data = {
-                _id: '507f1f77bcf86cd799439011',
+            const data: any = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
                 name: 'Test Company',
                 siretNumber: null as any,
@@ -100,7 +101,7 @@ describe('CompanyDto', () => {
 
             const dto = new CompanyDto(data);
 
-            expect(dto._id).toBe('507f1f77bcf86cd799439011');
+            expect(dto._id.toHexString()).toBe('507f1f77bcf86cd799439011');
             expect(dto.email).toBe('test@example.com');
             expect(dto.name).toBe('Test Company');
             expect(dto.siretNumber).toBeNull();
@@ -116,7 +117,7 @@ describe('CompanyDto', () => {
         });
 
     it('should create instance successfully when constructor is called with empty strings', () => {
-            const data = {
+            const data: any = {
                 _id: '',
                 email: '',
                 name: '',
@@ -145,8 +146,8 @@ describe('CompanyDto', () => {
 
     it('should create instance successfully when constructor is called with each StructureType value', () => {
             Object.values(StructureType).forEach((structureType) => {
-                const data = {
-                    _id: '507f1f77bcf86cd799439011',
+                const data: any = {
+                    _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                     email: 'test@example.com',
                     name: 'Test Company',
                     structureType: structureType,
@@ -160,8 +161,8 @@ describe('CompanyDto', () => {
 
     it('should create instance successfully when constructor is called with each LegalStatus value', () => {
             Object.values(LegalStatus).forEach((legalStatus) => {
-                const data = {
-                    _id: '507f1f77bcf86cd799439011',
+                const data: any = {
+                    _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                     email: 'test@example.com',
                     name: 'Test Company',
                     legalStatus: legalStatus,
@@ -174,8 +175,8 @@ describe('CompanyDto', () => {
         });
 
     it('should create instance successfully when constructor is called with isValid false', () => {
-            const data = {
-                _id: '507f1f77bcf86cd799439011',
+            const data: any = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
                 name: 'Test Company',
                 isValid: false,
@@ -187,8 +188,8 @@ describe('CompanyDto', () => {
         });
 
     it('should create instance successfully when constructor is called with isValid true', () => {
-            const data = {
-                _id: '507f1f77bcf86cd799439011',
+            const data: any = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
                 name: 'Test Company',
                 isValid: true,
@@ -200,8 +201,8 @@ describe('CompanyDto', () => {
         });
 
     it('should create instance successfully when constructor is called with partial address data', () => {
-            const data = {
-                _id: '507f1f77bcf86cd799439011',
+            const data: any = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
                 name: 'Test Company',
                 city: 'Paris',
@@ -218,8 +219,8 @@ describe('CompanyDto', () => {
         });
 
     it('should create instance successfully when constructor is called with extra properties', () => {
-            const data = {
-                _id: '507f1f77bcf86cd799439011',
+            const data: any = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
                 name: 'Test Company',
                 extraField: 'extra value',
@@ -228,7 +229,7 @@ describe('CompanyDto', () => {
 
             const dto = new CompanyDto(data);
 
-            expect(dto._id).toBe('507f1f77bcf86cd799439011');
+            expect(dto._id.toHexString()).toBe('507f1f77bcf86cd799439011');
             expect(dto.email).toBe('test@example.com');
             expect(dto.name).toBe('Test Company');
             expect((dto as any).extraField).toBe('extra value');
@@ -236,8 +237,8 @@ describe('CompanyDto', () => {
         });
 
     it('should create instance successfully when constructor is passed a Company entity object', () => {
-            const company = {
-                _id: '507f1f77bcf86cd799439011',
+            const company: any = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
                 password: 'hashedPassword',
                 name: 'Test Company',
@@ -246,7 +247,7 @@ describe('CompanyDto', () => {
 
             const dto = new CompanyDto(company);
 
-            expect(dto._id).toBe('507f1f77bcf86cd799439011');
+            expect(dto._id.toHexString()).toBe('507f1f77bcf86cd799439011');
             expect(dto.email).toBe('test@example.com');
             expect(dto.name).toBe('Test Company');
             expect(dto.isValid).toBe(true);
@@ -254,14 +255,14 @@ describe('CompanyDto', () => {
         });
 
     it('should create multiple instances independently when constructor is called repeatedly', () => {
-            const data1 = {
-                _id: '507f1f77bcf86cd799439011',
+            const data1: any = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test1@example.com',
                 name: 'Test Company 1',
             };
 
-            const data2 = {
-                _id: '507f1f77bcf86cd799439012',
+            const data2: any = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439012'),
                 email: 'test2@example.com',
                 name: 'Test Company 2',
             };
@@ -269,15 +270,15 @@ describe('CompanyDto', () => {
             const dto1 = new CompanyDto(data1);
             const dto2 = new CompanyDto(data2);
 
-            expect(dto1._id).toBe('507f1f77bcf86cd799439011');
-            expect(dto2._id).toBe('507f1f77bcf86cd799439012');
+            expect(dto1._id.toHexString()).toBe('507f1f77bcf86cd799439011');
+            expect(dto2._id.toHexString()).toBe('507f1f77bcf86cd799439012');
             expect(dto1.email).toBe('test1@example.com');
             expect(dto2.email).toBe('test2@example.com');
         });
 
     it('should create instance successfully when constructor is called with nested objects', () => {
-            const data = {
-                _id: '507f1f77bcf86cd799439011',
+            const data: any = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
                 name: 'Test Company',
                 nestedObject: {
@@ -287,7 +288,7 @@ describe('CompanyDto', () => {
 
             const dto = new CompanyDto(data);
 
-            expect(dto._id).toBe('507f1f77bcf86cd799439011');
+            expect(dto._id.toHexString()).toBe('507f1f77bcf86cd799439011');
             expect((dto as any).nestedObject).toEqual({ key: 'value' });
         });
 
@@ -311,10 +312,10 @@ describe('CompanyDto', () => {
 
         it('should allow property modification when properties are modified after construction', () => {
             const dto = new CompanyDto({
-                _id: '507f1f77bcf86cd799439011',
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
                 name: 'Test Company',
-            });
+            } as any);
 
             dto.name = 'Modified Company';
             dto.email = 'modified@example.com';
@@ -325,10 +326,10 @@ describe('CompanyDto', () => {
 
     it('should allow adding optional properties successfully when properties are set after creation', () => {
             const dto = new CompanyDto({
-                _id: '507f1f77bcf86cd799439011',
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
                 name: 'Test Company',
-            });
+            } as any);
 
             dto.siretNumber = '12345678901234';
             dto.isValid = true;

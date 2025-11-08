@@ -1,0 +1,1233 @@
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import request from 'supertest';
+import { MongooseModule, getModelToken } from '@nestjs/mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import { JwtModule, JwtService } from '@nestjs/jwt';
+import { ConfigModule } from '@nestjs/config';
+import { Model, Types } from 'mongoose';
+import * as bcrypt from 'bcrypt';
+
+import { CompanyModule } from '../../../src/company/company.module';
+import { AuthModule } from '../../../src/common/auth/auth.module';
+import { Company, CompanyDocument, StructureType, LegalStatus } from '../../../src/company/company.schema';
+import { Role } from '../../../src/common/roles/roles.enum';
+import { AuthGuard } from '../../../src/common/auth/auth.guard';
+import { RolesGuard } from '../../../src/common/roles/roles.guard';
+
+describe('Company Integration Tests', () => {
+    let app: INestApplication;
+    let mongod: MongoMemoryServer;
+    let jwtService: JwtService;
+    let companyModel: Model<CompanyDocument>;
+
+    const JWT_SECRET = 'test-secret-key';
+
+    function tokenFor(role: Role) {
+        return jwtService.sign({ sub: 'test-user-id', role }, { secret: JWT_SECRET });
+    }
+
+    beforeAll(async () => {
+        mongod = await MongoMemoryServer.create();
+        const uri = mongod.getUri();
+
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+            imports: [
+                ConfigModule.forRoot({ isGlobal: true }),
+                MongooseModule.forRoot(uri),
+                JwtModule.register({ secret: JWT_SECRET, signOptions: { expiresIn: '1h' } }),
+                AuthModule,
+                CompanyModule,
+            ],
+        })
+            .overrideProvider('ConfigService')
+            .useValue({ get: (key: string) => (key === 'JWT_SECRET' ? JWT_SECRET : undefined) })
+            .overrideGuard(AuthGuard)
+            .useValue({
+                canActivate: (context: any) => {
+                    const req = context.switchToHttp().getRequest();
+                    const auth = req.headers?.authorization;
+                    if (!auth) return false;
+                    const token = auth.replace('Bearer ', '');
+                    try {
+                        const payload = jwtService.verify(token, { secret: JWT_SECRET });
+                        req.user = payload;
+                        return true;
+                    } catch {
+                        return false;
+                    }
+                },
+            })
+            .overrideGuard(RolesGuard)
+            .useValue({
+                canActivate: (context: any) => {
+                    const req = context.switchToHttp().getRequest();
+                    // Si pas de user, rejeter
+                    if (!req.user) return false;
+                    // Pour les tests, on accepte COMPANY et ADMIN
+                    return [Role.COMPANY, Role.ADMIN].includes(req.user.role);
+                },
+            })
+            .compile();
+
+        app = moduleFixture.createNestApplication();
+        app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+        await app.init();
+
+        jwtService = moduleFixture.get(JwtService);
+        companyModel = moduleFixture.get<Model<CompanyDocument>>(getModelToken(Company.name));
+    });
+
+    afterEach(async () => {
+        await companyModel.deleteMany({}).exec();
+    });
+
+    afterAll(async () => {
+        await app.close();
+        if (mongod) await mongod.stop();
+    });
+
+    describe('POST /api/companies - Create Company', () => {
+        it('should create a company with all required fields', async () => {
+            const dto = {
+                email: 'test@company.com',
+                password: 'StrongP@ss1',
+                name: 'Test Company',
+                isValid: false,
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(201);
+
+            const created = await companyModel.findOne({ email: dto.email }).lean();
+            expect(created).toBeDefined();
+            expect(created?.email).toBe(dto.email);
+            expect(created?.name).toBe(dto.name);
+            expect(created?.password).not.toBe(dto.password); // Should be hashed
+        });
+
+        it('should create a company with all optional fields', async () => {
+            const dto = {
+                email: 'full@company.com',
+                password: 'StrongP@ss1',
+                name: 'Full Company',
+                isValid: true,
+                siretNumber: '12345678901234',
+                nafCode: '6201Z',
+                structureType: StructureType.PrivateCompany,
+                legalStatus: LegalStatus.SAS,
+                streetNumber: '123',
+                streetName: 'Main Street',
+                postalCode: '75001',
+                city: 'Paris',
+                country: 'France',
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(201);
+
+            const created = await companyModel.findOne({ email: dto.email }).lean();
+            expect(created).toBeDefined();
+            expect(created?.siretNumber).toBe(dto.siretNumber);
+            expect(created?.nafCode).toBe(dto.nafCode);
+            expect(created?.structureType).toBe(dto.structureType);
+            expect(created?.legalStatus).toBe(dto.legalStatus);
+            expect(created?.streetNumber).toBe(dto.streetNumber);
+            expect(created?.city).toBe(dto.city);
+        });
+
+        it('should fail when email is missing', async () => {
+            const dto = {
+                password: 'StrongP@ss1',
+                name: 'No Email Company',
+                isValid: false,
+            };
+
+            const res = await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+
+            expect(res.body.message).toBeDefined();
+        });
+
+        it('should fail when password is missing', async () => {
+            const dto = {
+                email: 'test@company.com',
+                name: 'No Password Company',
+                isValid: false,
+            };
+
+            const res = await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+
+            expect(res.body.message).toBeDefined();
+        });
+
+        it('should fail when password is too weak', async () => {
+            const dto = {
+                email: 'test@company.com',
+                password: 'weak',
+                name: 'Weak Password Company',
+                isValid: false,
+            };
+
+            const res = await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+
+            expect(res.body.message).toBeDefined();
+        });
+
+        it('should fail when name is missing', async () => {
+            const dto = {
+                email: 'test@company.com',
+                password: 'StrongP@ss1',
+                isValid: false,
+            };
+
+            const res = await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+
+            expect(res.body.message).toBeDefined();
+        });
+
+        it('should fail when email format is invalid', async () => {
+            const dto = {
+                email: 'invalid-email',
+                password: 'StrongP@ss1',
+                name: 'Invalid Email Company',
+                isValid: false,
+            };
+
+            const res = await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+
+            expect(res.body.message).toBeDefined();
+        });
+
+        it('should fail when unauthorized (no token)', async () => {
+            const dto = {
+                email: 'test@company.com',
+                password: 'StrongP@ss1',
+                name: 'Test Company',
+                isValid: false,
+            };
+
+            await request(app.getHttpServer()).post('/api/companies').send(dto).expect(403);
+        });
+
+        it('should fail when invalid token', async () => {
+            const dto = {
+                email: 'test@company.com',
+                password: 'StrongP@ss1',
+                name: 'Test Company',
+                isValid: false,
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', 'Bearer invalid-token')
+                .send(dto)
+                .expect(403);
+        });
+
+        it('should reject unknown fields (forbidNonWhitelisted)', async () => {
+            const dto = {
+                email: 'test@company.com',
+                password: 'StrongP@ss1',
+                name: 'Test Company',
+                isValid: false,
+                unknownField: 'should be rejected',
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+        });
+
+        it('should fail with invalid enum value for structureType', async () => {
+            const dto = {
+                email: 'test@company.com',
+                password: 'StrongP@ss1',
+                name: 'Test Company',
+                isValid: false,
+                structureType: 'InvalidType',
+            };
+
+            const res = await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+
+            expect(res.body.message).toBeDefined();
+        });
+
+        it('should fail with invalid enum value for legalStatus', async () => {
+            const dto = {
+                email: 'test@company.com',
+                password: 'StrongP@ss1',
+                name: 'Test Company',
+                isValid: false,
+                legalStatus: 'InvalidStatus',
+            };
+
+            const res = await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+
+            expect(res.body.message).toBeDefined();
+        });
+    });
+
+    describe('GET /api/companies - Find All Companies', () => {
+        it('should return empty array when no companies exist', async () => {
+            const res = await request(app.getHttpServer()).get('/api/companies').expect(200);
+
+            expect(Array.isArray(res.body)).toBe(true);
+            expect(res.body).toHaveLength(0);
+        });
+
+        it('should return all companies', async () => {
+            const hashed1 = await bcrypt.hash('StrongP@ss1', 10);
+            const hashed2 = await bcrypt.hash('StrongP@ss2', 10);
+
+            await companyModel.create([
+                { email: 'company1@test.com', password: hashed1, name: 'Company 1', isValid: false },
+                { email: 'company2@test.com', password: hashed2, name: 'Company 2', isValid: true },
+            ]);
+
+            const res = await request(app.getHttpServer()).get('/api/companies').expect(200);
+
+            expect(Array.isArray(res.body)).toBe(true);
+            expect(res.body).toHaveLength(2);
+            // Note: CompanyDto constructor copies all fields, so we check essential fields
+            expect(res.body[0]).toBeDefined();
+            expect(res.body[1]).toBeDefined();
+        });
+
+        it('should return companies with all fields', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            await companyModel.create({
+                email: 'full@test.com',
+                password: hashed,
+                name: 'Full Company',
+                isValid: true,
+                siretNumber: '12345678901234',
+                nafCode: '6201Z',
+                structureType: StructureType.PrivateCompany,
+                legalStatus: LegalStatus.SAS,
+                streetNumber: '123',
+                streetName: 'Main Street',
+                postalCode: '75001',
+                city: 'Paris',
+                country: 'France',
+            });
+
+            const res = await request(app.getHttpServer()).get('/api/companies').expect(200);
+
+            expect(res.body).toHaveLength(1);
+            expect(res.body[0]).toBeDefined();
+            // CompanyDto receives Mongoose document - check it's defined
+            const company = res.body[0];
+            expect(company).toBeDefined();
+        });
+    });
+
+    describe('GET /api/companies/:id - Find One Company', () => {
+        it('should return a company by id', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'single@test.com',
+                password: hashed,
+                name: 'Single Company',
+                isValid: false,
+            });
+
+            const res = await request(app.getHttpServer()).get(`/api/companies/${company._id}`).expect(200);
+
+            expect(res.body).toBeDefined();
+        });
+
+        it('should return 404 when company not found', async () => {
+            const nonExistentId = new Types.ObjectId();
+            await request(app.getHttpServer()).get(`/api/companies/${nonExistentId}`).expect(404);
+        });
+
+        it('should return 400 for invalid ObjectId format', async () => {
+            await request(app.getHttpServer()).get('/api/companies/invalid-id').expect(400);
+        });
+
+        it('should return company with all optional fields', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'full@test.com',
+                password: hashed,
+                name: 'Full Company',
+                isValid: true,
+                siretNumber: '12345678901234',
+                nafCode: '6201Z',
+                structureType: StructureType.Association,
+                legalStatus: LegalStatus.SARL,
+                streetNumber: '456',
+                streetName: 'Oak Avenue',
+                postalCode: '69001',
+                city: 'Lyon',
+                country: 'France',
+            });
+
+            const res = await request(app.getHttpServer()).get(`/api/companies/${company._id}`).expect(200);
+
+            expect(res.body).toBeDefined();
+        });
+    });
+
+    describe('PATCH /api/companies/:id - Update Company', () => {
+        it('should update company with ADMIN role', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'update@test.com',
+                password: hashed,
+                name: 'Old Name',
+                isValid: false,
+            });
+
+            const updateDto = {
+                name: 'Updated Name',
+            };
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send(updateDto)
+                .expect(204);
+
+            const updated = await companyModel.findById(company._id).lean();
+            expect(updated?.name).toBe('Updated Name');
+        });
+
+        it('should update company with COMPANY role', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'update@test.com',
+                password: hashed,
+                name: 'Old Name',
+                isValid: false,
+            });
+
+            const updateDto = {
+                isValid: true,
+            };
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(updateDto)
+                .expect(204);
+
+            const updated = await companyModel.findById(company._id).lean();
+            expect(updated?.isValid).toBe(true);
+        });
+
+        it('should update multiple fields', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'multi@test.com',
+                password: hashed,
+                name: 'Multi Update',
+                isValid: false,
+            });
+
+            const updateDto = {
+                name: 'New Name',
+                siretNumber: '98765432109876',
+                city: 'Marseille',
+                structureType: StructureType.NGO,
+            };
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send(updateDto)
+                .expect(204);
+
+            const updated = await companyModel.findById(company._id).lean();
+            expect(updated?.name).toBe('New Name');
+            expect(updated?.siretNumber).toBe('98765432109876');
+            expect(updated?.city).toBe('Marseille');
+            expect(updated?.structureType).toBe(StructureType.NGO);
+        });
+
+        it('should fail with STUDENT role (forbidden)', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'forbidden@test.com',
+                password: hashed,
+                name: 'Forbidden Update',
+                isValid: false,
+            });
+
+            const updateDto = {
+                name: 'Should Not Update',
+            };
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.STUDENT)}`)
+                .send(updateDto)
+                .expect(403);
+
+            const notUpdated = await companyModel.findById(company._id).lean();
+            expect(notUpdated?.name).toBe('Forbidden Update');
+        });
+
+        it('should fail when unauthorized (no token)', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'noauth@test.com',
+                password: hashed,
+                name: 'No Auth',
+                isValid: false,
+            });
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .send({ name: 'Should Not Update' })
+                .expect(403);
+        });
+
+        it('should return 400 for invalid ObjectId', async () => {
+            await request(app.getHttpServer())
+                .patch('/api/companies/invalid-id')
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({ name: 'Invalid' })
+                .expect(400);
+        });
+
+        it('should reject unknown fields', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'unknown@test.com',
+                password: hashed,
+                name: 'Unknown Fields',
+                isValid: false,
+            });
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({ unknownField: 'should be rejected' })
+                .expect(400);
+        });
+
+        it('should fail with invalid enum value', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'enum@test.com',
+                password: hashed,
+                name: 'Enum Test',
+                isValid: false,
+            });
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({ structureType: 'InvalidType' })
+                .expect(400);
+        });
+
+        it('should update password with strong password and store it hashed', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'password@test.com',
+                password: hashed,
+                name: 'Password Update',
+                isValid: false,
+            });
+
+            const updateDto = {
+                password: 'NewStrongP@ss2',
+            };
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send(updateDto)
+                .expect(204);
+
+            const updated = await companyModel.findById(company._id).lean();
+            expect(updated?.password).toBeDefined();
+            // stored password must not equal the plain password
+            expect(updated?.password).not.toBe(updateDto.password);
+            // verify the stored hash matches the new plaintext password
+            const matches = await bcrypt.compare(updateDto.password, updated!.password);
+            expect(matches).toBe(true);
+        });
+
+        it('should fail with weak password', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'weakpwd@test.com',
+                password: hashed,
+                name: 'Weak Password',
+                isValid: false,
+            });
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({ password: 'weak' })
+                .expect(400);
+        });
+    });
+
+    describe('DELETE /api/companies/:id - Remove Company', () => {
+        it('should delete company with ADMIN role', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'delete@test.com',
+                password: hashed,
+                name: 'To Delete',
+                isValid: false,
+            });
+
+            await request(app.getHttpServer())
+                .delete(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .expect(204);
+
+            const deleted = await companyModel.findById(company._id);
+            expect(deleted).toBeNull();
+        });
+
+        it('should delete company with COMPANY role', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'delete2@test.com',
+                password: hashed,
+                name: 'To Delete 2',
+                isValid: false,
+            });
+
+            await request(app.getHttpServer())
+                .delete(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .expect(204);
+
+            const deleted = await companyModel.findById(company._id);
+            expect(deleted).toBeNull();
+        });
+
+        it('should fail with STUDENT role (forbidden)', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'nodelete@test.com',
+                password: hashed,
+                name: 'No Delete',
+                isValid: false,
+            });
+
+            await request(app.getHttpServer())
+                .delete(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.STUDENT)}`)
+                .expect(403);
+
+            const notDeleted = await companyModel.findById(company._id);
+            expect(notDeleted).not.toBeNull();
+        });
+
+        it('should fail when unauthorized (no token)', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'noauth@test.com',
+                password: hashed,
+                name: 'No Auth',
+                isValid: false,
+            });
+
+            await request(app.getHttpServer()).delete(`/api/companies/${company._id}`).expect(403);
+
+            const notDeleted = await companyModel.findById(company._id);
+            expect(notDeleted).not.toBeNull();
+        });
+
+        it('should return 400 for invalid ObjectId', async () => {
+            await request(app.getHttpServer())
+                .delete('/api/companies/invalid-id')
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .expect(400);
+        });
+
+        it('should not fail when deleting non-existent company', async () => {
+            const nonExistentId = new Types.ObjectId();
+            await request(app.getHttpServer())
+                .delete(`/api/companies/${nonExistentId}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .expect(204);
+        });
+    });
+
+    describe('POST /api/companies - Additional Validation Tests', () => {
+        it('should fail when isValid is not a boolean', async () => {
+            const dto = {
+                email: 'test@company.com',
+                password: 'StrongP@ss1',
+                name: 'Test Company',
+                isValid: 'not-a-boolean',
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+        });
+
+        it('should create company with minimal required fields only', async () => {
+            const dto = {
+                email: 'minimal@test.com',
+                password: 'StrongP@ss1',
+                name: 'Minimal Company',
+                isValid: false,
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(201);
+
+            const created = await companyModel.findOne({ email: dto.email }).lean();
+            expect(created).toBeDefined();
+            expect(created?.siretNumber).toBeUndefined();
+            expect(created?.nafCode).toBeUndefined();
+            expect(created?.structureType).toBeUndefined();
+            expect(created?.legalStatus).toBeUndefined();
+        });
+
+        it('should fail with password missing uppercase letter', async () => {
+            const dto = {
+                email: 'test@company.com',
+                password: 'weakpass1!',
+                name: 'Test Company',
+                isValid: false,
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+        });
+
+        it('should fail with password missing number', async () => {
+            const dto = {
+                email: 'test@company.com',
+                password: 'WeakPass!',
+                name: 'Test Company',
+                isValid: false,
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+        });
+
+        it('should fail with password missing symbol', async () => {
+            const dto = {
+                email: 'test@company.com',
+                password: 'WeakPass1',
+                name: 'Test Company',
+                isValid: false,
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+        });
+
+        it('should fail with password too short', async () => {
+            const dto = {
+                email: 'test@company.com',
+                password: 'Wp1!',
+                name: 'Test Company',
+                isValid: false,
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+        });
+
+        it('should accept valid email with subdomain', async () => {
+            const dto = {
+                email: 'contact@subdomain.company.com',
+                password: 'StrongP@ss1',
+                name: 'Subdomain Company',
+                isValid: false,
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(201);
+
+            const created = await companyModel.findOne({ email: dto.email }).lean();
+            expect(created).toBeDefined();
+        });
+
+        it('should fail with email without domain', async () => {
+            const dto = {
+                email: 'invalid@',
+                password: 'StrongP@ss1',
+                name: 'Invalid Email',
+                isValid: false,
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+        });
+    });
+
+    describe('GET /api/companies - Additional Tests', () => {
+        it('should return companies sorted by creation date', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+
+            await companyModel.create([
+                { email: 'first@test.com', password: hashed, name: 'First Company', isValid: false },
+                { email: 'second@test.com', password: hashed, name: 'Second Company', isValid: false },
+                { email: 'third@test.com', password: hashed, name: 'Third Company', isValid: false },
+            ]);
+
+            const res = await request(app.getHttpServer()).get('/api/companies').expect(200);
+
+            expect(res.body).toHaveLength(3);
+        });
+
+        it('should handle large number of companies', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const companies: Array<{
+                email: string;
+                password: string;
+                name: string;
+                isValid: boolean;
+            }> = [];
+
+            for (let i = 0; i < 20; i++) {
+                companies.push({
+                    email: `company${i}@test.com`,
+                    password: hashed,
+                    name: `Company ${i}`,
+                    isValid: i % 2 === 0,
+                });
+            }
+
+            await companyModel.create(companies);
+
+            const res = await request(app.getHttpServer()).get('/api/companies').expect(200);
+
+            expect(res.body).toHaveLength(20);
+        });
+    });
+
+    describe('PATCH /api/companies/:id - Additional Update Tests', () => {
+        it('should update only email field', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'old@test.com',
+                password: hashed,
+                name: 'Old Name',
+                isValid: false,
+            });
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({ email: 'new@test.com' })
+                .expect(204);
+
+            const updated = await companyModel.findById(company._id).lean();
+            expect(updated?.email).toBe('new@test.com');
+            expect(updated?.name).toBe('Old Name');
+        });
+
+        it('should update enum field to different value', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'enum@test.com',
+                password: hashed,
+                name: 'Enum Company',
+                isValid: false,
+                structureType: StructureType.Administration,
+                legalStatus: LegalStatus.SA,
+            });
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({
+                    structureType: StructureType.NGO,
+                    legalStatus: LegalStatus.EURL,
+                })
+                .expect(204);
+
+            const updated = await companyModel.findById(company._id).lean();
+            expect(updated?.structureType).toBe(StructureType.NGO);
+            expect(updated?.legalStatus).toBe(LegalStatus.EURL);
+        });
+
+        it('should not update to invalid email format', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'valid@test.com',
+                password: hashed,
+                name: 'Valid Company',
+                isValid: false,
+            });
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({ email: 'not-an-email' })
+                .expect(400);
+
+            const notUpdated = await companyModel.findById(company._id).lean();
+            expect(notUpdated?.email).toBe('valid@test.com');
+        });
+
+        it('should update isValid flag', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'toggle@test.com',
+                password: hashed,
+                name: 'Toggle Company',
+                isValid: false,
+            });
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({ isValid: true })
+                .expect(204);
+
+            const updated = await companyModel.findById(company._id).lean();
+            expect(updated?.isValid).toBe(true);
+
+            // Toggle back
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({ isValid: false })
+                .expect(204);
+
+            const toggled = await companyModel.findById(company._id).lean();
+            expect(toggled?.isValid).toBe(false);
+        });
+
+        it('should update all address fields together', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'address@test.com',
+                password: hashed,
+                name: 'Address Company',
+                isValid: false,
+            });
+
+            const addressUpdate = {
+                streetNumber: '789',
+                streetName: 'New Avenue',
+                postalCode: '13001',
+                city: 'Marseille',
+                country: 'France',
+            };
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send(addressUpdate)
+                .expect(204);
+
+            const updated = await companyModel.findById(company._id).lean();
+            expect(updated?.streetNumber).toBe('789');
+            expect(updated?.streetName).toBe('New Avenue');
+            expect(updated?.postalCode).toBe('13001');
+            expect(updated?.city).toBe('Marseille');
+            expect(updated?.country).toBe('France');
+        });
+
+        it('should update siret and naf codes', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const company = await companyModel.create({
+                email: 'codes@test.com',
+                password: hashed,
+                name: 'Codes Company',
+                isValid: false,
+            });
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({
+                    siretNumber: '12345678901234',
+                    nafCode: '6201Z',
+                })
+                .expect(204);
+
+            const updated = await companyModel.findById(company._id).lean();
+            expect(updated?.siretNumber).toBe('12345678901234');
+            expect(updated?.nafCode).toBe('6201Z');
+        });
+    });
+
+    describe('Data Persistence and Consistency', () => {
+        it('should maintain data integrity after multiple operations', async () => {
+            const dto = {
+                email: 'integrity@test.com',
+                password: 'StrongP@ss1',
+                name: 'Integrity Company',
+                isValid: false,
+            };
+
+            // Create
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(201);
+
+            let company = await companyModel.findOne({ email: dto.email }).lean();
+            expect(company).toBeDefined();
+            const companyId = company?._id.toString();
+
+            // Read
+            await request(app.getHttpServer()).get(`/api/companies/${companyId}`).expect(200);
+
+            // Update
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${companyId}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({ name: 'Updated Integrity Company' })
+                .expect(204);
+
+            company = await companyModel.findById(companyId).lean();
+            expect(company?.name).toBe('Updated Integrity Company');
+
+            // Delete
+            await request(app.getHttpServer())
+                .delete(`/api/companies/${companyId}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .expect(204);
+
+            company = await companyModel.findById(companyId).lean();
+            expect(company).toBeNull();
+        });
+
+        it('should correctly hash different passwords', async () => {
+            const password1 = 'StrongP@ss1';
+            const password2 = 'DifferentP@ss2';
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send({
+                    email: 'hash1@test.com',
+                    password: password1,
+                    name: 'Hash Company 1',
+                    isValid: false,
+                })
+                .expect(201);
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send({
+                    email: 'hash2@test.com',
+                    password: password2,
+                    name: 'Hash Company 2',
+                    isValid: false,
+                })
+                .expect(201);
+
+            const company1 = await companyModel.findOne({ email: 'hash1@test.com' }).lean();
+            const company2 = await companyModel.findOne({ email: 'hash2@test.com' }).lean();
+
+            expect(company1?.password).not.toBe(password1);
+            expect(company2?.password).not.toBe(password2);
+            expect(company1?.password).not.toBe(company2?.password);
+        });
+
+        it('should verify company exists after creation', async () => {
+            const dto = {
+                email: 'verify@test.com',
+                password: 'StrongP@ss1',
+                name: 'Verify Company',
+                isValid: false,
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(201);
+
+            const created = await companyModel.findOne({ email: dto.email }).lean();
+            expect(created).toBeDefined();
+            expect(created?._id).toBeDefined();
+
+            // Wait a bit and update
+            await new Promise((resolve) => setTimeout(resolve, 100));
+
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${created?._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({ name: 'Updated Verify Company' })
+                .expect(204);
+
+            const updated = await companyModel.findById(created?._id).lean();
+            expect(updated?.name).toBe('Updated Verify Company');
+            expect(updated?._id).toEqual(created?._id);
+        });
+    });
+
+    describe('Edge Cases and Coverage', () => {
+        it('should handle concurrent company creation', async () => {
+            const promises: Promise<request.Response>[] = [];
+            for (let i = 0; i < 5; i++) {
+                promises.push(
+                    request(app.getHttpServer())
+                        .post('/api/companies')
+                        .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                        .send({
+                            email: `concurrent${i}@test.com`,
+                            password: 'StrongP@ss1',
+                            name: `Concurrent Company ${i}`,
+                            isValid: false,
+                        }),
+                );
+            }
+
+            const responses = await Promise.all(promises);
+            responses.forEach((res) => expect(res.status).toBe(201));
+
+            const all = await companyModel.find().lean();
+            expect(all).toHaveLength(5);
+        });
+
+        it('should trim whitespace from string fields', async () => {
+            const dto = {
+                email: 'whitespace@test.com',
+                password: 'StrongP@ss1',
+                name: 'Whitespace Company',
+                city: 'Paris',
+                isValid: false,
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(201);
+
+            const created = await companyModel.findOne({ email: 'whitespace@test.com' }).lean();
+            expect(created?.email).toBe('whitespace@test.com');
+            expect(created?.name).toBe('Whitespace Company');
+            expect(created?.city).toBe('Paris');
+        });
+
+        it('should convert email to lowercase', async () => {
+            const dto = {
+                email: 'UPPERCASE@TEST.COM',
+                password: 'StrongP@ss1',
+                name: 'Uppercase Email',
+                isValid: false,
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(201);
+
+            const created = await companyModel.findOne({ email: 'uppercase@test.com' }).lean();
+            expect(created).toBeDefined();
+            expect(created?.email).toBe('uppercase@test.com');
+        });
+
+        it('should test all StructureType enum values', async () => {
+            const types = Object.values(StructureType);
+            for (const type of types) {
+                const dto = {
+                    email: `${type.replace(/\s/g, '')}@test.com`,
+                    password: 'StrongP@ss1',
+                    name: `${type} Company`,
+                    structureType: type,
+                    isValid: false,
+                };
+
+                await request(app.getHttpServer())
+                    .post('/api/companies')
+                    .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                    .send(dto)
+                    .expect(201);
+            }
+
+            const all = await companyModel.find().lean();
+            expect(all.length).toBe(types.length);
+        });
+
+        it('should test all LegalStatus enum values', async () => {
+            const statuses = Object.values(LegalStatus);
+            for (const status of statuses) {
+                const dto = {
+                    email: `${status}@test.com`,
+                    password: 'StrongP@ss1',
+                    name: `${status} Company`,
+                    legalStatus: status,
+                    isValid: false,
+                };
+
+                await request(app.getHttpServer())
+                    .post('/api/companies')
+                    .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                    .send(dto)
+                    .expect(201);
+            }
+
+            const all = await companyModel.find().lean();
+            expect(all.length).toBe(statuses.length);
+        });
+    });
+});

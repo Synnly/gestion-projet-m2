@@ -821,7 +821,7 @@ describe('CompanyController', () => {
             it('should allow access successfully when canActivate is called with USER role', () => {
                 mockReflector.getAllAndOverride.mockReturnValue(undefined);
 
-                const context = createMockExecutionContext({ role: Role.USER });
+                const context = createMockExecutionContext({ role: Role.STUDENT });
                 const result = rolesGuard.canActivate(context);
 
                 expect(result).toBe(true);
@@ -855,7 +855,7 @@ describe('CompanyController', () => {
             it('should allow access successfully when canActivate is called without specific role', () => {
                 mockReflector.getAllAndOverride.mockReturnValue(undefined);
 
-                const context = createMockExecutionContext({ role: Role.USER });
+                const context = createMockExecutionContext({ role: Role.STUDENT });
                 const result = rolesGuard.canActivate(context);
 
                 expect(result).toBe(true);
@@ -900,7 +900,7 @@ describe('CompanyController', () => {
             it('should deny USER role when canActivate is called with USER role for update', () => {
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
-                const context = createMockExecutionContext({ role: Role.USER });
+                const context = createMockExecutionContext({ role: Role.STUDENT });
 
                 expect(() => rolesGuard.canActivate(context)).toThrow(ForbiddenException);
                 expect(() => rolesGuard.canActivate(context)).toThrow('Access denied');
@@ -953,7 +953,7 @@ describe('CompanyController', () => {
             it('should deny USER role when canActivate is called with USER role for delete', () => {
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
-                const context = createMockExecutionContext({ role: Role.USER });
+                const context = createMockExecutionContext({ role: Role.STUDENT });
 
                 expect(() => rolesGuard.canActivate(context)).toThrow(ForbiddenException);
                 expect(() => rolesGuard.canActivate(context)).toThrow('Access denied');

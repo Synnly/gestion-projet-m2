@@ -3,6 +3,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthGuard } from './auth.guard';
 
+/**
+ * Global authentication module that provides JWT functionality
+ * Configures JWT with secret and expiration from environment variables
+ * Exports AuthGuard and JwtModule for use throughout the application
+ */
 @Global()
 @Module({
     imports: [
