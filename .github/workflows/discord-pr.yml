@@ -1,124 +1,110 @@
 name: Notify Discord on PR open
 
 on:
-    pull_request:
-        types: [opened, reopened, ready_for_review]
-        branches: [dev]
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+    branches: [dev]
 
 jobs:
-    notify:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Post PR info to Discord (diagnostic + wait=true)
-              env:
-                WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
-                PR_NUMBER: ${{ github.event.pull_request.number }}
-                PR_TITLE: ${{ github.event.pull_request.title }}
-                PR_URL: ${{ github.event.pull_request.html_url }}
-                PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-                PR_BODY: ${{ github.event.pull_request.body }}
-                REPO: ${{ github.repository }}
-                BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
-                HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
-              shell: bash
-              run: |
-                python3 - <<'PY'
-                import json, os, sys, time, urllib.request, urllib.error, urllib.parse
-            
-                webhook = os.environ["WEBHOOK_URL"].strip()
-            
-                def with_wait(url):
-                    # ajoute ?wait=true ou &wait=true selon le cas
-                    parsed = urllib.parse.urlparse(url)
-                    qs = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
-                    if not any(k == "wait" for k, _ in qs):
-                        qs.append(("wait","true"))
-                    new_qs = urllib.parse.urlencode(qs)
-                    return urllib.parse.urlunparse(parsed._replace(query=new_qs))
-            
-                headers = {
-                  "Content-Type": "application/json",
-                  "Accept": "application/json",
-                  "User-Agent": "curl/8.5.0 GitHubActions (+https://github.com/)"
-                }
-            
-                def http(method, url, payload=None):
-                    data = None if payload is None else json.dumps(payload).encode("utf-8")
-                    req = urllib.request.Request(url, data=data, headers=headers, method=method)
-                    try:
-                        with urllib.request.urlopen(req, timeout=15) as resp:
-                            body = resp.read().decode("utf-8","ignore")
-                            return resp.getcode(), body
-                    except urllib.error.HTTPError as e:
-                        return e.code, e.read().decode("utf-8","ignore")
-                    except Exception as e:
-                        return None, str(e)
-            
-                # 0) GET webhook metadata (pour vérifier channel/nom)
-                s, b = http("GET", webhook, None)
-                print("GET webhook ->", s, b[:400])
-                if not s or s >= 400:
-                    print("❌ Impossible de lire le webhook (URL invalide ou révoquée ?)")
-                    sys.exit(1)
-            
-                # Prépare les données PR
-                author = os.environ.get("PR_AUTHOR","")
-                pr_number = os.environ.get("PR_NUMBER","")
-                pr_title = os.environ.get("PR_TITLE","") or ""
-                pr_url = os.environ.get("PR_URL","")
-                repo = os.environ.get("REPO","")
-                head = os.environ.get("HEAD_BRANCH","")
-                base = os.environ.get("BASE_BRANCH","")
-                body = (os.environ.get("PR_BODY") or "").strip()
-            
-                # Troncatures (limites Discord)
-                if len(pr_title) > 250: pr_title = pr_title[:250] + "…"
-                if len(body) > 4000: body = body[:4000] + "…"
-                content = f"**{author}** a ouvert une pull request"
-                if len(content) > 1900: content = content[:1900] + "…"
-            
-                embed = {
-                  "title": f"PR #{pr_number}: {pr_title}",
-                  "url": pr_url,
-                  "description": body or "_(aucune description)_",
-                  "fields": [
-                    {"name": "Auteur", "value": author or "—", "inline": True},
-                    {"name": "Repo", "value": repo or "—", "inline": True},
-                    {"name": "Branches", "value": f"`{head}` → `{base}`", "inline": False},
-                  ],
-                }
-            
-                # 1) Envoi avec wait=true (on veut l’objet message)
-                url_wait = with_wait(webhook)
-                payload = {"content": content, "allowed_mentions": {"parse": []}, "embeds": [embed]}
-                s1, b1 = http("POST", url_wait, payload)
-                print("POST avec embed (wait=true) ->", s1, b1[:400])
-            
-                # Si succès, Discord renvoie l'objet message JSON : on loggue l'id et le channel
-                try:
-                    j = json.loads(b1) if b1 else {}
-                except Exception:
-                    j = {}
-                if s1 and 200 <= s1 < 300 and isinstance(j, dict) and "id" in j:
-                    print(f"✅ Message créé id={j.get('id')} channel_id={j.get('channel_id')}")
-                    sys.exit(0)
-            
-                # 2) Si l’embed pose problème (permissions), tente content seul
-                #    (Missing Permissions = code 50013 dans le JSON)
-                code = j.get("code")
-                if s1 in (403, 400) or code in (50013,):
-                    s2, b2 = http("POST", url_wait, {"content": content, "allowed_mentions": {"parse": []}})
-                    print("POST content seul (wait=true) ->", s2, b2[:400])
-                    try:
-                        j2 = json.loads(b2) if b2 else {}
-                    except Exception:
-                        j2 = {}
-                    if s2 and 200 <= s2 < 300 and "id" in j2:
-                        print(f"✅ Message (sans embed) id={j2.get('id')} channel_id={j2.get('channel_id')}")
-                        sys.exit(0)
-            
-                # 3) Rien n’a été créé → échouer pour visibilité
-                print("❌ Aucune création de message visible. Inspecte status/body ci-dessus.")
-                sys.exit(1)
-                PY
-            
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post PR info to Discord
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          REPO: ${{ github.repository }}
+          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, urllib.request, urllib.error, urllib.parse
+
+          webhook = os.environ.get("WEBHOOK_URL", "").strip()
+          if not webhook:
+              print("Missing secret DISCORD_WEBHOOK")
+              sys.exit(1)
+
+          def with_wait(url: str) -> str:
+              p = urllib.parse.urlparse(url)
+              qs = urllib.parse.parse_qsl(p.query, keep_blank_values=True)
+              if not any(k == "wait" for k, _ in qs):
+                  qs.append(("wait", "true"))
+              return urllib.parse.urlunparse(p._replace(query=urllib.parse.urlencode(qs)))
+
+          headers = {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+              "User-Agent": "curl/8.5.0 GitHubActions (+https://github.com/)"
+          }
+
+          def post(payload):
+              data = json.dumps(payload).encode("utf-8")
+              req = urllib.request.Request(with_wait(webhook), data=data, headers=headers, method="POST")
+              try:
+                  with urllib.request.urlopen(req, timeout=15) as resp:
+                      body = resp.read().decode("utf-8", "ignore")
+                      return resp.getcode(), body
+              except urllib.error.HTTPError as e:
+                  return e.code, e.read().decode("utf-8", "ignore")
+              except Exception as e:
+                  return None, str(e)
+
+          # Données PR
+          author = os.environ.get("PR_AUTHOR","")
+          pr_number = os.environ.get("PR_NUMBER","")
+          pr_title = os.environ.get("PR_TITLE","") or ""
+          pr_url = os.environ.get("PR_URL","")
+          repo = os.environ.get("REPO","")
+          head = os.environ.get("HEAD_BRANCH","")
+          base = os.environ.get("BASE_BRANCH","")
+          body = (os.environ.get("PR_BODY") or "").strip()
+
+          # Troncatures (limites Discord)
+          if len(pr_title) > 250: pr_title = pr_title[:250] + "…"
+          if len(body) > 4000: body = body[:4000] + "…"
+          content = f"**{author}** a ouvert une pull request"
+          if len(content) > 1900: content = content[:1900] + "…"
+
+          embed = {
+              "title": f"PR #{pr_number}: {pr_title}",
+              "url": pr_url,
+              "description": body or "_(aucune description)_",
+              "fields": [
+                  {"name": "Auteur", "value": author or "—", "inline": True},
+                  {"name": "Repo", "value": repo or "—", "inline": True},
+                  {"name": "Branches", "value": f"`{head}` → `{base}`", "inline": False},
+              ],
+          }
+
+          # 1) Tente avec embed
+          status, resp = post({"content": content, "allowed_mentions": {"parse": []}, "embeds": [embed]})
+          try:
+              j = json.loads(resp) if resp else {}
+          except Exception:
+              j = {}
+
+          if status and 200 <= status < 300 and isinstance(j, dict) and "id" in j:
+              print(f"Discord OK • message_id={j.get('id')} • channel_id={j.get('channel_id')}")
+              sys.exit(0)
+
+          # 2) Fallback si embeds interdits (403/50013) → content seul
+          if (status == 403) or (isinstance(j, dict) and j.get("code") == 50013):
+              status2, resp2 = post({"content": content, "allowed_mentions": {"parse": []}})
+              try:
+                  j2 = json.loads(resp2) if resp2 else {}
+              except Exception:
+                  j2 = {}
+              if status2 and 200 <= status2 < 300 and "id" in j2:
+                  print(f"Discord OK (sans embed) • message_id={j2.get('id')} • channel_id={j2.get('channel_id')}")
+                  sys.exit(0)
+
+          # 3) Échec net (on garde le statut lisible)
+          print(f"Discord error • status={status} • body={resp[:300] if resp else ''}")
+          sys.exit(1)
+          PY
