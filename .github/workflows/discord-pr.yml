@@ -22,67 +22,57 @@ jobs:
                   HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
               shell: bash
               run: |
-                  python3 - <<'PY'
-                  import json, os, sys, time, urllib.request
-
-                  webhook = os.environ["WEBHOOK_URL"]
-                  author = os.environ.get("PR_AUTHOR","")
-                  pr_number = os.environ.get("PR_NUMBER","")
-                  pr_title = os.environ.get("PR_TITLE","")
-                  pr_url = os.environ.get("PR_URL","")
-                  repo = os.environ.get("REPO","")
-                  head = os.environ.get("HEAD_BRANCH","")
-                  base = os.environ.get("BASE_BRANCH","")
-                  body = os.environ.get("PR_BODY") or ""
-
-                  # --- Troncatures sécurisées (Discord limits) ---
-                  if len(pr_title) > 250:
-                      pr_title = pr_title[:250] + "…"
-                  body = body.strip()
-                  if len(body) > 4000:
-                      body = body[:4000] + "…"
-                  content = f"**{author}** a ouvert une pull request"
-                  if len(content) > 1900:
-                      content = content[:1900] + "…"
-
-                  # --- Création de l'embed Discord ---
-                  embed = {
-                      "title": f"PR #{pr_number}: {pr_title}",
-                      "url": pr_url,
-                      "description": body or "_(aucune description)_",
-                      "fields": [
-                          {"name": "Auteur", "value": author or "—", "inline": True},
-                          {"name": "Repo", "value": repo or "—", "inline": True},
-                          {"name": "Branches", "value": f"`{head}` → `{base}`", "inline": False},
-                      ],
-                  }
-
-                  payload = {
-                      "content": content,
-                      "allowed_mentions": {"parse": []},  # bloque @everyone/@here
-                      "embeds": [embed],
-                  }
-
-                  data = json.dumps(payload).encode("utf-8")
-                  req = urllib.request.Request(
-                      webhook,
-                      data=data,
-                      headers={"Content-Type": "application/json"},
-                      method="POST",
-                  )
-
-                  # --- Envoi avec retry exponentiel ---
-                  for attempt in range(5):
-                      try:
-                          with urllib.request.urlopen(req, timeout=10) as resp:
-                              status = resp.getcode()
-                              if 200 <= status < 300:
-                                  print(f"Notification Discord envoyée ({status})")
-                                  sys.exit(0)
-                              else:
-                                  print(f"Discord HTTP {status}")
-                      except Exception as e:
-                          print(f"Tentative {attempt+1}/5 échouée: {e}")
-                      time.sleep(min(2 ** attempt, 10))  # 1,2,4,8,10s
-                  sys.exit(1)
-                  PY
+                python3 - <<'PY'
+                import json, os, sys, time, urllib.request, urllib.error
+            
+                def post(payload):
+                    data = json.dumps(payload).encode("utf-8")
+                    req = urllib.request.Request(
+                        os.environ["WEBHOOK_URL"],
+                        data=data,
+                        headers={"Content-Type": "application/json"},
+                        method="POST",
+                    )
+                    try:
+                        with urllib.request.urlopen(req, timeout=10) as resp:
+                            return resp.getcode(), resp.read().decode("utf-8","ignore")
+                    except urllib.error.HTTPError as e:
+                        body = e.read().decode("utf-8","ignore")
+                        return e.code, body
+                    except Exception as e:
+                        return None, str(e)
+            
+                # ------ construit un payload minimal (content seul) ------
+                content = f"**{os.environ.get('PR_AUTHOR','')}** a ouvert une pull request"
+                if len(content) > 1900: content = content[:1900] + "…"
+                status, body = post({"content": content, "allowed_mentions": {"parse": []}})
+                print("Tentative content seul ->", status, body)
+            
+                if status and 200 <= status < 300:
+                    sys.exit(0)
+            
+                # ------ si ok d'envoyer des embeds, on tente l'embed complet ------
+                pr_title = os.environ.get("PR_TITLE","")
+                if len(pr_title) > 250: pr_title = pr_title[:250] + "…"
+                pr_body = (os.environ.get("PR_BODY") or "").strip()
+                if len(pr_body) > 4000: pr_body = pr_body[:4000] + "…"
+            
+                embed = {
+                    "title": f"PR #{os.environ.get('PR_NUMBER','')}: {pr_title}",
+                    "url": os.environ.get("PR_URL",""),
+                    "description": pr_body or "_(aucune description)_",
+                    "fields": [
+                        {"name": "Auteur", "value": os.environ.get("PR_AUTHOR","—"), "inline": True},
+                        {"name": "Repo", "value": os.environ.get("REPO","—"), "inline": True},
+                        {"name": "Branches", "value": f"`{os.environ.get('HEAD_BRANCH','')}` → `{os.environ.get('BASE_BRANCH','')}`", "inline": False},
+                    ],
+                }
+                status2, body2 = post({
+                    "content": content,
+                    "allowed_mentions": {"parse": []},
+                    "embeds": [embed],
+                })
+                print("Tentative avec embed ->", status2, body2)
+            
+                sys.exit(0 if (status2 and 200 <= status2 < 300) else 1)
+                PY
