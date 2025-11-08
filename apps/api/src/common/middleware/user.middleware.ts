@@ -23,7 +23,11 @@ export class UserMiddleware implements NestMiddleware {
             try {
                 const payload = this.jwtService.verify(token);
                 req['user'] = payload;
-            } catch (_) {}
+            } catch (error) {
+                // Token validation failed, continuing without user
+                // Uncomment the next line to log errors for debugging:
+                // console.debug('JWT verification error:', error);
+            }
         }
         next();
     }
