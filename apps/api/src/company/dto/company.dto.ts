@@ -1,4 +1,5 @@
 import { StructureType, LegalStatus } from '../company.schema';
+import { NafCode } from '../naf-codes.enum';
 import { Types } from 'mongoose';
 
 /**
@@ -19,7 +20,7 @@ export class CompanyDto {
     siretNumber?: string;
 
     /** NAF code (French business activity code) */
-    nafCode?: string;
+    nafCode?: NafCode;
 
     /** Type of organizational structure */
     structureType?: StructureType;

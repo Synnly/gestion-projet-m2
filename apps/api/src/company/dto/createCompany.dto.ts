@@ -1,13 +1,6 @@
-import {
-    IsString,
-    IsEmail,
-    IsOptional,
-    IsEnum,
-    IsBoolean,
-    IsStrongPassword,
-    IsNotEmpty,
-} from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsEnum, IsStrongPassword, IsNotEmpty, Matches, Length } from 'class-validator';
 import { StructureType, LegalStatus } from '../company.schema';
+import { NafCode } from '../naf-codes.enum';
 
 /**
  * Data Transfer Object for creating a new company
@@ -28,15 +21,16 @@ export class CreateCompanyDto {
     @IsNotEmpty()
     name: string;
 
-    /** SIRET number (French business registration number) */
+    /** SIRET number (French business registration number - exactly 14 digits) */
     @IsOptional()
-    @IsString()
+    @Length(14, 14, { message: 'siretNumber must be exactly 14 characters long' })
+    @Matches(/^\d+$/, { message: 'siretNumber must contain only digits' })
     siretNumber?: string;
 
     /** NAF code (French business activity code) */
     @IsOptional()
-    @IsString()
-    nafCode?: string;
+    @IsEnum(NafCode)
+    nafCode?: NafCode;
 
     /** Type of organizational structure */
     @IsOptional()
@@ -72,10 +66,6 @@ export class CreateCompanyDto {
     @IsOptional()
     @IsString()
     country?: string;
-
-    /** Whether the company account should be validated */
-    @IsBoolean()
-    isValid: boolean;
 
     /**
      * Constructs a CreateCompanyDto instance

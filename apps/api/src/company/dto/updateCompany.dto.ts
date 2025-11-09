@@ -1,12 +1,6 @@
-import {
-    IsOptional,
-    IsString,
-    IsEmail,
-    IsEnum,
-    IsBoolean,
-    IsStrongPassword,
-} from 'class-validator';
+import { IsOptional, IsString, IsEmail, IsEnum, IsBoolean, IsStrongPassword, Matches } from 'class-validator';
 import { StructureType, LegalStatus } from '../company.schema';
+import { NafCode } from '../naf-codes.enum';
 
 /**
  * Data Transfer Object for updating an existing company
@@ -28,15 +22,15 @@ export class UpdateCompanyDto {
     @IsString()
     name?: string;
 
-    /** SIRET number (French business registration number) */
+    /** SIRET number (French business registration number - exactly 14 digits) */
     @IsOptional()
-    @IsString()
+    @Matches(/^\d{14}$/, { message: 'siretNumber must be exactly 14 digits' })
     siretNumber?: string;
 
     /** NAF code (French business activity code) */
     @IsOptional()
-    @IsString()
-    nafCode?: string;
+    @IsEnum(NafCode)
+    nafCode?: NafCode;
 
     /** Type of organizational structure */
     @IsOptional()

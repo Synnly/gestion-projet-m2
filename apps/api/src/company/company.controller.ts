@@ -18,6 +18,7 @@ import { CompanyService } from './company.service';
 import { CompanyDto } from './dto/company.dto';
 import { ParseObjectIdPipe } from '../../src/validators/parse-objectid.pipe';
 import { RolesGuard } from '../../src/common/roles/roles.guard';
+import { CompanyOwnerGuard } from '../../src/common/roles/company-owner.guard';
 import { Roles } from '../../src/common/roles/roles.decorator';
 import { Role } from '../../src/common/roles/roles.enum';
 import { AuthGuard } from '../../src/common/auth/auth.guard';
@@ -57,11 +58,9 @@ export class CompanyController {
 
     /**
      * Creates a new company
-     * Requires authentication
      * @param dto The company data for creation
      */
     @Post('')
-    @UseGuards(AuthGuard, RolesGuard)
     @HttpCode(HttpStatus.CREATED)
     async create(
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
@@ -77,7 +76,7 @@ export class CompanyController {
      * @param dto The updated company data
      */
     @Patch('/:id')
-    @UseGuards(AuthGuard, RolesGuard)
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
     async update(
@@ -94,7 +93,7 @@ export class CompanyController {
      * @param id The company identifier to delete
      */
     @Delete('/:id')
-    @UseGuards(AuthGuard, RolesGuard)
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
     async remove(@Param('id', ParseObjectIdPipe) id: string) {

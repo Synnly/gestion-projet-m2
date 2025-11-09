@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import { NafCode } from './naf-codes.enum';
 
 /**
  * Enumeration of organizational structure types
@@ -76,8 +77,8 @@ export class Company {
     siretNumber?: string;
 
     /** NAF code - French business activity code (Nomenclature d'Activités Française) */
-    @Prop({ required: false, trim: true })
-    nafCode?: string;
+    @Prop({ required: false, type: String, enum: NafCode })
+    nafCode?: NafCode;
 
     /** Type of organizational structure */
     @Prop({ required: false, enum: StructureType })

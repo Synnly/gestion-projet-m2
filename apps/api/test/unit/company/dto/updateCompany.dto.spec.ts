@@ -1,18 +1,17 @@
 import { validate } from 'class-validator';
 import { UpdateCompanyDto } from '../../../../src/company/dto/updateCompany.dto';
 import { StructureType, LegalStatus } from '../../../../src/company/company.schema';
+import { NafCode } from '../../../../src/company/naf-codes.enum';
 
 describe('UpdateCompanyDto', () => {
     describe('constructor', () => {
-
-
         it('should create instance successfully when constructor is called with all fields', () => {
             const data = {
                 email: 'updated@example.com',
                 password: 'NewPassword123!',
                 name: 'Updated Company',
                 siretNumber: '12345678901234',
-                nafCode: '6202A',
+                nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
                 streetNumber: '10',
@@ -29,7 +28,7 @@ describe('UpdateCompanyDto', () => {
             expect(dto.password).toBe('NewPassword123!');
             expect(dto.name).toBe('Updated Company');
             expect(dto.siretNumber).toBe('12345678901234');
-            expect(dto.nafCode).toBe('6202A');
+            expect(dto.nafCode).toBe(NafCode.NAF_62_02A);
             expect(dto.structureType).toBe(StructureType.PrivateCompany);
             expect(dto.legalStatus).toBe(LegalStatus.SARL);
             expect(dto.streetNumber).toBe('10');
@@ -40,7 +39,7 @@ describe('UpdateCompanyDto', () => {
             expect(dto.isValid).toBe(true);
         });
 
-    it('should create instance successfully when constructor is called with a single field', () => {
+        it('should create instance successfully when constructor is called with a single field', () => {
             const data = {
                 name: 'Updated Name',
             };
@@ -53,7 +52,7 @@ describe('UpdateCompanyDto', () => {
             expect(dto.siretNumber).toBeUndefined();
         });
 
-    it('should create instance successfully when constructor is called with an empty object', () => {
+        it('should create instance successfully when constructor is called with an empty object', () => {
             const dto = new UpdateCompanyDto({});
 
             expect(dto.email).toBeUndefined();
@@ -62,7 +61,7 @@ describe('UpdateCompanyDto', () => {
             expect(dto.isValid).toBeUndefined();
         });
 
-    it('should create instance successfully when constructor is called without data', () => {
+        it('should create instance successfully when constructor is called without data', () => {
             const dto = new UpdateCompanyDto(undefined as any);
 
             expect(dto).toBeDefined();
@@ -71,10 +70,8 @@ describe('UpdateCompanyDto', () => {
         });
     });
 
-        describe('validation', () => {
+    describe('validation', () => {
         describe('email field', () => {
-
-
             it('should pass validation when email is not provided', async () => {
                 const dto = new UpdateCompanyDto({
                     name: 'Updated Company',
@@ -121,8 +118,6 @@ describe('UpdateCompanyDto', () => {
         });
 
         describe('password field', () => {
-
-
             it('should pass validation when password is not provided', async () => {
                 const dto = new UpdateCompanyDto({
                     name: 'Updated Company',
@@ -227,8 +222,6 @@ describe('UpdateCompanyDto', () => {
         });
 
         describe('name field', () => {
-
-
             it('should pass validation when name is not provided', async () => {
                 const dto = new UpdateCompanyDto({
                     email: 'test@example.com',
@@ -278,8 +271,6 @@ describe('UpdateCompanyDto', () => {
         });
 
         describe('optional string fields', () => {
-
-
             it('should pass validation when all optional fields are undefined', async () => {
                 const dto = new UpdateCompanyDto({});
 
@@ -296,13 +287,15 @@ describe('UpdateCompanyDto', () => {
                 expect(errors.length).toBe(0);
             });
 
-            it('should pass validation when siretNumber is empty', async () => {
+            it('should fail validation when siretNumber is empty string', async () => {
                 const dto = new UpdateCompanyDto({
                     siretNumber: '',
                 });
 
                 const errors = await validate(dto);
-                expect(errors.length).toBe(0);
+                expect(errors.length).toBeGreaterThan(0);
+                const siretError = errors.find((e) => e.property === 'siretNumber');
+                expect(siretError).toBeDefined();
             });
 
             it('should fail validation when siretNumber is not a string', async () => {
@@ -318,16 +311,7 @@ describe('UpdateCompanyDto', () => {
 
             it('should pass validation when nafCode is valid', async () => {
                 const dto = new UpdateCompanyDto({
-                    nafCode: '6202A',
-                });
-
-                const errors = await validate(dto);
-                expect(errors.length).toBe(0);
-            });
-
-            it('should pass validation when nafCode is empty', async () => {
-                const dto = new UpdateCompanyDto({
-                    nafCode: '',
+                    nafCode: NafCode.NAF_62_02A,
                 });
 
                 const errors = await validate(dto);
@@ -394,8 +378,6 @@ describe('UpdateCompanyDto', () => {
         });
 
         describe('structureType field', () => {
-
-
             it('should pass validation when structureType is not provided', async () => {
                 const dto = new UpdateCompanyDto({
                     name: 'Updated Company',
@@ -438,8 +420,6 @@ describe('UpdateCompanyDto', () => {
         });
 
         describe('legalStatus field', () => {
-
-
             it('should pass validation when legalStatus is not provided', async () => {
                 const dto = new UpdateCompanyDto({
                     name: 'Updated Company',
@@ -482,8 +462,6 @@ describe('UpdateCompanyDto', () => {
         });
 
         describe('isValid field', () => {
-
-
             it('should pass validation when isValid is not provided', async () => {
                 const dto = new UpdateCompanyDto({
                     name: 'Updated Company',
@@ -536,8 +514,6 @@ describe('UpdateCompanyDto', () => {
         });
 
         describe('multiple field updates', () => {
-
-
             it('should pass validation when partial update contains multiple valid fields', async () => {
                 const dto = new UpdateCompanyDto({
                     name: 'Updated Company',
@@ -555,7 +531,7 @@ describe('UpdateCompanyDto', () => {
                     password: 'NewPassword123!',
                     name: 'Complete Update',
                     siretNumber: '12345678901234',
-                    nafCode: '6202A',
+                    nafCode: NafCode.NAF_62_02A,
                     structureType: StructureType.PrivateCompany,
                     legalStatus: LegalStatus.SARL,
                     streetNumber: '10',
@@ -590,8 +566,6 @@ describe('UpdateCompanyDto', () => {
         });
 
         describe('edge cases', () => {
-
-
             it('should pass validation when DTO is empty', async () => {
                 const dto = new UpdateCompanyDto({});
 

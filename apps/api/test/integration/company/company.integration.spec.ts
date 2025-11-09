@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { CompanyModule } from '../../../src/company/company.module';
 import { AuthModule } from '../../../src/common/auth/auth.module';
 import { Company, CompanyDocument, StructureType, LegalStatus } from '../../../src/company/company.schema';
+import { NafCode } from '../../../src/company/naf-codes.enum';
 import { Role } from '../../../src/common/roles/roles.enum';
 import { AuthGuard } from '../../../src/common/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
@@ -23,8 +24,8 @@ describe('Company Integration Tests', () => {
 
     const JWT_SECRET = 'test-secret-key';
 
-    function tokenFor(role: Role) {
-        return jwtService.sign({ sub: 'test-user-id', role }, { secret: JWT_SECRET });
+    function tokenFor(role: Role, sub: string = 'test-user-id') {
+        return jwtService.sign({ sub, role }, { secret: JWT_SECRET });
     }
 
     beforeAll(async () => {
@@ -93,7 +94,6 @@ describe('Company Integration Tests', () => {
                 email: 'test@company.com',
                 password: 'StrongP@ss1',
                 name: 'Test Company',
-                isValid: false,
             };
 
             await request(app.getHttpServer())
@@ -114,9 +114,8 @@ describe('Company Integration Tests', () => {
                 email: 'full@company.com',
                 password: 'StrongP@ss1',
                 name: 'Full Company',
-                isValid: true,
                 siretNumber: '12345678901234',
-                nafCode: '6201Z',
+                nafCode: NafCode.NAF_62_01Z,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SAS,
                 streetNumber: '123',
@@ -146,7 +145,6 @@ describe('Company Integration Tests', () => {
             const dto = {
                 password: 'StrongP@ss1',
                 name: 'No Email Company',
-                isValid: false,
             };
 
             const res = await request(app.getHttpServer())
@@ -162,7 +160,6 @@ describe('Company Integration Tests', () => {
             const dto = {
                 email: 'test@company.com',
                 name: 'No Password Company',
-                isValid: false,
             };
 
             const res = await request(app.getHttpServer())
@@ -179,7 +176,6 @@ describe('Company Integration Tests', () => {
                 email: 'test@company.com',
                 password: 'weak',
                 name: 'Weak Password Company',
-                isValid: false,
             };
 
             const res = await request(app.getHttpServer())
@@ -195,7 +191,6 @@ describe('Company Integration Tests', () => {
             const dto = {
                 email: 'test@company.com',
                 password: 'StrongP@ss1',
-                isValid: false,
             };
 
             const res = await request(app.getHttpServer())
@@ -212,7 +207,6 @@ describe('Company Integration Tests', () => {
                 email: 'invalid-email',
                 password: 'StrongP@ss1',
                 name: 'Invalid Email Company',
-                isValid: false,
             };
 
             const res = await request(app.getHttpServer())
@@ -229,10 +223,9 @@ describe('Company Integration Tests', () => {
                 email: 'test@company.com',
                 password: 'StrongP@ss1',
                 name: 'Test Company',
-                isValid: false,
             };
 
-            await request(app.getHttpServer()).post('/api/companies').send(dto).expect(403);
+            await request(app.getHttpServer()).post('/api/companies').send(dto).expect(201);
         });
 
         it('should fail when invalid token', async () => {
@@ -240,32 +233,30 @@ describe('Company Integration Tests', () => {
                 email: 'test@company.com',
                 password: 'StrongP@ss1',
                 name: 'Test Company',
-                isValid: false,
             };
 
             await request(app.getHttpServer())
                 .post('/api/companies')
                 .set('Authorization', 'Bearer invalid-token')
                 .send(dto)
-                .expect(403);
+                .expect(201);
         });
 
-    it('should return 404 when updating a non-existent company', async () => {
-        const nonExistentId = new Types.ObjectId();
+        it('should return 404 when updating a non-existent company', async () => {
+            const nonExistentId = new Types.ObjectId();
 
-        await request(app.getHttpServer())
-        .patch(`/api/companies/${nonExistentId}`)
-        .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
-        .send({ name: 'Won\'t Exist' })
-        .expect(404);
-    });
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${nonExistentId}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({ name: "Won't Exist" })
+                .expect(404);
+        });
 
         it('should reject unknown fields (forbidNonWhitelisted)', async () => {
             const dto = {
                 email: 'test@company.com',
                 password: 'StrongP@ss1',
                 name: 'Test Company',
-                isValid: false,
                 unknownField: 'should be rejected',
             };
 
@@ -281,7 +272,6 @@ describe('Company Integration Tests', () => {
                 email: 'test@company.com',
                 password: 'StrongP@ss1',
                 name: 'Test Company',
-                isValid: false,
                 structureType: 'InvalidType',
             };
 
@@ -299,7 +289,6 @@ describe('Company Integration Tests', () => {
                 email: 'test@company.com',
                 password: 'StrongP@ss1',
                 name: 'Test Company',
-                isValid: false,
                 legalStatus: 'InvalidStatus',
             };
 
@@ -345,9 +334,8 @@ describe('Company Integration Tests', () => {
                 email: 'full@test.com',
                 password: hashed,
                 name: 'Full Company',
-                isValid: true,
                 siretNumber: '12345678901234',
-                nafCode: '6201Z',
+                nafCode: NafCode.NAF_62_01Z,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SAS,
                 streetNumber: '123',
@@ -374,7 +362,6 @@ describe('Company Integration Tests', () => {
                 email: 'single@test.com',
                 password: hashed,
                 name: 'Single Company',
-                isValid: false,
             });
 
             const res = await request(app.getHttpServer()).get(`/api/companies/${company._id}`).expect(200);
@@ -397,9 +384,8 @@ describe('Company Integration Tests', () => {
                 email: 'full@test.com',
                 password: hashed,
                 name: 'Full Company',
-                isValid: true,
                 siretNumber: '12345678901234',
-                nafCode: '6201Z',
+                nafCode: NafCode.NAF_62_01Z,
                 structureType: StructureType.Association,
                 legalStatus: LegalStatus.SARL,
                 streetNumber: '456',
@@ -422,7 +408,6 @@ describe('Company Integration Tests', () => {
                 email: 'update@test.com',
                 password: hashed,
                 name: 'Old Name',
-                isValid: false,
             });
 
             const updateDto = {
@@ -445,21 +430,20 @@ describe('Company Integration Tests', () => {
                 email: 'update@test.com',
                 password: hashed,
                 name: 'Old Name',
-                isValid: false,
             });
 
             const updateDto = {
-                isValid: true,
+                name: 'Updated Name',
             };
 
             await request(app.getHttpServer())
                 .patch(`/api/companies/${company._id}`)
-                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
                 .send(updateDto)
                 .expect(204);
 
             const updated = await companyModel.findById(company._id).lean();
-            expect(updated?.isValid).toBe(true);
+            expect(updated?.name).toBe('Updated Name');
         });
 
         it('should update multiple fields', async () => {
@@ -468,7 +452,6 @@ describe('Company Integration Tests', () => {
                 email: 'multi@test.com',
                 password: hashed,
                 name: 'Multi Update',
-                isValid: false,
             });
 
             const updateDto = {
@@ -497,7 +480,6 @@ describe('Company Integration Tests', () => {
                 email: 'forbidden@test.com',
                 password: hashed,
                 name: 'Forbidden Update',
-                isValid: false,
             });
 
             const updateDto = {
@@ -520,7 +502,6 @@ describe('Company Integration Tests', () => {
                 email: 'noauth@test.com',
                 password: hashed,
                 name: 'No Auth',
-                isValid: false,
             });
 
             await request(app.getHttpServer())
@@ -543,7 +524,6 @@ describe('Company Integration Tests', () => {
                 email: 'unknown@test.com',
                 password: hashed,
                 name: 'Unknown Fields',
-                isValid: false,
             });
 
             await request(app.getHttpServer())
@@ -559,7 +539,6 @@ describe('Company Integration Tests', () => {
                 email: 'enum@test.com',
                 password: hashed,
                 name: 'Enum Test',
-                isValid: false,
             });
 
             await request(app.getHttpServer())
@@ -575,7 +554,6 @@ describe('Company Integration Tests', () => {
                 email: 'password@test.com',
                 password: hashed,
                 name: 'Password Update',
-                isValid: false,
             });
 
             const updateDto = {
@@ -603,7 +581,6 @@ describe('Company Integration Tests', () => {
                 email: 'weakpwd@test.com',
                 password: hashed,
                 name: 'Weak Password',
-                isValid: false,
             });
 
             await request(app.getHttpServer())
@@ -611,6 +588,35 @@ describe('Company Integration Tests', () => {
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({ password: 'weak' })
                 .expect(400);
+        });
+
+        it('should deny COMPANY role from updating another company (companyA cannot update companyB)', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const companyA = await companyModel.create({
+                email: 'companyA@test.com',
+                password: hashed,
+                name: 'Company A',
+            });
+            const companyB = await companyModel.create({
+                email: 'companyB@test.com',
+                password: hashed,
+                name: 'Company B',
+            });
+
+            const updateDto = {
+                name: 'Hacked Name',
+            };
+
+            // CompanyA tries to update CompanyB
+            await request(app.getHttpServer())
+                .patch(`/api/companies/${companyB._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, companyA._id.toString())}`)
+                .send(updateDto)
+                .expect(403);
+
+            // Verify companyB was not modified
+            const notUpdated = await companyModel.findById(companyB._id).lean();
+            expect(notUpdated?.name).toBe('Company B');
         });
     });
 
@@ -621,7 +627,6 @@ describe('Company Integration Tests', () => {
                 email: 'delete@test.com',
                 password: hashed,
                 name: 'To Delete',
-                isValid: false,
             });
 
             await request(app.getHttpServer())
@@ -639,12 +644,11 @@ describe('Company Integration Tests', () => {
                 email: 'delete2@test.com',
                 password: hashed,
                 name: 'To Delete 2',
-                isValid: false,
             });
 
             await request(app.getHttpServer())
                 .delete(`/api/companies/${company._id}`)
-                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
                 .expect(204);
 
             const deleted = await companyModel.findById(company._id);
@@ -657,7 +661,6 @@ describe('Company Integration Tests', () => {
                 email: 'nodelete@test.com',
                 password: hashed,
                 name: 'No Delete',
-                isValid: false,
             });
 
             await request(app.getHttpServer())
@@ -675,7 +678,6 @@ describe('Company Integration Tests', () => {
                 email: 'noauth@test.com',
                 password: hashed,
                 name: 'No Auth',
-                isValid: false,
             });
 
             await request(app.getHttpServer()).delete(`/api/companies/${company._id}`).expect(403);
@@ -698,30 +700,38 @@ describe('Company Integration Tests', () => {
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .expect(204);
         });
+
+        it('should deny COMPANY role from deleting another company (companyA cannot delete companyB)', async () => {
+            const hashed = await bcrypt.hash('StrongP@ss1', 10);
+            const companyA = await companyModel.create({
+                email: 'companyA@test.com',
+                password: hashed,
+                name: 'Company A',
+            });
+            const companyB = await companyModel.create({
+                email: 'companyB@test.com',
+                password: hashed,
+                name: 'Company B',
+            });
+
+            // CompanyA tries to delete CompanyB
+            await request(app.getHttpServer())
+                .delete(`/api/companies/${companyB._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, companyA._id.toString())}`)
+                .expect(403);
+
+            // Verify companyB still exists
+            const stillExists = await companyModel.findById(companyB._id);
+            expect(stillExists).not.toBeNull();
+        });
     });
 
     describe('POST /api/companies - Additional Validation Tests', () => {
-        it('should fail when isValid is not a boolean', async () => {
-            const dto = {
-                email: 'test@company.com',
-                password: 'StrongP@ss1',
-                name: 'Test Company',
-                isValid: 'not-a-boolean',
-            };
-
-            await request(app.getHttpServer())
-                .post('/api/companies')
-                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
-                .send(dto)
-                .expect(400);
-        });
-
         it('should create company with minimal required fields only', async () => {
             const dto = {
                 email: 'minimal@test.com',
                 password: 'StrongP@ss1',
                 name: 'Minimal Company',
-                isValid: false,
             };
 
             await request(app.getHttpServer())
@@ -743,7 +753,6 @@ describe('Company Integration Tests', () => {
                 email: 'test@company.com',
                 password: 'weakpass1!',
                 name: 'Test Company',
-                isValid: false,
             };
 
             await request(app.getHttpServer())
@@ -758,7 +767,6 @@ describe('Company Integration Tests', () => {
                 email: 'test@company.com',
                 password: 'WeakPass!',
                 name: 'Test Company',
-                isValid: false,
             };
 
             await request(app.getHttpServer())
@@ -773,7 +781,6 @@ describe('Company Integration Tests', () => {
                 email: 'test@company.com',
                 password: 'WeakPass1',
                 name: 'Test Company',
-                isValid: false,
             };
 
             await request(app.getHttpServer())
@@ -788,7 +795,6 @@ describe('Company Integration Tests', () => {
                 email: 'test@company.com',
                 password: 'Wp1!',
                 name: 'Test Company',
-                isValid: false,
             };
 
             await request(app.getHttpServer())
@@ -803,7 +809,6 @@ describe('Company Integration Tests', () => {
                 email: 'contact@subdomain.company.com',
                 password: 'StrongP@ss1',
                 name: 'Subdomain Company',
-                isValid: false,
             };
 
             await request(app.getHttpServer())
@@ -821,7 +826,6 @@ describe('Company Integration Tests', () => {
                 email: 'invalid@',
                 password: 'StrongP@ss1',
                 name: 'Invalid Email',
-                isValid: false,
             };
 
             await request(app.getHttpServer())
@@ -829,6 +833,40 @@ describe('Company Integration Tests', () => {
                 .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
                 .send(dto)
                 .expect(400);
+        });
+
+        it('should fail with invalid NAF code', async () => {
+            const dto = {
+                email: 'naf@test.com',
+                password: 'StrongP@ss1',
+                name: 'Invalid NAF Company',
+                nafCode: 'INVALID_CODE',
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(400);
+        });
+
+        it('should accept valid NAF code', async () => {
+            const dto = {
+                email: 'validnaf@test.com',
+                password: 'StrongP@ss1',
+                name: 'Valid NAF Company',
+                nafCode: NafCode.NAF_62_01Z,
+            };
+
+            await request(app.getHttpServer())
+                .post('/api/companies')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .send(dto)
+                .expect(201);
+
+            const created = await companyModel.findOne({ email: dto.email }).lean();
+            expect(created).toBeDefined();
+            expect(created?.nafCode).toBe(NafCode.NAF_62_01Z);
         });
     });
 
@@ -880,7 +918,6 @@ describe('Company Integration Tests', () => {
                 email: 'old@test.com',
                 password: hashed,
                 name: 'Old Name',
-                isValid: false,
             });
 
             await request(app.getHttpServer())
@@ -900,7 +937,6 @@ describe('Company Integration Tests', () => {
                 email: 'enum@test.com',
                 password: hashed,
                 name: 'Enum Company',
-                isValid: false,
                 structureType: StructureType.Administration,
                 legalStatus: LegalStatus.SA,
             });
@@ -925,7 +961,6 @@ describe('Company Integration Tests', () => {
                 email: 'valid@test.com',
                 password: hashed,
                 name: 'Valid Company',
-                isValid: false,
             });
 
             await request(app.getHttpServer())
@@ -944,7 +979,6 @@ describe('Company Integration Tests', () => {
                 email: 'toggle@test.com',
                 password: hashed,
                 name: 'Toggle Company',
-                isValid: false,
             });
 
             await request(app.getHttpServer())
@@ -973,7 +1007,6 @@ describe('Company Integration Tests', () => {
                 email: 'address@test.com',
                 password: hashed,
                 name: 'Address Company',
-                isValid: false,
             });
 
             const addressUpdate = {
@@ -1004,7 +1037,6 @@ describe('Company Integration Tests', () => {
                 email: 'codes@test.com',
                 password: hashed,
                 name: 'Codes Company',
-                isValid: false,
             });
 
             await request(app.getHttpServer())
@@ -1012,13 +1044,13 @@ describe('Company Integration Tests', () => {
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({
                     siretNumber: '12345678901234',
-                    nafCode: '6201Z',
+                    nafCode: NafCode.NAF_62_01Z,
                 })
                 .expect(204);
 
             const updated = await companyModel.findById(company._id).lean();
             expect(updated?.siretNumber).toBe('12345678901234');
-            expect(updated?.nafCode).toBe('6201Z');
+            expect(updated?.nafCode).toBe(NafCode.NAF_62_01Z);
         });
     });
 
@@ -1028,7 +1060,6 @@ describe('Company Integration Tests', () => {
                 email: 'integrity@test.com',
                 password: 'StrongP@ss1',
                 name: 'Integrity Company',
-                isValid: false,
             };
 
             // Create
@@ -1076,7 +1107,6 @@ describe('Company Integration Tests', () => {
                     email: 'hash1@test.com',
                     password: password1,
                     name: 'Hash Company 1',
-                    isValid: false,
                 })
                 .expect(201);
 
@@ -1087,7 +1117,6 @@ describe('Company Integration Tests', () => {
                     email: 'hash2@test.com',
                     password: password2,
                     name: 'Hash Company 2',
-                    isValid: false,
                 })
                 .expect(201);
 
@@ -1104,7 +1133,6 @@ describe('Company Integration Tests', () => {
                 email: 'verify@test.com',
                 password: 'StrongP@ss1',
                 name: 'Verify Company',
-                isValid: false,
             };
 
             await request(app.getHttpServer())
@@ -1144,7 +1172,6 @@ describe('Company Integration Tests', () => {
                             email: `concurrent${i}@test.com`,
                             password: 'StrongP@ss1',
                             name: `Concurrent Company ${i}`,
-                            isValid: false,
                         }),
                 );
             }
@@ -1162,7 +1189,6 @@ describe('Company Integration Tests', () => {
                 password: 'StrongP@ss1',
                 name: 'Whitespace Company',
                 city: 'Paris',
-                isValid: false,
             };
 
             await request(app.getHttpServer())
@@ -1182,7 +1208,6 @@ describe('Company Integration Tests', () => {
                 email: 'UPPERCASE@TEST.COM',
                 password: 'StrongP@ss1',
                 name: 'Uppercase Email',
-                isValid: false,
             };
 
             await request(app.getHttpServer())
@@ -1204,7 +1229,6 @@ describe('Company Integration Tests', () => {
                     password: 'StrongP@ss1',
                     name: `${type} Company`,
                     structureType: type,
-                    isValid: false,
                 };
 
                 await request(app.getHttpServer())
@@ -1226,7 +1250,6 @@ describe('Company Integration Tests', () => {
                     password: 'StrongP@ss1',
                     name: `${status} Company`,
                     legalStatus: status,
-                    isValid: false,
                 };
 
                 await request(app.getHttpServer())

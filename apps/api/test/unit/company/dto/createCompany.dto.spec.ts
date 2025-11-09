@@ -1,17 +1,17 @@
 import { validate } from 'class-validator';
 import { CreateCompanyDto } from '../../../../src/company/dto/createCompany.dto';
 import { StructureType, LegalStatus } from '../../../../src/company/company.schema';
+import { NafCode } from '../../../../src/company/naf-codes.enum';
 
 describe('CreateCompanyDto', () => {
     describe('constructor', () => {
-
         it('should create instance successfully when constructor is called with all fields', () => {
             const data = {
                 email: 'test@example.com',
                 password: 'Password123!',
                 name: 'Test Company',
                 siretNumber: '12345678901234',
-                nafCode: '6202A',
+                nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
                 streetNumber: '10',
@@ -19,7 +19,6 @@ describe('CreateCompanyDto', () => {
                 postalCode: '75001',
                 city: 'Paris',
                 country: 'France',
-                isValid: true,
             };
 
             const dto = new CreateCompanyDto(data);
@@ -28,7 +27,7 @@ describe('CreateCompanyDto', () => {
             expect(dto.password).toBe('Password123!');
             expect(dto.name).toBe('Test Company');
             expect(dto.siretNumber).toBe('12345678901234');
-            expect(dto.nafCode).toBe('6202A');
+            expect(dto.nafCode).toBe(NafCode.NAF_62_02A);
             expect(dto.structureType).toBe(StructureType.PrivateCompany);
             expect(dto.legalStatus).toBe(LegalStatus.SARL);
             expect(dto.streetNumber).toBe('10');
@@ -36,15 +35,13 @@ describe('CreateCompanyDto', () => {
             expect(dto.postalCode).toBe('75001');
             expect(dto.city).toBe('Paris');
             expect(dto.country).toBe('France');
-            expect(dto.isValid).toBe(true);
         });
 
-    it('should create instance successfully when constructor is called with minimal required fields', () => {
+        it('should create instance successfully when constructor is called with minimal required fields', () => {
             const data = {
                 email: 'test@example.com',
                 password: 'Password123!',
                 name: 'Test Company',
-                isValid: false,
             };
 
             const dto = new CreateCompanyDto(data);
@@ -52,7 +49,6 @@ describe('CreateCompanyDto', () => {
             expect(dto.email).toBe('test@example.com');
             expect(dto.password).toBe('Password123!');
             expect(dto.name).toBe('Test Company');
-            expect(dto.isValid).toBe(false);
             expect(dto.siretNumber).toBeUndefined();
             expect(dto.nafCode).toBeUndefined();
             expect(dto.structureType).toBeUndefined();
@@ -62,12 +58,11 @@ describe('CreateCompanyDto', () => {
 
     describe('validation', () => {
         describe('email field', () => {
-                it('should pass validation when email is correct', async () => {
+            it('should pass validation when email is correct', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -79,7 +74,6 @@ describe('CreateCompanyDto', () => {
                     email: 'invalid-email',
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -93,7 +87,6 @@ describe('CreateCompanyDto', () => {
                     email: '',
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -105,8 +98,7 @@ describe('CreateCompanyDto', () => {
                 const dto = new CreateCompanyDto({
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
-                } as any);
+                });
 
                 const errors = await validate(dto);
                 expect(errors.length).toBeGreaterThan(0);
@@ -119,7 +111,6 @@ describe('CreateCompanyDto', () => {
                     email: null as any,
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -133,7 +124,6 @@ describe('CreateCompanyDto', () => {
                     email: undefined as any,
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -155,7 +145,6 @@ describe('CreateCompanyDto', () => {
                         email,
                         password: 'Password123!',
                         name: 'Test Company',
-                        isValid: false,
                     });
 
                     const errors = await validate(dto);
@@ -170,7 +159,6 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -182,7 +170,6 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: 'password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -197,7 +184,6 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: 'PASSWORD123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -211,7 +197,6 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: 'Password!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -225,7 +210,6 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: 'Password123',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -239,7 +223,6 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: 'Pass1!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -253,7 +236,6 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: '',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -266,7 +248,6 @@ describe('CreateCompanyDto', () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
                     name: 'Test Company',
-                    isValid: false,
                 } as any);
 
                 const errors = await validate(dto);
@@ -289,7 +270,6 @@ describe('CreateCompanyDto', () => {
                         email: 'test@example.com',
                         password,
                         name: 'Test Company',
-                        isValid: false,
                     });
 
                     const errors = await validate(dto);
@@ -304,7 +284,6 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -316,7 +295,6 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: '',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -329,7 +307,6 @@ describe('CreateCompanyDto', () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
                     password: 'Password123!',
-                    isValid: false,
                 } as any);
 
                 const errors = await validate(dto);
@@ -343,7 +320,6 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: 123 as any,
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -357,7 +333,6 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: 'A'.repeat(100),
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -366,14 +341,11 @@ describe('CreateCompanyDto', () => {
         });
 
         describe('optional string fields', () => {
-
-
             it('should pass validation when optional fields are undefined', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -386,7 +358,6 @@ describe('CreateCompanyDto', () => {
                     password: 'Password123!',
                     name: 'Test Company',
                     siretNumber: '12345678901234',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -399,7 +370,6 @@ describe('CreateCompanyDto', () => {
                     password: 'Password123!',
                     name: 'Test Company',
                     siretNumber: 123 as any,
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -413,8 +383,7 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: 'Test Company',
-                    nafCode: '6202A',
-                    isValid: false,
+                    nafCode: NafCode.NAF_62_02A,
                 });
 
                 const errors = await validate(dto);
@@ -431,7 +400,6 @@ describe('CreateCompanyDto', () => {
                     postalCode: '75001',
                     city: 'Paris',
                     country: 'France',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -444,7 +412,6 @@ describe('CreateCompanyDto', () => {
                     password: 'Password123!',
                     name: 'Test Company',
                     streetNumber: 10 as any,
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -455,8 +422,6 @@ describe('CreateCompanyDto', () => {
         });
 
         describe('structureType field', () => {
-
-
             it('should pass validation when structureType is valid', async () => {
                 for (const structureType of Object.values(StructureType)) {
                     const dto = new CreateCompanyDto({
@@ -464,7 +429,6 @@ describe('CreateCompanyDto', () => {
                         password: 'Password123!',
                         name: 'Test Company',
                         structureType: structureType,
-                        isValid: false,
                     });
 
                     const errors = await validate(dto);
@@ -478,7 +442,6 @@ describe('CreateCompanyDto', () => {
                     password: 'Password123!',
                     name: 'Test Company',
                     structureType: 'InvalidType' as any,
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -493,7 +456,6 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -502,8 +464,6 @@ describe('CreateCompanyDto', () => {
         });
 
         describe('legalStatus field', () => {
-
-
             it('should pass validation when legalStatus is valid', async () => {
                 for (const legalStatus of Object.values(LegalStatus)) {
                     const dto = new CreateCompanyDto({
@@ -511,7 +471,6 @@ describe('CreateCompanyDto', () => {
                         password: 'Password123!',
                         name: 'Test Company',
                         legalStatus: legalStatus,
-                        isValid: false,
                     });
 
                     const errors = await validate(dto);
@@ -525,7 +484,6 @@ describe('CreateCompanyDto', () => {
                     password: 'Password123!',
                     name: 'Test Company',
                     legalStatus: 'InvalidStatus' as any,
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -540,79 +498,19 @@ describe('CreateCompanyDto', () => {
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
                 expect(errors.length).toBe(0);
-            });
-        });
-
-        describe('isValid field', () => {
-
-
-            it('should pass validation when isValid is true', async () => {
-                const dto = new CreateCompanyDto({
-                    email: 'test@example.com',
-                    password: 'Password123!',
-                    name: 'Test Company',
-                    isValid: true,
-                });
-
-                const errors = await validate(dto);
-                expect(errors.length).toBe(0);
-            });
-
-            it('should pass validation when isValid is false', async () => {
-                const dto = new CreateCompanyDto({
-                    email: 'test@example.com',
-                    password: 'Password123!',
-                    name: 'Test Company',
-                    isValid: false,
-                });
-
-                const errors = await validate(dto);
-                expect(errors.length).toBe(0);
-            });
-
-            it('should fail validation when isValid is not boolean', async () => {
-                const dto = new CreateCompanyDto({
-                    email: 'test@example.com',
-                    password: 'Password123!',
-                    name: 'Test Company',
-                    isValid: 'true' as any,
-                });
-
-                const errors = await validate(dto);
-                expect(errors.length).toBeGreaterThan(0);
-                const isValidError = errors.find((e) => e.property === 'isValid');
-                expect(isValidError).toBeDefined();
-                expect(isValidError?.constraints).toHaveProperty('isBoolean');
-            });
-
-            it('should fail validation when isValid is missing', async () => {
-                const dto = new CreateCompanyDto({
-                    email: 'test@example.com',
-                    password: 'Password123!',
-                    name: 'Test Company',
-                } as any);
-
-                const errors = await validate(dto);
-                expect(errors.length).toBeGreaterThan(0);
-                const isValidError = errors.find((e) => e.property === 'isValid');
-                expect(isValidError).toBeDefined();
             });
         });
 
         describe('multiple field validation errors', () => {
-
-
             it('should return multiple validation errors when multiple fields are invalid', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'invalid-email',
                     password: 'weak',
                     name: '',
-                    isValid: 'not-boolean' as any,
                 });
 
                 const errors = await validate(dto);
@@ -622,25 +520,22 @@ describe('CreateCompanyDto', () => {
                 expect(properties).toContain('email');
                 expect(properties).toContain('password');
                 expect(properties).toContain('name');
-                expect(properties).toContain('isValid');
             });
         });
 
         describe('edge cases', () => {
-
-
-            it('should pass validation when optional strings are empty', async () => {
+            it('should fail validation when siretNumber is empty string', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: 'Test Company',
                     siretNumber: '',
-                    nafCode: '',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
-                expect(errors.length).toBe(0);
+                expect(errors.length).toBeGreaterThan(0);
+                const siretError = errors.find((e) => e.property === 'siretNumber');
+                expect(siretError).toBeDefined();
             });
 
             it('should fail validation when email contains leading or trailing whitespace', async () => {
@@ -648,7 +543,6 @@ describe('CreateCompanyDto', () => {
                     email: '  test@example.com  ',
                     password: 'Password123!',
                     name: '  Test Company  ',
-                    isValid: false,
                 });
 
                 const errors = await validate(dto);
@@ -663,7 +557,7 @@ describe('CreateCompanyDto', () => {
                     password: 'Password123!',
                     name: 'Complete Company',
                     siretNumber: '12345678901234',
-                    nafCode: '6202A',
+                    nafCode: NafCode.NAF_62_02A,
                     structureType: StructureType.PrivateCompany,
                     legalStatus: LegalStatus.SARL,
                     streetNumber: '10',
@@ -671,7 +565,6 @@ describe('CreateCompanyDto', () => {
                     postalCode: '75001',
                     city: 'Paris',
                     country: 'France',
-                    isValid: true,
                 });
 
                 const errors = await validate(dto);
