@@ -1,5 +1,5 @@
 import { useForm, type Resolver, type SubmitHandler } from 'react-hook-form';
-import signupImage from '../../../assets/signup-image.avif';
+import signupImage from '../../assets/signup-image.avif';
 import { zodResolver } from '@hookform/resolvers/zod';
 import useConfirmModal from '../hooks/useConfirmModal';
 import { NavLink } from 'react-router';
@@ -31,7 +31,7 @@ export const CompanySignUp = () => {
 
     const setUser = userStore((state) => state.set);
 
-    const { mutateAsync, isPending, isError, error } = useMutation({
+    const { mutateAsync, isPending, isError, error,reset } = useMutation({
         mutationFn: async (data: companyFormSignUp) => {
             const res = await fetch(`${API_URL}/auth/login`, {
                 method: 'POST',
@@ -45,8 +45,7 @@ export const CompanySignUp = () => {
     const onSubmit: SubmitHandler<companyFormSignUp> = async (data: companyFormSignUp) => {
         let confirmed = true;
         if (!isComplete(data)) confirmed = await askUserConfirmation();
-        if (confirmed) {
-            data.nafCode
+        if (confirmed) { 
             const user = await mutateAsync(data);
             setUser(user.id, user.role);
         }
@@ -66,7 +65,7 @@ export const CompanySignUp = () => {
                         </div>
                         <form
                             onSubmit={handleSubmit(onSubmit)}
-                            onClick={() => clearErrors()}
+                            onClick={() => {clearErrors(); reset();}}
                             className="w-full flex flex-col gap-8 mt-4 items-center"
                         >
                             <div className="w-full flex flex-col gap-5">
@@ -125,14 +124,14 @@ export const CompanySignUp = () => {
                                         {errors.siretNumber && (
                                             <span className="text-red-500">{errors.siretNumber.message}</span>
                                         )}
-                                    </div>
+                                    </div>                                 
                                     <div className="flex flex-col w-1/2">
-                                        <select {...register('nafCode')} className="border-1 rounded-lg p-2 w-full">
+                                        <select {...register('nafCode')} defaultValue="" className="border-1 rounded-lg p-2 w-full truncate" >
                                             <option value="" disabled selected>
-                                                Statut légal
+                                                code NAF
                                             </option>
                                             {naflist.map((naf) => (
-                                                <option key={naf.code} value={JSON.stringify(naf)}>
+                                                <option key={naf.code+"-"+naf.activite} value={JSON.stringify(naf)} className='truncate'>
                                                     {naf.activite}
                                                 </option>
                                             ))}
@@ -229,7 +228,7 @@ export const CompanySignUp = () => {
                             </div>
                             <input
                                 type="submit"
-                                value={isPending ? "S'inscrire" : 'Inscription...'}
+                                value={!isPending ? "S'inscrire" : 'Inscription...'}
                                 className="bg-blue-600 text-white p-3 rounded-lg cursor-pointer"
                             />
                             {isError && <p className="text-red-500">{error.message}</p>}
@@ -255,7 +254,7 @@ function isComplete(data: {
     repeatPassword: string;
     name: string;
     siretNumber?: string | undefined;
-    nafCode?: string | undefined;
+    nafCode?: {activite:string,code:string} | undefined;
     structureType?:
         | 'Administration'
         | 'Association'

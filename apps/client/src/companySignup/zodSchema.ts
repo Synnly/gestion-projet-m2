@@ -70,5 +70,5 @@ export const companyFormSignUpSchema = z
 })
 .refine((data) => data.password === data.repeatPassword, {
     message: 'Les mots de passe ne correspondent pas',
-    path: ['repeatPassword,password'],
+    path: ['repeatPassword'],
 });
