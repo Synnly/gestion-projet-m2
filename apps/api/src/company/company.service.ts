@@ -1,0 +1,79 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { CreateCompanyDto } from './dto/createCompany.dto';
+import { UpdateCompanyDto } from './dto/updateCompany.dto';
+import { Company, CompanyDocument } from './company.schema';
+import * as bcrypt from "bcrypt";
+
+/**
+ * Service handling business logic for company operations
+ * Manages CRUD operations and data transformations for companies
+ */
+@Injectable()
+export class CompanyService {
+    constructor(@InjectModel(Company.name) private readonly companyModel: Model<CompanyDocument>) {}
+
+    /**
+     * Retrieves all non-deleted companies
+     * @returns An array of all active companies
+     */
+    async findAll(): Promise<Company[]> {
+        const companies = await this.companyModel.find({ deletedAt: { $exists: false } }).exec();
+        return companies;
+    }
+
+    /**
+     * Retrieves a single company by its ID
+     * @param id The company identifier
+     * @returns The company if found, null otherwise
+     */
+    async findOne(id: string): Promise<Company | null> {
+        const company = await this.companyModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
+        return company;
+    }
+
+    /**
+     * Creates a new company with hashed password
+     * @param dto The company data for creation
+     */
+    async create(dto: CreateCompanyDto): Promise<void> {
+        let data = { ...dto };
+        data.password = await bcrypt.hash(dto.password, 10);
+        await this.companyModel.create({ ...data });
+        return;
+    }
+
+    /**
+     * Updates an existing company's data
+     * @param id The company identifier
+     * @param dto The updated company data
+     * @throws {NotFoundException} if the company does not exist or is deleted
+     */
+    async update(id: string, dto: UpdateCompanyDto): Promise<void> {
+        let updateData = { ...dto };
+        if (dto.password) {
+            updateData.password = await bcrypt.hash(dto.password, 10);
+        }
+        const updated = await this.companyModel
+            .findOneAndUpdate(
+                { _id: id, deletedAt: { $exists: false } },
+                { $set: { ...updateData, updatedAt: new Date() } },
+                { new: true },
+            )
+            .exec();
+        if (!updated) {
+            throw new NotFoundException(`Company with id ${id} not found or already deleted`);
+        }
+        return;
+    }
+
+    /**
+     * Deletes a company from the database
+     * @param id The company identifier to delete
+     */
+    async remove(id: string): Promise<void> {
+        await this.companyModel.findOneAndDelete({ _id: id, deletedAt: { $exists: false } }).exec();
+        return;
+    }
+}
