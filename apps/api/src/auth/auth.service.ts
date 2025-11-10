@@ -10,16 +10,20 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
 
+/**
+ * Service handling authentication logic
+ * Responsible for login, token generation, refresh, and logout.
+ */
 @Injectable()
 export class AuthService {
     /** JWT secret for signing access tokens */
-    private readonly accessTokenSecret: string;
+    private readonly ACCESS_TOKEN_SECRET: string;
     /** JWT secret for signing refresh tokens */
-    private readonly refreshTokenSecret: string;
+    private readonly REFRESH_TOKEN_SECRET: string;
     /** Lifespan of access tokens in minutes */
-    private readonly accessTokenLifespan: number;
+    private readonly ACCESS_TOKEN_LIFESPAN: number;
     /** Lifespan of refresh tokens in minutes */
-    private readonly refreshTokenLifespan: number;
+    private readonly REFRESH_TOKEN_LIFESPAN: number;
 
     /**
      * Constructor for AuthService.
@@ -41,22 +45,22 @@ export class AuthService {
         // Load access token secret
         secret = this.configService.get<string>('ACCESS_TOKEN_SECRET');
         if (!secret) throw new InvalidConfigurationException('Access token secret is not configured');
-        this.accessTokenSecret = secret;
+        this.ACCESS_TOKEN_SECRET = secret;
 
         // Load refresh token secret
         secret = this.configService.get<string>('REFRESH_TOKEN_SECRET');
         if (!secret) throw new InvalidConfigurationException('Refresh token secret is not configured');
-        this.refreshTokenSecret = secret;
+        this.REFRESH_TOKEN_SECRET = secret;
 
         // Load access token lifespan
         lifespan = this.configService.get<number>('ACCESS_TOKEN_LIFESPAN_MINUTES');
         if (!lifespan) throw new InvalidConfigurationException('Access token lifespan is not configured');
-        this.refreshTokenLifespan = lifespan;
+        this.REFRESH_TOKEN_LIFESPAN = lifespan;
 
         // Load refresh token lifespan
         lifespan = this.configService.get<number>('REFRESH_TOKEN_LIFESPAN_MINUTES');
         if (!lifespan) throw new InvalidConfigurationException('Refresh token lifespan is not configured');
-        this.refreshTokenLifespan = lifespan;
+        this.REFRESH_TOKEN_LIFESPAN = lifespan;
     }
 
     /**
@@ -124,13 +128,13 @@ export class AuthService {
 
         let accessTokenPayload: AccessTokenPayload = {
             sub: userId,
-            exp: await this.computeExpiryDate(this.accessTokenLifespan),
+            exp: await this.computeExpiryDate(this.ACCESS_TOKEN_LIFESPAN),
             iat: new Date(),
             role: role,
             rti: rti,
         };
 
-        return this.jwtService.signAsync(accessTokenPayload, { secret: this.accessTokenSecret });
+        return this.jwtService.signAsync(accessTokenPayload, { secret: this.ACCESS_TOKEN_SECRET });
     }
 
     /**
@@ -140,7 +144,7 @@ export class AuthService {
      * token id.
      */
     private async generateRefreshToken(userId: Types.ObjectId): Promise<{ token: string; rti: Types.ObjectId }> {
-        const refreshTokenExpiryDate = await this.computeExpiryDate(this.refreshTokenLifespan);
+        const refreshTokenExpiryDate = await this.computeExpiryDate(this.REFRESH_TOKEN_LIFESPAN);
 
         const refreshToken = await new this.refreshTokenModel({
             userId: userId,
@@ -155,7 +159,7 @@ export class AuthService {
         };
 
         return {
-            token: await this.jwtService.signAsync(refreshTokenPayload, { secret: this.refreshTokenSecret }),
+            token: await this.jwtService.signAsync(refreshTokenPayload, { secret: this.REFRESH_TOKEN_SECRET }),
             rti: refreshToken._id,
         };
     }
@@ -167,7 +171,7 @@ export class AuthService {
      * @throws {InvalidCredentialsException} If the refresh token is invalid or has expired.
      */
     async refreshAccessToken(refreshTokenString: string): Promise<string> {
-        if (!this.jwtService.verify(refreshTokenString, { secret: this.refreshTokenSecret })) {
+        if (!this.jwtService.verify(refreshTokenString, { secret: this.REFRESH_TOKEN_SECRET })) {
             throw new InvalidCredentialsException('Invalid refresh token');
         }
 
@@ -190,7 +194,7 @@ export class AuthService {
      * @throws {InvalidCredentialsException} If the refresh token is invalid.
      */
     async logout(refreshTokenString: string): Promise<void> {
-        if (!this.jwtService.verify(refreshTokenString, { secret: this.refreshTokenSecret })) {
+        if (!this.jwtService.verify(refreshTokenString, { secret: this.REFRESH_TOKEN_SECRET })) {
             throw new InvalidCredentialsException('Invalid refresh token');
         }
 
