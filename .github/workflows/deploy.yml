@@ -1,0 +1,62 @@
+name: Deploy
+
+on:
+    workflow_run:
+        workflows: ['Test and Build']
+        types:
+            - completed
+
+jobs:
+    deploy:
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        runs-on: self-hosted
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Fetch latest changes
+              run: git fetch
+
+            - name: Pull latest changes
+              run: git pull origin main
+
+            - name: Copy API .env from persistent location
+              run: |
+                  if [ -f /home/ghrunner/.env.api.prod ]; then
+                    cp /home/ghrunner/.env.api.prod /home/ghrunner/actions-runner/_work/gestion-projet-m2/gestion-projet-m2/apps/api/.env
+                  else
+                    exit 1
+                  fi
+
+            - name: Copy Client .env from persistent location
+              run: |
+                  if [ -f /home/ghrunner/.env.client.prod ]; then
+                    cp /home/ghrunner/.env.client.prod /home/ghrunner/actions-runner/_work/gestion-projet-m2/gestion-projet-m2/apps/client/.env
+                  else
+                    exit 1
+                  fi
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+
+            - name: Install root deps
+              run: npm install
+
+            - name: Build
+              run: npm run build
+
+            - name: Deploy frontend
+              run: cp -r /home/ghrunner/actions-runner/_work/gestion-projet-m2/gestion-projet-m2/apps/client/dist/* /var/www/html/
+
+            - name: Install PM2
+              run: |
+                  npm install -g pm2
+                  pm2 -v
+
+            - name: Delelete all PM2 processes
+              run: pm2 delete all || true
+
+            - name: Restart API
+              run: cd /home/ghrunner/actions-runner/_work/gestion-projet-m2/gestion-projet-m2/apps/api && pm2 start "node --env-file=.env dist/main.js"
