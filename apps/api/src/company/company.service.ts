@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { Company, CompanyDocument } from './company.schema';
-import * as bcrypt from "bcrypt";
+import * as bcrypt from 'bcrypt';
 
 /**
  * Service handling business logic for company operations
@@ -31,6 +31,15 @@ export class CompanyService {
     async findOne(id: string): Promise<Company | null> {
         const company = await this.companyModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
         return company;
+    }
+
+    /**
+     * Finds a company by its email address
+     * @param email The email address to search for
+     * @returns The company if found, null otherwise
+     */
+    async findByEmail(email: string): Promise<Company | null> {
+        return await this.companyModel.findOne({ email: email, deletedAt: { $exists: false } }).exec();
     }
 
     /**
