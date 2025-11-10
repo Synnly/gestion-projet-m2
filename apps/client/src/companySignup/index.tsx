@@ -8,7 +8,7 @@ import { companyFormSignUpSchema } from './zodSchema';
 import type { companyFormSignUp } from './type';
 import { userStore } from '../store/userStore';
 import { LegalStatus, StructureType } from './type';
-
+import { useNafStore } from '../store/nafStore';
 /*
  * @Description Company Sign Up component
  */
@@ -27,6 +27,8 @@ export const CompanySignUp = () => {
 
     const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
 
+    const naflist = useNafStore((state) => state.nafList);
+
     const setUser = userStore((state) => state.set);
 
     const { mutateAsync, isPending, isError, error } = useMutation({
@@ -44,6 +46,7 @@ export const CompanySignUp = () => {
         let confirmed = true;
         if (!isComplete(data)) confirmed = await askUserConfirmation();
         if (confirmed) {
+            data.nafCode
             const user = await mutateAsync(data);
             setUser(user.id, user.role);
         }
@@ -124,12 +127,16 @@ export const CompanySignUp = () => {
                                         )}
                                     </div>
                                     <div className="flex flex-col w-1/2">
-                                        <input
-                                            type="text"
-                                            placeholder="Code NAF"
-                                            {...register('nafCode')}
-                                            className="border-1 rounded-lg p-2"
-                                        />
+                                        <select {...register('nafCode')} className="border-1 rounded-lg p-2 w-full">
+                                            <option value="" disabled selected>
+                                                Statut légal
+                                            </option>
+                                            {naflist.map((naf) => (
+                                                <option key={naf.code} value={JSON.stringify(naf)}>
+                                                    {naf.activite}
+                                                </option>
+                                            ))}
+                                        </select>
                                         {errors.nafCode && (
                                             <span className="text-red-500">{errors.nafCode.message}</span>
                                         )}
@@ -238,7 +245,7 @@ export const CompanySignUp = () => {
                     </div>
                 </div>
             </div>
-            <Modal message="Votre profil n'est pas complètement rempli. certaines fonctionnalités seront limitées"/>
+            <Modal message="Votre profil n'est pas complètement rempli. certaines fonctionnalités seront limitées" />
         </>
     );
 };
