@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
+import { Role } from '../common/roles/roles.enum';
 
 /**
  * Type representing the payload of a refresh token JWT.
@@ -9,6 +10,8 @@ export type RefreshTokenPayload = {
     _id: Types.ObjectId;
     /** The user ID who was issued this token */
     sub: Types.ObjectId;
+    /** The role of the user */
+    role: Role;
     /** Expiration date of the token */
     exp: Date;
     /** Date of issue of the token */
@@ -24,6 +27,8 @@ export type AccessTokenPayload = {
     iat: Date;
     /** Role of the user */
     role: string;
+    /** Email of the user */
+    email: string;
     /** The refresh token ID associated with this access token */
     rti: Types.ObjectId;
 };
@@ -47,6 +52,10 @@ export class RefreshToken {
     /** The user ID associated with this refresh token */
     @Prop({ required: true, type: Types.ObjectId })
     userId: Types.ObjectId;
+
+    /** The role of the user associated with this refresh token */
+    @Prop({ required: true, type: String, enum: Role })
+    role: Role;
 
     /** Expiration date of the refresh token */
     @Prop({ required: true })

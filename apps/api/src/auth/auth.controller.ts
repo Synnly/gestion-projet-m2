@@ -1,5 +1,5 @@
 import { Body, Controller, Post, Req, Res, ValidationPipe } from '@nestjs/common';
-import type { Response, Request } from 'express';
+import express from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ConfigService } from '@nestjs/config';
@@ -37,10 +37,10 @@ export class AuthController {
     async login(
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
         dto: LoginDto,
-        @Res({ passthrough: true }) res: Response,
+        @Res({ passthrough: true }) res: express.Request,
     ): Promise<string> {
         const { access, refresh } = await this.authService.login(dto.email, dto.password, dto.role);
-        res.cookie('refreshToken', refresh, {
+        res.cookies('refreshToken', refresh, {
             httpOnly: true,
             secure: true,
             sameSite: 'lax',
@@ -57,7 +57,7 @@ export class AuthController {
      * @throws {InvalidCredentialsException} if the refresh token is invalid or expired
      */
     @Post('refresh')
-    async refresh(@Req() req: Request): Promise<string> {
+    async refresh(@Req() req: express.Request): Promise<string> {
         const refreshTokenString = req.cookies.get('refreshToken');
         return await this.authService.refreshAccessToken(refreshTokenString);
     }
@@ -68,7 +68,7 @@ export class AuthController {
      * @throws {InvalidCredentialsException} if the refresh token is invalid
      */
     @Post('logout')
-    async logout(@Req() req: Request) {
+    async logout(@Req() req: express.Request) {
         const refreshTokenString = req.cookies.get('refreshToken');
         await this.authService.logout(refreshTokenString);
     }

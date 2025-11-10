@@ -9,11 +9,11 @@ import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 
 import { CompanyModule } from '../../../src/company/company.module';
-import { AuthModule } from '../../../src/common/auth/auth.module';
+import { AuthModule } from '../../../src/auth/auth.module';
 import { Company, CompanyDocument, StructureType, LegalStatus } from '../../../src/company/company.schema';
 import { NafCode } from '../../../src/company/naf-codes.enum';
 import { Role } from '../../../src/common/roles/roles.enum';
-import { AuthGuard } from '../../../src/common/auth/auth.guard';
+import { AuthGuard } from '../../../src/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
 
 describe('Company Integration Tests', () => {

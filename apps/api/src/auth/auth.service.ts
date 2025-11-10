@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -16,10 +16,6 @@ import { InvalidConfigurationException } from '../common/exceptions/invalidConfi
  */
 @Injectable()
 export class AuthService {
-    /** JWT secret for signing access tokens */
-    private readonly ACCESS_TOKEN_SECRET: string;
-    /** JWT secret for signing refresh tokens */
-    private readonly REFRESH_TOKEN_SECRET: string;
     /** Lifespan of access tokens in minutes */
     private readonly ACCESS_TOKEN_LIFESPAN: number;
     /** Lifespan of refresh tokens in minutes */
@@ -29,28 +25,19 @@ export class AuthService {
      * Constructor for AuthService.
      * @param refreshTokenModel The Mongoose model for RefreshToken.
      * @param companyService The service for managing companies.
-     * @param jwtService The JWT service for token operations.
+     * @param jwtService The JWT service for handling access tokens.
+     * @param refreshJwtService The JWT service for handling refresh tokens.
      * @param configService The configuration service for accessing environment variables.
      * @throws {InvalidConfigurationException} If any required configuration is missing.
      */
     constructor(
         @InjectModel(RefreshToken.name) private readonly refreshTokenModel: Model<RefreshTokenDocument>,
         private readonly companyService: CompanyService,
-        private readonly jwtService: JwtService,
+        private readonly jwtService: JwtService, // For access tokens
+        @Inject('REFRESH_JWT_SERVICE') private readonly refreshJwtService: JwtService, // For refresh tokens
         private readonly configService: ConfigService,
     ) {
-        let secret: string | undefined;
         let lifespan: number | undefined;
-
-        // Load access token secret
-        secret = this.configService.get<string>('ACCESS_TOKEN_SECRET');
-        if (!secret) throw new InvalidConfigurationException('Access token secret is not configured');
-        this.ACCESS_TOKEN_SECRET = secret;
-
-        // Load refresh token secret
-        secret = this.configService.get<string>('REFRESH_TOKEN_SECRET');
-        if (!secret) throw new InvalidConfigurationException('Refresh token secret is not configured');
-        this.REFRESH_TOKEN_SECRET = secret;
 
         // Load access token lifespan
         lifespan = this.configService.get<number>('ACCESS_TOKEN_LIFESPAN_MINUTES');
@@ -72,7 +59,7 @@ export class AuthService {
      * @throws {NotFoundException} If the user with the specified email is not found.
      * @throws {InvalidCredentialsException} If the provided credentials are invalid.
      */
-    async login(email: string, password: string, role: string): Promise<{ access: string; refresh: string }> {
+    async login(email: string, password: string, role: Role): Promise<{ access: string; refresh: string }> {
         let userId: Types.ObjectId | null = null;
 
         // Finding user based on role
@@ -80,18 +67,19 @@ export class AuthService {
             case Role.COMPANY:
                 const company = await this.companyService.findByEmail(email);
                 if (!company) throw new NotFoundException(`Company with email ${email} not found`);
-
-                if (!(await bcrypt.compare(password, company.password))) {
-                    throw new InvalidCredentialsException();
-                }
+                if (!(await bcrypt.compare(password, company.password))) throw new InvalidCredentialsException();
 
                 userId = company._id;
+                break;
+
+            default:
+                throw new InvalidCredentialsException('Invalid refresh token');
         }
         if (!userId) throw new InvalidCredentialsException('Invalid role specified');
 
         // Generating tokens
-        const { token, rti } = await this.generateRefreshToken(userId);
-        const accessToken = await this.generateAccessToken(userId, role as Role, rti);
+        const { token, rti } = await this.generateRefreshToken(userId, role);
+        const accessToken = await this.generateAccessToken(userId, email, role, rti);
 
         return { access: accessToken, refresh: token };
     }
@@ -110,12 +98,18 @@ export class AuthService {
     /**
      * Generates a JWT access token for the specified user. Deletes the associated refresh token if it is expired.
      * @param userId The ID of the user for whom the token is generated.
+     * @param email The email of the user.
      * @param role The role of the user.
      * @param rti The refresh token ID associated with this access token.
      * @returns A Promise that resolves to the generated JWT access token as a string.
      * @throws {InvalidCredentialsException} If the provided refresh token is invalid, expired or does not belong to the user.
      */
-    private async generateAccessToken(userId: Types.ObjectId, role: Role, rti: Types.ObjectId): Promise<string> {
+    private async generateAccessToken(
+        userId: Types.ObjectId,
+        email: string,
+        role: Role,
+        rti: Types.ObjectId,
+    ): Promise<string> {
         // Validate the refresh token existence and validity
         const refreshToken = await this.refreshTokenModel.findById(rti);
         if (!refreshToken) throw new InvalidCredentialsException('Refresh token not found');
@@ -131,19 +125,24 @@ export class AuthService {
             exp: await this.computeExpiryDate(this.ACCESS_TOKEN_LIFESPAN),
             iat: new Date(),
             role: role,
+            email: email,
             rti: rti,
         };
 
-        return this.jwtService.signAsync(accessTokenPayload, { secret: this.ACCESS_TOKEN_SECRET });
+        return this.jwtService.signAsync(accessTokenPayload);
     }
 
     /**
      * Generates a refresh token for the specified user and stores it in the database.
      * @param userId The ID of the user for whom the refresh token is generated.
+     * @param role The role of the user.
      * @returns A Promise that resolves to an object containing the generated refresh token as a string and the refresh
      * token id.
      */
-    private async generateRefreshToken(userId: Types.ObjectId): Promise<{ token: string; rti: Types.ObjectId }> {
+    private async generateRefreshToken(
+        userId: Types.ObjectId,
+        role: Role,
+    ): Promise<{ token: string; rti: Types.ObjectId }> {
         const refreshTokenExpiryDate = await this.computeExpiryDate(this.REFRESH_TOKEN_LIFESPAN);
 
         const refreshToken = await new this.refreshTokenModel({
@@ -155,11 +154,12 @@ export class AuthService {
             _id: refreshToken._id,
             sub: userId,
             exp: refreshTokenExpiryDate,
+            role: role,
             iat: new Date(),
         };
 
         return {
-            token: await this.jwtService.signAsync(refreshTokenPayload, { secret: this.REFRESH_TOKEN_SECRET }),
+            token: await this.refreshJwtService.signAsync(refreshTokenPayload),
             rti: refreshToken._id,
         };
     }
@@ -171,21 +171,32 @@ export class AuthService {
      * @throws {InvalidCredentialsException} If the refresh token is invalid or has expired.
      */
     async refreshAccessToken(refreshTokenString: string): Promise<string> {
-        if (!this.jwtService.verify(refreshTokenString, { secret: this.REFRESH_TOKEN_SECRET })) {
+        if (!this.refreshJwtService.verify(refreshTokenString)) {
             throw new InvalidCredentialsException('Invalid refresh token');
         }
 
-        const refreshToken = this.jwtService.decode(refreshTokenString) as RefreshTokenPayload;
+        const refreshToken = this.refreshJwtService.decode(refreshTokenString) as RefreshTokenPayload;
 
         if (refreshToken.exp < new Date()) {
             await this.refreshTokenModel.deleteOne({ _id: refreshToken._id });
             throw new InvalidCredentialsException('Refresh token has expired');
         }
 
-        const company = await this.companyService.findOne(refreshToken.sub.toString());
-        if (!company) throw new InvalidCredentialsException('Invalid refresh token');
+        let userId: Types.ObjectId;
+        let email: string;
+        switch (refreshToken.role) {
+            case Role.COMPANY:
+                const company = await this.companyService.findOne(refreshToken.sub.toString());
+                if (!company) throw new InvalidCredentialsException('Invalid refresh token');
+                userId = company._id;
+                email = company.email;
+                break;
 
-        return this.generateAccessToken(company._id, Role.COMPANY, refreshToken._id);
+            default:
+                throw new InvalidCredentialsException('Invalid refresh token');
+        }
+
+        return this.generateAccessToken(userId, email, refreshToken.role as Role, refreshToken._id);
     }
 
     /**
@@ -194,11 +205,11 @@ export class AuthService {
      * @throws {InvalidCredentialsException} If the refresh token is invalid.
      */
     async logout(refreshTokenString: string): Promise<void> {
-        if (!this.jwtService.verify(refreshTokenString, { secret: this.REFRESH_TOKEN_SECRET })) {
+        if (!this.refreshJwtService.verify(refreshTokenString)) {
             throw new InvalidCredentialsException('Invalid refresh token');
         }
 
-        const refreshToken = this.jwtService.decode(refreshTokenString) as RefreshTokenPayload;
+        const refreshToken = this.refreshJwtService.decode(refreshTokenString) as RefreshTokenPayload;
 
         await this.refreshTokenModel.deleteOne({ _id: refreshToken._id });
     }
