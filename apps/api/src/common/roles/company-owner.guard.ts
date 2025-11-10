@@ -12,11 +12,20 @@ export class CompanyOwnerGuard implements CanActivate {
         const { user, params } = req || {};
 
         // If no authenticated user, deny access (other guards should normally handle auth)
-        if (!user) throw new ForbiddenException('User not authenticated');
+        if (!user) {
+            throw new ForbiddenException('User not authenticated');
+            return false;
+        }
 
-        // Only enforce ownership check for COMPANY role
-        if (user.role !== Role.COMPANY) return true;
+        // Allow ADMIN to bypass ownership check - they can modify any company
+        if (user.role === Role.ADMIN) {
+            return true;
+        }
 
+        // For COMPANY role: verify they own the resource they're trying to modify
+        if (user.role !== Role.COMPANY) {
+            throw new ForbiddenException('You can\'t access this resource');
+        }
         const companyId = params?.id;
         const userSub = user.sub;
 
