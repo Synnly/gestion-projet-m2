@@ -54,35 +54,37 @@ describe('AuthGuard', () => {
         expect(guard).toBeDefined();
     });
 
+    const setupValidToken = (token: string = 'valid-refresh-token', decodedToken: any = { sub: 'user-id', email: 'test@example.com', role: 'COMPANY' }) => {
+        mockConfigService.get.mockReturnValue('test-secret');
+        mockJwtService.verifyAsync.mockResolvedValue(decodedToken);
+        return { token, decodedToken };
+    };
+
+    const setupInvalidSecret = (secretValue: any) => {
+        mockConfigService.get.mockReturnValue(secretValue);
+    };
+
+    const setupTokenError = (errorMessage: string) => {
+        mockConfigService.get.mockReturnValue('test-secret');
+        mockJwtService.verifyAsync.mockRejectedValue(new Error(errorMessage));
+    };
+
     describe('canActivate', () => {
         it('should return true when valid refresh token is provided and canActivate is called resulting in user being set on request', async () => {
-            const refreshToken = 'valid-refresh-token';
-            const decodedToken = {
-                sub: 'user-id',
-                email: 'test@example.com',
-                role: 'COMPANY',
-            };
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
-            mockConfigService.get.mockReturnValue('test-secret');
-            mockJwtService.verifyAsync.mockResolvedValue(decodedToken);
-
+            const { token, decodedToken } = setupValidToken();
+            const mockRequest = { refreshToken: token } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             const result = await guard.canActivate(context);
 
             expect(result).toBe(true);
             expect(configService.get).toHaveBeenCalledWith('REFRESH_TOKEN_SECRET');
-            expect(jwtService.verifyAsync).toHaveBeenCalledWith(refreshToken, { secret: 'test-secret' });
+            expect(jwtService.verifyAsync).toHaveBeenCalledWith(token, { secret: 'test-secret' });
             expect(mockRequest['user']).toEqual(decodedToken);
         });
 
         it('should throw UnauthorizedException when refresh token is not found in request and canActivate is called', async () => {
             const mockRequest = {} as Request;
-
             const context = createMockExecutionContext(mockRequest);
 
             await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
@@ -92,10 +94,7 @@ describe('AuthGuard', () => {
         });
 
         it('should throw UnauthorizedException when refresh token is undefined and canActivate is called', async () => {
-            const mockRequest = {
-                refreshToken: undefined,
-            } as unknown as Request;
-
+            const mockRequest = { refreshToken: undefined } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
@@ -103,10 +102,7 @@ describe('AuthGuard', () => {
         });
 
         it('should throw UnauthorizedException when refresh token is null and canActivate is called', async () => {
-            const mockRequest = {
-                refreshToken: null,
-            } as unknown as Request;
-
+            const mockRequest = { refreshToken: null } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
@@ -114,10 +110,7 @@ describe('AuthGuard', () => {
         });
 
         it('should throw UnauthorizedException when refresh token is empty string and canActivate is called', async () => {
-            const mockRequest = {
-                refreshToken: '',
-            } as unknown as Request;
-
+            const mockRequest = { refreshToken: '' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             await expect(guard.canActivate(context)).rejects.toThrow(UnauthorizedException);
@@ -125,14 +118,8 @@ describe('AuthGuard', () => {
         });
 
         it('should throw InvalidConfigurationException when REFRESH_TOKEN_SECRET is not configured and canActivate is called', async () => {
-            const refreshToken = 'valid-refresh-token';
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
-            mockConfigService.get.mockReturnValue(undefined);
-
+            setupInvalidSecret(undefined);
+            const mockRequest = { refreshToken: 'valid-refresh-token' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             await expect(guard.canActivate(context)).rejects.toThrow(InvalidConfigurationException);
@@ -142,14 +129,8 @@ describe('AuthGuard', () => {
         });
 
         it('should throw InvalidConfigurationException when REFRESH_TOKEN_SECRET is null and canActivate is called', async () => {
-            const refreshToken = 'valid-refresh-token';
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
-            mockConfigService.get.mockReturnValue(null);
-
+            setupInvalidSecret(null);
+            const mockRequest = { refreshToken: 'valid-refresh-token' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             await expect(guard.canActivate(context)).rejects.toThrow(InvalidConfigurationException);
@@ -157,14 +138,8 @@ describe('AuthGuard', () => {
         });
 
         it('should throw InvalidConfigurationException when REFRESH_TOKEN_SECRET is empty string and canActivate is called', async () => {
-            const refreshToken = 'valid-refresh-token';
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
-            mockConfigService.get.mockReturnValue('');
-
+            setupInvalidSecret('');
+            const mockRequest = { refreshToken: 'valid-refresh-token' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             await expect(guard.canActivate(context)).rejects.toThrow(InvalidConfigurationException);
@@ -172,53 +147,31 @@ describe('AuthGuard', () => {
         });
 
         it('should throw error when jwtService verifyAsync fails and canActivate is called', async () => {
-            const refreshToken = 'invalid-token';
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
-            mockConfigService.get.mockReturnValue('test-secret');
-            mockJwtService.verifyAsync.mockRejectedValue(new Error('Invalid token'));
-
+            setupTokenError('Invalid token');
+            const mockRequest = { refreshToken: 'invalid-token' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             await expect(guard.canActivate(context)).rejects.toThrow('Invalid token');
-            expect(jwtService.verifyAsync).toHaveBeenCalledWith(refreshToken, { secret: 'test-secret' });
+            expect(jwtService.verifyAsync).toHaveBeenCalledWith('invalid-token', { secret: 'test-secret' });
         });
 
         it('should throw error when token is expired and canActivate is called', async () => {
-            const refreshToken = 'expired-token';
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
-            mockConfigService.get.mockReturnValue('test-secret');
-            mockJwtService.verifyAsync.mockRejectedValue(new Error('Token expired'));
-
+            setupTokenError('Token expired');
+            const mockRequest = { refreshToken: 'expired-token' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             await expect(guard.canActivate(context)).rejects.toThrow('Token expired');
         });
 
         it('should throw error when token signature is invalid and canActivate is called', async () => {
-            const refreshToken = 'tampered-token';
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
-            mockConfigService.get.mockReturnValue('test-secret');
-            mockJwtService.verifyAsync.mockRejectedValue(new Error('Invalid signature'));
-
+            setupTokenError('Invalid signature');
+            const mockRequest = { refreshToken: 'tampered-token' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             await expect(guard.canActivate(context)).rejects.toThrow('Invalid signature');
         });
 
         it('should set user with complete payload when valid token with all fields is provided and canActivate is called', async () => {
-            const refreshToken = 'valid-refresh-token';
             const decodedToken = {
                 _id: 'token-id',
                 sub: 'user-id',
@@ -227,14 +180,8 @@ describe('AuthGuard', () => {
                 exp: 1234567890,
                 iat: 1234567800,
             };
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
-            mockConfigService.get.mockReturnValue('test-secret');
-            mockJwtService.verifyAsync.mockResolvedValue(decodedToken);
-
+            setupValidToken('valid-refresh-token', decodedToken);
+            const mockRequest = { refreshToken: 'valid-refresh-token' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             await guard.canActivate(context);
@@ -247,33 +194,20 @@ describe('AuthGuard', () => {
         });
 
         it('should use correct secret when verifying token and canActivate is called', async () => {
-            const refreshToken = 'valid-refresh-token';
             const secret = 'my-super-secret-key';
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
             mockConfigService.get.mockReturnValue(secret);
             mockJwtService.verifyAsync.mockResolvedValue({ sub: 'user-id' });
-
+            const mockRequest = { refreshToken: 'valid-refresh-token' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             await guard.canActivate(context);
 
-            expect(jwtService.verifyAsync).toHaveBeenCalledWith(refreshToken, { secret });
+            expect(jwtService.verifyAsync).toHaveBeenCalledWith('valid-refresh-token', { secret });
         });
 
         it('should return boolean true and not truthy value when valid token is provided and canActivate is called', async () => {
-            const refreshToken = 'valid-refresh-token';
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
-            mockConfigService.get.mockReturnValue('test-secret');
-            mockJwtService.verifyAsync.mockResolvedValue({ sub: 'user-id' });
-
+            setupValidToken();
+            const mockRequest = { refreshToken: 'valid-refresh-token' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             const result = await guard.canActivate(context);
@@ -283,15 +217,8 @@ describe('AuthGuard', () => {
         });
 
         it('should not have user property on request before verification when canActivate is called', async () => {
-            const refreshToken = 'valid-refresh-token';
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
-            mockConfigService.get.mockReturnValue('test-secret');
-            mockJwtService.verifyAsync.mockResolvedValue({ sub: 'user-id' });
-
+            setupValidToken();
+            const mockRequest = { refreshToken: 'valid-refresh-token' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             expect(mockRequest['user']).toBeUndefined();
@@ -302,18 +229,9 @@ describe('AuthGuard', () => {
         });
 
         it('should handle token with minimal payload when valid minimal token is provided and canActivate is called', async () => {
-            const refreshToken = 'minimal-token';
-            const decodedToken = {
-                sub: 'user-id',
-            };
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
-            mockConfigService.get.mockReturnValue('test-secret');
-            mockJwtService.verifyAsync.mockResolvedValue(decodedToken);
-
+            const decodedToken = { sub: 'user-id' };
+            setupValidToken('minimal-token', decodedToken);
+            const mockRequest = { refreshToken: 'minimal-token' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             const result = await guard.canActivate(context);
@@ -323,15 +241,8 @@ describe('AuthGuard', () => {
         });
 
         it('should call configService get exactly once when canActivate is called', async () => {
-            const refreshToken = 'valid-refresh-token';
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
-            mockConfigService.get.mockReturnValue('test-secret');
-            mockJwtService.verifyAsync.mockResolvedValue({ sub: 'user-id' });
-
+            setupValidToken();
+            const mockRequest = { refreshToken: 'valid-refresh-token' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             await guard.canActivate(context);
@@ -340,15 +251,8 @@ describe('AuthGuard', () => {
         });
 
         it('should call jwtService verifyAsync exactly once when canActivate is called', async () => {
-            const refreshToken = 'valid-refresh-token';
-
-            const mockRequest = {
-                refreshToken,
-            } as unknown as Request;
-
-            mockConfigService.get.mockReturnValue('test-secret');
-            mockJwtService.verifyAsync.mockResolvedValue({ sub: 'user-id' });
-
+            setupValidToken();
+            const mockRequest = { refreshToken: 'valid-refresh-token' } as unknown as Request;
             const context = createMockExecutionContext(mockRequest);
 
             await guard.canActivate(context);

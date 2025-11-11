@@ -67,106 +67,71 @@ describe('Auth Integration Tests', () => {
         if (mongod) await mongod.stop();
     });
 
+    const DEFAULT_PASSWORD = 'StrongP@ss1';
+
+    const createCompany = async (email: string, password: string = DEFAULT_PASSWORD) => {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        return companyModel.create({
+            email,
+            password: hashedPassword,
+            name: 'Test Company',
+            isValid: true,
+        });
+    };
+
+    const loginRequest = (email: string, password: string, role: Role = Role.COMPANY) => {
+        return request(app.getHttpServer()).post('/api/auth/login').send({ email, password, role });
+    };
+
+    const extractRefreshCookie = (response: any): string => {
+        const cookies = response.headers['set-cookie'];
+        const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
+        return cookieArray.find((c: string) => c.startsWith('refreshToken='));
+    };
+
+    const expectCookieAttributes = (cookie: string) => {
+        expect(cookie).toBeDefined();
+        expect(cookie).toContain('HttpOnly');
+        expect(cookie).toContain('Secure');
+        expect(cookie).toContain('SameSite=Lax');
+        expect(cookie).toContain('Path=/api/auth/refresh');
+    };
+
     describe('POST /api/auth/login - Login', () => {
         it('should login successfully when valid company credentials are provided and login is called resulting in access token and refresh cookie', async () => {
-            const password = 'StrongP@ss1';
-            const hashedPassword = await bcrypt.hash(password, 10);
+            const company = await createCompany('test@company.com');
 
-            const company = await companyModel.create({
-                email: 'test@company.com',
-                password: hashedPassword,
-                name: 'Test Company',
-                isValid: true,
-            });
-
-            const res = await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({
-                    email: 'test@company.com',
-                    password: password,
-                    role: Role.COMPANY,
-                })
-                .expect(201);
+            const res = await loginRequest('test@company.com', DEFAULT_PASSWORD).expect(201);
 
             expect(res.text).toBeDefined();
             expect(typeof res.text).toBe('string');
 
-            const cookies = res.headers['set-cookie'];
-            expect(cookies).toBeDefined();
-            expect(Array.isArray(cookies)).toBe(true);
-
-            const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
-            const refreshCookie = cookieArray.find((c: string) => c.startsWith('refreshToken='));
-            expect(refreshCookie).toBeDefined();
-            expect(refreshCookie).toContain('HttpOnly');
-            expect(refreshCookie).toContain('Secure');
-            expect(refreshCookie).toContain('SameSite=Lax');
-            expect(refreshCookie).toContain('Path=/api/auth/refresh');
+            const refreshCookie = extractRefreshCookie(res);
+            expectCookieAttributes(refreshCookie);
 
             const savedTokens = await refreshTokenModel.find({ userId: company._id }).exec();
             expect(savedTokens.length).toBe(1);
         });
 
         it('should return 404 when company email is not found and login is called', async () => {
-            const res = await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({
-                    email: 'nonexistent@company.com',
-                    password: 'StrongP@ss1',
-                    role: Role.COMPANY,
-                })
-                .expect(404);
-
+            const res = await loginRequest('nonexistent@company.com', DEFAULT_PASSWORD).expect(404);
             expect(res.body.message).toContain('Company with email nonexistent@company.com not found');
         });
 
         it('should return 401 when password is incorrect and login is called', async () => {
-            const hashedPassword = await bcrypt.hash('CorrectP@ss1', 10);
-
-            await companyModel.create({
-                email: 'test@company.com',
-                password: hashedPassword,
-                name: 'Test Company',
-                isValid: true,
-            });
-
-            await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({
-                    email: 'test@company.com',
-                    password: 'WrongP@ss1',
-                    role: Role.COMPANY,
-                })
-                .expect(401);
+            await createCompany('test@company.com', 'CorrectP@ss1');
+            await loginRequest('test@company.com', 'WrongP@ss1').expect(401);
         });
 
         it('should return 401 when invalid role is provided and login is called', async () => {
-            const hashedPassword = await bcrypt.hash('StrongP@ss1', 10);
-
-            await companyModel.create({
-                email: 'test@company.com',
-                password: hashedPassword,
-                name: 'Test Company',
-                isValid: true,
-            });
-
-            await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({
-                    email: 'test@company.com',
-                    password: 'StrongP@ss1',
-                    role: Role.ADMIN,
-                })
-                .expect(401);
+            await createCompany('test@company.com');
+            await loginRequest('test@company.com', DEFAULT_PASSWORD, Role.STUDENT).expect(401);
         });
 
         it('should return 400 when email is missing and login is called', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/auth/login')
-                .send({
-                    password: 'StrongP@ss1',
-                    role: Role.COMPANY,
-                })
+                .send({ password: DEFAULT_PASSWORD, role: Role.COMPANY })
                 .expect(400);
 
             expect(res.body.message).toBeDefined();
@@ -175,10 +140,7 @@ describe('Auth Integration Tests', () => {
         it('should return 400 when password is missing and login is called', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/auth/login')
-                .send({
-                    email: 'test@company.com',
-                    role: Role.COMPANY,
-                })
+                .send({ email: 'test@company.com', role: Role.COMPANY })
                 .expect(400);
 
             expect(res.body.message).toBeDefined();
@@ -187,10 +149,7 @@ describe('Auth Integration Tests', () => {
         it('should return 400 when role is missing and login is called', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/auth/login')
-                .send({
-                    email: 'test@company.com',
-                    password: 'StrongP@ss1',
-                })
+                .send({ email: 'test@company.com', password: DEFAULT_PASSWORD })
                 .expect(400);
 
             expect(res.body.message).toBeDefined();
@@ -199,11 +158,7 @@ describe('Auth Integration Tests', () => {
         it('should return 400 when email format is invalid and login is called', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/auth/login')
-                .send({
-                    email: 'invalid-email',
-                    password: 'StrongP@ss1',
-                    role: Role.COMPANY,
-                })
+                .send({ email: 'invalid-email', password: DEFAULT_PASSWORD, role: Role.COMPANY })
                 .expect(400);
 
             expect(res.body.message).toBeDefined();
@@ -212,11 +167,7 @@ describe('Auth Integration Tests', () => {
         it('should return 400 when email is empty string and login is called', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/auth/login')
-                .send({
-                    email: '',
-                    password: 'StrongP@ss1',
-                    role: Role.COMPANY,
-                })
+                .send({ email: '', password: DEFAULT_PASSWORD, role: Role.COMPANY })
                 .expect(400);
 
             expect(res.body.message).toBeDefined();
@@ -225,11 +176,7 @@ describe('Auth Integration Tests', () => {
         it('should return 400 when password is empty string and login is called', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/auth/login')
-                .send({
-                    email: 'test@company.com',
-                    password: '',
-                    role: Role.COMPANY,
-                })
+                .send({ email: 'test@company.com', password: '', role: Role.COMPANY })
                 .expect(400);
 
             expect(res.body.message).toBeDefined();
@@ -238,11 +185,7 @@ describe('Auth Integration Tests', () => {
         it('should return 400 when role is invalid enum value and login is called', async () => {
             const res = await request(app.getHttpServer())
                 .post('/api/auth/login')
-                .send({
-                    email: 'test@company.com',
-                    password: 'StrongP@ss1',
-                    role: 'INVALID_ROLE',
-                })
+                .send({ email: 'test@company.com', password: DEFAULT_PASSWORD, role: 'INVALID_ROLE' })
                 .expect(400);
 
             expect(res.body.message).toBeDefined();
@@ -253,7 +196,7 @@ describe('Auth Integration Tests', () => {
                 .post('/api/auth/login')
                 .send({
                     email: 'test@company.com',
-                    password: 'StrongP@ss1',
+                    password: DEFAULT_PASSWORD,
                     role: Role.COMPANY,
                     extraField: 'should-be-rejected',
                 })
@@ -263,24 +206,8 @@ describe('Auth Integration Tests', () => {
         });
 
         it('should store refresh token in database when login is successful', async () => {
-            const password = 'StrongP@ss1';
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            const company = await companyModel.create({
-                email: 'test@company.com',
-                password: hashedPassword,
-                name: 'Test Company',
-                isValid: true,
-            });
-
-            await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({
-                    email: 'test@company.com',
-                    password: password,
-                    role: Role.COMPANY,
-                })
-                .expect(201);
+            const company = await createCompany('test@company.com');
+            await loginRequest('test@company.com', DEFAULT_PASSWORD).expect(201);
 
             const tokens = await refreshTokenModel.find({ userId: company._id }).exec();
             expect(tokens.length).toBe(1);
@@ -291,25 +218,9 @@ describe('Auth Integration Tests', () => {
 
     describe('POST /api/auth/refresh - Refresh Access Token', () => {
         it('should return new access token when valid refresh token cookie is provided and refresh is called', async () => {
-            const password = 'StrongP@ss1';
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            await companyModel.create({
-                email: 'test@company.com',
-                password: hashedPassword,
-                name: 'Test Company',
-                isValid: true,
-            });
-
-            const loginRes = await request(app.getHttpServer()).post('/api/auth/login').send({
-                email: 'test@company.com',
-                password: password,
-                role: Role.COMPANY,
-            });
-
-            const cookies = loginRes.headers['set-cookie'];
-            const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
-            const refreshCookie = cookieArray.find((c: string) => c.startsWith('refreshToken='));
+            await createCompany('test@company.com');
+            const loginRes = await loginRequest('test@company.com', DEFAULT_PASSWORD);
+            const refreshCookie = extractRefreshCookie(loginRes);
 
             const res = await request(app.getHttpServer())
                 .post('/api/auth/refresh')
@@ -332,15 +243,7 @@ describe('Auth Integration Tests', () => {
         });
 
         it('should return 401 when refresh token is expired and refresh is called', async () => {
-            const password = 'StrongP@ss1';
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            const company = await companyModel.create({
-                email: 'test@company.com',
-                password: hashedPassword,
-                name: 'Test Company',
-                isValid: true,
-            });
+            const company = await createCompany('test@company.com');
 
             const expiredToken = await refreshTokenModel.create({
                 userId: company._id,
@@ -357,25 +260,9 @@ describe('Auth Integration Tests', () => {
 
     describe('POST /api/auth/logout - Logout', () => {
         it('should logout successfully when valid refresh token cookie is provided and logout is called', async () => {
-            const password = 'StrongP@ss1';
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            const company = await companyModel.create({
-                email: 'test@company.com',
-                password: hashedPassword,
-                name: 'Test Company',
-                isValid: true,
-            });
-
-            const loginRes = await request(app.getHttpServer()).post('/api/auth/login').send({
-                email: 'test@company.com',
-                password: password,
-                role: Role.COMPANY,
-            });
-
-            const cookies = loginRes.headers['set-cookie'];
-            const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
-            const refreshCookie = cookieArray.find((c: string) => c.startsWith('refreshToken='));
+            const company = await createCompany('test@company.com');
+            const loginRes = await loginRequest('test@company.com', DEFAULT_PASSWORD);
+            const refreshCookie = extractRefreshCookie(loginRes);
 
             const tokensBefore = await refreshTokenModel.find({ userId: company._id }).exec();
             expect(tokensBefore.length).toBe(1);
@@ -400,29 +287,11 @@ describe('Auth Integration Tests', () => {
 
     describe('Integration Flow - Login -> Refresh -> Logout', () => {
         it('should complete full authentication flow when user logs in refreshes token and logs out', async () => {
-            const password = 'StrongP@ss1';
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            const company = await companyModel.create({
-                email: 'flow@company.com',
-                password: hashedPassword,
-                name: 'Flow Test Company',
-                isValid: true,
-            });
-
-            const loginRes = await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({
-                    email: 'flow@company.com',
-                    password: password,
-                    role: Role.COMPANY,
-                })
-                .expect(201);
+            const company = await createCompany('flow@company.com');
+            const loginRes = await loginRequest('flow@company.com', DEFAULT_PASSWORD).expect(201);
 
             expect(loginRes.text).toBeDefined();
-            const cookies = loginRes.headers['set-cookie'];
-            const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
-            const refreshCookie = cookieArray.find((c: string) => c.startsWith('refreshToken='));
+            const refreshCookie = extractRefreshCookie(loginRes);
             expect(refreshCookie).toBeDefined();
 
             let tokens = await refreshTokenModel.find({ userId: company._id }).exec();
@@ -445,173 +314,54 @@ describe('Auth Integration Tests', () => {
         });
 
         it('should allow multiple logins from same user when user logs in multiple times resulting in multiple refresh tokens', async () => {
-            const password = 'StrongP@ss1';
-            const hashedPassword = await bcrypt.hash(password, 10);
+            const company = await createCompany('multi@company.com');
 
-            const company = await companyModel.create({
-                email: 'multi@company.com',
-                password: hashedPassword,
-                name: 'Multi Login Company',
-                isValid: true,
-            });
-
-            await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({
-                    email: 'multi@company.com',
-                    password: password,
-                    role: Role.COMPANY,
-                })
-                .expect(201);
-
-            await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({
-                    email: 'multi@company.com',
-                    password: password,
-                    role: Role.COMPANY,
-                })
-                .expect(201);
+            await loginRequest('multi@company.com', DEFAULT_PASSWORD).expect(201);
+            await loginRequest('multi@company.com', DEFAULT_PASSWORD).expect(201);
 
             const tokens = await refreshTokenModel.find({ userId: company._id }).exec();
             expect(tokens.length).toBe(2);
         });
 
         it('should prevent refresh after logout when user logs out and tries to refresh', async () => {
-            const password = 'StrongP@ss1';
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            await companyModel.create({
-                email: 'prevent@company.com',
-                password: hashedPassword,
-                name: 'Prevent Refresh Company',
-                isValid: true,
-            });
-
-            const loginRes = await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({
-                    email: 'prevent@company.com',
-                    password: password,
-                    role: Role.COMPANY,
-                })
-                .expect(201);
-
-            const cookies = loginRes.headers['set-cookie'];
-            const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
-            const refreshCookie = cookieArray.find((c: string) => c.startsWith('refreshToken='));
+            await createCompany('prevent@company.com');
+            const loginRes = await loginRequest('prevent@company.com', DEFAULT_PASSWORD).expect(201);
+            const refreshCookie = extractRefreshCookie(loginRes);
 
             await request(app.getHttpServer()).post('/api/auth/logout').set('Cookie', refreshCookie).expect(201);
-
             await request(app.getHttpServer()).post('/api/auth/refresh').set('Cookie', refreshCookie).expect(401);
         });
     });
 
     describe('Cookie Security', () => {
         it('should set httpOnly flag on refresh token cookie when login is called', async () => {
-            const password = 'StrongP@ss1';
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            await companyModel.create({
-                email: 'security@company.com',
-                password: hashedPassword,
-                name: 'Security Company',
-                isValid: true,
-            });
-
-            const res = await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({
-                    email: 'security@company.com',
-                    password: password,
-                    role: Role.COMPANY,
-                })
-                .expect(201);
-
-            const cookies = res.headers['set-cookie'];
-            const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
-            const refreshCookie = cookieArray.find((c: string) => c.startsWith('refreshToken='));
+            await createCompany('security@company.com');
+            const res = await loginRequest('security@company.com', DEFAULT_PASSWORD).expect(201);
+            const refreshCookie = extractRefreshCookie(res);
 
             expect(refreshCookie).toContain('HttpOnly');
         });
 
         it('should set secure flag on refresh token cookie when login is called', async () => {
-            const password = 'StrongP@ss1';
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            await companyModel.create({
-                email: 'secure@company.com',
-                password: hashedPassword,
-                name: 'Secure Company',
-                isValid: true,
-            });
-
-            const res = await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({
-                    email: 'secure@company.com',
-                    password: password,
-                    role: Role.COMPANY,
-                })
-                .expect(201);
-
-            const cookies = res.headers['set-cookie'];
-            const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
-            const refreshCookie = cookieArray.find((c: string) => c.startsWith('refreshToken='));
+            await createCompany('secure@company.com');
+            const res = await loginRequest('secure@company.com', DEFAULT_PASSWORD).expect(201);
+            const refreshCookie = extractRefreshCookie(res);
 
             expect(refreshCookie).toContain('Secure');
         });
 
         it('should set sameSite lax on refresh token cookie when login is called', async () => {
-            const password = 'StrongP@ss1';
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            await companyModel.create({
-                email: 'samesite@company.com',
-                password: hashedPassword,
-                name: 'SameSite Company',
-                isValid: true,
-            });
-
-            const res = await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({
-                    email: 'samesite@company.com',
-                    password: password,
-                    role: Role.COMPANY,
-                })
-                .expect(201);
-
-            const cookies = res.headers['set-cookie'];
-            const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
-            const refreshCookie = cookieArray.find((c: string) => c.startsWith('refreshToken='));
+            await createCompany('samesite@company.com');
+            const res = await loginRequest('samesite@company.com', DEFAULT_PASSWORD).expect(201);
+            const refreshCookie = extractRefreshCookie(res);
 
             expect(refreshCookie).toContain('SameSite=Lax');
         });
 
         it('should set correct path on refresh token cookie when login is called', async () => {
-            const password = 'StrongP@ss1';
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            await companyModel.create({
-                email: 'path@company.com',
-                password: hashedPassword,
-                name: 'Path Company',
-                isValid: true,
-            });
-
-            const res = await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({
-                    email: 'path@company.com',
-                    password: password,
-                    role: Role.COMPANY,
-                })
-                .expect(201);
-
-            const cookies = res.headers['set-cookie'];
-            const cookieArray = Array.isArray(cookies) ? cookies : [cookies];
-            const refreshCookie = cookieArray.find((c: string) => c.startsWith('refreshToken='));
+            await createCompany('path@company.com');
+            const res = await loginRequest('path@company.com', DEFAULT_PASSWORD).expect(201);
+            const refreshCookie = extractRefreshCookie(res);
 
             expect(refreshCookie).toContain('Path=/api/auth/refresh');
         });
