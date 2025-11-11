@@ -66,7 +66,7 @@ export class AuthService {
                 break;
 
             default:
-                throw new InvalidCredentialsException('Invalid refresh token');
+                throw new InvalidCredentialsException('Invalid role specified');
         }
         if (!userId) throw new InvalidCredentialsException('Invalid role specified');
 
@@ -109,7 +109,7 @@ export class AuthService {
         if (!refreshToken.userId.equals(userId))
             throw new InvalidCredentialsException('Refresh token does not belong to the user');
         if (refreshToken.expiresAt < new Date()) {
-            this.refreshTokenModel.deleteOne({ _id: rti });
+            await this.refreshTokenModel.deleteOne({ _id: rti });
             throw new InvalidCredentialsException('Refresh token has expired');
         }
 

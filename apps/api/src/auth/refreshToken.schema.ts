@@ -18,7 +18,7 @@ export type AccessTokenPayload = {
     /** The user ID who was issued this token */
     sub: Types.ObjectId;
     /** Role of the user */
-    role: string;
+    role: Role;
     /** Email of the user */
     email: string;
     /** The refresh token ID associated with this access token */
