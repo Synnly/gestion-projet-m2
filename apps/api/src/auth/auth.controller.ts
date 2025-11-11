@@ -37,10 +37,10 @@ export class AuthController {
     async login(
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
         dto: LoginDto,
-        @Res({ passthrough: true }) res: express.Request,
+        @Res({ passthrough: true }) res: express.Response,
     ): Promise<string> {
         const { access, refresh } = await this.authService.login(dto.email, dto.password, dto.role);
-        res.cookies('refreshToken', refresh, {
+        res.cookie('refreshToken', refresh, {
             httpOnly: true,
             secure: true,
             sameSite: 'lax',
@@ -58,7 +58,7 @@ export class AuthController {
      */
     @Post('refresh')
     async refresh(@Req() req: express.Request): Promise<string> {
-        const refreshTokenString = req.cookies.get('refreshToken');
+        const refreshTokenString = req.cookies['refreshToken'];
         return await this.authService.refreshAccessToken(refreshTokenString);
     }
 
@@ -69,7 +69,7 @@ export class AuthController {
      */
     @Post('logout')
     async logout(@Req() req: express.Request) {
-        const refreshTokenString = req.cookies.get('refreshToken');
+        const refreshTokenString = req.cookies['refreshToken'];
         await this.authService.logout(refreshTokenString);
     }
 }
