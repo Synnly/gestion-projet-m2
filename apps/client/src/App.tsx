@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import './App.css';
 import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router';
@@ -9,6 +10,14 @@ import { AuthCompany } from './authCompany/index';
 import { CompanyLogin } from './authCompany/companyLogin';
 function App() {
     const queryClient = new QueryClient();
+=======
+import { useState } from 'react';
+import './App.css';
+import { createBrowserRouter } from 'react-router';
+import { RouterProvider } from 'react-router';
+import { CompanySignUp } from './components/CompanySignup';
+
+function App() {
     // Replace the code below with your own components
     const route = [
         {
