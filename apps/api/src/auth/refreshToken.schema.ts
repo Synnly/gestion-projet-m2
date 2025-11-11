@@ -12,19 +12,19 @@ export type RefreshTokenPayload = {
     sub: Types.ObjectId;
     /** The role of the user */
     role: Role;
-    /** Expiration date of the token */
-    exp: Date;
-    /** Date of issue of the token */
-    iat: Date;
+    /** Expiration date of the token in UNIX Timestamp */
+    exp: number;
+    /** Date of issue of the token in UNIX Timestamp */
+    iat: number;
 };
 
 export type AccessTokenPayload = {
     /** The user ID who was issued this token */
     sub: Types.ObjectId;
-    /** Expiration date of the token */
-    exp: Date;
-    /** Date of issue of the token */
-    iat: Date;
+    /** Expiration date of the token in UNIX Timestamp */
+    exp: number;
+    /** Date of issue of the token in UNIX Timestamp */
+    iat: number;
     /** Role of the user */
     role: string;
     /** Email of the user */

@@ -42,7 +42,7 @@ export class AuthService {
         // Load access token lifespan
         lifespan = this.configService.get<number>('ACCESS_TOKEN_LIFESPAN_MINUTES');
         if (!lifespan) throw new InvalidConfigurationException('Access token lifespan is not configured');
-        this.REFRESH_TOKEN_LIFESPAN = lifespan;
+        this.ACCESS_TOKEN_LIFESPAN = lifespan;
 
         // Load refresh token lifespan
         lifespan = this.configService.get<number>('REFRESH_TOKEN_LIFESPAN_MINUTES');
@@ -122,8 +122,8 @@ export class AuthService {
 
         let accessTokenPayload: AccessTokenPayload = {
             sub: userId,
-            exp: await this.computeExpiryDate(this.ACCESS_TOKEN_LIFESPAN),
-            iat: new Date(),
+            exp: (await this.computeExpiryDate(this.ACCESS_TOKEN_LIFESPAN)).getTime(),
+            iat: Date.now(),
             role: role,
             email: email,
             rti: rti,
@@ -145,17 +145,17 @@ export class AuthService {
     ): Promise<{ token: string; rti: Types.ObjectId }> {
         const refreshTokenExpiryDate = await this.computeExpiryDate(this.REFRESH_TOKEN_LIFESPAN);
 
-        const refreshToken = await new this.refreshTokenModel({
+        const refreshToken = await this.refreshTokenModel.create({
             userId: userId,
             expiresAt: refreshTokenExpiryDate,
-        }).save();
+        });
 
         let refreshTokenPayload: RefreshTokenPayload = {
             _id: refreshToken._id,
             sub: userId,
-            exp: refreshTokenExpiryDate,
+            exp: refreshTokenExpiryDate.getTime(),
             role: role,
-            iat: new Date(),
+            iat: Date.now(),
         };
 
         return {
@@ -177,7 +177,7 @@ export class AuthService {
 
         const refreshToken = this.refreshJwtService.decode(refreshTokenString) as RefreshTokenPayload;
 
-        if (refreshToken.exp < new Date()) {
+        if (new Date(refreshToken.exp) < new Date()) {
             await this.refreshTokenModel.deleteOne({ _id: refreshToken._id });
             throw new InvalidCredentialsException('Refresh token has expired');
         }
