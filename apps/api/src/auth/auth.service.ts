@@ -16,8 +16,6 @@ import { InvalidConfigurationException } from '../common/exceptions/invalidConfi
  */
 @Injectable()
 export class AuthService {
-    /** Lifespan of access tokens in minutes */
-    private readonly ACCESS_TOKEN_LIFESPAN: number;
     /** Lifespan of refresh tokens in minutes */
     private readonly REFRESH_TOKEN_LIFESPAN: number;
 
@@ -38,11 +36,6 @@ export class AuthService {
         private readonly configService: ConfigService,
     ) {
         let lifespan: number | undefined;
-
-        // Load access token lifespan
-        lifespan = this.configService.get<number>('ACCESS_TOKEN_LIFESPAN_MINUTES');
-        if (!lifespan) throw new InvalidConfigurationException('Access token lifespan is not configured');
-        this.ACCESS_TOKEN_LIFESPAN = lifespan;
 
         // Load refresh token lifespan
         lifespan = this.configService.get<number>('REFRESH_TOKEN_LIFESPAN_MINUTES');
@@ -113,7 +106,7 @@ export class AuthService {
         // Validate the refresh token existence and validity
         const refreshToken = await this.refreshTokenModel.findById(rti);
         if (!refreshToken) throw new InvalidCredentialsException('Refresh token not found');
-        if (refreshToken.userId !== userId)
+        if (!refreshToken.userId.equals(userId))
             throw new InvalidCredentialsException('Refresh token does not belong to the user');
         if (refreshToken.expiresAt < new Date()) {
             this.refreshTokenModel.deleteOne({ _id: rti });
@@ -122,8 +115,6 @@ export class AuthService {
 
         let accessTokenPayload: AccessTokenPayload = {
             sub: userId,
-            exp: (await this.computeExpiryDate(this.ACCESS_TOKEN_LIFESPAN)).getTime(),
-            iat: Date.now(),
             role: role,
             email: email,
             rti: rti,
@@ -147,15 +138,14 @@ export class AuthService {
 
         const refreshToken = await this.refreshTokenModel.create({
             userId: userId,
+            role: role,
             expiresAt: refreshTokenExpiryDate,
         });
 
         let refreshTokenPayload: RefreshTokenPayload = {
             _id: refreshToken._id,
             sub: userId,
-            exp: refreshTokenExpiryDate.getTime(),
             role: role,
-            iat: Date.now(),
         };
 
         return {
@@ -171,13 +161,24 @@ export class AuthService {
      * @throws {InvalidCredentialsException} If the refresh token is invalid or has expired.
      */
     async refreshAccessToken(refreshTokenString: string): Promise<string> {
-        if (!this.refreshJwtService.verify(refreshTokenString)) {
+        if (!refreshTokenString) {
+            throw new InvalidCredentialsException('Refresh token not provided');
+        }
+
+        try {
+            if (!this.refreshJwtService.verify(refreshTokenString)) {
+                throw new InvalidCredentialsException('Invalid refresh token');
+            }
+        } catch (error) {
             throw new InvalidCredentialsException('Invalid refresh token');
         }
 
-        const refreshToken = this.refreshJwtService.decode(refreshTokenString) as RefreshTokenPayload;
+        const decodesRefreshToken = this.refreshJwtService.decode(refreshTokenString) as RefreshTokenPayload;
+        const refreshToken = await this.refreshTokenModel.findOne({ _id: decodesRefreshToken._id });
 
-        if (new Date(refreshToken.exp) < new Date()) {
+        if (!refreshToken) throw new InvalidCredentialsException('Refresh token not found');
+
+        if (refreshToken.expiresAt < new Date()) {
             await this.refreshTokenModel.deleteOne({ _id: refreshToken._id });
             throw new InvalidCredentialsException('Refresh token has expired');
         }
@@ -186,7 +187,7 @@ export class AuthService {
         let email: string;
         switch (refreshToken.role) {
             case Role.COMPANY:
-                const company = await this.companyService.findOne(refreshToken.sub.toString());
+                const company = await this.companyService.findOne(refreshToken.userId.toString());
                 if (!company) throw new InvalidCredentialsException('Invalid refresh token');
                 userId = company._id;
                 email = company.email;
@@ -205,7 +206,15 @@ export class AuthService {
      * @throws {InvalidCredentialsException} If the refresh token is invalid.
      */
     async logout(refreshTokenString: string): Promise<void> {
-        if (!this.refreshJwtService.verify(refreshTokenString)) {
+        if (!refreshTokenString) {
+            throw new InvalidCredentialsException('Refresh token not provided');
+        }
+
+        try {
+            if (!this.refreshJwtService.verify(refreshTokenString)) {
+                throw new InvalidCredentialsException('Invalid refresh token');
+            }
+        } catch (error) {
             throw new InvalidCredentialsException('Invalid refresh token');
         }
 

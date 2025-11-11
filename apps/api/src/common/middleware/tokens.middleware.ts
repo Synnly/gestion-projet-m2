@@ -66,7 +66,7 @@ export class TokensMiddleware implements NestMiddleware {
                 }
 
                 // Verify expiration of refresh token
-                if (refreshPayload.exp < new Date()) return next();
+                if ((refreshPayload as any).expiresIn < new Date()) return next();
 
                 // Refresh the access token
                 try {
@@ -114,7 +114,7 @@ export class TokensMiddleware implements NestMiddleware {
      * @param payload The access token payload
      */
     private setUser(req: Request, payload: AccessTokenPayload): void {
-        if (!req.user) throw new Error('User does not exist');
+        if (!req.user) req.user = {};
         req.user.sub = payload.sub.toString();
         req.user.email = payload.email;
         req.user.role = payload.role;

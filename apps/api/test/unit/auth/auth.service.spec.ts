@@ -19,6 +19,7 @@ describe('AuthService', () => {
     let refreshTokenModel: {
         create: jest.Mock;
         findById: jest.Mock;
+        findOne: jest.Mock;
         deleteOne: jest.Mock;
     };
 
@@ -41,6 +42,7 @@ describe('AuthService', () => {
         refreshTokenModel = {
             create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }),
             findById: jest.fn(),
+            findOne: jest.fn(),
             deleteOne: jest.fn().mockResolvedValue(undefined),
         };
 
@@ -86,44 +88,6 @@ describe('AuthService', () => {
     });
 
     describe('constructor', () => {
-        it('should throw InvalidConfigurationException when ACCESS_TOKEN_LIFESPAN_MINUTES is not configured and service is instantiated', async () => {
-            const invalidConfigService = {
-                get: jest.fn().mockImplementation((key: string) => {
-                    if (key === 'ACCESS_TOKEN_LIFESPAN_MINUTES') return undefined;
-                    if (key === 'REFRESH_TOKEN_LIFESPAN_MINUTES') return REFRESH_LIFESPAN;
-                    return undefined;
-                }),
-            };
-
-            await expect(
-                Test.createTestingModule({
-                    providers: [
-                        AuthService,
-                        {
-                            provide: getModelToken(RefreshToken.name),
-                            useValue: refreshTokenModel,
-                        },
-                        {
-                            provide: CompanyService,
-                            useValue: mockCompanyService,
-                        },
-                        {
-                            provide: JwtService,
-                            useValue: mockJwtService,
-                        },
-                        {
-                            provide: 'REFRESH_JWT_SERVICE',
-                            useValue: mockRefreshJwtService,
-                        },
-                        {
-                            provide: ConfigService,
-                            useValue: invalidConfigService,
-                        },
-                    ],
-                }).compile(),
-            ).rejects.toThrow('Access token lifespan is not configured');
-        });
-
         it('should throw InvalidConfigurationException when REFRESH_TOKEN_LIFESPAN_MINUTES is not configured and service is instantiated', async () => {
             const invalidConfigService = {
                 get: jest.fn().mockImplementation((key: string) => {
@@ -273,6 +237,7 @@ describe('AuthService', () => {
             const saved = {
                 _id: new Types.ObjectId(),
                 userId: userId,
+                role: Role.COMPANY,
                 expiresAt: new Date(Date.now() + 1000 * 60 * REFRESH_LIFESPAN),
             };
             refreshTokenModel.create.mockResolvedValue(saved);
@@ -306,18 +271,39 @@ describe('AuthService', () => {
             await expect(service.refreshAccessToken('x')).rejects.toThrow(InvalidCredentialsException);
         });
 
-        it('should throw InvalidCredentialsException when token is expired and refreshAccessToken is called resulting in deleteOne being called', async () => {
+        it('should throw InvalidCredentialsException when refresh token is not found in database and refreshAccessToken is called', async () => {
             const payload = {
                 _id: new Types.ObjectId(),
                 sub: new Types.ObjectId(),
                 role: Role.COMPANY,
-                exp: new Date(Date.now() - 1000),
+                exp: Date.now() + 10000,
             };
             mockRefreshJwtService.verify.mockReturnValue(true);
             mockRefreshJwtService.decode.mockReturnValue(payload);
+            refreshTokenModel.findOne.mockResolvedValue(null);
 
             await expect(service.refreshAccessToken('t')).rejects.toThrow(InvalidCredentialsException);
-            expect(refreshTokenModel.deleteOne).toHaveBeenCalledWith({ _id: payload._id });
+        });
+
+        it('should throw InvalidCredentialsException when token is expired and refreshAccessToken is called resulting in deleteOne being called', async () => {
+            const tokenId = new Types.ObjectId();
+            const payload = {
+                _id: tokenId,
+                sub: new Types.ObjectId(),
+                role: Role.COMPANY,
+                exp: Date.now() - 1000,
+            };
+            mockRefreshJwtService.verify.mockReturnValue(true);
+            mockRefreshJwtService.decode.mockReturnValue(payload);
+            refreshTokenModel.findOne.mockResolvedValue({
+                _id: tokenId,
+                userId: payload.sub,
+                role: Role.COMPANY,
+                expiresAt: new Date(Date.now() - 1000),
+            });
+
+            await expect(service.refreshAccessToken('t')).rejects.toThrow(InvalidCredentialsException);
+            expect(refreshTokenModel.deleteOne).toHaveBeenCalledWith({ _id: tokenId });
         });
 
         it('should throw InvalidCredentialsException when company is not found and refreshAccessToken is called', async () => {
@@ -325,10 +311,16 @@ describe('AuthService', () => {
                 _id: new Types.ObjectId(),
                 sub: new Types.ObjectId(),
                 role: Role.COMPANY,
-                exp: new Date(Date.now() + 10000),
+                exp: Date.now() + 10000,
             };
             mockRefreshJwtService.verify.mockReturnValue(true);
             mockRefreshJwtService.decode.mockReturnValue(payload);
+            refreshTokenModel.findOne.mockResolvedValue({
+                _id: payload._id,
+                userId: payload.sub,
+                role: Role.COMPANY,
+                expiresAt: new Date(Date.now() + 10000),
+            });
             mockCompanyService.findOne.mockResolvedValue(null);
 
             await expect(service.refreshAccessToken('t')).rejects.toThrow(InvalidCredentialsException);
@@ -338,25 +330,38 @@ describe('AuthService', () => {
             const payload = {
                 _id: new Types.ObjectId(),
                 sub: new Types.ObjectId(),
-                role: 'INEXISTENT_ROLE' as Role,
-                exp: new Date(Date.now() + 10000),
+                role: Role.STUDENT,
+                exp: Date.now() + 10000,
             };
             mockRefreshJwtService.verify.mockReturnValue(true);
             mockRefreshJwtService.decode.mockReturnValue(payload);
+            refreshTokenModel.findOne.mockResolvedValue({
+                _id: payload._id,
+                userId: payload.sub,
+                role: Role.STUDENT,
+                expiresAt: new Date(Date.now() + 10000),
+            });
 
             await expect(service.refreshAccessToken('t')).rejects.toThrow(InvalidCredentialsException);
         });
 
         it('should return new access token when all data is valid and refreshAccessToken is called', async () => {
             const companyId = new Types.ObjectId();
+            const tokenId = new Types.ObjectId();
             const payload = {
-                _id: new Types.ObjectId(),
+                _id: tokenId,
                 sub: companyId,
                 role: Role.COMPANY,
-                exp: new Date(Date.now() + 10000),
+                exp: Date.now() + 10000,
             } as any;
             mockRefreshJwtService.verify.mockReturnValue(true);
             mockRefreshJwtService.decode.mockReturnValue(payload);
+            refreshTokenModel.findOne.mockResolvedValue({
+                _id: tokenId,
+                userId: companyId,
+                role: Role.COMPANY,
+                expiresAt: new Date(Date.now() + 10000),
+            });
             mockCompanyService.findOne.mockResolvedValue({ _id: companyId, email: 'c@test' });
 
             jest.spyOn<any, any>(service as any, 'generateAccessToken').mockResolvedValue('new-access');
