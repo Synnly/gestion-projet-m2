@@ -7,6 +7,6 @@ export type companyFormLogin = {
 };
 
 export const companyFormLoginSchema = z.object({
-    email: z.string().min(1, { message: 'Email is required' }).email({ message: 'Email invalide' }),
+    email: z.string().min(1, { message: "L'email est requis" }).email({ message: 'Email invalide' }),
     password: passwordSchema,
 });

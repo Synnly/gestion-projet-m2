@@ -18,7 +18,7 @@ export const CompanyLoginForm = () => {
         resolver: zodResolver(companyFormLoginSchema) as Resolver<companyFormLogin>,
         mode: 'onSubmit',
     });
-    const setUser = userStore((state) => state.setUser);
+    const setUser = userStore((state) => state.set);
     const API_URL = import.meta.env.VITE_API_URL;
     const { mutateAsync, isPending, isError, error, reset } = useMutation({
         mutationFn: async (data: companyFormLogin) => {
@@ -26,12 +26,12 @@ export const CompanyLoginForm = () => {
                 method: 'POST',
                 body: JSON.stringify(data),
             });
-            return res;
+            return res.text();
         },
     });
 
-    const onSubmit = (data: companyFormLogin) => {
-        const accessToken = mutateAsync(data);
+    const onSubmit = async (data: companyFormLogin): Promise<void> => {
+        const accessToken = await mutateAsync(data);
         setUser(accessToken, 'COMPANY', false);
     };
     return (
@@ -46,22 +46,11 @@ export const CompanyLoginForm = () => {
         >
             <FormInput
                 label="Email"
-                register={register('email')}
+                register={register('email', { required: true })}
                 error={errors.email}
-                type="email"
-                onChange={async () => {
-                    await trigger('email');
-                }}
+                type="text"
             />
-            <FormInput
-                label="mot de passe"
-                register={register('password')}
-                error={errors.password}
-                type="password"
-                onChange={async () => {
-                    await trigger('password');
-                }}
-            />
+            <FormInput label="mot de passe" register={register('password')} error={errors.password} type="password" />
             <FormSubmit
                 isPending={isPending}
                 isError={isError}

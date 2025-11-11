@@ -3,11 +3,7 @@ import { userStore } from '../store/userStore';
 import { Outlet } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Navigate } from 'react-router-dom';
-export type userContext = {
-    access: string;
-    role: string;
-    isVerified: boolean;
-};
+import { type userContext } from './type';
 
 /**
  * @description Function which refresh user session.
