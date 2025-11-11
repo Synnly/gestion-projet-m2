@@ -66,7 +66,7 @@ export class TokensMiddleware implements NestMiddleware {
                 }
 
                 // Verify expiration of refresh token
-                if ((refreshPayload as any).expiresAt < new Date()) return next();
+                if (refreshPayload.expiresAt! < Date.now()) return next();
 
                 // Refresh the access token
                 try {

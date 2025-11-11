@@ -12,6 +12,8 @@ export type RefreshTokenPayload = {
     sub: Types.ObjectId;
     /** The role of the user */
     role: Role;
+    /** Expiration time as a Unix timestamp (in seconds) */
+    expiresAt?: number;
 };
 
 export type AccessTokenPayload = {
@@ -23,6 +25,8 @@ export type AccessTokenPayload = {
     email: string;
     /** The refresh token ID associated with this access token */
     rti: Types.ObjectId;
+    /** Expiration time as a Unix timestamp (in seconds) */
+    expiresAt?: number;
 };
 
 /**

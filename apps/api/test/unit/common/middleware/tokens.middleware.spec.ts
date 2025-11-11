@@ -38,9 +38,9 @@ describe('TokensMiddleware', () => {
         ...overrides,
     });
 
-    const createRefreshPayload = (expiresIn = Date.now() + 10000) => ({
+    const createRefreshPayload = (expiresAt = Date.now() + 10000) => ({
         ...createValidPayload(),
-        expiresIn: new Date(expiresIn),
+        expiresAt: new Date(expiresAt),
     });
 
     const createTestModule = async (configOverrides?: Partial<ConfigService>) => {
