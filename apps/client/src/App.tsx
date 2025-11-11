@@ -1,10 +1,12 @@
 import './App.css';
 import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router';
-import { CompanySignUp } from './companySignup';
+import { CompanySignUp } from './authCompany/companySignup';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthRoutes } from './authRoutes/index'; 
-import { CompanyRoute } from './authRoutes/companyRoute';
+import { AuthRoutes } from './authRoutes/index';
+import { ProtectedRouteByRole } from './authRoutes/protectedRouteByRole';
+import { AuthCompany } from './authCompany/index';
+import { CompanyLogin } from './authCompany/companyLogin';
 function App() {
     const queryClient = new QueryClient();
     // Replace the code below with your own components
@@ -14,21 +16,26 @@ function App() {
             element: <div>Hello World</div>,
         },
         {
-            path: '/company/signup',
-            element: <CompanySignUp />,
-        },
-        {
-            path: '/signin',
-            element: <h1>Sign Up Page</h1>,
-        },
-        {
-            element:<AuthRoutes />,
-            children:[
+            element: <AuthCompany />,
+            children: [
                 {
-                    element:<CompanyRoute />
-                }
-            ]
-        }
+                    path: '/company/signup',
+                    element: <CompanySignUp />,
+                },
+                {
+                    path: '/company/signin',
+                    element: <CompanyLogin />,
+                },
+            ],
+        },
+        {
+            element: <AuthRoutes />,
+            children: [
+                {
+                    element: <ProtectedRouteByRole allowedRoles={['COMPANY']} />,
+                },
+            ],
+        },
     ];
     const router = createBrowserRouter(route);
     return (
