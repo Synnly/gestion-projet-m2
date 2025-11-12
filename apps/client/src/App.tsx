@@ -36,7 +36,12 @@ function App() {
                 {
                     path: '/company',
                     element: <ProtectedRouteByRole allowedRoles={['COMPANY']} />,
-                    children: [{ element: <VerifiedRoute /> }],
+                    children: [
+                        {
+                            element: <VerifiedRoute />,
+                            children: [],
+                        },
+                    ],
                 },
             ],
         },

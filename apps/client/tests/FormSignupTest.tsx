@@ -76,4 +76,159 @@ describe('Test of FormSignupComponent', () => {
             expect(setMock).toHaveBeenCalledWith(42);
         });
     });
+
+    it('should display errors when password is not strong enough', async () => {
+        render(<SignupForm askUserConfirmation={askUserConfirmationMock} />);
+        const form = screen.getByRole('form');
+        fireEvent.submit(form);
+
+        fireEvent.change(screen.getByLabelText(/email*/i), {
+            target: { value: 'test@mail.com' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/mot de passe/i), {
+            target: { value: '12345678' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/confirmer le mot de passe/i), {
+            target: { value: '12345678' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/nom de l'entreprise*/i), {
+            target: { value: 'MaBoite' },
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText(/mot de passe doit contenir/i)).toBeGreaterThan(0);
+            expect(askUserConfirmationMock).not.toHaveBeenCalled();
+            expect(mutateAsyncMock).not.toHaveBeenCalled();
+            expect(setMock).not.toHaveBeenCalled();
+        });
+    });
+
+    it('should display error when passwords do not match', async () => {
+        render(<SignupForm askUserConfirmation={askUserConfirmationMock} />);
+        const form = screen.getByRole('form');
+        fireEvent.submit(form);
+
+        fireEvent.change(screen.getByLabelText(/email*/i), {
+            target: { value: 'test@mail.com' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/mot de passe/i), {
+            target: { value: 'Pass123!' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/confirmer le mot de passe/i), {
+            target: { value: 'Pass1234!' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/nom de l'entreprise/i), {
+            target: { value: 'MaBoite' },
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText(/Les mots de passe ne correspondent pas/i)).toBeGreaterThan(0);
+            expect(askUserConfirmationMock).not.toHaveBeenCalled();
+            expect(mutateAsyncMock).not.toHaveBeenCalled();
+            expect(setMock).not.toHaveBeenCalled();
+        });
+    });
+
+    it('should display when error if siretNumber is not a number', async () => {
+        render(<SignupForm askUserConfirmation={askUserConfirmationMock} />);
+        const form = screen.getByRole('form');
+        fireEvent.submit(form);
+
+        fireEvent.change(screen.getByLabelText(/email*/i), {
+            target: { value: 'test@mail.com' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/mot de passe/i), {
+            target: { value: 'Pass123!' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/confirmer le mot de passe/i), {
+            target: { value: 'Pass123!' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/nom de l'entreprise/i), {
+            target: { value: 'MaBoite' },
+        });
+
+        fireEvent.change(screen.getByLabelText('Numérot SIRET (14 chiffres)'), {
+            target: { value: 'abcdefghijklmn' },
+        });
+        await waitFor(() => {
+            expect(screen.getByText(/Le numéro siret doit être un nombre/i)).toBeGreaterThan(0);
+            expect(askUserConfirmationMock).not.toHaveBeenCalled();
+            expect(mutateAsyncMock).not.toHaveBeenCalled();
+            expect(setMock).not.toHaveBeenCalled();
+        });
+    });
+    it('should display when error if siretNumber has not length of 14', async () => {
+        render(<SignupForm askUserConfirmation={askUserConfirmationMock} />);
+        const form = screen.getByRole('form');
+        fireEvent.submit(form);
+
+        fireEvent.change(screen.getByLabelText(/email*/i), {
+            target: { value: 'test@mail.com' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/mot de passe/i), {
+            target: { value: 'Pass123!' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/confirmer le mot de passe/i), {
+            target: { value: 'Pass123!' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/nom de l'entreprise/i), {
+            target: { value: 'MaBoite' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/Numérot SIRET/i), {
+            target: { value: '123456789101112' },
+        });
+        await waitFor(() => {
+            expect(
+                screen.getByText(/le siret n'est pas au bon format, il doit être un nombre de 14 caractères/i),
+            ).toBeGreaterThan(0);
+            expect(askUserConfirmationMock).not.toHaveBeenCalled();
+            expect(mutateAsyncMock).not.toHaveBeenCalled();
+            expect(setMock).not.toHaveBeenCalled();
+        });
+    });
+
+    it('should display when error streetNumber is not a number', async () => {
+        render(<SignupForm askUserConfirmation={askUserConfirmationMock} />);
+        const form = screen.getByRole('form');
+        fireEvent.submit(form);
+
+        fireEvent.change(screen.getByLabelText(/email*/i), {
+            target: { value: 'test@mail.com' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/mot de passe/i), {
+            target: { value: 'Pass123!' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/confirmer le mot de passe/i), {
+            target: { value: 'Pass123!' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/nom de l'entreprise/i), {
+            target: { value: 'MaBoite' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/numéro de rue/), {
+            target: { value: 'abcdefghijklmn' },
+        });
+        await waitFor(() => {
+            expect(screen.getByText(/Le numéro de rue doit être un nombre/i)).toBeGreaterThan(0);
+            expect(askUserConfirmationMock).not.toHaveBeenCalled();
+            expect(mutateAsyncMock).not.toHaveBeenCalled();
+            expect(setMock).not.toHaveBeenCalled();
+        });
+    });
 });

@@ -807,7 +807,10 @@ export const companyFormSignUpSchema = z
         // is a optional string of 14 characters
         siretNumber: z.preprocess(
             (val) => (val === '' ? undefined : val),
-            z.string().length(14, { message: "le siret n'est pas au bon format" }).optional(),
+            z.string().length(14, { message: "le siret n'est pas au bon format, il doit être un nombre de 14 caractères"})
+            .refine((val) => !isNaN(Number(val)), { message: 'Le numéro siret doit être un nombre' })
+            .optional(),
+
         ),
         // is required
         name: z.string().min(1, { message: "Le nom de l'entreprise est requis" }),

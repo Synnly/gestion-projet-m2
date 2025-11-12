@@ -94,6 +94,7 @@ export const SignupForm = ({ askUserConfirmation }: SignupFormProps) => {
                     url: `${API_URL}/api/auth/login`,
                     data: { email: data.email, password: data.password, role: 'COMPANY' },
                 });
+
                 const accessToken = await loginRes.text();
                 setUser(accessToken, 'COMPANY', false);
             }
@@ -198,7 +199,7 @@ export const SignupForm = ({ askUserConfirmation }: SignupFormProps) => {
                 <div className="flex flex-row gap-1">
                     <div className="flex flex-col w-1/2">
                         <FormInput
-                            label="Numero de rue"
+                            label="Numéro de rue"
                             register={register('streetNumber')}
                             className="border-1 rounded-lg p-2"
                             error={errors.streetNumber}

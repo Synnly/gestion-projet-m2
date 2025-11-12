@@ -18,8 +18,12 @@ export const CustomSelect = <T extends readonly unknown[]>({
 }: CustomSelectProps<T>) => {
     return (
         <>
-            {label && <label className="font-bold text-sm">{label}</label>}
-            <select className={className} {...rest} defaultValue="">
+            {label && (
+                <label className="font-bold text-sm" htmlFor={label}>
+                    {label}
+                </label>
+            )}
+            <select className={className} {...rest} defaultValue="" name={label}>
                 <option value="" disabled>
                     {defaultText}
                 </option>

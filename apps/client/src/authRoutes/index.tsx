@@ -48,8 +48,9 @@ export const AuthRoutes = () => {
     }
 
     if (user && isError) {
+        const to = `/${user.role.toLowerCase()}/signin`;
         logout();
-        return <Navigate to="/" replace />;
+        return <Navigate to={to} replace />;
     }
 
     if (data) {
