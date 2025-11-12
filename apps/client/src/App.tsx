@@ -7,6 +7,7 @@ import { AuthRoutes } from './authRoutes/index';
 import { ProtectedRouteByRole } from './authRoutes/protectedRouteByRole';
 import { AuthCompany } from './authCompany/index';
 import { CompanyLogin } from './authCompany/companyLogin';
+import { VerifiedRoute } from './authRoutes/protectedRouteByRole/verifiedRoute';
 
 function App() {
     const queryClient = new QueryClient();
@@ -33,7 +34,9 @@ function App() {
             element: <AuthRoutes />,
             children: [
                 {
+                    path: '/company',
                     element: <ProtectedRouteByRole allowedRoles={['COMPANY']} />,
+                    children: [{ element: <VerifiedRoute /> }],
                 },
             ],
         },

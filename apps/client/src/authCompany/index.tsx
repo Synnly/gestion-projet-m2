@@ -1,7 +1,13 @@
-import { Outlet } from 'react-router';
+import { Outlet, useNavigate } from 'react-router';
 import signupImage from '../../assets/signup-image.avif';
+import { userStore } from '../store/userStore';
 
 export const AuthCompany = () => {
+    const user = userStore((state) => state.user);
+    const navigate = useNavigate();
+    if (user) {
+        navigate('/company/dashboard');
+    }
     return (
         <div className="flex flex-col-reverse xl:flex-row w-full min-h-screen flex-grow">
             <div className="flex-1 bg-neutral-50  xl:border-r-2 xl:px-28 flex flex-col p-4 min-h-full justify-center sm:pt-8 xl:pt-5">
