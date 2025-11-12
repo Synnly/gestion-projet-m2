@@ -23,13 +23,11 @@ export const useAuthenticatedFetch = () => {
         if (res.status === 401) {
             try {
                 await refreshAccessToken();
-                // ✅ Retente la requête après refresh réussi
                 res = await fetch(`${API_URL}${url}`, {
                     ...options,
                     credentials: 'include',
                 });
             } catch (err) {
-                // ❌ Si le refresh échoue, on peut rediriger vers le login
                 throw new Error('Session expirée, veuillez vous reconnecter');
             }
         }
