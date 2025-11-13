@@ -1,21 +1,14 @@
-import { IsString, IsEmail, IsOptional, IsEnum, IsStrongPassword, IsNotEmpty, Matches, Length } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsStrongPassword, IsNotEmpty, Matches, Length } from 'class-validator';
 import { StructureType, LegalStatus } from '../company.schema';
 import { NafCode } from '../naf-codes.enum';
+import { CreateUserDto } from '../../user/dto/create-user.dto';
 
 /**
  * Data Transfer Object for creating a new company
- * Contains all required and optional fields with validation rules
+ * Extends CreateUserDto to inherit auth fields (email/password)
+ * Service must force role = Role.COMPANY when creating
  */
-export class CreateCompanyDto {
-    /** Email address of the company (must be valid email format) */
-    @IsEmail()
-    email: string;
-
-    /** Password (must be at least 8 characters with uppercase, lowercase, number, and symbol) */
-    @IsStrongPassword({ minLength: 8, minUppercase: 1, minLowercase: 1, minNumbers: 1, minSymbols: 1 })
-    @IsNotEmpty()
-    password: string;
-
+export class CreateCompanyDto extends CreateUserDto {
     /** Name of the company */
     @IsString()
     @IsNotEmpty()
@@ -67,11 +60,13 @@ export class CreateCompanyDto {
     @IsString()
     country?: string;
 
-    /**
-     * Constructs a CreateCompanyDto instance
-     * @param partial Partial company data to initialize the DTO
-     */
+    /** Optional logo URL or path for the company */
+    @IsOptional()
+    @IsString()
+    logo?: string;
+
     constructor(partial: Partial<CreateCompanyDto>) {
+        super();
         Object.assign(this, partial);
     }
 }

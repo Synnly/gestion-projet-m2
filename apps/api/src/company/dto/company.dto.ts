@@ -46,6 +46,9 @@ export class CompanyDto {
     /** Whether the company account is validated */
     isValid?: boolean;
 
+     /**logo URL or path for the company */
+    logo?: string;
+
     /**
      * Constructs a CompanyDto instance
      * @param company Partial company data to initialize the DTO
