@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsStrongPassword, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsStrongPassword } from 'class-validator';
 
 /**
  * Data Transfer Object for user authentication
