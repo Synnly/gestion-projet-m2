@@ -326,7 +326,7 @@ describe('Company Integration Tests', () => {
 
             await companyModel.create([
                 { role: Role.COMPANY, email: 'company1@test.com', password: hashed1, name: 'Company 1', isValid: false },
-                { email: 'company2@test.com', password: hashed2, name: 'Company 2', isValid: true },
+                { role: Role.COMPANY, email: 'company2@test.com', password: hashed2, name: 'Company 2', isValid: true },
             ]);
 
             const res = await request(app.getHttpServer()).get('/api/companies').expect(200);
