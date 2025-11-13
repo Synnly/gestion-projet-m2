@@ -38,6 +38,7 @@ export const LegalStatus = {
 };
 export type LegalStatus = (typeof LegalStatus)[keyof typeof LegalStatus];
 
+
 // Type inferred from Zod schema for company sign-up form
 export type companyFormSignUp = z.infer<typeof companyFormSignUpSchema>; // preprocess will transform empty strings to undefined for optional fields
 
@@ -806,7 +807,7 @@ export const companyFormSignUpSchema = z
         repeatPassword: z.string(),
         // is a optional string of 14 characters
         siretNumber: z.preprocess(
-            (val) => (val === '' ? undefined : val),
+            (val) => (typeof val === "string" && val.trim() === '' ? undefined : val),
             z.string().length(14, { message: "le siret n'est pas au bon format, il doit être un nombre de 14 caractères"})
             .refine((val) => !isNaN(Number(val)), { message: 'Le numéro siret doit être un nombre' })
             .optional(),
@@ -816,47 +817,62 @@ export const companyFormSignUpSchema = z
         name: z.string().min(1, { message: "Le nom de l'entreprise est requis" }),
         // value is object with valid code
         nafCode: z
-            .preprocess((val) => (val === '' ? undefined : val), z.enum(Object.values(nafCode)).optional())
+            .preprocess((val) => (typeof val === "string" && val.trim() === '' ? undefined : val), z.enum(Object.values(nafCode)).optional())
             .refine((val) => !val || Object.values(nafCode).includes(val), {
                 message: 'Veuillez choisir un code NAF valide',
             }), //is a optional valid structured type
         structureType: z.preprocess(
-            (val) => (val === '' ? undefined : val),
+            (val) => (typeof val === "string" && val.trim() === '' ? undefined : val),
             z.enum(Object.values(StructureType), { message: 'Type de structure invalide' }).optional(),
         ),
 
         //is valid legal status
         LegalStatus: z.preprocess(
-            (val) => (val === '' ? undefined : val),
+            (val) => (typeof val === "string" && val.trim() === '' ? undefined : val),
             z.enum(Object.values(LegalStatus), { message: 'Statut légal invalide' }).optional(),
         ),
-        // is a optional string representing a number
         streetNumber: z.preprocess(
-            (val) => (val === '' ? undefined : val),
-            z
-                .string()
-                .refine((val) => !isNaN(Number(val)), { message: 'Le numéro de rue doit être un nombre' })
-                .optional(),
+            (val) => (typeof val === "string" && val.trim() === '' ? undefined : val),
+            z.string().min(1, { message: 'Le numéro de rue est requis' })
+            .regex(/^\d+[A-Za-z]?(?:[-/]\d+[A-Za-z]?)?$/, {
+                message: 'Numéro de rue invalide (ex: 12, 12B, 12-14)',
+            }).optional()
+        ), 
+        //is a optional string 
+        streetName: z.preprocess(
+            (val) => (typeof val === "string" && val.trim() === '' ? undefined : val),
+            z.string()
+            .min(1, { message: 'Le nom de rue est requis' })
+            .max(100, { message: 'Le nom de rue est trop long' })
+            .regex(/^[a-zA-ZÀ-ÖØ-öø-ÿ0-9' \-]+$/, {
+            message:'Le nom de rue contient des caractères invalides (lettres, chiffres, espaces, tirets et apostrophes autorisés)',
+            }).optional()
         ),
-        //is a optional string
-        streetName: z.preprocess((val) => (val === '' ? undefined : val), z.string().optional()),
         postalCode: z.preprocess(
-            (val) => (val === '' ? undefined : val),
+            (val) => (typeof val === "string" && val.trim() === '' ? undefined : val),
             z
                 .string()
                 .regex(/^[0-9]{5}$/, { message: 'Le code postal doit contenir 5 chiffres' })
                 .optional(),
         ),
         city: z.preprocess(
-            (val) => (val === '' ? undefined : val),
+            (val) => (typeof val === "string" && val.trim() === '' ? undefined : val),
             z.string().min(1, { message: 'La ville est requise' }).optional(),
         ),
         country: z.preprocess(
-            (val) => (val === '' ? undefined : val),
-            z.string().min(1, { message: 'Le pays est requis' }).optional(),
-        ),
+            (val) => (typeof val === "string" && val.trim() === '' ? undefined : val),
+            z.string().min(1, { message: 'Le pays est requis' }).max(100,{message:'Le nom du pays est trop long'}).optional(),
+              ),
     })
     .refine((data) => data.password === data.repeatPassword, {
         message: 'Les mots de passe ne correspondent pas',
         path: ['repeatPassword'],
     });
+
+
+
+ 
+
+ 
+
+  

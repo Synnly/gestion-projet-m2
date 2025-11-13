@@ -77,6 +77,39 @@ describe('Test of FormSignupComponent', () => {
         });
     });
 
+    it('should display modal when all required fields are filled but something is missing and data is not send if user cancel', async () => {
+        askUserConfirmationMock.mockResolvedValue(false);
+        mutateAsyncMock.mockResolvedValue({ id: 42 });
+        render(<SignupForm askUserConfirmation={askUserConfirmationMock} />);
+
+        const form = screen.getByRole('form');
+        fireEvent.submit(form);
+
+        fireEvent.change(screen.getByLabelText(/email*/i), {
+            target: { value: 'test@mail.com' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/mot de passe/i), {
+            target: { value: 'Pass123!' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/confirmer le mot de passe/i), {
+            target: { value: 'Pass123!' },
+        });
+
+        fireEvent.change(screen.getByLabelText(/nom de l'entreprise/i), {
+            target: { value: 'MaBoite' },
+        });
+
+        fireEvent.submit(screen.getByRole('form'));
+
+        await waitFor(() => {
+            expect(askUserConfirmationMock).toHaveBeenCalled();
+            expect(mutateAsyncMock).not.toHaveBeenCalled();
+            expect(setMock).not.toHaveBeenCalledWith(42);
+        });
+    });
+
     it('should display errors when password is not strong enough', async () => {
         render(<SignupForm askUserConfirmation={askUserConfirmationMock} />);
         const form = screen.getByRole('form');
@@ -200,7 +233,7 @@ describe('Test of FormSignupComponent', () => {
         });
     });
 
-    it('should display when error streetNumber is not a number', async () => {
+    it('should display when error streetNumber is invalide', async () => {
         render(<SignupForm askUserConfirmation={askUserConfirmationMock} />);
         const form = screen.getByRole('form');
         fireEvent.submit(form);
@@ -222,7 +255,7 @@ describe('Test of FormSignupComponent', () => {
         });
 
         fireEvent.change(screen.getByLabelText(/numéro de rue/), {
-            target: { value: 'abcdefghijklmn' },
+            target: { value: '12@@' },
         });
         await waitFor(() => {
             expect(screen.getByText(/Le numéro de rue doit être un nombre/i)).toBeGreaterThan(0);
