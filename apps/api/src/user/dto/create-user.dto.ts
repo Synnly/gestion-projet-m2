@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, MinLength, IsOptional, IsEnum, IsStrongPassword } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsEnum, IsStrongPassword } from 'class-validator';
 import { Role } from '../../common/roles/roles.enum';
 
 /**
