@@ -913,8 +913,8 @@ describe('Company Integration Tests', () => {
 
             await companyModel.create([
                 { role: Role.COMPANY, email: 'first@test.com', password: hashed, name: 'First Company', isValid: false },
-                { email: 'second@test.com', password: hashed, name: 'Second Company', isValid: false },
-                { email: 'third@test.com', password: hashed, name: 'Third Company', isValid: false },
+                { role: Role.COMPANY, email: 'second@test.com', password: hashed, name: 'Second Company', isValid: false },
+                { role: Role.COMPANY, email: 'third@test.com', password: hashed, name: 'Third Company', isValid: false },
             ]);
 
             const res = await request(app.getHttpServer()).get('/api/companies').expect(200);
