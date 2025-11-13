@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsStrongPassword, IsNotEmpty, Matches, Length } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsNotEmpty, Matches, Length } from 'class-validator';
 import { StructureType, LegalStatus } from '../company.schema';
 import { NafCode } from '../naf-codes.enum';
 import { CreateUserDto } from '../../user/dto/create-user.dto';
