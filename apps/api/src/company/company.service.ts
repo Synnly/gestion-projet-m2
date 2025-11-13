@@ -4,7 +4,6 @@ import { Model } from 'mongoose';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { Company, CompanyDocument } from './company.schema';
-import { CompanyUserDocument } from '../user/user.schema';
 
 /**
  * Service handling business logic for company operations
