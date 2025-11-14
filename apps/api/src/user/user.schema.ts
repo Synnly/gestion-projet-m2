@@ -149,29 +149,3 @@ UserSchema.pre('save', async function (next) {
         next(error);
     }
 });
-
-/**
- * Instance method to verify a password against the stored hash
- *
- * Used during authentication to validate user credentials. Compares the provided
- * plain-text password with the hashed password stored in the database using bcrypt.
- *
- * @param candidatePassword - The plain-text password to verify (from login attempt)
- * @returns Promise resolving to true if password matches, false otherwise
- *
- * @example
- * ```typescript
- * const user = await userModel.findOne({ email: 'user@example.com' });
- * const isValid = await user.comparePassword('userInputPassword');
- * if (isValid) {
- *   // Authentication successful
- * }
- * ```
- *
- * @remarks
- * This method is added to all User documents and is available on discriminator
- * schemas (Company, Admin, Student) as well.
- */
-UserSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
-    return bcrypt.compare(candidatePassword, this.password);
-};
