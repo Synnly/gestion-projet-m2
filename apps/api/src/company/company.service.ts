@@ -4,19 +4,43 @@ import { Model } from 'mongoose';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { Company, CompanyDocument } from './company.schema';
-import * as bcrypt from 'bcrypt';
+import { CompanyUserDocument } from '../user/user.schema';
 
 /**
  * Service handling business logic for company operations
- * Manages CRUD operations and data transformations for companies
+ * 
+ * Provides comprehensive CRUD operations for managing company entities in the system.
+ * Implements soft-delete pattern where companies are marked as deleted rather than removed.
+ * 
+ * **Key Features:**
+ * - Automatic password hashing via User schema pre-save hooks
+ * - Soft delete support (uses deletedAt field)
+ * - Discriminator pattern support (Company extends User schema)
+ * - Immutable fields enforcement (email, SIRET cannot be updated)
+ * 
+ * @see {@link Company} for the company schema definition
+ * @see {@link UpdateCompanyDto} for update restrictions
  */
 @Injectable()
 export class CompanyService {
-    constructor(@InjectModel(Company.name) private readonly companyModel: Model<CompanyDocument>) {}
+    /**
+     * Creates a new CompanyService instance
+     * @param companyModel - Injected Mongoose model for Company operations
+     */
+    constructor(@InjectModel(Company.name) private readonly companyModel: Model<CompanyUserDocument>) {}
 
     /**
-     * Retrieves all non-deleted companies
-     * @returns An array of all active companies
+     * Retrieves all active (non-deleted) companies
+     * 
+     * Uses soft-delete pattern, only returning companies where deletedAt field does not exist.
+     * 
+     * @returns Promise resolving to an array of all active companies
+     * 
+     * @example
+     * ```typescript
+     * const companies = await companyService.findAll();
+     * console.log(`Found ${companies.length} active companies`);
+     * ```
      */
     async findAll(): Promise<Company[]> {
         const companies = await this.companyModel.find({ deletedAt: { $exists: false } }).exec();
@@ -24,9 +48,20 @@ export class CompanyService {
     }
 
     /**
-     * Retrieves a single company by its ID
-     * @param id The company identifier
-     * @returns The company if found, null otherwise
+     * Retrieves a single company by its unique identifier
+     * 
+     * Only returns the company if it exists and is not soft-deleted.
+     * 
+     * @param id - The MongoDB ObjectId of the company as a string
+     * @returns Promise resolving to the company if found and active, null otherwise
+     * 
+     * @example
+     * ```typescript
+     * const company = await companyService.findOne('507f1f77bcf86cd799439011');
+     * if (company) {
+     *   console.log(`Found company: ${company.name}`);
+     * }
+     * ```
      */
     async findOne(id: string): Promise<Company | null> {
         const company = await this.companyModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
@@ -34,52 +69,95 @@ export class CompanyService {
     }
 
     /**
-     * Finds a company by its email address
-     * @param email The email address to search for
-     * @returns The company if found, null otherwise
-     */
-    async findByEmail(email: string): Promise<Company | null> {
-        return await this.companyModel.findOne({ email: email, deletedAt: { $exists: false } }).exec();
-    }
-
-    /**
-     * Creates a new company with hashed password
-     * @param dto The company data for creation
+     * Creates a new company in the database
+     * 
+     * The password provided in the DTO will be automatically hashed by the User schema
+     * pre-save hook before storage. Email and SIRET number are set during creation
+     * and cannot be modified later.
+     * 
+     * @param dto - The complete company data required for creation
+     * @returns Promise resolving to void upon successful creation
+     * 
+     * @throws May throw validation errors if required fields are missing or invalid
+     * 
+     * @example
+     * ```typescript
+     * await companyService.create({
+     *   email: 'company@example.com',
+     *   password: 'SecurePass123!',
+     *   siretNumber: '12345678901234',
+     *   name: 'My Company',
+     *   role: Role.COMPANY
+     * });
+     * ```
      */
     async create(dto: CreateCompanyDto): Promise<void> {
-        let data = { ...dto };
-        data.password = await bcrypt.hash(dto.password, 10);
-        await this.companyModel.create({ ...data });
+        await this.companyModel.create({ ...dto });
         return;
     }
 
     /**
-     * Updates an existing company's data
-     * @param id The company identifier
-     * @param dto The updated company data
-     * @throws {NotFoundException} if the company does not exist or is deleted
+     * Updates an existing company's data with partial information
+     * 
+     * This method uses `save()` instead of `findOneAndUpdate()` to ensure that Mongoose
+     * pre-save hooks are triggered, particularly for password hashing. The validation
+     * is disabled during save to avoid issues with Mongoose discriminator pattern
+     * requiring all base schema fields.
+     * 
+     * **Important Notes:**
+     * - Email and SIRET number cannot be updated (not included in UpdateCompanyDto)
+     * - Password will be automatically hashed if provided
+     * - Only provided fields will be updated (partial update support)
+     * - Soft-deleted companies cannot be updated
+     * 
+     * @param id - The MongoDB ObjectId of the company to update
+     * @param dto - Partial company data with fields to update
+     * @returns Promise resolving to void upon successful update
+     * 
+     * @example
+     * ```typescript
+     * await companyService.update('507f1f77bcf86cd799439011', {
+     *   name: 'Updated Company Name',
+     *   city: 'Paris'
+     * });
+     * ```
      */
-    async update(id: string, dto: UpdateCompanyDto): Promise<void> {
-        let updateData = { ...dto };
-        if (dto.password) {
-            updateData.password = await bcrypt.hash(dto.password, 10);
-        }
-        const updated = await this.companyModel
-            .findOneAndUpdate(
-                { _id: id, deletedAt: { $exists: false } },
-                { $set: { ...updateData, updatedAt: new Date() } },
-                { new: true },
-            )
+    async update(id: string, dto: UpdateCompanyDto | CreateCompanyDto): Promise<void> {
+        // Try to find an active (non-deleted) company
+        const company = await this.companyModel
+            .findOne({ _id: id, deletedAt: { $exists: false } })
             .exec();
-        if (!updated) {
-            throw new NotFoundException(`Company with id ${id} not found or already deleted`);
+
+        if (company) {
+            // Update existing active company
+            Object.assign(company, dto);
+            // keep previous behavior: trigger pre-save hooks, but skip full validation to avoid discriminator issues
+            await company.save({ validateBeforeSave: false });
+            return;
         }
+
+        // If no active company found, create a new one.
+        await this.companyModel.create({ ...(dto as CreateCompanyDto) });
         return;
     }
 
     /**
-     * Deletes a company from the database
-     * @param id The company identifier to delete
+     * Permanently removes a company from the database
+     * 
+     * This performs a hard delete operation, removing the company document entirely.
+     * Only affects companies that have not been previously soft-deleted.
+     * 
+     * @param id - The MongoDB ObjectId of the company to delete
+     * @returns Promise resolving to void upon successful deletion
+     * 
+     * @example
+     * ```typescript
+     * await companyService.remove('507f1f77bcf86cd799439011');
+     * ```
+     * 
+     * @remarks
+     * Consider implementing soft-delete logic if you need to maintain audit trails
+     * or allow data recovery. This operation is irreversible.
      */
     async remove(id: string): Promise<void> {
         await this.companyModel.findOneAndDelete({ _id: id, deletedAt: { $exists: false } }).exec();

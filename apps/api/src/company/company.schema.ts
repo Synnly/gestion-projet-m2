@@ -60,14 +60,6 @@ export class Company {
     /** Unique MongoDB identifier */
     _id: Types.ObjectId;
 
-    /** Email address of the company (unique, stored in lowercase with trimmed whitespace) */
-    @Prop({ required: true, unique: true, lowercase: true, trim: true })
-    email: string;
-
-    /** Hashed password for authentication */
-    @Prop({ required: true })
-    password: string;
-
     /** Name of the company (trimmed whitespace) */
     @Prop({ required: true, trim: true })
     name: string;
@@ -107,6 +99,10 @@ export class Company {
     /** Country where the company is located */
     @Prop({ required: false, trim: true })
     country?: string;
+
+    /** Optional logo URL or path for the company */
+    @Prop({ required: false, trim: true })
+    logo?: string;
 
     /** Whether the company account has been validated by an administrator */
     @Prop({ default: false })
