@@ -71,7 +71,8 @@ describe('Company Integration Tests', () => {
             })
             .compile();
 
-        app = moduleFixture.createNestApplication();
+    // Disable Nest logger during tests to avoid noisy output
+    app = moduleFixture.createNestApplication({ logger: false });
         app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
         await app.init();
 
