@@ -6,5 +6,6 @@ import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 export class SendCustomTemplateDto {
     @IsString()
     @IsNotEmpty({ message: 'Template name is required' })
+    @MaxLength(50)
     templateName: string;
 }

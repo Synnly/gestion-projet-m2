@@ -11,7 +11,7 @@ export class MailerConfigService implements MailerOptionsFactory {
   createMailerOptions(): MailerOptions {
     const user = this.configService.get<string>('MAIL_USER');
     const pass = this.configService.get<string>('MAIL_PASS');
-    const fromName = this.configService.get<string>('MAIL_FROM_NAME') || 'No-Reply';
+    const fromName = this.configService.get<string>('MAIL_FROM_NAME');
     const fromEmail = this.configService.get<string>('MAIL_FROM_EMAIL');
 
     return {

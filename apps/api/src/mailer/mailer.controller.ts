@@ -77,25 +77,6 @@ export class MailerController {
     }
 
     /**
-     * Test email sending - DEBUG ONLY
-     * POST /mailer/test
-     * Public route - sends a simple test email without template
-     */
-    @Post('mailer/test')
-    @HttpCode(HttpStatus.OK)
-    async testEmail(@Body() dto: EmailDto) {
-        try {
-            await this.mailerService.sendTestEmail(dto.email);
-            return {
-                success: true,
-                message: 'Test email sent successfully',
-            };
-        } catch (error) {
-            throw new BadRequestException(`Failed to send test email: ${error.message}`);
-        }
-    }
-
-    /**
      * Send account verification OTP
      * POST /auth/send-verification
      * Public route - sends OTP valid for 1 hour
