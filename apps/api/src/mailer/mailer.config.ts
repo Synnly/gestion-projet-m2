@@ -19,6 +19,11 @@ export class MailerConfigService implements MailerOptionsFactory {
     const fromName = this.configService.get<string>('MAIL_FROM_NAME');
     const fromEmail = this.configService.get<string>('MAIL_FROM_EMAIL'); 
 
+    if (!user || !pass || !fromName || !fromEmail) {
+      throw new Error(
+        'Missing required email configuration: MAIL_USER, MAIL_PASS, MAIL_FROM_NAME, and MAIL_FROM_EMAIL must be set'
+      );
+    }
     return {
       transport: {
         host: 'smtp.gmail.com',
