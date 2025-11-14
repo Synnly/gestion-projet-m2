@@ -30,7 +30,7 @@ describe('MailerController (Integration)', () => {
             imports: [
                 ConfigModule.forRoot({
                     isGlobal: true,
-                    envFilePath: '.env.test',
+                    envFilePath: '.env',
                 }),
                 MongooseModule.forRoot(mongoUri),
                 MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
@@ -308,7 +308,7 @@ describe('MailerController (Integration)', () => {
                 })
                 .expect(400);
 
-            expect(response.body.message).toContain('reset password');
+            expect(response.body.message).toContain('Too many verification attempts');
         });
     });
 
