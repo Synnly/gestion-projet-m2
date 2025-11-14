@@ -17,14 +17,17 @@ import { AuthGuard } from '../common/auth/auth.guard';
 /**
  * Controller handling email operations: password reset, account verification, and custom templates
  */
-@Controller()
+@Controller('/api')
 export class MailerController {
     constructor(private readonly mailerService: MailerService) {}
 
+
     /**
-     * Request a password reset OTP
-     * POST /password/forgot
-     * Public route - sends OTP valid for 5 minutes
+     * Request a password reset OTP via email
+     * @param dto Email address of the user requesting password reset
+     * @returns Success response with confirmation message
+     * @throws {NotFoundException} If no account is found with the provided email
+     * @throws {BadRequestException} If rate limit is exceeded or email sending fails
      */
     @Post('password/forgot')
     @HttpCode(HttpStatus.OK)
@@ -46,10 +49,13 @@ export class MailerController {
         }
     }
 
+
     /**
-     * Reset password with OTP
-     * POST /password/reset
-     * Public route - verifies OTP and updates password
+     * Reset user password using OTP verification
+     * @param dto Contains email, OTP code and new password
+     * @returns Success response confirming password reset
+     * @throws {NotFoundException} If no account is found with the provided email
+     * @throws {BadRequestException} If OTP is invalid, expired, or password reset fails
      */
     @Post('password/reset')
     @HttpCode(HttpStatus.OK)
@@ -76,10 +82,13 @@ export class MailerController {
         }
     }
 
+
     /**
-     * Send account verification OTP
-     * POST /auth/send-verification
-     * Public route - sends OTP valid for 1 hour
+     * Send account verification OTP via email
+     * @param dto Email address of the user to verify
+     * @returns Success response with confirmation message
+     * @throws {NotFoundException} If no account is found with the provided email
+     * @throws {BadRequestException} If rate limit is exceeded or email sending fails
      */
     @Post('auth/send-verification')
     @HttpCode(HttpStatus.OK)
@@ -101,10 +110,13 @@ export class MailerController {
         }
     }
 
+
     /**
-     * Verify account with OTP
-     * POST /auth/verify
-     * Public route - validates OTP and marks account as verified
+     * Verify user account using OTP code
+     * @param dto Contains email and OTP code for verification
+     * @returns Success response confirming account verification
+     * @throws {NotFoundException} If no account is found with the provided email
+     * @throws {BadRequestException} If OTP is invalid, expired, or verification fails
      */
     @Post('auth/verify')
     @HttpCode(HttpStatus.OK)
@@ -126,11 +138,14 @@ export class MailerController {
         }
     }
 
+
     /**
      * Send custom template email to authenticated user
-     * POST /mailer/send-template
-     * Protected route - requires authentication
-     * Template file must exist as {templateName}.hbs in templates/
+     * @param req HTTP request containing authenticated user information
+     * @param dto Contains the template name to use for the email
+     * @returns Success response confirming email was sent
+     * @throws {BadRequestException} If user email is not found in token or email sending fails
+     * @throws {NotFoundException} If the specified template file does not exist
      */
     @Post('mailer/send-template')
     @UseGuards(AuthGuard)

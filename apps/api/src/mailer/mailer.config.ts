@@ -8,11 +8,16 @@ import * as path from 'path';
 export class MailerConfigService implements MailerOptionsFactory {
   constructor(private configService: ConfigService) {}
 
+
+  /**
+   * Create mailer options for NestJS MailerModule configuration
+   * @returns Mailer configuration object with SMTP transport and Handlebars templates
+   */
   createMailerOptions(): MailerOptions {
     const user = this.configService.get<string>('MAIL_USER');
     const pass = this.configService.get<string>('MAIL_PASS');
     const fromName = this.configService.get<string>('MAIL_FROM_NAME');
-    const fromEmail = this.configService.get<string>('MAIL_FROM_EMAIL');
+    const fromEmail = this.configService.get<string>('MAIL_FROM_EMAIL'); 
 
     return {
       transport: {

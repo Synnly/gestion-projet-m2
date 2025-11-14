@@ -19,15 +19,18 @@ export class MailerService {
     ) {}
 
     /**
-     * Generate a cryptographically secure 6-digit OTP
-     * Uses crypto.randomInt for true randomness
+     * Generate a cryptographically secure 6-digit OTP using crypto.randomInt
+     * @returns A 6-digit string OTP padded with leading zeros if necessary
      */
     private generateOtp(): string {
         return crypto.randomInt(0, 1000000).toString().padStart(6, '0');
     }
 
+
+
     /**
-     * Get the configured "from" email address and name
+     * Get the configured "from" email address and name from environment variables
+     * @returns Object containing sender name, email address, and formatted from string
      */
     private getFromAddress(): { name: string; email: string; from: string } {
         const name = this.configService.get<string>('MAIL_FROM_NAME') || 'No-Reply';
@@ -39,22 +42,36 @@ export class MailerService {
         };
     }
 
+
+
     /**
-     * Hash OTP using bcrypt before storing in database
-     * Protects OTP if database is compromised
+     * Hash OTP using bcrypt with salt before storing in database
+     * @param otp Plain text OTP to hash
+     * @returns Hashed OTP string
      */
     private async hashOtp(otp: string): Promise<string> {
         const salt = await bcrypt.genSalt(10);
         return bcrypt.hash(otp, salt);
     }
 
+
+
     /**
-     * Verify OTP against hashed value using constant-time comparison
+     * Verify plain OTP against hashed value using constant-time comparison
+     * @param plainOtp Plain text OTP to verify
+     * @param hashedOtp Hashed OTP from database
+     * @returns True if OTP matches, false otherwise
      */
     private async verifyOtp(plainOtp: string, hashedOtp: string): Promise<boolean> {
         return bcrypt.compare(plainOtp, hashedOtp);
     }
 
+
+    /**
+     * Enforce rate limiting for OTP requests to prevent spam
+     * @param user User document to check rate limits for
+     * @throws {Error} If rate limit is exceeded (more than 5 requests per hour)
+     */
     private async enforceRateLimit(user: UserDocument) {
         const now = new Date();
         const windowMs = 60 * 60 * 1000; // 1 hour window
@@ -74,10 +91,14 @@ export class MailerService {
         }
     }
 
+
+
     /**
-     * Send account verification OTP. Valid for 1 hour.
-     * Respects per-user anti-spam limits (max 5 per hour).
-     * OTP is hashed before storage for security.
+     * Send account verification OTP email to user
+     * @param email Email address of the user to send verification to
+     * @param providedOtp Optional pre-generated OTP for testing purposes
+     * @returns True if email was sent successfully
+     * @throws {Error} If user is not found or rate limit is exceeded
      */
     async sendVerificationEmail(email: string, providedOtp?: string) {
         const normalized = email.toLowerCase();
@@ -113,10 +134,14 @@ export class MailerService {
         return true;
     }
 
+
+
     /**
-     * Send password reset OTP. Valid for 5 minutes.
-     * Respects per-user anti-spam limits (max 5 per hour).
-     * OTP is hashed before storage for security.
+     * Send password reset OTP email to user
+     * @param email Email address of the user requesting password reset
+     * @param providedOtp Optional pre-generated OTP for testing purposes
+     * @returns True if email was sent successfully
+     * @throws {Error} If user is not found or rate limit is exceeded
      */
     async sendPasswordResetEmail(email: string, providedOtp?: string) {
         const normalized = email.toLowerCase();
@@ -152,8 +177,14 @@ export class MailerService {
         return true;
     }
 
+
+
     /**
-     * Send a simple information email using the info-message template.
+     * Send a simple information email using the info-message template
+     * @param email Email address of the recipient
+     * @param title Email subject and title
+     * @param message Content message to include in the email
+     * @returns True if email was sent successfully
      */
     async sendInfoEmail(email: string, title: string, message: string) {
         const normalized = email.toLowerCase();
@@ -174,10 +205,14 @@ export class MailerService {
         return true;
     }
 
+
+
     /**
-     * Send a custom template email to a user.
-     * Template file must exist in templates/ directory.
-     * Template receives only fromName in context.
+     * Send a custom template email to a user
+     * @param email Email address of the recipient
+     * @param templateName Name of the template file (without .hbs extension)
+     * @returns True if email was sent successfully
+     * @throws {Error} If template file does not exist in templates/ directory
      */
     async sendCustomTemplateEmail(email: string, templateName: string) {
         const normalized = email.toLowerCase();
@@ -196,8 +231,14 @@ export class MailerService {
         return true;
     }
 
+
+
     /**
-     * Update user password after successful OTP verification.
+     * Update user password after successful OTP verification
+     * @param email Email address of the user
+     * @param newPassword New password to set for the user
+     * @returns True if password was updated successfully
+     * @throws {Error} If user is not found
      */
     async updatePassword(email: string, newPassword: string): Promise<boolean> {
         const normalized = email.toLowerCase();
@@ -209,10 +250,14 @@ export class MailerService {
         return true;
     }
 
+
+
     /**
-     * Verify a previously issued signup OTP. Throws if invalid/expired.
-     * Implements brute-force protection with attempt counter.
-     * OTP is single-use and invalidated after successful verification.
+     * Verify a previously issued signup OTP with brute-force protection
+     * @param email Email address of the user
+     * @param otp Plain text OTP to verify
+     * @returns True if verification is successful
+     * @throws {Error} If user is not found, OTP is invalid, expired, or too many attempts
      */
     async verifySignupOtp(email: string, otp: string) {
         const normalized = email.toLowerCase();
@@ -263,10 +308,14 @@ export class MailerService {
         return true;
     }
 
+
+
     /**
-     * Verify a password reset OTP. Throws on invalid/expired.
-     * Implements brute-force protection with attempt counter.
-     * OTP is single-use and invalidated after successful verification.
+     * Verify a password reset OTP with brute-force protection
+     * @param email Email address of the user
+     * @param otp Plain text OTP to verify
+     * @returns User document if verification is successful
+     * @throws {Error} If user is not found, OTP is invalid, expired, or too many attempts
      */
     async verifyPasswordResetOtp(email: string, otp: string) {
         const normalized = email.toLowerCase();
