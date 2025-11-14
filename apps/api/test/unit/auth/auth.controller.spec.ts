@@ -3,7 +3,6 @@ import { AuthController } from '../../../src/auth/auth.controller';
 import { AuthService } from '../../../src/auth/auth.service';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from '../../../src/user/dto/login.dto';
-import { Role } from '../../../src/common/roles/roles.enum';
 import { InvalidCredentialsException } from '../../../src/common/exceptions/invalidCredentials.exception';
 import { NotFoundException } from '@nestjs/common';
 

@@ -5,7 +5,6 @@ import { MongooseModule, getModelToken } from '@nestjs/mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { ConfigModule } from '@nestjs/config';
 import { Model } from 'mongoose';
-import * as bcrypt from 'bcrypt';
 import cookieParser from 'cookie-parser';
 
 import { AuthModule } from '../../../src/auth/auth.module';

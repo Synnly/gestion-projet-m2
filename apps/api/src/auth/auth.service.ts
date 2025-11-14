@@ -61,7 +61,7 @@ export class AuthService {
 
         // Generating tokens
         const { token, rti } = await this.generateRefreshToken(user._id, user.role);
-        const accessToken = await this.generateAccessToken(user._id, user.email, user.role, rti);
+        const accessToken = await this.generateAccessToken(user._id, user.email, rti);
 
         return { access: accessToken, refresh: token };
     }
@@ -86,12 +86,7 @@ export class AuthService {
      * @returns A Promise that resolves to the generated JWT access token as a string.
      * @throws {InvalidCredentialsException} If the provided refresh token is invalid, expired or does not belong to the user.
      */
-    private async generateAccessToken(
-        userId: Types.ObjectId,
-        email: string,
-        role: Role,
-        rti: Types.ObjectId,
-    ): Promise<string> {
+    private async generateAccessToken(userId: Types.ObjectId, email: string, rti: Types.ObjectId): Promise<string> {
         // Validate the refresh token existence and validity
         const refreshToken = await this.refreshTokenModel.findById(rti);
         if (!refreshToken) throw new InvalidCredentialsException('Refresh token not found');
@@ -103,9 +98,14 @@ export class AuthService {
             throw new InvalidCredentialsException('Refresh token has expired');
         }
 
+        // Fetch the current user document to get the latest role
+        const user = await this.userModel.findById(userId);
+        if (!user) {
+            throw new InvalidCredentialsException('User not found');
+        }
         let accessTokenPayload: AccessTokenPayload = {
             sub: userId,
-            role: role,
+            role: user.role,
             email: email,
             rti: rti,
         };
@@ -174,7 +174,12 @@ export class AuthService {
         const user = await this.userModel.findById(refreshToken.userId);
         if (!user) throw new InvalidCredentialsException('User not found for the provided refresh token');
 
-        return this.generateAccessToken(user._id, user.email, user.role, refreshToken._id);
+        // Validate that the role in the refresh token matches the user's current role
+        if (refreshToken.role !== user.role) {
+            throw new InvalidCredentialsException('User role has changed since refresh token was issued');
+        }
+
+        return this.generateAccessToken(user._id, user.email, refreshToken._id);
     }
 
     /**

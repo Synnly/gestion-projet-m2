@@ -10,7 +10,7 @@ import { Role } from '../../../src/common/roles/roles.enum';
 import * as bcrypt from 'bcrypt';
 import { InvalidCredentialsException } from '../../../src/common/exceptions/invalidCredentials.exception';
 import { NotFoundException } from '@nestjs/common';
-import { User, UserSchema } from '../../../src/user/user.schema';
+import { User } from '../../../src/user/user.schema';
 
 describe('AuthService', () => {
     let service: AuthService;
@@ -146,6 +146,7 @@ describe('AuthService', () => {
         it('should return access and refresh tokens when company is found with valid credentials and login is called', async () => {
             const company = await createMockCompany();
             mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
 
             const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
             refreshTokenModel.create.mockResolvedValue(savedToken);
@@ -184,7 +185,6 @@ describe('AuthService', () => {
                 (service as any).generateAccessToken(
                     new Types.ObjectId(),
                     'email@test.com',
-                    Role.COMPANY,
                     new Types.ObjectId(),
                 ),
             ).rejects.toThrow(InvalidCredentialsException);
@@ -198,7 +198,7 @@ describe('AuthService', () => {
             refreshTokenModel.findById.mockResolvedValue(token);
 
             await expect(
-                (service as any).generateAccessToken(userId, 'email@test.com', Role.COMPANY, tokenId),
+                (service as any).generateAccessToken(userId, 'email@test.com', tokenId),
             ).rejects.toThrow(InvalidCredentialsException);
         });
 
@@ -209,7 +209,7 @@ describe('AuthService', () => {
             refreshTokenModel.findById.mockResolvedValue(expiredToken);
 
             await expect(
-                (service as any).generateAccessToken(userId, 'email@test.com', Role.COMPANY, tokenId),
+                (service as any).generateAccessToken(userId, 'email@test.com', tokenId),
             ).rejects.toThrow(InvalidCredentialsException);
             expect(refreshTokenModel.deleteOne).toHaveBeenCalledWith({ _id: tokenId });
         });
@@ -217,11 +217,11 @@ describe('AuthService', () => {
         it('should return signed access token when refresh token is valid and generateAccessToken is called', async () => {
             const userId = new Types.ObjectId();
             const tokenId = new Types.ObjectId();
-            const validToken = createMockRefreshToken(userId, 10000);
+            const validToken = createMockRefreshToken(userId);
             refreshTokenModel.findById.mockResolvedValue(validToken);
             mockJwtService.signAsync.mockResolvedValue('signed-access-token');
 
-            const result = await (service as any).generateAccessToken(userId, 'email@test.com', Role.COMPANY, tokenId);
+            const result = await (service as any).generateAccessToken(userId, 'email@test.com', tokenId);
 
             expect(result).toBe('signed-access-token');
             expect(mockJwtService.signAsync).toHaveBeenCalledWith(expect.objectContaining({ sub: userId }));
@@ -354,7 +354,7 @@ const createMockCompany = async (overrides = {}) => {
     };
 };
 
-const createMockRefreshToken = (userId: Types.ObjectId, expiresInMs: number = 10000) => {
+const createMockRefreshToken = (userId: Types.ObjectId, expiresInMs: number = 60 * 60 * 1000) => {
     return {
         _id: new Types.ObjectId(),
         userId,

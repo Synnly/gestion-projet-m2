@@ -4,7 +4,7 @@ import { UnauthorizedException } from '@nestjs/common';
  * Exception thrown when user credentials are invalid.
  */
 export class InvalidCredentialsException extends UnauthorizedException {
-    constructor(message = 'Les identifiants sont invalides') {
+    constructor(message = 'Invalid credentials') {
         super({ message, error: 'INVALID_CREDENTIALS' });
     }
 }
