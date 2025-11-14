@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from '../../../src/auth/auth.controller';
 import { AuthService } from '../../../src/auth/auth.service';
 import { ConfigService } from '@nestjs/config';
-import { LoginDto } from '../../../src/auth/dto/login.dto';
+import { LoginDto } from '../../../src/user/dto/login.dto';
 import { Role } from '../../../src/common/roles/roles.enum';
 import { InvalidCredentialsException } from '../../../src/common/exceptions/invalidCredentials.exception';
 import { NotFoundException } from '@nestjs/common';
@@ -90,7 +90,6 @@ describe('AuthController', () => {
         const VALID_LOGIN_DTO: LoginDto = {
             email: 'test@example.com',
             password: 'password123',
-            role: Role.COMPANY,
         };
 
         const MOCK_TOKENS = {
@@ -116,7 +115,7 @@ describe('AuthController', () => {
             const result = await controller.login(VALID_LOGIN_DTO, mockRes as any);
 
             expect(result).toBe('access-token-123');
-            expect(authService.login).toHaveBeenCalledWith('test@example.com', 'password123', Role.COMPANY);
+            expect(authService.login).toHaveBeenCalledWith('test@example.com', 'password123');
             expect(authService.login).toHaveBeenCalledTimes(1);
             expectCookieSettings(mockRes, 'refresh-token-456');
             expect(mockRes.cookie).toHaveBeenCalledTimes(1);
@@ -130,7 +129,7 @@ describe('AuthController', () => {
             const mockRes = createMockResponse();
 
             await expect(controller.login(loginDto, mockRes as any)).rejects.toThrow(NotFoundException);
-            expect(authService.login).toHaveBeenCalledWith('notfound@example.com', 'password123', Role.COMPANY);
+            expect(authService.login).toHaveBeenCalledWith('notfound@example.com', 'password123');
             expect(mockRes.cookie).not.toHaveBeenCalled();
         });
 
@@ -140,17 +139,8 @@ describe('AuthController', () => {
             const mockRes = createMockResponse();
 
             await expect(controller.login(loginDto, mockRes as any)).rejects.toThrow(InvalidCredentialsException);
-            expect(authService.login).toHaveBeenCalledWith('test@example.com', 'wrongpassword', Role.COMPANY);
+            expect(authService.login).toHaveBeenCalledWith('test@example.com', 'wrongpassword');
             expect(mockRes.cookie).not.toHaveBeenCalled();
-        });
-
-        it('should throw InvalidCredentialsException when invalid role is provided and login is called', async () => {
-            const loginDto: LoginDto = { ...VALID_LOGIN_DTO, role: "INEXISTENT_ROLE" as Role };
-            mockAuthService.login.mockRejectedValue(new InvalidCredentialsException('Invalid refresh token'));
-            const mockRes = createMockResponse();
-
-            await expect(controller.login(loginDto, mockRes as any)).rejects.toThrow(InvalidCredentialsException);
-            expect(authService.login).toHaveBeenCalledWith('test@example.com', 'password123', "INEXISTENT_ROLE" as Role);
         });
 
         it('should set cookie with correct maxAge when login is called', async () => {

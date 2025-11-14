@@ -70,17 +70,16 @@ describe('Auth Integration Tests', () => {
     const DEFAULT_PASSWORD = 'StrongP@ss1';
 
     const createCompany = async (email: string, password: string = DEFAULT_PASSWORD) => {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        return companyModel.create({
+        return await companyModel.create({
             email,
-            password: hashedPassword,
+            password: password,
             name: 'Test Company',
             isValid: true,
         });
     };
 
-    const loginRequest = (email: string, password: string, role: Role = Role.COMPANY) => {
-        return request(app.getHttpServer()).post('/api/auth/login').send({ email, password, role });
+    const loginRequest = (email: string, password: string) => {
+        return request(app.getHttpServer()).post('/api/auth/login').send({ email, password });
     };
 
     const extractRefreshCookie = (response: any): string => {
@@ -115,17 +114,12 @@ describe('Auth Integration Tests', () => {
 
         it('should return 404 when company email is not found and login is called', async () => {
             const res = await loginRequest('nonexistent@company.com', DEFAULT_PASSWORD).expect(404);
-            expect(res.body.message).toContain('Company with email nonexistent@company.com not found');
+            expect(res.body.message).toContain('User with email nonexistent@company.com not found');
         });
 
         it('should return 401 when password is incorrect and login is called', async () => {
             await createCompany('test@company.com', 'CorrectP@ss1');
             await loginRequest('test@company.com', 'WrongP@ss1').expect(401);
-        });
-
-        it('should return 401 when invalid role is provided and login is called', async () => {
-            await createCompany('test@company.com');
-            await loginRequest('test@company.com', DEFAULT_PASSWORD, Role.STUDENT).expect(401);
         });
 
         it('should return 400 when email is missing and login is called', async () => {
@@ -141,15 +135,6 @@ describe('Auth Integration Tests', () => {
             const res = await request(app.getHttpServer())
                 .post('/api/auth/login')
                 .send({ email: 'test@company.com', role: Role.COMPANY })
-                .expect(400);
-
-            expect(res.body.message).toBeDefined();
-        });
-
-        it('should return 400 when role is missing and login is called', async () => {
-            const res = await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({ email: 'test@company.com', password: DEFAULT_PASSWORD })
                 .expect(400);
 
             expect(res.body.message).toBeDefined();
@@ -177,15 +162,6 @@ describe('Auth Integration Tests', () => {
             const res = await request(app.getHttpServer())
                 .post('/api/auth/login')
                 .send({ email: 'test@company.com', password: '', role: Role.COMPANY })
-                .expect(400);
-
-            expect(res.body.message).toBeDefined();
-        });
-
-        it('should return 400 when role is invalid enum value and login is called', async () => {
-            const res = await request(app.getHttpServer())
-                .post('/api/auth/login')
-                .send({ email: 'test@company.com', password: DEFAULT_PASSWORD, role: 'INVALID_ROLE' })
                 .expect(400);
 
             expect(res.body.message).toBeDefined();

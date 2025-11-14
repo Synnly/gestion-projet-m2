@@ -10,6 +10,7 @@ import { Role } from '../../../src/common/roles/roles.enum';
 import * as bcrypt from 'bcrypt';
 import { InvalidCredentialsException } from '../../../src/common/exceptions/invalidCredentials.exception';
 import { NotFoundException } from '@nestjs/common';
+import { User, UserSchema } from '../../../src/user/user.schema';
 
 describe('AuthService', () => {
     let service: AuthService;
@@ -38,6 +39,11 @@ describe('AuthService', () => {
         decode: jest.fn(),
     };
 
+    const mockUserModel = {
+        findById: jest.fn(),
+        findOne: jest.fn(),
+    };
+
     beforeEach(async () => {
         refreshTokenModel = {
             create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }),
@@ -52,6 +58,10 @@ describe('AuthService', () => {
                 {
                     provide: getModelToken(RefreshToken.name),
                     useValue: refreshTokenModel,
+                },
+                {
+                    provide: getModelToken(User.name),
+                    useValue: mockUserModel,
                 },
                 {
                     provide: CompanyService,
@@ -106,6 +116,11 @@ describe('AuthService', () => {
                             useValue: refreshTokenModel,
                         },
                         {
+                            // Même mock pour le second module de test dans ce cas
+                            provide: getModelToken(User.name),
+                            useValue: mockUserModel,
+                        },
+                        {
                             provide: CompanyService,
                             useValue: mockCompanyService,
                         },
@@ -130,7 +145,7 @@ describe('AuthService', () => {
     describe('login', () => {
         it('should return access and refresh tokens when company is found with valid credentials and login is called', async () => {
             const company = await createMockCompany();
-            mockCompanyService.findByEmail.mockResolvedValue(company);
+            mockUserModel.findOne.mockResolvedValue(company);
 
             const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
             refreshTokenModel.create.mockResolvedValue(savedToken);
@@ -139,35 +154,25 @@ describe('AuthService', () => {
             mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
             mockJwtService.signAsync.mockResolvedValue('access-token');
 
-            const result = await service.login(company.email, company.plainPassword, Role.COMPANY);
+            const result = await service.login(company.email, company.plainPassword);
 
             expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
-            expect(mockCompanyService.findByEmail).toHaveBeenCalledWith(company.email);
+            expect(mockUserModel.findOne).toHaveBeenCalledWith({ email: company.email });
             expect(mockRefreshJwtService.signAsync).toHaveBeenCalled();
             expect(mockJwtService.signAsync).toHaveBeenCalled();
         });
 
         it('should throw NotFoundException when company not found and login is called', async () => {
-            mockCompanyService.findByEmail.mockResolvedValue(null);
+            mockUserModel.findOne.mockResolvedValue(null);
 
-            await expect(service.login('notfound@test.com', 'password', Role.COMPANY)).rejects.toThrow(
-                NotFoundException,
-            );
+            await expect(service.login('notfound@test.com', 'password')).rejects.toThrow(NotFoundException);
         });
 
         it('should throw InvalidCredentialsException when password mismatches and login is called', async () => {
             const company = await createMockCompany();
-            mockCompanyService.findByEmail.mockResolvedValue(company);
+            mockUserModel.findOne.mockResolvedValue(company);
 
-            await expect(service.login(company.email, 'wrongPassword', Role.COMPANY)).rejects.toThrow(
-                InvalidCredentialsException,
-            );
-        });
-
-        it('should throw InvalidCredentialsException when invalid role is provided and login is called', async () => {
-            await expect(service.login('test@test.com', 'password', 'INEXISTENT_ROLE' as Role)).rejects.toThrow(
-                InvalidCredentialsException,
-            );
+            await expect(service.login(company.email, 'wrongPassword')).rejects.toThrow(InvalidCredentialsException);
         });
     });
 
@@ -285,7 +290,7 @@ describe('AuthService', () => {
             mockRefreshJwtService.verify.mockReturnValue(true);
             mockRefreshJwtService.decode.mockReturnValue(payload);
             refreshTokenModel.findOne.mockResolvedValue(validToken);
-            mockCompanyService.findOne.mockResolvedValue(null);
+            mockUserModel.findById.mockResolvedValue(null);
 
             await expect(service.refreshAccessToken('token')).rejects.toThrow(InvalidCredentialsException);
         });
@@ -308,7 +313,7 @@ describe('AuthService', () => {
             mockRefreshJwtService.verify.mockReturnValue(true);
             mockRefreshJwtService.decode.mockReturnValue(payload);
             refreshTokenModel.findOne.mockResolvedValue(validToken);
-            mockCompanyService.findOne.mockResolvedValue({ _id: companyId, email: 'company@test.com' });
+            mockUserModel.findById.mockResolvedValue({ _id: companyId, email: 'company@test.com', role: Role.COMPANY });
 
             jest.spyOn<any, any>(service as any, 'generateAccessToken').mockResolvedValue('new-access-token');
 

@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthGuard } from './auth.guard';
 import { StringValue } from 'ms';
 import { CompanyModule } from '../company/company.module';
+import { UsersModule } from '../user/user.module';
 
 /**
  * Global module for authentication.
@@ -18,6 +19,7 @@ import { CompanyModule } from '../company/company.module';
     imports: [
         ConfigModule,
         CompanyModule,
+        UsersModule,
         MongooseModule.forFeature([{ name: RefreshToken.name, schema: RefreshTokenSchema }]),
         JwtModule.registerAsync({
             imports: [ConfigModule],
