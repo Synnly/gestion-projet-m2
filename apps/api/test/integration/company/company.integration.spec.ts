@@ -253,7 +253,7 @@ describe('Company Integration Tests', () => {
             const nonExistentId = new Types.ObjectId();
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${nonExistentId}`)
+                .put(`/api/companies/${nonExistentId}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({ name: "Won't Exist" })
                 // upsert behavior currently attempts to create and may trigger validation errors
@@ -430,7 +430,7 @@ describe('Company Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send(updateDto)
                 .expect(204);
@@ -453,7 +453,7 @@ describe('Company Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
                 .send(updateDto)
                 .expect(204);
@@ -478,7 +478,7 @@ describe('Company Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send(updateDto)
                 .expect(204);
@@ -503,7 +503,7 @@ describe('Company Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.STUDENT)}`)
                 .send(updateDto)
                 .expect(403);
@@ -522,14 +522,14 @@ describe('Company Integration Tests', () => {
             });
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .send({ name: 'Should Not Update' })
                 .expect(403);
         });
 
         it('should return 400 for invalid ObjectId', async () => {
             await request(app.getHttpServer())
-                .patch('/api/companies/invalid-id')
+                .put('/api/companies/invalid-id')
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({ name: 'Invalid' })
                 .expect(400);
@@ -545,7 +545,7 @@ describe('Company Integration Tests', () => {
             });
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({ unknownField: 'should be rejected' })
                 // ValidationPipe may not run as before due to union DTO; current behavior returns No Content
@@ -562,7 +562,7 @@ describe('Company Integration Tests', () => {
             });
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({ structureType: 'InvalidType' })
                 // ValidationPipe may not run as before due to union DTO; current behavior returns No Content
@@ -583,7 +583,7 @@ describe('Company Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send(updateDto)
                 .expect(204);
@@ -607,7 +607,7 @@ describe('Company Integration Tests', () => {
             });
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({ password: 'weak' })
                 // Current behavior will accept and attempt save (service upsert/update); expect No Content
@@ -635,7 +635,7 @@ describe('Company Integration Tests', () => {
 
             // CompanyA tries to update CompanyB
             await request(app.getHttpServer())
-                .patch(`/api/companies/${companyB._id}`)
+                .put(`/api/companies/${companyB._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, companyA._id.toString())}`)
                 .send(updateDto)
                 .expect(403);
@@ -966,7 +966,7 @@ describe('Company Integration Tests', () => {
             });
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({
                     structureType: StructureType.NGO,
@@ -989,7 +989,7 @@ describe('Company Integration Tests', () => {
             });
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({ email: 'newemail@test.com' })
                 // Current controller accepts union DTOs and route performs upsert/update; expect No Content
@@ -1018,7 +1018,7 @@ describe('Company Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send(addressUpdate)
                 .expect(204);
@@ -1042,7 +1042,7 @@ describe('Company Integration Tests', () => {
             });
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({
                     siretNumber: '12345678901234', // Attempt to change SIRET
@@ -1065,7 +1065,7 @@ describe('Company Integration Tests', () => {
             });
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${company._id}`)
+                .put(`/api/companies/${company._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({
                     nafCode: NafCode.NAF_62_01Z,
@@ -1102,7 +1102,7 @@ describe('Company Integration Tests', () => {
 
             // Update
             await request(app.getHttpServer())
-                .patch(`/api/companies/${companyId}`)
+                .put(`/api/companies/${companyId}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({ name: 'Updated Integrity Company' })
                 .expect(204);
@@ -1176,7 +1176,7 @@ describe('Company Integration Tests', () => {
             await new Promise((resolve) => setTimeout(resolve, 100));
 
             await request(app.getHttpServer())
-                .patch(`/api/companies/${created?._id}`)
+                .put(`/api/companies/${created?._id}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({ name: 'Updated Verify Company' })
                 .expect(204);

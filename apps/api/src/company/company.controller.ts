@@ -7,7 +7,7 @@ import {
     Delete,
     HttpCode,
     HttpStatus,
-    Patch,
+    Put,
     NotFoundException,
     ValidationPipe,
     UseGuards,
@@ -75,7 +75,7 @@ export class CompanyController {
      * @param id The company identifier
      * @param dto The updated company data
      */
-    @Patch('/:id')
+    @Put('/:id')
     @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
