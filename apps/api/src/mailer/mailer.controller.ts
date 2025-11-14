@@ -78,6 +78,9 @@ export class MailerController {
             if (error.message === 'Invalid OTP' || error.message === 'OTP expired') {
                 throw new BadRequestException(error.message);
             }
+            if (error.message === 'Too many verification attempts. Please request a new code.') {
+                throw new BadRequestException(error.message);
+            }
             throw new BadRequestException('Failed to reset password');
         }
     }
