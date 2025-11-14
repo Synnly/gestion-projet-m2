@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './common/auth/auth.module';
 import { UserMiddleware } from './common/middleware/user.middleware';
+import { MailerModule } from './mailer/mailer.module';
 
 @Module({
     imports: [
@@ -19,6 +20,7 @@ import { UserMiddleware } from './common/middleware/user.middleware';
         }),
         AuthModule,
         CompanyModule,
+        MailerModule,
     ],
     controllers: [],
     providers: [],

@@ -16,12 +16,12 @@ import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { CompanyService } from './company.service';
 import { CompanyDto } from './dto/company.dto';
-import { ParseObjectIdPipe } from '../../src/validators/parse-objectid.pipe';
-import { RolesGuard } from '../../src/common/roles/roles.guard';
-import { CompanyOwnerGuard } from '../../src/common/roles/company-owner.guard';
-import { Roles } from '../../src/common/roles/roles.decorator';
-import { Role } from '../../src/common/roles/roles.enum';
-import { AuthGuard } from '../../src/common/auth/auth.guard';
+import { ParseObjectIdPipe } from '../validators/parse-objectid.pipe';
+import { RolesGuard } from '../common/roles/roles.guard';
+import { CompanyOwnerGuard } from '../common/roles/company-owner.guard';
+import { Roles } from '../common/roles/roles.decorator';
+import { Role } from '../common/roles/roles.enum';
+import { AuthGuard } from '../common/auth/auth.guard';
 
 /**
  * Controller handling company-related HTTP requests
