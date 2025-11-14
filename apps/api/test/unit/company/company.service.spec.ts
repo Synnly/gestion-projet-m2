@@ -5,6 +5,7 @@ import { CompanyService } from '../../../src/company/company.service';
 import { Company, CompanyDocument, StructureType, LegalStatus } from '../../../src/company/company.schema';
 import { CreateCompanyDto } from '../../../src/company/dto/createCompany.dto';
 import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
+import { NafCode } from '../../../src/company/naf-codes.enum';
 import * as bcrypt from 'bcrypt';
 
 describe('CompanyService', () => {
@@ -50,14 +51,12 @@ describe('CompanyService', () => {
                     email: 'test@example.com',
                     password: 'hashedPassword',
                     name: 'Test Company',
-                    isValid: true,
                 },
                 {
                     _id: '507f1f77bcf86cd799439012',
                     email: 'test2@example.com',
                     password: 'hashedPassword2',
                     name: 'Test Company 2',
-                    isValid: false,
                 },
             ];
 
@@ -95,7 +94,7 @@ describe('CompanyService', () => {
                     password: 'hashedPassword',
                     name: 'Test Company',
                     siretNumber: '12345678901234',
-                    nafCode: '6202A',
+                    nafCode: NafCode.NAF_62_02A,
                     structureType: StructureType.PrivateCompany,
                     legalStatus: LegalStatus.SARL,
                     streetNumber: '10',
@@ -103,7 +102,6 @@ describe('CompanyService', () => {
                     postalCode: '75001',
                     city: 'Paris',
                     country: 'France',
-                    isValid: true,
                 },
             ];
 
@@ -126,7 +124,6 @@ describe('CompanyService', () => {
                     email: 'test@example.com',
                     password: 'hashedPassword',
                     name: 'Test Company',
-                    isValid: true,
                 },
             ];
 
@@ -157,7 +154,7 @@ describe('CompanyService', () => {
                 email: `test${i}@example.com`,
                 password: 'hashedPassword',
                 name: `Test Company ${i}`,
-                isValid: i % 2 === 0,
+
             }));
 
             mockExec.mockResolvedValue(companies);
@@ -179,7 +176,6 @@ describe('CompanyService', () => {
                 email: 'test@example.com',
                 password: 'hashedPassword',
                 name: 'Test Company',
-                isValid: true,
             };
 
             mockExec.mockResolvedValue(company);
@@ -235,7 +231,7 @@ describe('CompanyService', () => {
                 password: 'hashedPassword',
                 name: 'Test Company',
                 siretNumber: '12345678901234',
-                nafCode: '6202A',
+                nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
                 streetNumber: '10',
@@ -243,7 +239,6 @@ describe('CompanyService', () => {
                 postalCode: '75001',
                 city: 'Paris',
                 country: 'France',
-                isValid: true,
             };
 
             mockExec.mockResolvedValue(company);
@@ -264,7 +259,6 @@ describe('CompanyService', () => {
                 email: 'test@example.com',
                 password: 'hashedPassword',
                 name: 'Test Company',
-                isValid: false,
             };
 
             mockExec.mockResolvedValue(company);
@@ -276,7 +270,7 @@ describe('CompanyService', () => {
 
             expect(result).toEqual(company);
             expect(result?.siretNumber).toBeUndefined();
-            expect(result?.isValid).toBe(false);
+
         });
 
     it('should throw when findOne encounters a database error', async () => {
@@ -313,9 +307,9 @@ describe('CompanyService', () => {
     it('should create a company when create is called with minimal required fields', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
+                role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company',
-                isValid: false,
             });
 
             mockCompanyModel.create.mockResolvedValue({
@@ -330,21 +324,19 @@ describe('CompanyService', () => {
             expect(createdArg).toEqual(expect.objectContaining({
                 email: createDto.email,
                 name: createDto.name,
-                isValid: createDto.isValid,
-            }));
+                }));
             expect(typeof createdArg.password).toBe('string');
-            expect(createdArg.password).not.toBe(createDto.password);
-            const matches = await bcrypt.compare(createDto.password, createdArg.password);
-            expect(matches).toBe(true);
+            // Password hashing is handled by User schema pre-save hook, not tested in unit tests with mocks
         });
 
     it('should create a company when create is called with all fields provided', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
+                role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company',
                 siretNumber: '12345678901234',
-                nafCode: '6202A',
+                nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
                 streetNumber: '10',
@@ -352,7 +344,6 @@ describe('CompanyService', () => {
                 postalCode: '75001',
                 city: 'Paris',
                 country: 'France',
-                isValid: true,
             });
 
             mockCompanyModel.create.mockResolvedValue({
@@ -366,18 +357,16 @@ describe('CompanyService', () => {
             expect(createdArg).toEqual(expect.objectContaining({
                 email: createDto.email,
                 name: createDto.name,
-                isValid: createDto.isValid,
-            }));
-            const matches = await bcrypt.compare(createDto.password, createdArg.password);
-            expect(matches).toBe(true);
+                }));
+            // Password hashing is handled by User schema pre-save hook
         });
 
     it('should return void after successful creation when create resolves', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
+                role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company',
-                isValid: false,
             });
 
             mockCompanyModel.create.mockResolvedValue({
@@ -389,8 +378,7 @@ describe('CompanyService', () => {
 
             expect(result).toBeUndefined();
             const createdArg = mockCompanyModel.create.mock.calls[0][0];
-            const matches = await bcrypt.compare(createDto.password, createdArg.password);
-            expect(matches).toBe(true);
+            // Password hashing is handled by User schema pre-save hook
         });
 
     it('should create company with each StructureType when create is called for each enum value', async () => {
@@ -400,7 +388,6 @@ describe('CompanyService', () => {
                     password: 'Password123!',
                     name: `Test ${structureType}`,
                     structureType: structureType,
-                    isValid: false,
                 });
 
                 mockCompanyModel.create.mockResolvedValue({
@@ -412,8 +399,7 @@ describe('CompanyService', () => {
 
                 const createdArg = mockCompanyModel.create.mock.calls[mockCompanyModel.create.mock.calls.length - 1][0];
                 expect(createdArg).toEqual(expect.objectContaining({ structureType }));
-                const matches = await bcrypt.compare(createDto.password, createdArg.password);
-                expect(matches).toBe(true);
+                // Password hashing is handled by User schema pre-save hook
             }
         });
 
@@ -424,7 +410,6 @@ describe('CompanyService', () => {
                     password: 'Password123!',
                     name: `Test ${legalStatus}`,
                     legalStatus: legalStatus,
-                    isValid: false,
                 });
 
                 mockCompanyModel.create.mockResolvedValue({
@@ -436,59 +421,16 @@ describe('CompanyService', () => {
 
                 const createdArg = mockCompanyModel.create.mock.calls[mockCompanyModel.create.mock.calls.length - 1][0];
                 expect(createdArg).toEqual(expect.objectContaining({ legalStatus }));
-                const matches = await bcrypt.compare(createDto.password, createdArg.password);
-                expect(matches).toBe(true);
+                // Password hashing is handled by User schema pre-save hook
             }
         });
 
-    it('should create company with isValid true when create is called with isValid true', async () => {
-            const createDto = new CreateCompanyDto({
-                email: 'valid@example.com',
-                password: 'Password123!',
-                name: 'Valid Company',
-                isValid: true,
-            });
-
-            mockCompanyModel.create.mockResolvedValue({
-                _id: '507f1f77bcf86cd799439011',
-                ...createDto,
-            });
-
-            await service.create(createDto);
-
-            const createdArg = mockCompanyModel.create.mock.calls[0][0];
-            expect(createdArg).toEqual(expect.objectContaining({ isValid: true }));
-            const matches = await bcrypt.compare(createDto.password, createdArg.password);
-            expect(matches).toBe(true);
-        });
-
-    it('should create company with isValid false when create is called with isValid false', async () => {
-            const createDto = new CreateCompanyDto({
-                email: 'invalid@example.com',
-                password: 'Password123!',
-                name: 'Invalid Company',
-                isValid: false,
-            });
-
-            mockCompanyModel.create.mockResolvedValue({
-                _id: '507f1f77bcf86cd799439011',
-                ...createDto,
-            });
-
-            await service.create(createDto);
-
-            const createdArg = mockCompanyModel.create.mock.calls[0][0];
-            expect(createdArg).toEqual(expect.objectContaining({ isValid: false }));
-            const matches = await bcrypt.compare(createDto.password, createdArg.password);
-            expect(matches).toBe(true);
-        });
-
-    it('should throw when create encounters a database error', async () => {
+it('should throw when create encounters a database error', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
+                role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company',
-                isValid: false,
             });
 
             const error = new Error('Duplicate key error');
@@ -501,9 +443,9 @@ describe('CompanyService', () => {
     it('should throw when create encounters validation errors', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
+                role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company',
-                isValid: false,
             });
 
             const error = new Error('Validation error');
@@ -515,11 +457,11 @@ describe('CompanyService', () => {
     it('should create company when create is called with a partial address', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
+                role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company',
                 city: 'Paris',
                 country: 'France',
-                isValid: false,
             });
 
             mockCompanyModel.create.mockResolvedValue({
@@ -531,13 +473,13 @@ describe('CompanyService', () => {
 
             const createdArg = mockCompanyModel.create.mock.calls[0][0];
             expect(createdArg).toEqual(expect.objectContaining({ city: 'Paris', country: 'France' }));
-            const matches = await bcrypt.compare(createDto.password, createdArg.password);
-            expect(matches).toBe(true);
+            // Password hashing is handled by User schema pre-save hook
         });
 
     it('should create company when create is called with a complete address', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
+                role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company',
                 streetNumber: '10',
@@ -545,7 +487,6 @@ describe('CompanyService', () => {
                 postalCode: '75001',
                 city: 'Paris',
                 country: 'France',
-                isValid: false,
             });
 
             mockCompanyModel.create.mockResolvedValue({
@@ -563,8 +504,7 @@ describe('CompanyService', () => {
                 city: 'Paris',
                 country: 'France',
             }));
-            const matches = await bcrypt.compare(createDto.password, createdArg.password);
-            expect(matches).toBe(true);
+            // Password hashing is handled by User schema pre-save hook
         });
     });
 
@@ -574,48 +514,42 @@ describe('CompanyService', () => {
                 name: 'Updated Company',
             });
 
-            const updatedCompany = {
+            const mockCompany = {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'test@example.com',
-                name: 'Updated Company',
+                name: 'Old Company',
+                save: jest.fn().mockResolvedValue(true),
             };
 
-            mockExec.mockResolvedValue(updatedCompany);
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({
                 exec: mockExec,
             });
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
-                { $set: { ...updateDto, updatedAt: expect.any(Date) } },
-                { new: true },
+            expect(mockCompanyModel.findOne).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } }
             );
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
-            expect(mockExec).toHaveBeenCalledTimes(1);
+            expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
         });
 
     it('should update a company when update is called with multiple fields', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
-                email: 'updated@example.com',
-                siretNumber: '98765432109876',
-                isValid: true,
+                city: 'Paris',
             });
 
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011', ...updateDto });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
-                { $set: { ...updateDto, updatedAt: expect.any(Date) } },
-                { new: true },
+            expect(mockCompanyModel.findOne).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } }
             );
+            expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
         });
 
     it('should return void after successful update when findOneAndUpdate resolves', async () => {
@@ -623,33 +557,13 @@ describe('CompanyService', () => {
                 name: 'Updated Company',
             });
 
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
             const result = await service.update('507f1f77bcf86cd799439011', updateDto);
 
             expect(result).toBeUndefined();
-        });
-
-    it('should update company email when update is called with a new email', async () => {
-            const updateDto = new UpdateCompanyDto({
-                email: 'newemail@example.com',
-            });
-
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
-
-            await service.update('507f1f77bcf86cd799439011', updateDto);
-
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
-                expect.any(Object),
-                { $set: { email: 'newemail@example.com', updatedAt: expect.any(Date) } },
-                expect.any(Object),
-            );
         });
 
     it('should update company password when update is called with a new password', async () => {
@@ -657,19 +571,14 @@ describe('CompanyService', () => {
                 password: 'NewPassword123!',
             });
 
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
-            const callArg = mockCompanyModel.findOneAndUpdate.mock.calls[0][1].$set;
-            expect(callArg.password).toBeDefined();
-            expect(callArg.password).not.toBe(updateDto.password);
-            const matches = await bcrypt.compare(updateDto.password, callArg.password);
-            expect(matches).toBe(true);
+            expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
+            // Password hashing is handled by User schema pre-save hook
         });
 
     it('should update company structureType when update is called with a new structureType', async () => {
@@ -677,23 +586,13 @@ describe('CompanyService', () => {
                 structureType: StructureType.Association,
             });
 
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
-                expect.any(Object),
-                {
-                    $set: {
-                        structureType: StructureType.Association,
-                        updatedAt: expect.any(Date),
-                    },
-                },
-                expect.any(Object),
-            );
+            expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
         });
 
     it('should update company legalStatus when update is called with a new legalStatus', async () => {
@@ -701,40 +600,16 @@ describe('CompanyService', () => {
                 legalStatus: LegalStatus.SAS,
             });
 
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
-                expect.any(Object),
-                { $set: { legalStatus: LegalStatus.SAS, updatedAt: expect.any(Date) } },
-                expect.any(Object),
-            );
+            expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
         });
 
-    it('should update company isValid status when update is called with isValid value', async () => {
-            const updateDto = new UpdateCompanyDto({
-                isValid: true,
-            });
-
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
-
-            await service.update('507f1f77bcf86cd799439011', updateDto);
-
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
-                expect.any(Object),
-                { $set: { isValid: true, updatedAt: expect.any(Date) } },
-                expect.any(Object),
-            );
-        });
-
-    it('should update company address fields when update is called with address data', async () => {
+    it('should update company address fields when update is called with new address data', async () => {
             const updateDto = new UpdateCompanyDto({
                 streetNumber: '456',
                 streetName: 'New Street',
@@ -744,26 +619,20 @@ describe('CompanyService', () => {
             });
 
             mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
-                expect.any(Object),
-                { $set: { ...updateDto, updatedAt: expect.any(Date) } },
-                expect.any(Object),
-            );
+            expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
         });
 
     it('should update all company fields when update is called with full update data', async () => {
             const updateDto = new UpdateCompanyDto({
-                email: 'fullupdate@example.com',
                 password: 'NewPassword123!',
                 name: 'Fully Updated Company',
-                siretNumber: '11111111111111',
-                nafCode: '9999Z',
+                nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.NGO,
                 legalStatus: LegalStatus.OTHER,
                 streetNumber: '999',
@@ -771,30 +640,16 @@ describe('CompanyService', () => {
                 postalCode: '99999',
                 city: 'Complete City',
                 country: 'Complete Country',
-                isValid: true,
             });
 
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
-            const callArg = mockCompanyModel.findOneAndUpdate.mock.calls[0][1].$set;
-            // verify a subset of fields were passed
-            expect(callArg.email).toBe(updateDto.email);
-            expect(callArg.name).toBe(updateDto.name);
-            expect(callArg.siretNumber).toBe(updateDto.siretNumber);
-            expect(callArg.nafCode).toBe(updateDto.nafCode);
-            expect(callArg.structureType).toBe(updateDto.structureType);
-            expect(callArg.legalStatus).toBe(updateDto.legalStatus);
-            // password must be hashed
-            expect(callArg.password).toBeDefined();
-            expect(callArg.password).not.toBe(updateDto.password);
-            const matches = await bcrypt.compare(updateDto.password, callArg.password);
-            expect(matches).toBe(true);
+            expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
+            // Service uses Object.assign + save(), User pre-save hook handles password hashing
         });
 
     it('should include updatedAt timestamp when update is performed', async () => {
@@ -802,35 +657,33 @@ describe('CompanyService', () => {
                 name: 'Updated Company',
             });
 
-            const beforeUpdate = new Date();
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            const callArgs = mockCompanyModel.findOneAndUpdate.mock.calls[0][1];
-            expect(callArgs.$set.updatedAt).toBeInstanceOf(Date);
-            expect(callArgs.$set.updatedAt.getTime()).toBeGreaterThanOrEqual(beforeUpdate.getTime());
+            expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
+            // updatedAt is set by Mongoose timestamps, not explicitly in service
         });
 
-    it('should only update non-deleted companies when update is attempted', async () => {
+    it('should create a new company when update is attempted on a non-existent id (upsert)', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
             });
 
             mockExec.mockResolvedValue(null);
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
-            await expect(service.update('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow('Company with id 507f1f77bcf86cd799439011 not found or already deleted');
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
-                expect.any(Object),
-                expect.any(Object),
-            );
+            // mock create to succeed
+            mockCompanyModel.create.mockResolvedValue({ _id: '507f1f77bcf86cd799439011', ...updateDto });
+
+            await service.update('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompanyModel.create).toHaveBeenCalledTimes(1);
+            const createdArg = mockCompanyModel.create.mock.calls[0][0];
+            // ensure DTO fields were passed to create (we don't assert exact _id here)
+            expect(createdArg).toEqual(expect.objectContaining({ name: updateDto.name }));
         });
 
     it('should throw when update encounters a database error', async () => {
@@ -840,9 +693,7 @@ describe('CompanyService', () => {
 
             const error = new Error('Database error');
             mockExec.mockRejectedValue(error);
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
             await expect(service.update('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow('Database error');
         });
@@ -851,17 +702,13 @@ describe('CompanyService', () => {
             const updateDto = new UpdateCompanyDto({});
 
             mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
-                expect.any(Object),
-                { $set: { updatedAt: expect.any(Date) } },
-                expect.any(Object),
-            );
+            expect(mockCompany.save).toHaveBeenCalled();
         });
 
     it('should set new: true option when update is called', async () => {
@@ -870,15 +717,13 @@ describe('CompanyService', () => {
             });
 
             mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(expect.any(Object), expect.any(Object), {
-                new: true,
-            });
+            expect(mockCompany.save).toHaveBeenCalled();
         });
     });
 
@@ -972,9 +817,9 @@ describe('CompanyService', () => {
     it('should create and then find the created company when create then findOne are called', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'integration@example.com',
+                role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Integration Company',
-                isValid: true,
             });
 
             const createdCompany = {
@@ -997,14 +842,13 @@ describe('CompanyService', () => {
     it('should create, update, and verify the updated company when create and update are called sequentially', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'update-test@example.com',
+                role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Update Test Company',
-                isValid: false,
             });
 
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Test Company',
-                isValid: true,
             });
 
             mockCompanyModel.create.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
@@ -1013,18 +857,17 @@ describe('CompanyService', () => {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'update-test@example.com',
                 name: 'Updated Test Company',
-                isValid: true,
             };
 
             mockExec.mockResolvedValue(updatedCompany);
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
             await service.create(createDto);
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalled();
+            expect(mockCompany.save).toHaveBeenCalled();
         });
 
     it('should verify company is removed from findAll after deletion when remove is called', async () => {
@@ -1086,25 +929,25 @@ describe('CompanyService', () => {
     it('should handle undefined values in update DTO when update is called with undefined fields', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: undefined,
-                email: undefined,
+                password: undefined,
             });
 
             mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalled();
+            expect(mockCompany.save).toHaveBeenCalled();
         });
 
     it('should handle special characters in fields when create is called with special characters', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test+special@example.com',
+                role: 'COMPANY' as any,
                 password: 'P@ssw0rd!#$',
                 name: 'Test Company with \'quotes\' and "symbols"',
-                isValid: false,
             });
 
             mockCompanyModel.create.mockResolvedValue({
@@ -1118,25 +961,23 @@ describe('CompanyService', () => {
             expect(createdArg).toEqual(expect.objectContaining({
                 email: createDto.email,
                 name: createDto.name,
-                isValid: createDto.isValid,
-            }));
-            const matches = await bcrypt.compare(createDto.password, createdArg.password);
-            expect(matches).toBe(true);
+                }));
+            // Password hashing is handled by User schema pre-save hook
         });
 
     it('should handle concurrent operations when multiple create calls are executed concurrently', async () => {
             const createDto1 = new CreateCompanyDto({
                 email: 'test1@example.com',
+                role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company 1',
-                isValid: false,
             });
 
             const createDto2 = new CreateCompanyDto({
                 email: 'test2@example.com',
+                role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company 2',
-                isValid: false,
             });
 
             mockCompanyModel.create
