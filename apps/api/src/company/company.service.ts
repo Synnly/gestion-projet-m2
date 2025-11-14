@@ -113,7 +113,7 @@ export class CompanyService {
      * @param id - The MongoDB ObjectId of the company to update
      * @param dto - Partial company data with fields to update
      * @returns Promise resolving to void upon successful update
-     *      * 
+     * 
      * @example
      * ```typescript
      * await companyService.update('507f1f77bcf86cd799439011', {
