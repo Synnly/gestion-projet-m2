@@ -15,7 +15,7 @@ import { Role } from '../common/roles/roles.enum';
                 const userModel = connection.model(User.name);
                 
                 // Create Company discriminator if not already exists
-                if (!userModel.discriminators || !userModel.discriminators[Company.name]) {
+                if (!userModel.discriminators?.[Company.name]) {
                     // Use Role.COMPANY as the discriminator value so stored documents have role = 'COMPANY'
                     return userModel.discriminator(Company.name, CompanySchema, Role.COMPANY);
                 }
