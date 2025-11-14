@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MailerController } from '../../../src/mailer/mailer.controller';
 import { MailerService } from '../../../src/mailer/mailer.service';
-import { AuthGuard } from '../../../src/common/auth/auth.guard';
+import { AuthGuard } from '../../../src/auth/auth.guard';
 
 describe('MailerController', () => {
     let controller: MailerController;

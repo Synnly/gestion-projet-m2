@@ -12,7 +12,7 @@ import {
 import { MailerService } from './mailer.service';
 import { EmailDto, VerifyOtpDto, ResetPasswordDto } from './dto/mailer.dto';
 import { SendCustomTemplateDto } from './dto/send-custom-template.dto';
-import { AuthGuard } from '../common/auth/auth.guard';
+import { AuthGuard } from '../auth/auth.guard';
 
 /**
  * Controller handling email operations: password reset, account verification, and custom templates

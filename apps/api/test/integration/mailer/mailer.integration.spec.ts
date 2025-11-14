@@ -9,7 +9,7 @@ import { User, UserSchema } from '../../../src/user/user.schema';
 import { Model } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
-import { AuthGuard } from '../../../src/common/auth/auth.guard';
+import { AuthGuard } from '../../../src/auth/auth.guard';
 import { Role } from '../../../src/common/roles/roles.enum';
 import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
 

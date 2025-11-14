@@ -21,7 +21,7 @@ import { RolesGuard } from '../common/roles/roles.guard';
 import { CompanyOwnerGuard } from '../common/roles/company-owner.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
-import { AuthGuard } from '../common/auth/auth.guard';
+import { AuthGuard } from '../auth/auth.guard';
 
 /**
  * Controller handling company-related HTTP requests
