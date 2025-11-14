@@ -129,9 +129,9 @@ UserSchema.pre('save', async function (next) {
         return next();
     }
 
-    // Safety check: verify password exists before attempting to hash
-    if (!this.password) {
-        return next();
+    // Safety check: verify password exists and is not empty or whitespace before attempting to hash
+    if (!this.password || this.password.trim().length === 0) {
+        return next(new Error('Password cannot be empty'));
     }
 
     try {
