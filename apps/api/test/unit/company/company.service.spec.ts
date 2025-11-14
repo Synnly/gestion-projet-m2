@@ -667,7 +667,7 @@ it('should throw when create encounters a database error', async () => {
             // updatedAt is set by Mongoose timestamps, not explicitly in service
         });
 
-    it('should only update non-deleted companies when update is attempted', async () => {
+    it('should create a new company when update is attempted on a non-existent id (upsert)', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
             });
@@ -675,7 +675,15 @@ it('should throw when create encounters a database error', async () => {
             mockExec.mockResolvedValue(null);
             mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
 
-            await expect(service.update('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow('Company with id 507f1f77bcf86cd799439011 not found or already deleted');
+            // mock create to succeed
+            mockCompanyModel.create.mockResolvedValue({ _id: '507f1f77bcf86cd799439011', ...updateDto });
+
+            await service.update('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompanyModel.create).toHaveBeenCalledTimes(1);
+            const createdArg = mockCompanyModel.create.mock.calls[0][0];
+            // ensure DTO fields were passed to create (we don't assert exact _id here)
+            expect(createdArg).toEqual(expect.objectContaining({ name: updateDto.name }));
         });
 
     it('should throw when update encounters a database error', async () => {

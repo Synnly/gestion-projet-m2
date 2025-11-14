@@ -82,7 +82,7 @@ export class CompanyController {
     async update(
         @Param('id', ParseObjectIdPipe) id: string,
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
-        dto: UpdateCompanyDto,
+        dto: UpdateCompanyDto | CreateCompanyDto,
     ) {
         await this.companyService.update(id, dto);
     }

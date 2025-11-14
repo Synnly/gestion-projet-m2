@@ -67,10 +67,10 @@ export class User {
     password: string;
 
     /**
-     * Email verification status
+     * Validation status of the user account
      * 
      * - Defaults to false for new accounts
-     * - Set to true after email verification process
+     * - Set to true after admin verification process
      * - May be required for accessing certain platform features
      */
     @Prop({ default: false })

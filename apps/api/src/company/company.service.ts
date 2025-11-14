@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { Company, CompanyDocument } from './company.schema';
+import { CompanyUserDocument } from '../user/user.schema';
 
 /**
  * Service handling business logic for company operations
@@ -26,7 +27,7 @@ export class CompanyService {
      * Creates a new CompanyService instance
      * @param companyModel - Injected Mongoose model for Company operations
      */
-    constructor(@InjectModel(Company.name) private readonly companyModel: Model<CompanyDocument>) {}
+    constructor(@InjectModel(Company.name) private readonly companyModel: Model<CompanyUserDocument>) {}
 
     /**
      * Retrieves all active (non-deleted) companies
@@ -112,9 +113,7 @@ export class CompanyService {
      * @param id - The MongoDB ObjectId of the company to update
      * @param dto - Partial company data with fields to update
      * @returns Promise resolving to void upon successful update
-     * 
-     * @throws {NotFoundException} When the company does not exist or has been soft-deleted
-     * 
+     *      * 
      * @example
      * ```typescript
      * await companyService.update('507f1f77bcf86cd799439011', {
@@ -123,20 +122,22 @@ export class CompanyService {
      * });
      * ```
      */
-    async update(id: string, dto: UpdateCompanyDto): Promise<void> {
+    async update(id: string, dto: UpdateCompanyDto | CreateCompanyDto): Promise<void> {
+        // Try to find an active (non-deleted) company
         const company = await this.companyModel
             .findOne({ _id: id, deletedAt: { $exists: false } })
             .exec();
-            
-        if (!company) {
-            throw new NotFoundException(`Company with id ${id} not found or already deleted`);
+
+        if (company) {
+            // Update existing active company
+            Object.assign(company, dto);
+            // keep previous behavior: trigger pre-save hooks, but skip full validation to avoid discriminator issues
+            await company.save({ validateBeforeSave: false });
+            return;
         }
 
-        // Use Object.assign to update only the provided fields
-        Object.assign(company, dto);
-        // Disable validation to avoid issues with discriminator pattern requiring all base fields
-        await company.save({ validateBeforeSave: false });
-        
+        // If no active company found, create a new one.
+        await this.companyModel.create({ ...(dto as CreateCompanyDto) });
         return;
     }
 
