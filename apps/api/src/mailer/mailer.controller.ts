@@ -17,7 +17,7 @@ import { AuthGuard } from '../auth/auth.guard';
 /**
  * Controller handling email operations: password reset, account verification, and custom templates
  */
-@Controller('/api')
+@Controller('/api/mailer')
 export class MailerController {
     constructor(private readonly mailerService: MailerService) {}
 
@@ -153,7 +153,7 @@ export class MailerController {
      * @throws {BadRequestException} If user email is not found in token or email sending fails
      * @throws {NotFoundException} If the specified template file does not exist
      */
-    @Post('mailer/send-template')
+    @Post('send-template')
     @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     async sendCustomTemplate(@Request() req, @Body() dto: SendCustomTemplateDto) {

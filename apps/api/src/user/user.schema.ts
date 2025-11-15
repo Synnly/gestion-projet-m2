@@ -72,6 +72,15 @@ export class User {
     password: string;
 
     /**
+     * Indicates if the user's email has been verified
+     *
+     * - Defaults to false for new accounts
+     * - Set to true upon successful email verification
+     */
+    @Prop({ default: false })
+    isVerified: boolean;
+
+     /**
      * Validation status of the user account
      *
      * - Defaults to false for new accounts
@@ -79,7 +88,7 @@ export class User {
      * - May be required for accessing certain platform features
      */
     @Prop({ default: false })
-    isVerified: boolean;
+    isValid: boolean;
 
     /**
      * One-time verification code sent to user's email for account confirmation
