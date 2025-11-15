@@ -21,7 +21,6 @@ import { AuthGuard } from '../auth/auth.guard';
 export class MailerController {
     constructor(private readonly mailerService: MailerService) {}
 
-
     /**
      * Request a password reset OTP via email
      * @param dto Email address of the user requesting password reset
@@ -49,7 +48,6 @@ export class MailerController {
         }
     }
 
-
     /**
      * Reset user password using OTP verification
      * @param dto Contains email, OTP code and new password
@@ -63,10 +61,10 @@ export class MailerController {
         try {
             // Verify OTP first
             await this.mailerService.verifyPasswordResetOtp(dto.email, dto.otp);
-            
+
             // Update password
             await this.mailerService.updatePassword(dto.email, dto.newPassword);
-            
+
             return {
                 success: true,
                 message: 'Password successfully reset',
@@ -84,7 +82,6 @@ export class MailerController {
             throw new BadRequestException('Failed to reset password');
         }
     }
-
 
     /**
      * Send account verification OTP via email
@@ -112,7 +109,6 @@ export class MailerController {
             throw new BadRequestException('Failed to send verification email');
         }
     }
-
 
     /**
      * Verify user account using OTP code
@@ -144,7 +140,6 @@ export class MailerController {
         }
     }
 
-
     /**
      * Send custom template email to authenticated user
      * @param req HTTP request containing authenticated user information
@@ -159,21 +154,21 @@ export class MailerController {
     async sendCustomTemplate(@Request() req, @Body() dto: SendCustomTemplateDto) {
         try {
             const userEmail = req.user.email;
-            
+
             if (!userEmail) {
                 throw new BadRequestException('User email not found in token');
             }
 
-            await this.mailerService.sendCustomTemplateEmail(
-                userEmail,
-                dto.templateName,
-            );
+            await this.mailerService.sendCustomTemplateEmail(userEmail, dto.templateName);
 
             return {
                 success: true,
                 message: `Email sent successfully using template: ${dto.templateName}`,
             };
         } catch (error) {
+            if (error instanceof BadRequestException || error instanceof NotFoundException) {
+                throw error;
+            }
             if (error.message?.includes('template')) {
                 throw new NotFoundException(`Template '${dto.templateName}' not found`);
             }

@@ -80,7 +80,7 @@ export class User {
     @Prop({ default: false })
     isVerified: boolean;
 
-     /**
+    /**
      * Validation status of the user account
      *
      * - Defaults to false for new accounts

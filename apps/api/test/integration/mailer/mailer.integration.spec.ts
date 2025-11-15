@@ -77,7 +77,7 @@ describe('MailerController (Integration)', () => {
             });
 
             const response = await request(app.getHttpServer())
-                .post('/api/password/forgot')
+                .post('/api/mailer/password/forgot')
                 .send({ email: 'test@example.com' })
                 .expect(200);
 
@@ -94,7 +94,7 @@ describe('MailerController (Integration)', () => {
 
         it('should return 404 for non-existent user', async () => {
             const response = await request(app.getHttpServer())
-                .post('/api/password/forgot')
+                .post('/api/mailer/password/forgot')
                 .send({ email: 'nonexistent@example.com' })
                 .expect(404);
 
@@ -105,7 +105,7 @@ describe('MailerController (Integration)', () => {
 
         it('should validate email format', async () => {
             const response = await request(app.getHttpServer())
-                .post('/api/password/forgot')
+                .post('/api/mailer/password/forgot')
                 .send({ email: 'invalid-email' })
                 .expect(400);
 
@@ -126,14 +126,14 @@ describe('MailerController (Integration)', () => {
             // Send 5 requests successfully
             for (let i = 0; i < 5; i++) {
                 await request(app.getHttpServer())
-                    .post('/api/password/forgot')
+                    .post('/api/mailer/password/forgot')
                     .send({ email: 'test@example.com' })
                     .expect(200);
             }
 
             // 6th request should be rate limited
             const response = await request(app.getHttpServer())
-                .post('/api/password/forgot')
+                .post('/api/mailer/password/forgot')
                 .send({ email: 'test@example.com' })
                 .expect(400);
 
@@ -160,7 +160,7 @@ describe('MailerController (Integration)', () => {
             });
 
             const response = await request(app.getHttpServer())
-                .post('/api/password/reset')
+                .post('/api/mailer/password/reset')
                 .send({
                     email: 'test@example.com',
                     otp: '123456',
@@ -200,7 +200,7 @@ describe('MailerController (Integration)', () => {
             });
 
             const response = await request(app.getHttpServer())
-                .post('/api/password/reset')
+                .post('/api/mailer/password/reset')
                 .send({
                     email: 'test@example.com',
                     otp: '123456',
@@ -229,7 +229,7 @@ describe('MailerController (Integration)', () => {
             });
 
             const response = await request(app.getHttpServer())
-                .post('/api/password/reset')
+                .post('/api/mailer/password/reset')
                 .send({
                     email: 'test@example.com',
                     otp: '999999', // Wrong OTP
@@ -258,7 +258,7 @@ describe('MailerController (Integration)', () => {
             });
 
             const response = await request(app.getHttpServer())
-                .post('/api/password/reset')
+                .post('/api/mailer/password/reset')
                 .send({
                     email: 'test@example.com',
                     otp: '123456',
@@ -289,7 +289,7 @@ describe('MailerController (Integration)', () => {
             // 5 failed attempts
             for (let i = 0; i < 5; i++) {
                 await request(app.getHttpServer())
-                    .post('/api/password/reset')
+                    .post('/api/mailer/password/reset')
                     .send({
                         email: 'test@example.com',
                         otp: '999999',
@@ -300,7 +300,7 @@ describe('MailerController (Integration)', () => {
 
             // Should be blocked now
             const response = await request(app.getHttpServer())
-                .post('/api/password/reset')
+                .post('/api/mailer/password/reset')
                 .send({
                     email: 'test@example.com',
                     otp: '123456', // Even correct OTP should fail
@@ -325,7 +325,7 @@ describe('MailerController (Integration)', () => {
             });
 
             const response = await request(app.getHttpServer())
-                .post('/api/auth/send-verification')
+                .post('/api/mailer/auth/send-verification')
                 .send({ email: 'test@example.com' })
                 .expect(200);
 
@@ -342,7 +342,7 @@ describe('MailerController (Integration)', () => {
 
         it('should return 404 for non-existent user', async () => {
             const response = await request(app.getHttpServer())
-                .post('/api/auth/send-verification')
+                .post('/api/mailer/auth/send-verification')
                 .send({ email: 'nonexistent@example.com' })
                 .expect(404);
 
@@ -369,7 +369,7 @@ describe('MailerController (Integration)', () => {
             });
 
             const response = await request(app.getHttpServer())
-                .post('/api/auth/verify')
+                .post('/api/mailer/auth/verify')
                 .send({
                     email: 'test@example.com',
                     otp: '123456',
@@ -404,7 +404,7 @@ describe('MailerController (Integration)', () => {
             });
 
             const response = await request(app.getHttpServer())
-                .post('/api/auth/verify')
+                .post('/api/mailer/auth/verify')
                 .send({
                     email: 'test@example.com',
                     otp: '999999',
@@ -432,7 +432,7 @@ describe('MailerController (Integration)', () => {
             });
 
             const response = await request(app.getHttpServer())
-                .post('/api/auth/verify')
+                .post('/api/mailer/auth/verify')
                 .send({
                     email: 'test@example.com',
                     otp: '123456',

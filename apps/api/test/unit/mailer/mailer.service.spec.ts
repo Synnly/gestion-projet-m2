@@ -207,7 +207,7 @@ describe('MailerService', () => {
         const mockUser = {
             _id: '507f1f77bcf86cd799439011',
             email: 'user@example.com',
-            emailVerificationCode: null,
+            emailVerificationCode: null as string | null,
             emailVerificationExpires: new Date(Date.now() + 60 * 60 * 1000),
             emailVerificationAttempts: 0,
             isVerified: false,
@@ -237,6 +237,19 @@ describe('MailerService', () => {
 
             await expect(service.verifySignupOtp('nonexistent@example.com', '123456')).rejects.toThrow(
                 'User not found',
+            );
+        });
+
+        it('should throw error when no verification code is set', async () => {
+            const userWithoutCode = {
+                ...mockUser,
+                emailVerificationCode: null,
+                emailVerificationExpires: null,
+            };
+            mockUserModel.findOne.mockResolvedValue(userWithoutCode);
+
+            await expect(service.verifySignupOtp('user@example.com', '123456')).rejects.toThrow(
+                'No verification code set',
             );
         });
 
@@ -293,7 +306,7 @@ describe('MailerService', () => {
         const mockUser = {
             _id: '507f1f77bcf86cd799439011',
             email: 'user@example.com',
-            passwordResetCode: null,
+            passwordResetCode: null as string | null,
             passwordResetExpires: new Date(Date.now() + 5 * 60 * 1000),
             passwordResetAttempts: 0,
             save: jest.fn(),
@@ -334,6 +347,19 @@ describe('MailerService', () => {
 
             await expect(service.verifyPasswordResetOtp('nonexistent@example.com', '123456')).rejects.toThrow(
                 'User not found',
+            );
+        });
+
+        it('should throw error when no password reset code is set', async () => {
+            const userWithoutCode = {
+                ...mockUser,
+                passwordResetCode: null,
+                passwordResetExpires: null,
+            };
+            mockUserModel.findOne.mockResolvedValue(userWithoutCode);
+
+            await expect(service.verifyPasswordResetOtp('user@example.com', '123456')).rejects.toThrow(
+                'No password reset code set',
             );
         });
     });
