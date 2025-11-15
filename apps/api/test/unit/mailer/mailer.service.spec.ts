@@ -434,4 +434,26 @@ describe('MailerService', () => {
             );
         });
     });
+
+    describe('Private helper methods', () => {
+        it('generateOtp should return 6-digit string', () => {
+            const otp = (service as any).generateOtp();
+            expect(typeof otp).toBe('string');
+            expect(otp.length).toBe(6);
+        });
+
+        it('getFromAddress should return formatted from value', () => {
+            const res = (service as any).getFromAddress();
+            expect(res).toHaveProperty('from');
+            expect(res.email).toBe('noreply@example.com');
+        });
+
+        it('hashOtp and verifyOtp should be consistent', async () => {
+            const plain = '123456';
+            const hashed = await (service as any).hashOtp(plain);
+            expect(typeof hashed).toBe('string');
+            const ok = await (service as any).verifyOtp(plain, hashed);
+            expect(ok).toBe(true);
+        });
+    });
 });

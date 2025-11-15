@@ -3,12 +3,99 @@ import { CreateCompanyDto } from '../../../../src/company/dto/createCompany.dto'
 import { StructureType, LegalStatus } from '../../../../src/company/company.schema';
 import { NafCode } from '../../../../src/company/naf-codes.enum';
 
+describe('CreateCompanyDto - decorator branches', () => {
+    it('should validate all optional enum fields when provided', async () => {
+        const dto = new CreateCompanyDto({
+            email: 'test@test.com',
+            password: 'Password123!',
+            role: 'COMPANY' as any,
+            name: 'Company',
+            nafCode: NafCode['6202A'],
+            structureType: StructureType.PrivateCompany,
+            legalStatus: LegalStatus.SARL,
+        });
+
+        const errors = await validate(dto);
+        expect(errors).toHaveLength(0);
+    });
+
+    it('should validate all optional string fields when provided', async () => {
+        const dto = new CreateCompanyDto({
+            email: 'test@test.com',
+            password: 'Password123!',
+            role: 'COMPANY' as any,
+            name: 'Company',
+            streetNumber: '10',
+            streetName: 'Rue Test',
+            postalCode: '75001',
+            city: 'Paris',
+            country: 'France',
+            logo: 'http://example.com/logo.png',
+        });
+
+        const errors = await validate(dto);
+        expect(errors).toHaveLength(0);
+    });
+
+    it('should fail when siretNumber has invalid format', async () => {
+        const dto = new CreateCompanyDto({
+            email: 'test@test.com',
+            password: 'Password123!',
+            role: 'COMPANY' as any,
+            name: 'Company',
+            siretNumber: 'abc123',
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+    });
+
+    it('should fail when nafCode is invalid enum value', async () => {
+        const dto = new CreateCompanyDto({
+            email: 'test@test.com',
+            password: 'Password123!',
+            role: 'COMPANY' as any,
+            name: 'Company',
+            nafCode: 'INVALID' as any,
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+    });
+
+    it('should fail when structureType is invalid enum value', async () => {
+        const dto = new CreateCompanyDto({
+            email: 'test@test.com',
+            password: 'Password123!',
+            role: 'COMPANY' as any,
+            name: 'Company',
+            structureType: 'INVALID' as any,
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+    });
+
+    it('should fail when legalStatus is invalid enum value', async () => {
+        const dto = new CreateCompanyDto({
+            email: 'test@test.com',
+            password: 'Password123!',
+            role: 'COMPANY' as any,
+            name: 'Company',
+            legalStatus: 'INVALID' as any,
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+    });
+});
+
 describe('CreateCompanyDto', () => {
     describe('constructor', () => {
         it('should create instance successfully when constructor is called with all fields', () => {
             const data = {
                 email: 'test@example.com',
-                    role: 'COMPANY' as any,
+                role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company',
                 siretNumber: '12345678901234',
@@ -41,7 +128,7 @@ describe('CreateCompanyDto', () => {
         it('should create instance successfully when constructor is called with minimal required fields', () => {
             const data = {
                 email: 'test@example.com',
-                    role: 'COMPANY' as any,
+                role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company',
             };
@@ -285,7 +372,7 @@ describe('CreateCompanyDto', () => {
                 for (const password of strongPasswords) {
                     const dto = new CreateCompanyDto({
                         email: 'test@example.com',
-                    role: 'COMPANY' as any,
+                        role: 'COMPANY' as any,
                         password,
                         name: 'Test Company',
                     });
@@ -455,7 +542,7 @@ describe('CreateCompanyDto', () => {
                 for (const structureType of Object.values(StructureType)) {
                     const dto = new CreateCompanyDto({
                         email: 'test@example.com',
-                    role: 'COMPANY' as any,
+                        role: 'COMPANY' as any,
                         password: 'Password123!',
                         name: 'Test Company',
                         structureType: structureType,
@@ -500,7 +587,7 @@ describe('CreateCompanyDto', () => {
                 for (const legalStatus of Object.values(LegalStatus)) {
                     const dto = new CreateCompanyDto({
                         email: 'test@example.com',
-                    role: 'COMPANY' as any,
+                        role: 'COMPANY' as any,
                         password: 'Password123!',
                         name: 'Test Company',
                         legalStatus: legalStatus,

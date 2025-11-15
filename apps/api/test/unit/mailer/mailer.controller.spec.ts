@@ -349,3 +349,95 @@ describe('MailerController', () => {
         });
     });
 });
+
+describe('MailerController - Success branches coverage', () => {
+    let controller: MailerController;
+    const mockSvc: Partial<MailerService> = {};
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        controller = new MailerController(mockSvc as MailerService);
+    });
+
+    it('forgotPassword success', async () => {
+        mockSvc.sendPasswordResetEmail = jest.fn().mockResolvedValue(true);
+        const res = await controller.forgotPassword({ email: 'a@a.com' } as any);
+        expect(res.success).toBe(true);
+    });
+
+    it('resetPassword success', async () => {
+        mockSvc.verifyPasswordResetOtp = jest.fn().mockResolvedValue(true);
+        mockSvc.updatePassword = jest.fn().mockResolvedValue(true);
+        const dto = { email: 'a@a.com', otp: '000000', newPassword: 'P@ssw0rd' };
+        const res = await controller.resetPassword(dto as any);
+        expect(res.success).toBe(true);
+    });
+
+    it('sendVerification success', async () => {
+        mockSvc.sendVerificationEmail = jest.fn().mockResolvedValue(true);
+        const res = await controller.sendVerification({ email: 'a@a.com' } as any);
+        expect(res.success).toBe(true);
+    });
+
+    it('verifyAccount success', async () => {
+        mockSvc.verifySignupOtp = jest.fn().mockResolvedValue(true);
+        const res = await controller.verifyAccount({ email: 'a@a.com', otp: '123456' } as any);
+        expect(res.success).toBe(true);
+    });
+
+    it('sendCustomTemplate success', async () => {
+        mockSvc.sendCustomTemplateEmail = jest.fn().mockResolvedValue(true);
+        const req = { user: { email: 'a@a.com' } } as any;
+        const res = await controller.sendCustomTemplate(req, { templateName: 'welcome' } as any);
+        expect(res.success).toBe(true);
+    });
+});
+
+describe('MailerController - Error mapping branches', () => {
+    let controller: MailerController;
+    const mockSvc: Partial<MailerService> = {};
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        controller = new MailerController(mockSvc as MailerService);
+    });
+
+    it('forgotPassword should translate "User not found" to NotFoundException', async () => {
+        mockSvc.sendPasswordResetEmail = jest.fn().mockRejectedValue(new Error('User not found'));
+        await expect(controller.forgotPassword({ email: 'a@a.com' } as any)).rejects.toThrow('No account found');
+    });
+
+    it('forgotPassword should translate rate limit error to BadRequestException', async () => {
+        mockSvc.sendPasswordResetEmail = jest
+            .fn()
+            .mockRejectedValue(new Error('OTP rate limit exceeded. Try again later.'));
+        await expect(controller.forgotPassword({ email: 'a@a.com' } as any)).rejects.toThrow('Too many requests');
+    });
+
+    it('resetPassword should translate Invalid OTP to BadRequestException', async () => {
+        mockSvc.verifyPasswordResetOtp = jest.fn().mockRejectedValue(new Error('Invalid OTP'));
+        mockSvc.updatePassword = jest.fn();
+        const dto = { email: 'a@a.com', otp: '000000', newPassword: 'P@ssw0rd' };
+        await expect(controller.resetPassword(dto as any)).rejects.toThrow('Invalid OTP');
+    });
+
+    it('sendVerification should translate User not found', async () => {
+        mockSvc.sendVerificationEmail = jest.fn().mockRejectedValue(new Error('User not found'));
+        await expect(controller.sendVerification({ email: 'a@a.com' } as any)).rejects.toThrow('No account found');
+    });
+
+    it('verifyAccount should translate OTP expired to BadRequestException', async () => {
+        mockSvc.verifySignupOtp = jest.fn().mockRejectedValue(new Error('OTP expired'));
+        await expect(controller.verifyAccount({ email: 'a@a.com', otp: '123456' } as any)).rejects.toThrow(
+            'OTP expired',
+        );
+    });
+
+    it('sendCustomTemplate should throw NotFoundException when template-related error is thrown', async () => {
+        mockSvc.sendCustomTemplateEmail = jest.fn().mockRejectedValue(new Error('template not found on disk'));
+        const req = { user: { email: 'a@a.com' } } as any;
+        await expect(controller.sendCustomTemplate(req, { templateName: 'missing' } as any)).rejects.toThrow(
+            "Template 'missing' not found",
+        );
+    });
+});
