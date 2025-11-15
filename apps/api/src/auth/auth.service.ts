@@ -4,11 +4,11 @@ import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { AccessTokenPayload, RefreshToken, RefreshTokenDocument, RefreshTokenPayload } from './refreshToken.schema';
 import { Role } from '../common/roles/roles.enum';
-import { CompanyService } from '../company/company.service';
 import { InvalidCredentialsException } from '../common/exceptions/invalidCredentials.exception';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
+import { User, UserDocument } from '../user/user.schema';
 
 /**
  * Service handling authentication logic
@@ -22,7 +22,7 @@ export class AuthService {
     /**
      * Constructor for AuthService.
      * @param refreshTokenModel The Mongoose model for RefreshToken.
-     * @param companyService The service for managing companies.
+     * @param userModel The Mongoose model for User.
      * @param jwtService The JWT service for handling access tokens.
      * @param refreshJwtService The JWT service for handling refresh tokens.
      * @param configService The configuration service for accessing environment variables.
@@ -30,7 +30,7 @@ export class AuthService {
      */
     constructor(
         @InjectModel(RefreshToken.name) private readonly refreshTokenModel: Model<RefreshTokenDocument>,
-        private readonly companyService: CompanyService,
+        @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
         private readonly jwtService: JwtService, // For access tokens
         @Inject('REFRESH_JWT_SERVICE') private readonly refreshJwtService: JwtService, // For refresh tokens
         private readonly configService: ConfigService,
@@ -44,35 +44,24 @@ export class AuthService {
     }
 
     /**
-     * Generates access and refresh tokens for the user based on their role.
+     * Generates access and refresh tokens for the user
      * @param email The email of the user attempting to log in.
-     * @param password The password of the user attempting to log in.
-     * @param role The role of the user.
+     * @param password The password of the user.
      * @returns A Promise that resolves to an object containing the access and refresh tokens.
      * @throws {NotFoundException} If the user with the specified email is not found.
      * @throws {InvalidCredentialsException} If the provided credentials are invalid.
      */
-    async login(email: string, password: string, role: Role): Promise<{ access: string; refresh: string }> {
-        let userId: Types.ObjectId | null = null;
+    async login(email: string, password: string): Promise<{ access: string; refresh: string }> {
+        const user = await this.userModel.findOne({ email: email });
+        if (!user) throw new NotFoundException(`User with email ${email} not found`);
 
-        // Finding user based on role
-        switch (role) {
-            case Role.COMPANY:
-                const company = await this.companyService.findByEmail(email);
-                if (!company) throw new NotFoundException(`Company with email ${email} not found`);
-                if (!(await bcrypt.compare(password, company.password))) throw new InvalidCredentialsException();
-
-                userId = company._id;
-                break;
-
-            default:
-                throw new InvalidCredentialsException('Invalid role specified');
+        if (!(await bcrypt.compare(password, user.password))) {
+            throw new InvalidCredentialsException('Invalid email or password');
         }
-        if (!userId) throw new InvalidCredentialsException('Invalid role specified');
 
         // Generating tokens
-        const { token, rti } = await this.generateRefreshToken(userId, role);
-        const accessToken = await this.generateAccessToken(userId, email, role, rti);
+        const { token, rti } = await this.generateRefreshToken(user._id, user.role);
+        const accessToken = await this.generateAccessToken(user._id, user.email, rti);
 
         return { access: accessToken, refresh: token };
     }
@@ -97,25 +86,26 @@ export class AuthService {
      * @returns A Promise that resolves to the generated JWT access token as a string.
      * @throws {InvalidCredentialsException} If the provided refresh token is invalid, expired or does not belong to the user.
      */
-    private async generateAccessToken(
-        userId: Types.ObjectId,
-        email: string,
-        role: Role,
-        rti: Types.ObjectId,
-    ): Promise<string> {
+    private async generateAccessToken(userId: Types.ObjectId, email: string, rti: Types.ObjectId): Promise<string> {
         // Validate the refresh token existence and validity
         const refreshToken = await this.refreshTokenModel.findById(rti);
         if (!refreshToken) throw new InvalidCredentialsException('Refresh token not found');
-        if (!refreshToken.userId.equals(userId))
+        if (!refreshToken.userId.equals(userId)) {
             throw new InvalidCredentialsException('Refresh token does not belong to the user');
+        }
         if (refreshToken.expiresAt < new Date()) {
             await this.refreshTokenModel.deleteOne({ _id: rti });
             throw new InvalidCredentialsException('Refresh token has expired');
         }
 
+        // Fetch the current user document to get the latest role
+        const user = await this.userModel.findById(userId);
+        if (!user) {
+            throw new InvalidCredentialsException('User not found');
+        }
         let accessTokenPayload: AccessTokenPayload = {
             sub: userId,
-            role: role,
+            role: user.role,
             email: email,
             rti: rti,
         };
@@ -161,13 +151,11 @@ export class AuthService {
      * @throws {InvalidCredentialsException} If the refresh token is invalid or has expired.
      */
     async refreshAccessToken(refreshTokenString: string): Promise<string> {
-        if (!refreshTokenString) {
-            throw new InvalidCredentialsException('Refresh token not provided');
-        }
+        if (!refreshTokenString) throw new InvalidCredentialsException('Refresh token not provided');
 
         try {
             if (!this.refreshJwtService.verify(refreshTokenString)) {
-                throw new InvalidCredentialsException('Invalid refresh token');
+                throw new Error();
             }
         } catch (error) {
             throw new InvalidCredentialsException('Invalid refresh token');
@@ -183,21 +171,15 @@ export class AuthService {
             throw new InvalidCredentialsException('Refresh token has expired');
         }
 
-        let userId: Types.ObjectId;
-        let email: string;
-        switch (refreshToken.role) {
-            case Role.COMPANY:
-                const company = await this.companyService.findOne(refreshToken.userId.toString());
-                if (!company) throw new InvalidCredentialsException('Invalid refresh token');
-                userId = company._id;
-                email = company.email;
-                break;
+        const user = await this.userModel.findById(refreshToken.userId);
+        if (!user) throw new InvalidCredentialsException('User not found for the provided refresh token');
 
-            default:
-                throw new InvalidCredentialsException('Invalid refresh token');
+        // Validate that the role in the refresh token matches the user's current role
+        if (refreshToken.role !== user.role) {
+            throw new InvalidCredentialsException('User role has changed since refresh token was issued');
         }
 
-        return this.generateAccessToken(userId, email, refreshToken.role as Role, refreshToken._id);
+        return this.generateAccessToken(user._id, user.email, refreshToken._id);
     }
 
     /**
@@ -212,7 +194,7 @@ export class AuthService {
 
         try {
             if (!this.refreshJwtService.verify(refreshTokenString)) {
-                throw new InvalidCredentialsException('Invalid refresh token');
+                throw new Error();
             }
         } catch (error) {
             throw new InvalidCredentialsException('Invalid refresh token');

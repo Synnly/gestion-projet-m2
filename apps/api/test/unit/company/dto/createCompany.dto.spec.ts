@@ -8,6 +8,7 @@ describe('CreateCompanyDto', () => {
         it('should create instance successfully when constructor is called with all fields', () => {
             const data = {
                 email: 'test@example.com',
+                    role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company',
                 siretNumber: '12345678901234',
@@ -40,6 +41,7 @@ describe('CreateCompanyDto', () => {
         it('should create instance successfully when constructor is called with minimal required fields', () => {
             const data = {
                 email: 'test@example.com',
+                    role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company',
             };
@@ -61,6 +63,7 @@ describe('CreateCompanyDto', () => {
             it('should pass validation when email is correct', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                 });
@@ -72,6 +75,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when email format is invalid', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'invalid-email',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                 });
@@ -84,6 +88,7 @@ describe('CreateCompanyDto', () => {
 
             it('should fail validation when email is empty', async () => {
                 const dto = new CreateCompanyDto({
+                    role: 'COMPANY' as any,
                     email: '',
                     password: 'Password123!',
                     name: 'Test Company',
@@ -96,6 +101,7 @@ describe('CreateCompanyDto', () => {
 
             it('should fail validation when email is missing', async () => {
                 const dto = new CreateCompanyDto({
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                 });
@@ -108,6 +114,7 @@ describe('CreateCompanyDto', () => {
 
             it('should fail validation when email is null', async () => {
                 const dto = new CreateCompanyDto({
+                    role: 'COMPANY' as any,
                     email: null as any,
                     password: 'Password123!',
                     name: 'Test Company',
@@ -121,6 +128,7 @@ describe('CreateCompanyDto', () => {
 
             it('should fail validation when email is undefined', async () => {
                 const dto = new CreateCompanyDto({
+                    role: 'COMPANY' as any,
                     email: undefined as any,
                     password: 'Password123!',
                     name: 'Test Company',
@@ -142,6 +150,7 @@ describe('CreateCompanyDto', () => {
 
                 for (const email of validEmails) {
                     const dto = new CreateCompanyDto({
+                        role: 'COMPANY' as any,
                         email,
                         password: 'Password123!',
                         name: 'Test Company',
@@ -157,6 +166,7 @@ describe('CreateCompanyDto', () => {
             it('should pass validation when password is strong', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                 });
@@ -168,6 +178,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when password has no uppercase letters', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'password123!',
                     name: 'Test Company',
                 });
@@ -182,6 +193,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when password has no lowercase letters', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'PASSWORD123!',
                     name: 'Test Company',
                 });
@@ -195,6 +207,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when password has no number', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password!',
                     name: 'Test Company',
                 });
@@ -208,6 +221,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when password has no symbol', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123',
                     name: 'Test Company',
                 });
@@ -221,6 +235,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when password is too short', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Pass1!',
                     name: 'Test Company',
                 });
@@ -234,6 +249,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when password is empty', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: '',
                     name: 'Test Company',
                 });
@@ -247,6 +263,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when password is missing', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     name: 'Test Company',
                 } as any);
 
@@ -268,6 +285,7 @@ describe('CreateCompanyDto', () => {
                 for (const password of strongPasswords) {
                     const dto = new CreateCompanyDto({
                         email: 'test@example.com',
+                    role: 'COMPANY' as any,
                         password,
                         name: 'Test Company',
                     });
@@ -282,6 +300,7 @@ describe('CreateCompanyDto', () => {
             it('should pass validation when name is valid', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                 });
@@ -293,6 +312,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when name is empty', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: '',
                 });
@@ -306,6 +326,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when name is missing', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                 } as any);
 
@@ -318,6 +339,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when name is not a string', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 123 as any,
                 });
@@ -331,6 +353,7 @@ describe('CreateCompanyDto', () => {
             it('should pass validation when name is long but valid', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'A'.repeat(100),
                 });
@@ -344,6 +367,7 @@ describe('CreateCompanyDto', () => {
             it('should pass validation when optional fields are undefined', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                 });
@@ -355,6 +379,7 @@ describe('CreateCompanyDto', () => {
             it('should pass validation when siretNumber is valid', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                     siretNumber: '12345678901234',
@@ -367,6 +392,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when siretNumber is not a string', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                     siretNumber: 123 as any,
@@ -381,6 +407,7 @@ describe('CreateCompanyDto', () => {
             it('should pass validation when nafCode is valid', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                     nafCode: NafCode.NAF_62_02A,
@@ -393,6 +420,7 @@ describe('CreateCompanyDto', () => {
             it('should pass validation when all optional address fields are provided', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                     streetNumber: '10',
@@ -409,6 +437,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when address fields are not strings', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                     streetNumber: 10 as any,
@@ -426,6 +455,7 @@ describe('CreateCompanyDto', () => {
                 for (const structureType of Object.values(StructureType)) {
                     const dto = new CreateCompanyDto({
                         email: 'test@example.com',
+                    role: 'COMPANY' as any,
                         password: 'Password123!',
                         name: 'Test Company',
                         structureType: structureType,
@@ -439,6 +469,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when structureType is invalid', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                     structureType: 'InvalidType' as any,
@@ -454,6 +485,7 @@ describe('CreateCompanyDto', () => {
             it('should pass validation when structureType is undefined', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                 });
@@ -468,6 +500,7 @@ describe('CreateCompanyDto', () => {
                 for (const legalStatus of Object.values(LegalStatus)) {
                     const dto = new CreateCompanyDto({
                         email: 'test@example.com',
+                    role: 'COMPANY' as any,
                         password: 'Password123!',
                         name: 'Test Company',
                         legalStatus: legalStatus,
@@ -481,6 +514,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when legalStatus is invalid', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                     legalStatus: 'InvalidStatus' as any,
@@ -496,6 +530,7 @@ describe('CreateCompanyDto', () => {
             it('should pass validation when legalStatus is undefined', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                 });
@@ -509,6 +544,7 @@ describe('CreateCompanyDto', () => {
             it('should return multiple validation errors when multiple fields are invalid', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'invalid-email',
+                    role: 'COMPANY' as any,
                     password: 'weak',
                     name: '',
                 });
@@ -527,6 +563,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when siretNumber is empty string', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'test@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
                     siretNumber: '',
@@ -541,6 +578,7 @@ describe('CreateCompanyDto', () => {
             it('should fail validation when email contains leading or trailing whitespace', async () => {
                 const dto = new CreateCompanyDto({
                     email: '  test@example.com  ',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: '  Test Company  ',
                 });
@@ -554,6 +592,7 @@ describe('CreateCompanyDto', () => {
             it('should pass validation when DTO contains all fields', async () => {
                 const dto = new CreateCompanyDto({
                     email: 'complete@example.com',
+                    role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Complete Company',
                     siretNumber: '12345678901234',

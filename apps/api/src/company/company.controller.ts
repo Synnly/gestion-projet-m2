@@ -7,7 +7,7 @@ import {
     Delete,
     HttpCode,
     HttpStatus,
-    Patch,
+    Put,
     NotFoundException,
     ValidationPipe,
     UseGuards,
@@ -75,14 +75,14 @@ export class CompanyController {
      * @param id The company identifier
      * @param dto The updated company data
      */
-    @Patch('/:id')
+    @Put('/:id')
     @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
     async update(
         @Param('id', ParseObjectIdPipe) id: string,
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
-        dto: UpdateCompanyDto,
+        dto: UpdateCompanyDto | CreateCompanyDto,
     ) {
         await this.companyService.update(id, dto);
     }

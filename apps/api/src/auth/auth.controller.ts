@@ -1,7 +1,7 @@
 import { Body, Controller, Post, Req, Res, ValidationPipe } from '@nestjs/common';
 import express from 'express';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
+import { LoginDto } from '../user/dto/login.dto';
 import { ConfigService } from '@nestjs/config';
 import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
 
@@ -39,7 +39,8 @@ export class AuthController {
         dto: LoginDto,
         @Res({ passthrough: true }) res: express.Response,
     ): Promise<string> {
-        const { access, refresh } = await this.authService.login(dto.email, dto.password, dto.role);
+        const { access, refresh } = await this.authService.login(dto.email, dto.password);
+
         res.cookie('refreshToken', refresh, {
             httpOnly: true,
             secure: true,

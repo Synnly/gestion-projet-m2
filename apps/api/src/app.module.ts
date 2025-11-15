@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { TokensMiddleware } from './common/middleware/tokens.middleware';
 import { S3Module } from './s3/s3.module';
+import { MailerModule } from './mailer/mailer.module';
 
 @Module({
     imports: [
@@ -21,6 +22,7 @@ import { S3Module } from './s3/s3.module';
         AuthModule,
         CompanyModule,
         S3Module,
+        MailerModule,
     ],
     controllers: [],
     providers: [],

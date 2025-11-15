@@ -46,7 +46,7 @@ export class TokensMiddleware implements NestMiddleware {
                         secret: this.ACCESS_TOKEN_SECRET,
                     });
                     this.setUser(req, accessPayload);
-                    return next();
+                    return;
                 } catch {
                     // Access token invalid, try refresh token now
                 }
@@ -62,11 +62,11 @@ export class TokensMiddleware implements NestMiddleware {
                     });
                 } catch {
                     // Refresh token invalid, nothing more to do
-                    return next();
+                    return;
                 }
 
                 // Verify expiration of refresh token
-                if (refreshPayload.expiresAt! < Date.now()) return next();
+                if (refreshPayload.expiresAt! < Date.now()) return;
 
                 // Refresh the access token
                 try {

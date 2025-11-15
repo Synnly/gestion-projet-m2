@@ -8,6 +8,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthGuard } from './auth.guard';
 import { StringValue } from 'ms';
 import { CompanyModule } from '../company/company.module';
+import { UsersModule } from '../user/user.module';
 
 /**
  * Global module for authentication.
@@ -18,13 +19,14 @@ import { CompanyModule } from '../company/company.module';
     imports: [
         ConfigModule,
         CompanyModule,
+        UsersModule,
         MongooseModule.forFeature([{ name: RefreshToken.name, schema: RefreshTokenSchema }]),
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: (config: ConfigService) => {
                 const secret = config.get<string>('ACCESS_TOKEN_SECRET') || 'change-me-access-secret';
-                const expires = config.get<string>('ACCESS_TOKEN_LIFESPAN_MINUTES') + 'm' || '5m';
+                const expires = (config.get<string>('ACCESS_TOKEN_LIFESPAN_MINUTES') || '5') + 'm';
                 return {
                     secret,
                     signOptions: { expiresIn: expires as StringValue },
@@ -38,7 +40,7 @@ import { CompanyModule } from '../company/company.module';
             provide: 'REFRESH_JWT_SERVICE',
             useFactory: (config: ConfigService) => {
                 const secret = config.get<string>('REFRESH_TOKEN_SECRET') || 'change-me-refresh-secret';
-                const expires = config.get<string>('REFRESH_TOKEN_LIFESPAN_MINUTES') + 'm' || '30d';
+                const expires = (config.get<string>('REFRESH_TOKEN_LIFESPAN_MINUTES') || '43200') + 'm';
                 return new JwtService({ secret, signOptions: { expiresIn: expires as StringValue } });
             },
             inject: [ConfigService],
