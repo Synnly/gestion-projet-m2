@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, Res, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Logger, Post, Req, Res, ValidationPipe } from '@nestjs/common';
 import express from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from '../user/dto/login.dto';
@@ -45,7 +45,7 @@ export class AuthController {
             httpOnly: true,
             secure: true,
             sameSite: 'lax',
-            path: '/api/auth/refresh',
+            path: '/api',
             maxAge: this.COOKIE_LIFESPAN,
         });
         return access;

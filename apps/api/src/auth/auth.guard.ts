@@ -1,7 +1,8 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
+import { Request } from 'express';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -19,7 +20,7 @@ export class AuthGuard implements CanActivate {
      */
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest<Request>();
-        const refreshToken = request['refreshToken'];
+        const refreshToken = request.cookies['refreshToken'];
 
         if (!refreshToken) throw new UnauthorizedException('Refresh token not found');
 
@@ -27,7 +28,6 @@ export class AuthGuard implements CanActivate {
         if (!secret) throw new InvalidConfigurationException('Refresh token secret not configured');
 
         request['user'] = await this.jwtService.verifyAsync(refreshToken, { secret });
-
         return true;
     }
 }
