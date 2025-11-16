@@ -7,13 +7,14 @@ type FormSubmitProps = {
     className?: string;
 };
 
-export const FormSubmit = ({ isPending, isError, title, pendingTitle, error, className }: FormSubmitProps) => {
+export const FormSubmit = ({ isPending, isError, title, pendingTitle, error, className,...rest }: FormSubmitProps) => {
     return (
         <>
             <input
                 type="submit"
                 value={isPending != null ? (!isPending ? title : pendingTitle) : title}
                 className={className}
+                {...rest} 
             />
             {isError && <p className="text-red-500">{error?.message}</p>}
         </>

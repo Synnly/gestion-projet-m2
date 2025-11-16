@@ -1,5 +1,4 @@
 export type userContext = {
-    access: string;
-    role: string;
-    isVerified: boolean;
+    accessToken: string;
+    get: (access: string) => { id: string; role: string; isVerified: boolean; isValid: boolean };
 };

@@ -1,20 +1,36 @@
-import type { FieldError, UseFormRegister } from 'react-hook-form';
-import type { companyFormSignUp } from '../authCompany/companySignup/type';
+import type { FieldError, FieldValues, UseFormRegister } from 'react-hook-form';
+import { cn } from '../utils/cn';
 
-type FormInput = {
-    label: string;
-    register: ReturnType<UseFormRegister<companyFormSignUp>>;
+export type FormInputProps<T extends FieldValues> = {
+    label?: string;
+    register: ReturnType<UseFormRegister<T>>;
     error?: FieldError;
+    className?: string;
 } & React.InputHTMLAttributes<HTMLInputElement>;
 
-export const FormInput = ({ label, register, error, ...props }: FormInput) => (
-    <div className="flex flex-col w-full">
-        {label && (
-            <label className="font-bold text-sm" htmlFor={label}>
-                {label}
-            </label>
-        )}
-        <input {...register} {...props} name={label} className="border rounded-lg p-2" />
-        {error && <span className="text-red-500">{error.message}</span>}
-    </div>
-);
+export function FormInput<T extends FieldValues>({
+    name,
+    label,
+    register,
+    error,
+    className,
+    ...props
+}: FormInputProps<T>) {
+    return (
+        <div className="flex flex-col w-full">
+            {label && (
+                <label className="font-bold text-sm pb-2" htmlFor={name}>
+                    {label}
+                </label>
+            )}
+
+            <input
+                {...register}
+                {...props}
+                className={cn('border p-5 rounded-field', error && 'border-red-500', className)}
+            />
+
+            {error && <span className="text-red-500">{error.message}</span>}
+        </div>
+    );
+}
