@@ -138,11 +138,19 @@ startxref
 
         const mockS3Service = {
             async generatePresignedUploadUrl(originalFilename: string, fileType: 'logo' | 'cv', userId: string) {
-                const filename = originalFilename.replace(/[^a-zA-Z0-9-_\.]/g, '_');
-                const timestamp = Date.now();
-                const prefix = fileType === 'logo' ? 'logos/' : 'cvs/';
-                const fileName = `${prefix}${timestamp}-${filename}`;
+                const extension = originalFilename.split('.').pop()?.toLowerCase() || '';
+                const fileName = `${userId}_${fileType}.${extension}`;
                 const uploadUrl = `http://mock/${fileName}`;
+                
+                // Check if file exists and delete it (simulate overwrite)
+                const exists = await mockMinio
+                    .statObject(process.env.MINIO_BUCKET || 'test-uploads', fileName)
+                    .then(() => true)
+                    .catch(() => false);
+                if (exists) {
+                    await mockMinio.removeObject(process.env.MINIO_BUCKET || 'test-uploads', fileName);
+                }
+                
                 return { fileName, uploadUrl };
             },
             async generatePresignedDownloadUrl(fileName: string) {
@@ -259,7 +267,7 @@ startxref
 
             expect(response.body).toHaveProperty('fileName');
             expect(response.body).toHaveProperty('uploadUrl');
-            expect(response.body.fileName).toMatch(/^logos\/\d+-company-logo\.png$/);
+            expect(response.body.fileName).toMatch(/^test-user-\d+_logo\.png$/);
         });
 
         it('should reject invalid extension', async () => {

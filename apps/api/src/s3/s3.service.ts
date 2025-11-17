@@ -95,21 +95,29 @@ export class S3Service implements OnModuleInit {
         fileType: 'logo' | 'cv',
         userId: string,
     ): Promise<PresignedUploadResult> {
-        // Validate filename to prevent path traversal
-        const filename = originalFilename.replace(/[^a-zA-Z0-9-_\.]/g, '_');
+        // Extract extension from original filename
+        const extension = originalFilename.split('.').pop()?.toLowerCase() || '';
         
-        // Generate unique filename with timestamp
-        const timestamp = Date.now();
-        const prefix = fileType === 'logo' ? BUCKET_PREFIXES.LOGO : BUCKET_PREFIXES.CV;
-        const fileName = `${prefix}${timestamp}-${filename}`;
+        // Generate filename: userId_logo.ext or userId_cv.ext (no folder prefix)
+        const fileName = `${userId}_${fileType}.${extension}`;
 
         // Validate path
         if (!PATH_REGEX.SAFE_PATH.test(fileName)) {
             throw new Error('Invalid file path generated');
         }
 
+        // Check if file already exists and delete it (overwrite old version)
+        const exists = await this.fileExists(fileName);
+        if (exists) {
+            try {
+                await this.minioClient.removeObject(this.bucket, fileName);
+            } catch (error) {
+                // Continue even if deletion fails
+            }
+        }
+
         try {
-            // Generate presigned PUT URL
+            // Generate presigned PUT URL with metadata
             const uploadUrl = await this.minioClient.presignedPutObject(
                 this.bucket,
                 fileName,

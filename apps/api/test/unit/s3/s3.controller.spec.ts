@@ -128,8 +128,8 @@ describe('S3Controller', () => {
             };
 
             const mockResult = {
-                fileName: 'logos/1699999999-company-logo.png',
-                uploadUrl: 'http://minio:9000/bucket/logos/1699999999-company-logo.png?signature=xyz',
+                fileName: 'user123_logo.png',
+                uploadUrl: 'http://minio:9000/bucket/user123_logo.png?signature=xyz',
             };
 
             mockS3Service.generatePresignedUploadUrl.mockResolvedValue(mockResult);
@@ -166,8 +166,8 @@ describe('S3Controller', () => {
             };
 
             const mockResult = {
-                fileName: 'cvs/1699999999-resume.pdf',
-                uploadUrl: 'http://minio:9000/bucket/cvs/1699999999-resume.pdf?signature=abc',
+                fileName: 'user456_cv.pdf',
+                uploadUrl: 'http://minio:9000/bucket/user456_cv.pdf?signature=abc',
             };
 
             mockS3Service.generatePresignedUploadUrl.mockResolvedValue(mockResult);

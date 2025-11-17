@@ -35,11 +35,14 @@ describe('S3Service (unit)', () => {
 
         const mockClient: any = {
             presignedPutObject: jest.fn().mockResolvedValue('upload-url'),
+            statObject: jest.fn().mockRejectedValue(new Error('not found')),
+            removeObject: jest.fn().mockResolvedValue(undefined),
         };
         svc['minioClient'] = mockClient;
 
         const res = await svc.generatePresignedUploadUrl('file.png', 'logo', 'uid');
         expect(res.uploadUrl).toBe('upload-url');
+        expect(res.fileName).toBe('uid_logo.png');
 
         // Simulate failure
         mockClient.presignedPutObject.mockRejectedValue(new Error('fail'));
@@ -93,7 +96,10 @@ describe('S3Service (unit)', () => {
 
         const svc = new S3Service(fakeConfig);
         svc['bucket'] = 'uploads';
-        svc['minioClient'] = { presignedPutObject: jest.fn().mockResolvedValue('u') } as any;
+        svc['minioClient'] = {
+            presignedPutObject: jest.fn().mockResolvedValue('u'),
+            statObject: jest.fn().mockRejectedValue(new Error('not found')),
+        } as any;
 
         await expect(svc.generatePresignedUploadUrl('file.png', 'logo', 'uid')).rejects.toThrow(
             'Invalid file path generated',
@@ -193,41 +199,59 @@ describe('S3Service', () => {
         });
 
         it('should generate presigned URL for logo upload', async () => {
-            const mockUrl = 'http://localhost:9000/test-bucket/logos/123-logo.png?signature=xyz';
+            const mockUrl = 'http://localhost:9000/test-bucket/user123_logo.png?signature=xyz';
             mockMinioClient.presignedPutObject.mockResolvedValue(mockUrl);
+            mockMinioClient.statObject.mockRejectedValue(new Error('Not found'));
 
             const result = await service.generatePresignedUploadUrl('logo.png', 'logo', 'user123');
 
             expect(result.uploadUrl).toBe(mockUrl);
-            expect(result.fileName).toMatch(/^logos\/\d+-logo\.png$/);
+            expect(result.fileName).toBe('user123_logo.png');
             expect(mockMinioClient.presignedPutObject).toHaveBeenCalledWith(
                 'test-bucket',
-                expect.stringMatching(/^logos\/\d+-logo\.png$/),
+                'user123_logo.png',
                 600,
             );
         });
 
         it('should generate presigned URL for CV upload', async () => {
-            const mockUrl = 'http://localhost:9000/test-bucket/cvs/456-resume.pdf?signature=abc';
+            const mockUrl = 'http://localhost:9000/test-bucket/user456_cv.pdf?signature=abc';
             mockMinioClient.presignedPutObject.mockResolvedValue(mockUrl);
+            mockMinioClient.statObject.mockRejectedValue(new Error('Not found'));
 
             const result = await service.generatePresignedUploadUrl('resume.pdf', 'cv', 'user456');
 
             expect(result.uploadUrl).toBe(mockUrl);
-            expect(result.fileName).toMatch(/^cvs\/\d+-resume\.pdf$/);
+            expect(result.fileName).toBe('user456_cv.pdf');
         });
 
-        it('should sanitize filename with special characters', async () => {
-            const mockUrl = 'http://localhost:9000/test-bucket/logos/123-my_file_name.png';
+        it('should delete existing file before generating new upload URL', async () => {
+            const mockUrl = 'http://localhost:9000/test-bucket/user123_logo.png';
             mockMinioClient.presignedPutObject.mockResolvedValue(mockUrl);
+            mockMinioClient.statObject.mockResolvedValue({ size: 1024 } as any);
+            mockMinioClient.removeObject.mockResolvedValue(undefined);
 
-            const result = await service.generatePresignedUploadUrl('my file@name!.png', 'logo', 'user123');
+            const result = await service.generatePresignedUploadUrl('newlogo.png', 'logo', 'user123');
 
-            expect(result.fileName).toMatch(/^logos\/\d+-my_file_name_\.png$/);
+            expect(result.fileName).toBe('user123_logo.png');
+            expect(mockMinioClient.removeObject).toHaveBeenCalledWith('test-bucket', 'user123_logo.png');
+        });
+
+        it('should continue if deletion of existing file fails', async () => {
+            const mockUrl = 'http://localhost:9000/test-bucket/user123_logo.png';
+            mockMinioClient.presignedPutObject.mockResolvedValue(mockUrl);
+            mockMinioClient.statObject.mockResolvedValue({ size: 1024 } as any);
+            mockMinioClient.removeObject.mockRejectedValue(new Error('Delete failed'));
+
+            const result = await service.generatePresignedUploadUrl('logo.png', 'logo', 'user123');
+
+            expect(result.fileName).toBe('user123_logo.png');
+            expect(result.uploadUrl).toBe(mockUrl);
         });
 
         it('should handle MinIO errors when generating upload URL', async () => {
             mockMinioClient.presignedPutObject.mockRejectedValue(new Error('MinIO error'));
+            mockMinioClient.statObject.mockRejectedValue(new Error('Not found'));
 
             await expect(service.generatePresignedUploadUrl('logo.png', 'logo', 'user123')).rejects.toThrow(
                 'Failed to generate upload URL',
