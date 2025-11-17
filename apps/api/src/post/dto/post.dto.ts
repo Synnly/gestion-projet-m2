@@ -80,7 +80,7 @@ export class PostDto {
     adress?: string;
 
     /**
-     * Work mode of the intership
+     * Work mode of the internship
      * Must be either in-person, remote, or hybrid
      */
     @IsOptional()
