@@ -182,11 +182,7 @@ describe('AuthService', () => {
             refreshTokenModel.findById.mockResolvedValue(null);
 
             await expect(
-                (service as any).generateAccessToken(
-                    new Types.ObjectId(),
-                    'email@test.com',
-                    new Types.ObjectId(),
-                ),
+                (service as any).generateAccessToken(new Types.ObjectId(), 'email@test.com', new Types.ObjectId()),
             ).rejects.toThrow(InvalidCredentialsException);
         });
 
@@ -197,9 +193,9 @@ describe('AuthService', () => {
             const token = createMockRefreshToken(differentUserId, 1000);
             refreshTokenModel.findById.mockResolvedValue(token);
 
-            await expect(
-                (service as any).generateAccessToken(userId, 'email@test.com', tokenId),
-            ).rejects.toThrow(InvalidCredentialsException);
+            await expect((service as any).generateAccessToken(userId, 'email@test.com', tokenId)).rejects.toThrow(
+                InvalidCredentialsException,
+            );
         });
 
         it('should throw InvalidCredentialsException when refresh token is expired and generateAccessToken is called resulting in deleteOne being called', async () => {
@@ -208,9 +204,9 @@ describe('AuthService', () => {
             const expiredToken = createMockRefreshToken(userId, -1000);
             refreshTokenModel.findById.mockResolvedValue(expiredToken);
 
-            await expect(
-                (service as any).generateAccessToken(userId, 'email@test.com', tokenId),
-            ).rejects.toThrow(InvalidCredentialsException);
+            await expect((service as any).generateAccessToken(userId, 'email@test.com', tokenId)).rejects.toThrow(
+                InvalidCredentialsException,
+            );
             expect(refreshTokenModel.deleteOne).toHaveBeenCalledWith({ _id: tokenId });
         });
 
@@ -219,12 +215,25 @@ describe('AuthService', () => {
             const tokenId = new Types.ObjectId();
             const validToken = createMockRefreshToken(userId);
             refreshTokenModel.findById.mockResolvedValue(validToken);
+            mockUserModel.findById.mockResolvedValue({ _id: userId, email: 'email@test.com', role: Role.COMPANY });
             mockJwtService.signAsync.mockResolvedValue('signed-access-token');
 
             const result = await (service as any).generateAccessToken(userId, 'email@test.com', tokenId);
 
             expect(result).toBe('signed-access-token');
             expect(mockJwtService.signAsync).toHaveBeenCalledWith(expect.objectContaining({ sub: userId }));
+        });
+
+        it('should throw InvalidCredentialsException when user not found in database and generateAccessToken is called', async () => {
+            const userId = new Types.ObjectId();
+            const tokenId = new Types.ObjectId();
+            const validToken = createMockRefreshToken(userId);
+            refreshTokenModel.findById.mockResolvedValue(validToken);
+            mockUserModel.findById.mockResolvedValue(null);
+
+            await expect((service as any).generateAccessToken(userId, 'email@test.com', tokenId)).rejects.toThrow(
+                InvalidCredentialsException,
+            );
         });
     });
 
@@ -304,6 +313,22 @@ describe('AuthService', () => {
             refreshTokenModel.findOne.mockResolvedValue(validToken);
 
             await expect(service.refreshAccessToken('token')).rejects.toThrow(InvalidCredentialsException);
+        });
+
+        it('should throw InvalidCredentialsException when user role has changed since token was issued', async () => {
+            const userId = new Types.ObjectId();
+            const payload = createMockTokenPayload({ sub: userId, role: Role.COMPANY });
+            const validToken = createMockRefreshToken(userId, 10000);
+            validToken.role = Role.COMPANY; // Token was issued for COMPANY role
+            mockRefreshJwtService.verify.mockReturnValue(true);
+            mockRefreshJwtService.decode.mockReturnValue(payload);
+            refreshTokenModel.findOne.mockResolvedValue(validToken);
+            // But user's current role is now ADMIN
+            mockUserModel.findById.mockResolvedValue({ _id: userId, email: 'user@test.com', role: Role.ADMIN });
+
+            await expect(service.refreshAccessToken('token')).rejects.toThrow(
+                'User role has changed since refresh token was issued',
+            );
         });
 
         it('should return new access token when all data is valid and refreshAccessToken is called', async () => {

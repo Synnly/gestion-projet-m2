@@ -72,6 +72,15 @@ export class User {
     password: string;
 
     /**
+     * Indicates if the user's email has been verified
+     *
+     * - Defaults to false for new accounts
+     * - Set to true upon successful email verification
+     */
+    @Prop({ default: false })
+    isVerified: boolean;
+
+    /**
      * Validation status of the user account
      *
      * - Defaults to false for new accounts
@@ -79,17 +88,60 @@ export class User {
      * - May be required for accessing certain platform features
      */
     @Prop({ default: false })
-    isVerified: boolean;
+    isValid: boolean;
 
     /**
-     * Token used for email verification
-     *
-     * - Generated during registration
-     * - Sent to user's email for account activation
-     * - Optional field, only present during verification process
+     * One-time verification code sent to user's email for account confirmation
+     * - Stores the 6-digit numeric OTP as a string
+     * - Cleared when verification completes or expires
      */
-    @Prop()
-    validationToken?: string;
+    @Prop({ default: null, type: String })
+    emailVerificationCode: string | null;
+
+    /**
+     * Expiration date for the email verification code
+     */
+    @Prop({ default: null, type: Date })
+    emailVerificationExpires: Date | null;
+
+    /**
+     * One-time code for password reset flows
+     */
+    @Prop({ default: null, type: String })
+    passwordResetCode: string | null;
+
+    /**
+     * Expiration date for the password reset code
+     */
+    @Prop({ default: null, type: Date })
+    passwordResetExpires: Date | null;
+
+    /**
+     * Number of OTP requests in the current rolling window (used by rate limiter)
+     * Defaults to 0 and increments on each OTP send request
+     */
+    @Prop({ default: 0 })
+    otpRequestCount: number;
+
+    /**
+     * Timestamp of the last OTP request. Used to compute rate-limit windows.
+     */
+    @Prop({ default: null, type: Date })
+    lastOtpRequestAt: Date | null;
+
+    /**
+     * Number of failed OTP verification attempts for email verification
+     * Reset when a new OTP is generated or after successful verification
+     */
+    @Prop({ default: 0 })
+    emailVerificationAttempts: number;
+
+    /**
+     * Number of failed OTP verification attempts for password reset
+     * Reset when a new OTP is generated or after successful verification
+     */
+    @Prop({ default: 0 })
+    passwordResetAttempts: number;
 
     /**
      * User's role in the system
