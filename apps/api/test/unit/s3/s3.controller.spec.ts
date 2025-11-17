@@ -1,6 +1,6 @@
 import { S3Controller } from '../../../src/s3/s3.controller';
 import { S3Service } from '../../../src/s3/s3.service';
-import { GeneratePresignedUploadDto } from '../../../src/s3/dto/generate-presigned.dto';
+import { GeneratePresignedUploadDto } from '../../../src/s3/dto/generatePresigned.dto';
 import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthGuard } from '../../../src/auth/auth.guard';

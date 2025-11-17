@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { NafCode } from './naf-codes.enum';
+import { NafCode } from './nafCodes.enum';
 
 /**
  * Enumeration of organizational structure types

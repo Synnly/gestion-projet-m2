@@ -297,13 +297,13 @@ describe('MailerController', () => {
             };
             mockMailerService.sendCustomTemplateEmail.mockResolvedValue(undefined);
 
-            const result = await controller.sendCustomTemplate(mockRequest as any, { templateName: 'finish-verif' });
+            const result = await controller.sendCustomTemplate(mockRequest as any, { templateName: 'finishVerif' });
 
             expect(result).toEqual({
                 success: true,
-                message: 'Email sent successfully using template: finish-verif',
+                message: 'Email sent successfully using template: finishVerif',
             });
-            expect(mockMailerService.sendCustomTemplateEmail).toHaveBeenCalledWith('user@example.com', 'finish-verif');
+            expect(mockMailerService.sendCustomTemplateEmail).toHaveBeenCalledWith('user@example.com', 'finishVerif');
         });
 
         it('should throw NotFoundException when template does not exist', async () => {
@@ -323,7 +323,7 @@ describe('MailerController', () => {
             };
 
             await expect(
-                controller.sendCustomTemplate(mockRequest as any, { templateName: 'finish-verif' }),
+                controller.sendCustomTemplate(mockRequest as any, { templateName: 'finishVerif' }),
             ).rejects.toThrow();
         });
 
@@ -333,7 +333,7 @@ describe('MailerController', () => {
             };
 
             await expect(
-                controller.sendCustomTemplate(mockRequest as any, { templateName: 'finish-verif' }),
+                controller.sendCustomTemplate(mockRequest as any, { templateName: 'finishVerif' }),
             ).rejects.toThrow('User email not found in token');
         });
 
@@ -344,7 +344,7 @@ describe('MailerController', () => {
             mockMailerService.sendCustomTemplateEmail.mockRejectedValue(new Error('Some other error'));
 
             await expect(
-                controller.sendCustomTemplate(mockRequest as any, { templateName: 'finish-verif' }),
+                controller.sendCustomTemplate(mockRequest as any, { templateName: 'finishVerif' }),
             ).rejects.toThrow('Failed to send email');
         });
     });

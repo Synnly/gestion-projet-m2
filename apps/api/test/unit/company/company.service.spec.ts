@@ -5,7 +5,7 @@ import { CompanyService } from '../../../src/company/company.service';
 import { Company, CompanyDocument, StructureType, LegalStatus } from '../../../src/company/company.schema';
 import { CreateCompanyDto } from '../../../src/company/dto/createCompany.dto';
 import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
-import { NafCode } from '../../../src/company/naf-codes.enum';
+import { NafCode } from '../../../src/company/nafCodes.enum';
 import * as bcrypt from 'bcrypt';
 
 describe('CompanyService', () => {

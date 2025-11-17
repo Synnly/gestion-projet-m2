@@ -94,7 +94,7 @@ describe('MailerService', () => {
                 expect.objectContaining({
                     to: 'user@example.com',
                     subject: 'Confirm your account',
-                    template: 'signup-confirmation',
+                    template: 'signupConfirmation',
                     from: '"Test App" <noreply@example.com>',
                     context: expect.objectContaining({
                         otp: expect.any(String),
@@ -190,7 +190,7 @@ describe('MailerService', () => {
                 expect.objectContaining({
                     to: 'user@example.com',
                     subject: 'Password reset request',
-                    template: 'reset-password',
+                    template: 'resetPassword',
                     from: '"Test App" <noreply@example.com>',
                 }),
             );
@@ -375,7 +375,7 @@ describe('MailerService', () => {
                 expect.objectContaining({
                     to: 'user@example.com',
                     subject: 'Test Title',
-                    template: 'info-message',
+                    template: 'infoMessage',
                     from: '"Test App" <noreply@example.com>',
                     context: {
                         title: 'Test Title',
@@ -391,13 +391,13 @@ describe('MailerService', () => {
         it('should send email with custom template', async () => {
             mockNestMailerService.sendMail.mockResolvedValue(true);
 
-            await service.sendCustomTemplateEmail('user@example.com', 'finish-verif');
+            await service.sendCustomTemplateEmail('user@example.com', 'finishVerif');
 
             expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
                 expect.objectContaining({
                     to: 'user@example.com',
                     subject: 'Notification from Test App',
-                    template: 'finish-verif',
+                    template: 'finishVerif',
                     from: '"Test App" <noreply@example.com>',
                     context: {
                         fromName: 'Test App',

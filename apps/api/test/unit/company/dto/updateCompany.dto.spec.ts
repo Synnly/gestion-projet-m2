@@ -1,6 +1,6 @@
 import { validate } from 'class-validator';
 import { UpdateCompanyDto } from '../../../../src/company/dto/updateCompany.dto';
-import { NafCode } from '../../../../src/company/naf-codes.enum';
+import { NafCode } from '../../../../src/company/nafCodes.enum';
 import { LegalStatus, StructureType } from '../../../../src/company/company.schema';
 
 describe('UpdateCompanyDto - decorator branches', () => {

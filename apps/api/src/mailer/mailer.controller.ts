@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { MailerService } from './mailer.service';
 import { EmailDto, VerifyOtpDto, ResetPasswordDto } from './dto/mailer.dto';
-import { SendCustomTemplateDto } from './dto/send-custom-template.dto';
+import { SendCustomTemplateDto } from './dto/sendCustomTemplate.dto';
 import { AuthGuard } from '../auth/auth.guard';
 
 /**

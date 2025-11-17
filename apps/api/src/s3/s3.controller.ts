@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { S3Service } from './s3.service';
-import { GeneratePresignedUploadDto } from './dto/generate-presigned.dto';
+import { GeneratePresignedUploadDto } from './dto/generatePresigned.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { RATE_LIMIT } from './s3.constants';
 import { OwnerGuard } from './owner.guard';

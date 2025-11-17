@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsEmail, IsEnum, IsBoolean, IsStrongPassword, Matches } from 'class-validator';
 import { StructureType, LegalStatus } from '../company.schema';
-import { NafCode } from '../naf-codes.enum';
+import { NafCode } from '../nafCodes.enum';
 
 /**
  * Data Transfer Object for updating an existing company

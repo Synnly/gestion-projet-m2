@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { FileValidationPipe, FileValidator } from '../../../src/s3/pipes/file-validation.pipe';
+import { FileValidationPipe, FileValidator } from '../../../src/s3/pipes/fileValidation.pipe';
 
 describe('FileValidationPipe', () => {
     let pipe: FileValidationPipe;

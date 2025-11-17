@@ -1,7 +1,7 @@
 import { validate } from 'class-validator';
 import { CreateCompanyDto } from '../../../../src/company/dto/createCompany.dto';
 import { StructureType, LegalStatus } from '../../../../src/company/company.schema';
-import { NafCode } from '../../../../src/company/naf-codes.enum';
+import { NafCode } from '../../../../src/company/nafCodes.enum';
 
 describe('CreateCompanyDto - decorator branches', () => {
     it('should validate all optional enum fields when provided', async () => {

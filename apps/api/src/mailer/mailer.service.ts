@@ -123,7 +123,7 @@ export class MailerService {
         await this.mailer.sendMail({
             to: normalized,
             subject: 'Confirm your account',
-            template: 'signup-confirmation',
+            template: 'signupConfirmation',
             from,
             context: {
                 otp,
@@ -166,7 +166,7 @@ export class MailerService {
         await this.mailer.sendMail({
             to: normalized,
             subject: 'Password reset request',
-            template: 'reset-password',
+            template: 'resetPassword',
             from,
             context: {
                 otp,
@@ -193,7 +193,7 @@ export class MailerService {
         await this.mailer.sendMail({
             to: normalized,
             subject: title,
-            template: 'info-message',
+            template: 'infoMessage',
             from,
             context: {
                 title,

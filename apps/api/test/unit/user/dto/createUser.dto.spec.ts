@@ -1,5 +1,5 @@
 import { validate } from 'class-validator';
-import { CreateUserDto } from '../../../../src/user/dto/create-user.dto';
+import { CreateUserDto } from '../../../../src/user/dto/createUser.dto';
 import { Role } from '../../../../src/common/roles/roles.enum';
 
 describe('CreateUserDto - decorator branches', () => {

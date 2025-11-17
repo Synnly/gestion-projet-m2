@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { validate } from 'class-validator';
-import { GeneratePresignedUploadDto } from '../../../../src/s3/dto/generate-presigned.dto';
+import { GeneratePresignedUploadDto } from '../../../../src/s3/dto/generatePresigned.dto';
 import { plainToClass } from 'class-transformer';
 
 describe('GeneratePresignedUploadDto', () => {
