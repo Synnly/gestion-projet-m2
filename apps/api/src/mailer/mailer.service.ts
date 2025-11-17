@@ -70,7 +70,7 @@ export class MailerService {
     /**
      * Enforce rate limiting for OTP requests to prevent spam
      * @param user User document to check rate limits for
-     * @throws {Error} If rate limit is exceeded (5 or more requests per hour)
+     * @throws {Error} If rate limit is exceeded
      */
     private async enforceRateLimit(user: UserDocument) {
         const now = new Date();

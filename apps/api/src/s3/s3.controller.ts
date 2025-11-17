@@ -36,7 +36,7 @@ export class S3Controller {
 
     /**
      * Generate a presigned URL for logo upload
-     * Rate limited to 5 requests per minute
+     * Rate limited
      * 
      * @param dto Contains originalFilename and fileType
      * @param req Express request object (contains user from AuthGuard)
@@ -71,7 +71,7 @@ export class S3Controller {
 
     /**
      * Generate a presigned URL for CV upload
-     * Rate limited to 5 requests per minute
+     * Rate limited
      * 
      * @param dto Contains originalFilename and fileType
      * @param req Express request object (contains user from AuthGuard)
@@ -99,7 +99,7 @@ export class S3Controller {
 
     /**
      * Generate a presigned URL for file download
-     * Rate limited to 20 requests per minute
+     * Rate limited
      * Verifies file ownership before generating URL
      * 
      * @param fileName Full path of the file (from route params)
@@ -124,7 +124,7 @@ export class S3Controller {
 
     /**
      * Delete a file from storage
-     * Rate limited to 10 requests per minute
+     * Rate limited
      * Verifies ownership before deletion
      * 
      * @param fileName Full path of the file (from route params)
