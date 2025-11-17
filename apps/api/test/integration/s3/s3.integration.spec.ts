@@ -9,6 +9,7 @@ import cookieParser from 'cookie-parser';
 import { S3Module } from '../../../src/s3/s3.module';
 import { S3Service } from '../../../src/s3/s3.service';
 import { AuthGuard } from '../../../src/auth/auth.guard';
+import { OwnerGuard } from '../../../src/s3/owner.guard';
 
 describe('S3 Integration Tests', () => {
     let app: INestApplication;
@@ -129,7 +130,6 @@ startxref
         process.env.MINIO_ACCESS_KEY = 'admin';
         process.env.MINIO_SECRET_KEY = 'U1NNMCQqPDMwMjlzbHPDuV4qLCw=';
         process.env.MINIO_BUCKET = 'test-uploads';
-        process.env.STORAGE_MASTER_KEY = 'ToKuAi+DkP3cM09GjbJPrgRz5E/0TLH6Na2VTN90jOU=';
 
         const secret = process.env.JWT_SECRET || 'test-secret';
 
@@ -198,6 +198,14 @@ startxref
                     } catch {
                         return false;
                     }
+                },
+            })
+            .overrideGuard(OwnerGuard)
+            .useValue({
+                canActivate: () => {
+                    // Allow all operations in test environment
+                    // Real ownership checks are tested in unit tests
+                    return true;
                 },
             });
 

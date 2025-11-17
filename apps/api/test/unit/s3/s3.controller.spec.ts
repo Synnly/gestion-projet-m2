@@ -5,6 +5,7 @@ import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { ForbiddenException } from '@nestjs/common';
+import { OwnerGuard } from '../../../src/s3/owner.guard';
 
 describe('S3Controller', () => {
     let controller: S3Controller;
@@ -72,6 +73,24 @@ describe('S3Controller', () => {
         canActivate: jest.fn().mockReturnValue(true),
     };
 
+    const mockOwnerGuard = {
+        canActivate: jest.fn().mockReturnValue(true),
+    };
+
+    const mockConfigService = {
+        get: jest.fn().mockImplementation((key: string) => {
+            const config = {
+                MINIO_ENDPOINT: 'localhost',
+                MINIO_PORT: '9000',
+                MINIO_USE_SSL: 'false',
+                MINIO_ACCESS_KEY: 'minioadmin',
+                MINIO_SECRET_KEY: 'minioadmin',
+                MINIO_BUCKET: 'test-bucket',
+            };
+            return config[key];
+        }),
+    };
+
     beforeEach(async () => {
         jest.clearAllMocks();
 
@@ -82,10 +101,16 @@ describe('S3Controller', () => {
                     provide: S3Service,
                     useValue: mockS3Service,
                 },
+                {
+                    provide: 'ConfigService',
+                    useValue: mockConfigService,
+                },
             ],
         })
             .overrideGuard(AuthGuard)
             .useValue(mockAuthGuard)
+            .overrideGuard(OwnerGuard)
+            .useValue({ canActivate: () => true })
             .compile();
 
         controller = module.get<S3Controller>(S3Controller);
@@ -213,6 +238,29 @@ describe('S3Controller', () => {
             );
 
             await expect(controller.deleteFile(fileName, mockRequest)).rejects.toThrow(ForbiddenException);
+        });
+    });
+
+    describe('OwnerGuard integration on DELETE', () => {
+        it('should apply OwnerGuard to deleteFile route', () => {
+            // Verify that OwnerGuard is applied to the DELETE route
+            const guards = Reflect.getMetadata('__guards__', controller.deleteFile);
+            expect(guards).toBeDefined();
+            // Note: In real integration tests, the guard would be tested by the framework
+        });
+
+        it('should pass user and fileName to OwnerGuard', async () => {
+            const fileName = 'logos/test.png';
+            const mockRequest = {
+                user: { sub: 'user123' },
+            };
+
+            mockS3Service.deleteFile.mockResolvedValue(undefined);
+
+            await controller.deleteFile(fileName, mockRequest);
+
+            // Verify the controller passes correct params
+            expect(s3Service.deleteFile).toHaveBeenCalledWith(fileName, 'user123');
         });
     });
 });

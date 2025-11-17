@@ -27,7 +27,6 @@ export interface FileMetadata {
  * - Generating presigned PUT URLs for uploads (logos & CVs)
  * - Generating presigned GET URLs for downloads
  * - File deletion with ownership verification
- * - All files are encrypted with AES-256-GCM
  */
 @Injectable()
 export class S3Service implements OnModuleInit {

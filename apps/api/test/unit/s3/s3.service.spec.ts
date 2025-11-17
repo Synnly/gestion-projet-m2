@@ -28,7 +28,6 @@ describe('S3Service (unit)', () => {
         }),
     };
 
-    // encryption was removed: tests use a lightweight stub if needed
 
     it('generatePresignedUploadUrl success and error branches', async () => {
         const svc = new S3Service(fakeConfig);
@@ -142,13 +141,11 @@ describe('S3Service', () => {
                         get: jest.fn((key: string) => mockConfigValues[key]),
                     },
                 },
-                // encryption provider removed
             ],
         }).compile();
 
         service = module.get<S3Service>(S3Service);
         configService = module.get<ConfigService>(ConfigService);
-        // encryption service removed from module
     });
 
     describe('onModuleInit', () => {

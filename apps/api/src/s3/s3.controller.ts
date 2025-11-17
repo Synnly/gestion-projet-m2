@@ -16,6 +16,7 @@ import { S3Service } from './s3.service';
 import { GeneratePresignedUploadDto } from './dto/generate-presigned.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { RATE_LIMIT } from './s3.constants';
+import { OwnerGuard } from './owner.guard';
 
 /**
  * S3Controller - Simplified REST API for file management
@@ -132,6 +133,7 @@ export class S3Controller {
      */
     @Delete(':fileName')
     @Throttle({ default: RATE_LIMIT.DELETE })
+    @UseGuards(OwnerGuard)
     @HttpCode(HttpStatus.OK)
     async deleteFile(
         @Param('fileName') fileName: string,
