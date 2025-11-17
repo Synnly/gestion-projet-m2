@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post } from './post.schema';
 import { Model } from 'mongoose';
-import { PostDto } from './dto/post.dto';
+import { CreatePostDto } from './dto/createPost.dto';
 
 @Injectable()
 export class PostService {
@@ -14,7 +14,7 @@ export class PostService {
      * @param dto - The complete post data required for creation
      * @returns Promise resolving to void upon successful creation
      */
-    async create(dto: PostDto): Promise<Post> {
+    async create(dto: CreatePostDto): Promise<Post> {
         const createdPost = new this.postModel(dto);
         return createdPost.save();
     }

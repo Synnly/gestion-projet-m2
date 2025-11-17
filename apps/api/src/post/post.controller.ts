@@ -1,20 +1,17 @@
-import {
-    Body,
-    Controller,
-    Get,
-    HttpCode,
-    HttpStatus,
-    NotFoundException,
-    Param,
-    Post,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, NotFoundException, Param, Post, UseGuards } from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';
 import { ParseObjectIdPipe } from '../validators/parse-objectid.pipe';
+import { AuthGuard } from '../auth/auth.guard';
+import { RolesGuard } from '../common/roles/roles.guard';
+import { Roles } from '../common/roles/roles.decorator';
+import { Role } from '../common/roles/roles.enum';
+import { CreatePostDto } from './dto/createPost.dto';
 
 /**
  * Controller handling post-related HTTP requests
  */
+@UseGuards(AuthGuard)
 @Controller('/api/posts')
 export class PostController {
     constructor(private readonly postService: PostService) {}
@@ -48,8 +45,10 @@ export class PostController {
      * @param dto The post data for creation
      */
     @Post('')
+    @UseGuards(RolesGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.CREATED)
-    async create(@Body() dto: PostDto) {
+    async create(@Body() dto: CreatePostDto) {
         await this.postService.create(dto);
     }
 }
