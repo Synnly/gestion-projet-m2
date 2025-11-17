@@ -1,7 +1,6 @@
 import { Injectable, OnModuleInit, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
-import { EncryptionService } from './encryption.service';
 import { BUCKET_PREFIXES, URL_EXPIRY, PATH_REGEX } from './s3.constants';
 
 export interface PresignedUploadResult {
@@ -35,10 +34,7 @@ export class S3Service implements OnModuleInit {
     private minioClient: Minio.Client;
     private bucket: string;
 
-    constructor(
-        private readonly configService: ConfigService,
-        private readonly encryptionService: EncryptionService,
-    ) {}
+    constructor(private readonly configService: ConfigService) {}
 
     /**
      * Initialize MinIO client and ensure bucket exists

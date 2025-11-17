@@ -2,7 +2,6 @@ import { S3Service } from '../../../src/s3/s3.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { EncryptionService } from '../../../src/s3/encryption.service';
 import * as Minio from 'minio';
 
 jest.mock('minio');
@@ -29,10 +28,10 @@ describe('S3Service (unit)', () => {
         }),
     };
 
-    const fakeEncryption = { encrypt: jest.fn(), decrypt: jest.fn() } as any;
+    // encryption was removed: tests use a lightweight stub if needed
 
     it('generatePresignedUploadUrl success and error branches', async () => {
-        const svc = new S3Service(fakeConfig, fakeEncryption);
+        const svc = new S3Service(fakeConfig);
         svc['bucket'] = 'uploads';
 
         const mockClient: any = {
@@ -51,7 +50,7 @@ describe('S3Service (unit)', () => {
     });
 
     it('generatePresignedDownloadUrl NotFound and success', async () => {
-        const svc = new S3Service(fakeConfig, fakeEncryption);
+        const svc = new S3Service(fakeConfig);
         svc['bucket'] = 'uploads';
 
         const mockClient: any = {
@@ -69,7 +68,7 @@ describe('S3Service (unit)', () => {
     });
 
     it('deleteFile not found and success', async () => {
-        const svc = new S3Service(fakeConfig, fakeEncryption);
+        const svc = new S3Service(fakeConfig);
         svc['bucket'] = 'uploads';
 
         const mockClient: any = {
@@ -93,7 +92,7 @@ describe('S3Service (unit)', () => {
         const original = PATHS.SAFE_PATH.test;
         PATHS.SAFE_PATH.test = () => false;
 
-        const svc = new S3Service(fakeConfig, fakeEncryption);
+        const svc = new S3Service(fakeConfig);
         svc['bucket'] = 'uploads';
         svc['minioClient'] = { presignedPutObject: jest.fn().mockResolvedValue('u') } as any;
 
@@ -109,7 +108,6 @@ describe('S3Service (unit)', () => {
 describe('S3Service', () => {
     let service: S3Service;
     let configService: ConfigService;
-    let encryptionService: EncryptionService;
     let mockMinioClient: jest.Mocked<Minio.Client>;
 
     const mockConfigValues: Record<string, string> = {
@@ -144,19 +142,13 @@ describe('S3Service', () => {
                         get: jest.fn((key: string) => mockConfigValues[key]),
                     },
                 },
-                {
-                    provide: EncryptionService,
-                    useValue: {
-                        encrypt: jest.fn(),
-                        decrypt: jest.fn(),
-                    },
-                },
+                // encryption provider removed
             ],
         }).compile();
 
         service = module.get<S3Service>(S3Service);
         configService = module.get<ConfigService>(ConfigService);
-        encryptionService = module.get<EncryptionService>(EncryptionService);
+        // encryption service removed from module
     });
 
     describe('onModuleInit', () => {

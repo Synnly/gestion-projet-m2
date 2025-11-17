@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { S3Controller } from './s3.controller';
 import { S3Service } from './s3.service';
-import { EncryptionService } from './encryption.service';
 
 /**
  * S3Module - Simplified file management module
@@ -27,7 +26,7 @@ import { EncryptionService } from './encryption.service';
         ]),
     ],
     controllers: [S3Controller],
-    providers: [S3Service, EncryptionService],
+    providers: [S3Service],
     exports: [S3Service],
 })
 export class S3Module {}
