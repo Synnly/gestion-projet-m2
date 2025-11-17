@@ -1,7 +1,8 @@
-import { Injectable, OnModuleInit, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, OnModuleInit, NotFoundException, ForbiddenException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
 import { BUCKET_PREFIXES, URL_EXPIRY, PATH_REGEX } from './s3.constants';
+import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
 
 export interface PresignedUploadResult {
     fileName: string;
@@ -54,7 +55,7 @@ export class S3Service implements OnModuleInit {
         const secretKey = this.configService.get<string>('MINIO_SECRET_KEY');
 
         if (!endpoint || !accessKey || !secretKey) {
-            throw new Error('MinIO configuration incomplete. Check MINIO_ENDPOINT, MINIO_ACCESS_KEY, and MINIO_SECRET_KEY');
+            throw new InvalidConfigurationException('MinIO configuration incomplete. Check MINIO_ENDPOINT, MINIO_ACCESS_KEY, and MINIO_SECRET_KEY');
         }
 
         this.bucket = this.configService.get<string>('MINIO_BUCKET') || 'uploads';
@@ -103,7 +104,7 @@ export class S3Service implements OnModuleInit {
 
         // Validate path
         if (!PATH_REGEX.SAFE_PATH.test(fileName)) {
-            throw new Error('Invalid file path generated');
+            throw new BadRequestException('Invalid file path generated');
         }
 
         // Check if file already exists and delete it (overwrite old version)
@@ -129,7 +130,7 @@ export class S3Service implements OnModuleInit {
                 uploadUrl,
             };
         } catch (error) {
-            throw new Error('Failed to generate upload URL');
+            throw new InternalServerErrorException('Failed to generate upload URL');
         }
     }
 
@@ -142,7 +143,7 @@ export class S3Service implements OnModuleInit {
     async generatePresignedDownloadUrl(fileName: string, userId: string): Promise<PresignedDownloadResult> {
         // Validate path to prevent traversal
         if (!PATH_REGEX.SAFE_PATH.test(fileName)) {
-            throw new Error('Invalid file path');
+            throw new BadRequestException('Invalid file path');
         }
 
         // Check if file exists
@@ -165,7 +166,7 @@ export class S3Service implements OnModuleInit {
 
             return { downloadUrl };
         } catch (error) {
-            throw new Error('Failed to generate download URL');
+            throw new InternalServerErrorException('Failed to generate download URL');
         }
     }
 
@@ -177,7 +178,7 @@ export class S3Service implements OnModuleInit {
     async deleteFile(fileName: string, userId: string): Promise<void> {
         // Validate path
         if (!PATH_REGEX.SAFE_PATH.test(fileName)) {
-            throw new Error('Invalid file path');
+            throw new BadRequestException('Invalid file path');
         }
 
         // Check if file exists
@@ -192,7 +193,7 @@ export class S3Service implements OnModuleInit {
         try {
             await this.minioClient.removeObject(this.bucket, fileName);
         } catch (error) {
-            throw new Error('Failed to delete file');
+            throw new InternalServerErrorException('Failed to delete file');
         }
     }
 

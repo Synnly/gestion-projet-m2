@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException, BadRequestException, HttpException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
 import { getModelToken } from '@nestjs/mongoose';
@@ -123,7 +124,9 @@ describe('MailerService', () => {
         it('should throw User not found error when user does not exist in database', async () => {
             mockUserModel.findOne.mockResolvedValue(null);
 
-            await expect(service.sendVerificationEmail('nonexistent@example.com')).rejects.toThrow('User not found');
+            await expect(service.sendVerificationEmail('nonexistent@example.com')).rejects.toBeInstanceOf(
+                NotFoundException,
+            );
         });
 
         it('should throw rate limit error when user has requested 5 OTPs within the last hour', async () => {
@@ -135,9 +138,7 @@ describe('MailerService', () => {
             };
             mockUserModel.findOne.mockResolvedValue(rateLimitedUser);
 
-            await expect(service.sendVerificationEmail('user@example.com')).rejects.toThrow(
-                'OTP rate limit exceeded. Try again later.',
-            );
+            await expect(service.sendVerificationEmail('user@example.com')).rejects.toBeInstanceOf(HttpException);
         });
 
         it('should reset rate limit and allow new OTP request when 1 hour window has passed since last request', async () => {
@@ -199,7 +200,9 @@ describe('MailerService', () => {
         it('should throw error when user not found', async () => {
             mockUserModel.findOne.mockResolvedValue(null);
 
-            await expect(service.sendPasswordResetEmail('nonexistent@example.com')).rejects.toThrow('User not found');
+            await expect(service.sendPasswordResetEmail('nonexistent@example.com')).rejects.toBeInstanceOf(
+                NotFoundException,
+            );
         });
     });
 
@@ -235,8 +238,8 @@ describe('MailerService', () => {
         it('should throw error when user not found', async () => {
             mockUserModel.findOne.mockResolvedValue(null);
 
-            await expect(service.verifySignupOtp('nonexistent@example.com', '123456')).rejects.toThrow(
-                'User not found',
+            await expect(service.verifySignupOtp('nonexistent@example.com', '123456')).rejects.toBeInstanceOf(
+                NotFoundException,
             );
         });
 
@@ -248,8 +251,8 @@ describe('MailerService', () => {
             };
             mockUserModel.findOne.mockResolvedValue(userWithoutCode);
 
-            await expect(service.verifySignupOtp('user@example.com', '123456')).rejects.toThrow(
-                'No verification code set',
+            await expect(service.verifySignupOtp('user@example.com', '123456')).rejects.toBeInstanceOf(
+                BadRequestException,
             );
         });
 
@@ -263,7 +266,9 @@ describe('MailerService', () => {
             mockUserModel.findOne.mockResolvedValue(expiredUser);
             expiredUser.save.mockResolvedValue(expiredUser);
 
-            await expect(service.verifySignupOtp('user@example.com', '123456')).rejects.toThrow('OTP expired');
+            await expect(service.verifySignupOtp('user@example.com', '123456')).rejects.toBeInstanceOf(
+                BadRequestException,
+            );
         });
 
         it('should increment attempts counter on invalid OTP', async () => {
@@ -276,7 +281,9 @@ describe('MailerService', () => {
             mockUserModel.findOne.mockResolvedValue(userWithCode);
             userWithCode.save.mockResolvedValue(userWithCode);
 
-            await expect(service.verifySignupOtp('user@example.com', '999999')).rejects.toThrow('Invalid OTP');
+            await expect(service.verifySignupOtp('user@example.com', '999999')).rejects.toBeInstanceOf(
+                BadRequestException,
+            );
 
             expect(userWithCode.emailVerificationAttempts).toBe(1);
             expect(userWithCode.save).toHaveBeenCalled();
@@ -293,9 +300,7 @@ describe('MailerService', () => {
             mockUserModel.findOne.mockResolvedValue(userWithAttempts);
             userWithAttempts.save.mockResolvedValue(userWithAttempts);
 
-            await expect(service.verifySignupOtp('user@example.com', '999999')).rejects.toThrow(
-                'Too many verification attempts. Please request a new code.',
-            );
+            await expect(service.verifySignupOtp('user@example.com', '999999')).rejects.toBeInstanceOf(HttpException);
 
             expect(userWithAttempts.emailVerificationCode).toBeNull();
             expect(userWithAttempts.emailVerificationExpires).toBeNull();
@@ -339,14 +344,16 @@ describe('MailerService', () => {
             mockUserModel.findOne.mockResolvedValue(expiredUser);
             expiredUser.save.mockResolvedValue(expiredUser);
 
-            await expect(service.verifyPasswordResetOtp('user@example.com', '123456')).rejects.toThrow('OTP expired');
+            await expect(service.verifyPasswordResetOtp('user@example.com', '123456')).rejects.toBeInstanceOf(
+                BadRequestException,
+            );
         });
 
         it('should throw error when user not found', async () => {
             mockUserModel.findOne.mockResolvedValue(null);
 
-            await expect(service.verifyPasswordResetOtp('nonexistent@example.com', '123456')).rejects.toThrow(
-                'User not found',
+            await expect(service.verifyPasswordResetOtp('nonexistent@example.com', '123456')).rejects.toBeInstanceOf(
+                NotFoundException,
             );
         });
 
@@ -358,8 +365,8 @@ describe('MailerService', () => {
             };
             mockUserModel.findOne.mockResolvedValue(userWithoutCode);
 
-            await expect(service.verifyPasswordResetOtp('user@example.com', '123456')).rejects.toThrow(
-                'No password reset code set',
+            await expect(service.verifyPasswordResetOtp('user@example.com', '123456')).rejects.toBeInstanceOf(
+                BadRequestException,
             );
         });
     });
@@ -429,8 +436,8 @@ describe('MailerService', () => {
         it('should throw error when user not found', async () => {
             mockUserModel.findOne.mockResolvedValue(null);
 
-            await expect(service.updatePassword('nonexistent@example.com', 'NewPassword123!')).rejects.toThrow(
-                'User not found',
+            await expect(service.updatePassword('nonexistent@example.com', 'NewPassword123!')).rejects.toBeInstanceOf(
+                NotFoundException,
             );
         });
     });

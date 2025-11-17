@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
@@ -87,7 +87,10 @@ export class MailerService {
         }
 
         if (user.otpRequestCount >= 5) {
-            throw new Error('OTP rate limit exceeded. Try again later.');
+            throw new HttpException(
+                'OTP rate limit exceeded. Try again later.',
+                HttpStatus.TOO_MANY_REQUESTS,
+            );
         }
     }
 
@@ -103,7 +106,7 @@ export class MailerService {
     async sendVerificationEmail(email: string, providedOtp?: string) {
         const normalized = email.toLowerCase();
         const user = await this.userModel.findOne({ email: normalized });
-        if (!user) throw new Error('User not found');
+        if (!user) throw new NotFoundException('User not found');
 
         await this.enforceRateLimit(user);
 
@@ -146,7 +149,7 @@ export class MailerService {
     async sendPasswordResetEmail(email: string, providedOtp?: string) {
         const normalized = email.toLowerCase();
         const user = await this.userModel.findOne({ email: normalized });
-        if (!user) throw new Error('User not found');
+        if (!user) throw new NotFoundException('User not found');
 
         await this.enforceRateLimit(user);
 
@@ -243,7 +246,7 @@ export class MailerService {
     async updatePassword(email: string, newPassword: string): Promise<boolean> {
         const normalized = email.toLowerCase();
         const user = await this.userModel.findOne({ email: normalized });
-        if (!user) throw new Error('User not found');
+        if (!user) throw new NotFoundException('User not found');
 
         user.password = newPassword;
         await user.save();
@@ -262,10 +265,10 @@ export class MailerService {
     async verifySignupOtp(email: string, otp: string) {
         const normalized = email.toLowerCase();
         const user = await this.userModel.findOne({ email: normalized });
-        if (!user) throw new Error('User not found');
+        if (!user) throw new NotFoundException('User not found');
 
         if (!user.emailVerificationCode || !user.emailVerificationExpires) {
-            throw new Error('No verification code set');
+            throw new BadRequestException('No verification code set');
         }
 
         // Check expiration first
@@ -276,7 +279,7 @@ export class MailerService {
             user.emailVerificationExpires = null;
             user.emailVerificationAttempts = 0;
             await user.save();
-            throw new Error('OTP expired');
+            throw new BadRequestException('OTP expired');
         }
 
         // Check brute-force protection
@@ -286,7 +289,7 @@ export class MailerService {
             user.emailVerificationExpires = null;
             user.emailVerificationAttempts = 0;
             await user.save();
-            throw new Error('Too many verification attempts. Please request a new code.');
+            throw new BadRequestException('Too many verification attempts. Please request a new code.');
         }
 
         // Verify OTP using constant-time comparison
@@ -296,7 +299,7 @@ export class MailerService {
             // Increment failed attempts counter
             user.emailVerificationAttempts = (user.emailVerificationAttempts || 0) + 1;
             await user.save();
-            throw new Error('Invalid OTP');
+            throw new BadRequestException('Invalid OTP');
         }
 
         // Success: Mark as verified and clear OTP (single-use)
@@ -320,10 +323,10 @@ export class MailerService {
     async verifyPasswordResetOtp(email: string, otp: string) {
         const normalized = email.toLowerCase();
         const user = await this.userModel.findOne({ email: normalized });
-        if (!user) throw new Error('User not found');
+        if (!user) throw new NotFoundException('User not found');
 
         if (!user.passwordResetCode || !user.passwordResetExpires) {
-            throw new Error('No password reset code set');
+            throw new BadRequestException('No password reset code set');
         }
 
         // Check expiration first
@@ -334,7 +337,7 @@ export class MailerService {
             user.passwordResetExpires = null;
             user.passwordResetAttempts = 0;
             await user.save();
-            throw new Error('OTP expired');
+            throw new BadRequestException('OTP expired');
         }
 
         // Check brute-force protection
@@ -344,7 +347,10 @@ export class MailerService {
             user.passwordResetExpires = null;
             user.passwordResetAttempts = 0;
             await user.save();
-            throw new Error('Too many verification attempts. Please request a new code.');
+            throw new HttpException(
+                'Too many verification attempts. Please request a new code.',
+                HttpStatus.TOO_MANY_REQUESTS,
+            );
         }
 
         // Verify OTP using constant-time comparison
@@ -354,7 +360,7 @@ export class MailerService {
             // Increment failed attempts counter
             user.passwordResetAttempts = (user.passwordResetAttempts || 0) + 1;
             await user.save();
-            throw new Error('Invalid OTP');
+            throw new BadRequestException('Invalid OTP');
         }
 
         // Success: Clear OTP (single-use) but keep user object for password update

@@ -77,13 +77,13 @@ export class FileValidator {
 
         // Verify SVG is still valid
         if (!sanitized.includes('<svg')) {
-            throw new Error('Invalid SVG content after sanitization');
+            throw new BadRequestException('Invalid SVG content after sanitization');
         }
 
         // Check for remaining dangerous patterns
         const forbidden = /<\s*(script|iframe|object|foreignObject)\b/i;
         if (forbidden.test(sanitized)) {
-            throw new Error('SVG contains forbidden elements');
+            throw new BadRequestException('SVG contains forbidden elements');
         }
 
         return sanitized;
@@ -99,7 +99,7 @@ export class FileValidator {
         const maxSize = fileType === 'logo' ? FILE_SIZE_LIMITS.LOGO : FILE_SIZE_LIMITS.CV;
         
         if (size > maxSize) {
-            throw new Error(`File size exceeds maximum allowed size of ${maxSize / 1024 / 1024}MB`);
+            throw new BadRequestException(`File size exceeds maximum allowed size of ${maxSize / 1024 / 1024}MB`);
         }
     }
 
@@ -115,7 +115,7 @@ export class FileValidator {
             : [...ALLOWED_TYPES.CV.MIME_TYPES];
 
         if (!allowedTypes.includes(mimeType)) {
-            throw new Error(`Invalid MIME type for ${fileType}. Allowed: ${allowedTypes.join(', ')}`);
+            throw new BadRequestException(`Invalid MIME type for ${fileType}. Allowed: ${allowedTypes.join(', ')}`);
         }
     }
 }

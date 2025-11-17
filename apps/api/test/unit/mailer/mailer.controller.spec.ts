@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { MailerController } from '../../../src/mailer/mailer.controller';
 import { MailerService } from '../../../src/mailer/mailer.service';
 import { AuthGuard } from '../../../src/auth/auth.guard';
@@ -65,8 +66,8 @@ describe('MailerController', () => {
         it('should throw NotFoundException when user not found', async () => {
             mockMailerService.sendPasswordResetEmail.mockRejectedValue(new Error('User not found'));
 
-            await expect(controller.forgotPassword({ email: 'nonexistent@example.com' })).rejects.toThrow(
-                'No account found with this email',
+            await expect(controller.forgotPassword({ email: 'nonexistent@example.com' })).rejects.toBeInstanceOf(
+                NotFoundException,
             );
         });
 
@@ -75,8 +76,8 @@ describe('MailerController', () => {
                 new Error('OTP rate limit exceeded. Try again later.'),
             );
 
-            await expect(controller.forgotPassword({ email: 'user@example.com' })).rejects.toThrow(
-                'Too many requests. Please try again later.',
+            await expect(controller.forgotPassword({ email: 'user@example.com' })).rejects.toBeInstanceOf(
+                BadRequestException,
             );
         });
 
@@ -122,7 +123,7 @@ describe('MailerController', () => {
                     otp: '999999',
                     newPassword: 'NewSecurePass123!',
                 }),
-            ).rejects.toThrow('Invalid OTP');
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
 
         it('should throw BadRequestException when OTP is expired', async () => {
@@ -146,7 +147,7 @@ describe('MailerController', () => {
                     otp: '123456',
                     newPassword: 'NewSecurePass123!',
                 }),
-            ).rejects.toThrow('No account found with this email');
+            ).rejects.toBeInstanceOf(NotFoundException);
         });
 
         it('should throw BadRequestException when too many attempts', async () => {
@@ -160,7 +161,7 @@ describe('MailerController', () => {
                     otp: '123456',
                     newPassword: 'NewSecurePass123!',
                 }),
-            ).rejects.toThrow('Too many verification attempts. Please request a new code.');
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
 
         it('should throw BadRequestException for generic errors', async () => {
@@ -192,8 +193,8 @@ describe('MailerController', () => {
         it('should throw NotFoundException when user not found', async () => {
             mockMailerService.sendVerificationEmail.mockRejectedValue(new Error('User not found'));
 
-            await expect(controller.sendVerification({ email: 'nonexistent@example.com' })).rejects.toThrow(
-                'No account found with this email',
+            await expect(controller.sendVerification({ email: 'nonexistent@example.com' })).rejects.toBeInstanceOf(
+                NotFoundException,
             );
         });
 
@@ -202,8 +203,8 @@ describe('MailerController', () => {
                 new Error('OTP rate limit exceeded. Try again later.'),
             );
 
-            await expect(controller.sendVerification({ email: 'user@example.com' })).rejects.toThrow(
-                'Too many requests. Please try again later.',
+            await expect(controller.sendVerification({ email: 'user@example.com' })).rejects.toBeInstanceOf(
+                BadRequestException,
             );
         });
 
@@ -253,7 +254,7 @@ describe('MailerController', () => {
                     email: 'user@example.com',
                     otp: '999999',
                 }),
-            ).rejects.toThrow();
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
 
         it('should throw BadRequestException when OTP is expired', async () => {
@@ -264,7 +265,7 @@ describe('MailerController', () => {
                     email: 'user@example.com',
                     otp: '123456',
                 }),
-            ).rejects.toThrow('OTP expired');
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
 
         it('should throw NotFoundException when user not found', async () => {
@@ -275,7 +276,7 @@ describe('MailerController', () => {
                     email: 'nonexistent@example.com',
                     otp: '123456',
                 }),
-            ).rejects.toThrow('No account found with this email');
+            ).rejects.toBeInstanceOf(NotFoundException);
         });
 
         it('should throw BadRequestException for generic errors', async () => {

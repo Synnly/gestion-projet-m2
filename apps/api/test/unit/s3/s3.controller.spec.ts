@@ -47,15 +47,15 @@ describe('S3Controller', () => {
                 { originalFilename: 'a.pdf' } as GeneratePresignedUploadDto,
                 { user: {} } as any,
             ),
-        ).rejects.toThrow(Error);
+        ).rejects.toThrow(BadRequestException);
     });
 
     it('generateDownloadUrl should throw when userId missing', async () => {
-        await expect(controller.generateDownloadUrl('file', { user: {} } as any)).rejects.toThrow(Error);
+        await expect(controller.generateDownloadUrl('file', { user: {} } as any)).rejects.toThrow(BadRequestException);
     });
 
     it('deleteFile should throw when userId missing', async () => {
-        await expect(controller.deleteFile('file', { user: {} } as any)).rejects.toThrow(Error);
+        await expect(controller.deleteFile('file', { user: {} } as any)).rejects.toThrow(BadRequestException);
     });
 });
 
@@ -149,9 +149,7 @@ describe('S3Controller', () => {
                 user: {},
             };
 
-            await expect(controller.generateLogoUploadUrl(dto, mockRequest)).rejects.toThrow(
-                'User ID not found in request',
-            );
+            await expect(controller.generateLogoUploadUrl(dto, mockRequest)).rejects.toThrow(BadRequestException);
         });
     });
 

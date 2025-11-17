@@ -87,7 +87,7 @@ export class S3Controller {
         const userId = req.user?.sub || req.user?.id;
 
         if (!userId) {
-            throw new Error('User ID not found in request');
+            throw new BadRequestException('User ID not found in request');
         }
 
         return this.s3Service.generatePresignedUploadUrl(
@@ -116,7 +116,7 @@ export class S3Controller {
         const userId = req.user?.sub || req.user?.id;
 
         if (!userId) {
-            throw new Error('User ID not found in request');
+            throw new BadRequestException('User ID not found in request');
         }
 
         return this.s3Service.generatePresignedDownloadUrl(fileName, userId);
@@ -142,7 +142,7 @@ export class S3Controller {
         const userId = req.user?.sub || req.user?.id;
 
         if (!userId) {
-            throw new Error('User ID not found in request');
+            throw new BadRequestException('User ID not found in request');
         }
 
         await this.s3Service.deleteFile(fileName, userId);

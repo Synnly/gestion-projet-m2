@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, ForbiddenException, BadRequestException, OnModuleInit } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, ForbiddenException, BadRequestException, OnModuleInit, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
 
@@ -34,7 +34,7 @@ export class OwnerGuard implements CanActivate, OnModuleInit {
         const secretKey = this.configService.get<string>('MINIO_SECRET_KEY');
 
         if (!endpoint || !accessKey || !secretKey) {
-            throw new Error('MinIO configuration incomplete for OwnerGuard');
+            throw new InternalServerErrorException('MinIO configuration incomplete for OwnerGuard');
         }
 
         this.bucket = this.configService.get<string>('MINIO_BUCKET') || 'uploads';
