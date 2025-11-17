@@ -61,6 +61,6 @@ export const SVG_DANGEROUS_PATTERNS = [
 /** Rate limiting */
 export const RATE_LIMIT = {
     UPLOAD: { limit: 5, ttl: 60000 }, // 5 uploads per minute
-    DOWNLOAD: { limit: 20, ttl: 60000 }, // 20 downloads per minute
+    DOWNLOAD: { limit: 400, ttl: 60000 }, // 200 downloads per minute
     DELETE: { limit: 10, ttl: 60000 }, // 10 deletes per minute
 } as const;
