@@ -18,11 +18,9 @@ export const companyFormSignUpSchema = z
     .object({
         //is email
         email: z.string().email({ message: 'Email invalide' }),
-        //is minimum 8 characters
         password: passwordSchema,
         repeatPassword: z.string(),
         name: z.string().min(1, { message: "Le nom de l'entreprise est requis" }),
-        // is required
     })
     .refine((data) => data.password === data.repeatPassword, {
         message: 'Les mots de passe ne correspondent pas',

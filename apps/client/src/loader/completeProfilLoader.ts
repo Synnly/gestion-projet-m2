@@ -13,14 +13,19 @@ export const completeProfilLoader = async ({ request }: { request: Request }) =>
     const API_URL = import.meta.env.VITE_APIURL;
     const { access, get } = userStore.getState();
     const { setProfil, profile } = profileStore.getState();
-
+    const pathname = request.url;
     if (!access) return;
 
     const payload = get(access);
 
-    if (!payload.isVerified) {
+    if (pathname === '/verify' && payload.isVerified) {
+        return redirect(`/${payload.role.toLowerCase()}/dashboard`);
+    }
+
+    if (pathname !== '/verify' && !payload.isVerified) {
         return redirect('/verify');
     }
+
     if (!profile) {
         const profileRes = await fetch(`${API_URL}/api/companies/${payload.id}`, {
             credentials: 'include',
@@ -37,9 +42,11 @@ export const completeProfilLoader = async ({ request }: { request: Request }) =>
         setProfil(newProfile);
     }
     const newProfile = profileStore.getState();
+
     if (!isProfilComplete(newProfile.profile) && request.url.endsWith('/complete-profil') === false) {
         return redirect('/complete-profil');
     }
+
     if (isProfilComplete(newProfile.profile) && request.url.endsWith('/complete-profil')) {
         return redirect(`/${payload.role.toLowerCase()}/dashboard`);
     }

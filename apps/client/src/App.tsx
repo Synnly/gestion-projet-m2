@@ -41,6 +41,10 @@ function App() {
                     element: <AuthRoutes />,
                     children: [
                         {
+                            path: '/verify',
+                            element: <div>verify</div>,
+                        },
+                        {
                             path: '/complete-profil',
                             element: <CompleteProfil />,
                         },
