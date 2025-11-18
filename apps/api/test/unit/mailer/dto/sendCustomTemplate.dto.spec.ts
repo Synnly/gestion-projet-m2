@@ -1,10 +1,10 @@
 import { validate } from 'class-validator';
-import { SendCustomTemplateDto } from '../../../../src/mailer/dto/send-custom-template.dto';
+import { SendCustomTemplateDto } from '../../../../src/mailer/dto/sendCustomTemplate.dto';
 
 describe('SendCustomTemplateDto', () => {
     it('should pass validation with valid template name', async () => {
         const dto = new SendCustomTemplateDto();
-        dto.templateName = 'finish-verif';
+        dto.templateName = 'finishVerif';
 
         const errors = await validate(dto);
         expect(errors.length).toBe(0);

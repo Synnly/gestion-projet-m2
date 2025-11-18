@@ -3,6 +3,7 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as path from 'path';
+import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
 
 @Injectable()
 export class MailerConfigService implements MailerOptionsFactory {
@@ -20,7 +21,7 @@ export class MailerConfigService implements MailerOptionsFactory {
     const fromEmail = this.configService.get<string>('MAIL_FROM_EMAIL'); 
 
     if (!user || !pass || !fromName || !fromEmail) {
-      throw new Error(
+      throw new InvalidConfigurationException(
         'Missing required email configuration: MAIL_USER, MAIL_PASS, MAIL_FROM_NAME, and MAIL_FROM_EMAIL must be set'
       );
     }

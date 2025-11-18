@@ -112,7 +112,7 @@ describe('MailerController (Integration)', () => {
             expect(response.body.message).toEqual(expect.arrayContaining(['Invalid email format']));
         });
 
-        it('should enforce rate limiting (5 requests per hour)', async () => {
+        it('should enforce rate limiting', async () => {
             const hashedPassword = await bcrypt.hash('Password123!', 10);
             await userModel.create({
                 email: 'test@example.com',
@@ -131,7 +131,6 @@ describe('MailerController (Integration)', () => {
                     .expect(200);
             }
 
-            // 6th request should be rate limited
             const response = await request(app.getHttpServer())
                 .post('/api/mailer/password/forgot')
                 .send({ email: 'test@example.com' })

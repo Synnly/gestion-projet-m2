@@ -1,7 +1,7 @@
 import { IsString, IsOptional, IsEnum, IsNotEmpty, Matches, Length } from 'class-validator';
 import { StructureType, LegalStatus } from '../company.schema';
-import { NafCode } from '../naf-codes.enum';
-import { CreateUserDto } from '../../user/dto/create-user.dto';
+import { NafCode } from '../nafCodes.enum';
+import { CreateUserDto } from '../../user/dto/createUser.dto';
 
 /**
  * Data Transfer Object for creating a new company
