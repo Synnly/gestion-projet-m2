@@ -10,6 +10,7 @@ import {
     HttpStatus,
     Request,
     BadRequestException,
+    ValidationPipe,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { S3Service } from './s3.service';
@@ -46,7 +47,7 @@ export class S3Controller {
     @Throttle({ default: RATE_LIMIT.UPLOAD })
     @HttpCode(HttpStatus.OK)
     async generateLogoUploadUrl(
-        @Body() dto: GeneratePresignedUploadDto,
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: GeneratePresignedUploadDto,
         @Request() req: any,
     ): Promise<{ fileName: string; uploadUrl: string }> {
         const userId = req.user?.sub || req.user?.id;
@@ -81,7 +82,7 @@ export class S3Controller {
     @Throttle({ default: RATE_LIMIT.UPLOAD })
     @HttpCode(HttpStatus.OK)
     async generateCvUploadUrl(
-        @Body() dto: GeneratePresignedUploadDto,
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: GeneratePresignedUploadDto,
         @Request() req: any,
     ): Promise<{ fileName: string; uploadUrl: string }> {
         const userId = req.user?.sub || req.user?.id;
