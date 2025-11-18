@@ -93,6 +93,7 @@ export class MailerController {
      */
     @Post('auth/send-verification')
     @HttpCode(HttpStatus.OK)
+    @UseGuards(AuthGuard)
     async sendVerification(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: EmailDto) {
         try {
             await this.mailerService.sendVerificationEmail(dto.email);
@@ -119,6 +120,7 @@ export class MailerController {
      * @throws {BadRequestException} If OTP is invalid, expired, or verification fails
      */
     @Post('auth/verify')
+    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     async verifyAccount(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: VerifyOtpDto) {
         try {
