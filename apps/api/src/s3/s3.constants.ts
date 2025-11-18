@@ -5,12 +5,6 @@
  * All values should be loaded from environment variables when possible
  */
 
-/** File size limits (in bytes) */
-export const FILE_SIZE_LIMITS = {
-    LOGO: 2 * 1024 * 1024, // 2MB
-    CV: 8 * 1024 * 1024,   // 8MB
-} as const;
-
 /** Presigned URL expiry times (in seconds) */
 export const URL_EXPIRY = {
     UPLOAD: 600,    // 10 minutes for PUT operations

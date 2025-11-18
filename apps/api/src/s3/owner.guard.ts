@@ -28,9 +28,10 @@ export class OwnerGuard implements CanActivate, OnModuleInit {
 
     async onModuleInit(): Promise<void> {
         const endpoint = this.configService.get<string>('MINIO_ENDPOINT');
-        const port = parseInt(this.configService.get<string>('MINIO_PORT') || '9000');
+        const port = parseInt(this.configService.get<string>('MINIO_PORT') || '443');
         const useSSL = this.configService.get<string>('MINIO_USE_SSL') === 'true';
         const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY');
+        
         const secretKey = this.configService.get<string>('MINIO_SECRET_KEY');
 
         if (!endpoint || !accessKey || !secretKey) {
