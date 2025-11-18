@@ -22,7 +22,7 @@ export const companyFormSignUpSchema = z
         repeatPassword: z.string(),
         name: z.string().min(1, { message: "Le nom de l'entreprise est requis" }),
     })
-    .refine((data) => data.password === data.repeatPassword, {
+    .refine((data) => data.password && data.repeatPassword && data.password === data.repeatPassword, {
         message: 'Les mots de passe ne correspondent pas',
         path: ['repeatPassword'],
     });
@@ -31,9 +31,15 @@ export type loginDto = {
     email: string;
     password: string;
 };
+export type sendVerifyMailDto = {
+    email: string;
+};
 export type registerForm = {
     url: string;
-    data: (Omit<companyFormSignUp, 'repeatPassword'> & { role: 'COMPANY' | 'STUDENT' | 'ADMIN' }) | loginDto;
+    data:
+        | (Omit<companyFormSignUp, 'repeatPassword'> & { role: 'COMPANY' | 'STUDENT' | 'ADMIN' })
+        | loginDto
+        | sendVerifyMailDto;
 };
 
 // Type inferred from Zod schema for company sign-up form

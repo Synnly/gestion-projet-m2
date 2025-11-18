@@ -107,6 +107,8 @@ export class AuthService {
             role: user.role,
             email: email,
             rti: rti,
+            isVerified: user.isVerified,
+            isValid: user.isValid,
         };
 
         return this.jwtService.signAsync(accessTokenPayload);

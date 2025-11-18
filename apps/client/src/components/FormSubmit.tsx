@@ -1,20 +1,20 @@
 type FormSubmitProps = {
     isPending?: boolean;
-    isError: boolean;
+    isError?: boolean;
     title: string;
-    pendingTitle: string;
+    pendingTitle?: string;
     error?: Error | null;
     className?: string;
 };
 
-export const FormSubmit = ({ isPending, isError, title, pendingTitle, error, className,...rest }: FormSubmitProps) => {
+export const FormSubmit = ({ isPending, isError, title, pendingTitle, error, className, ...rest }: FormSubmitProps) => {
     return (
         <>
             <input
                 type="submit"
                 value={isPending != null ? (!isPending ? title : pendingTitle) : title}
                 className={className}
-                {...rest} 
+                {...rest}
             />
             {isError && <p className="text-red-500">{error?.message}</p>}
         </>

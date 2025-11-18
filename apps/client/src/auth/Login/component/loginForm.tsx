@@ -1,11 +1,11 @@
 import { useForm } from 'react-hook-form';
-import { type companyFormLogin } from '../types';
+import { type companyFormLogin } from '../type';
 import { FormInput } from '../../../components/FormInput';
 import { FormSubmit } from '../../../components/FormSubmit';
-import { useMutation } from '@tanstack/react-query';
 import { CustomForm } from '../../../components/CustomForm';
-import { userStore } from '../../../store/userStore';
-import { useNavigate } from 'react-router';
+import { useLogin } from '../../../hooks/useLogin';
+import { NavLink } from 'react-router';
+
 export const LoginForm = () => {
     const {
         register,
@@ -15,33 +15,11 @@ export const LoginForm = () => {
     } = useForm<companyFormLogin>({
         mode: 'onSubmit',
     });
-    const getUser = userStore((state) => state.get);
-    const setUser = userStore((state) => state.set);
-    const navigate = useNavigate();
-    const API_URL = import.meta.env.VITE_APIURL;
-    const { mutateAsync, isPending, isError, error, reset } = useMutation({
-        mutationFn: async (data: companyFormLogin) => {
-            const res = await fetch(`${API_URL}/api/auth/login`, {
-                method: 'POST',
-                body: JSON.stringify(data),
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-            });
-            return res.text();
-        },
-    });
-
+    const { login, isPending, isError, error, reset } = useLogin();
     const onSubmit = async (data: companyFormLogin): Promise<void> => {
-        const accessToken = await mutateAsync(data);
-        setUser(accessToken);
-        const user = getUser(accessToken);
-        if (user && user.role === 'COMPANY') {
-            //redirect to company dashboard
-            navigate('/complete-profil');
-        }
+        login(data);
     };
+
     return (
         <div className=" rounded-(--radius-box) flex-col flex items-center just py-10 px-5 my-5 max-w-[700px]">
             <CustomForm
@@ -80,6 +58,14 @@ export const LoginForm = () => {
                     className="bg-primary p-3 rounded-lg cursor-pointer w-full text-black"
                 />
             </CustomForm>
+            <div className="flex flex-row justify-around w-full mt-2">
+                <NavLink to="/company/signup" className="mt-4 text-blue-600 underline">
+                    Créer un compte entreprise
+                </NavLink>
+                <NavLink to="" className="mt-4 text-blue-600 underline">
+                    Créer un compte étudiant
+                </NavLink>
+            </div>
         </div>
     );
 };

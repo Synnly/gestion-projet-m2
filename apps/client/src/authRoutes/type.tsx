@@ -1,4 +1,6 @@
+import type { userPayload } from '../store/userStore';
+
 export type userContext = {
     accessToken: string;
-    get: (access: string) => { id: string; role: string; isVerified: boolean; isValid: boolean };
+    get: (access: string) => userPayload;
 };

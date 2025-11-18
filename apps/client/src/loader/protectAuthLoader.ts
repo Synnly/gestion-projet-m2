@@ -7,7 +7,7 @@ import { userStore } from '../store/userStore';
  * @param {Request} param0.request - The request object.
  * @returns {Promise<Response|void>} - Redirects to signin if not authenticated, or to complete-profil if profile is incomplete.
  */
-export async function protectedLoader(): Promise<Response | void> {
+export async function protectedLoader(): Promise<Response | string> {
     const API_URL = import.meta.env.VITE_APIURL;
     const { access, set: setAccess, logout } = userStore.getState();
 
@@ -20,6 +20,7 @@ export async function protectedLoader(): Promise<Response | void> {
         credentials: 'include',
         headers: { Authorization: `Bearer ${access}` },
     });
+
     if (!refreshRes.ok) {
         logout();
         return redirect('/signin');
@@ -27,4 +28,5 @@ export async function protectedLoader(): Promise<Response | void> {
 
     const refreshed = await refreshRes.text();
     setAccess(refreshed);
+    return refreshed;
 }

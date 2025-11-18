@@ -10,20 +10,29 @@ function isProfilComplete(profile: completeProfilFormType | null): boolean {
     return profile !== null && completeProfilFormCheck.safeParse(profile).success;
 }
 export const completeProfilLoader = async ({ request }: { request: Request }) => {
+    await userStore.persist.rehydrate();
     const API_URL = import.meta.env.VITE_APIURL;
     const { access, get } = userStore.getState();
     const { setProfil, profile } = profileStore.getState();
-    const pathname = request.url;
+    const pathname = new URL(request.url).pathname;
     if (!access) return;
-
+    console.log('completeProfilLoader called');
     const payload = get(access);
-
-    if (pathname === '/verify' && payload.isVerified) {
-        return redirect(`/${payload.role.toLowerCase()}/dashboard`);
+    if (!payload.isVerified && pathname === '/verify') {
+        return;
+    }
+    if (!isProfilComplete(profile) && pathname === '/complete-profil') {
+        return;
+    }
+    //if user try to access verify and already verified redirect to dashboard
+    if (payload.isVerified && pathname === '/verify') {
+        throw redirect(`/${payload.role.toLowerCase()}/dashboard`);
     }
 
-    if (pathname !== '/verify' && !payload.isVerified) {
-        return redirect('/verify');
+    //if user is not verified and is not already on verify page redirect to verify
+    if (!payload.isVerified && pathname !== '/verify') {
+        throw redirect('/verify');
+        return null;
     }
 
     if (!profile) {
@@ -42,12 +51,10 @@ export const completeProfilLoader = async ({ request }: { request: Request }) =>
         setProfil(newProfile);
     }
     const newProfile = profileStore.getState();
-
     if (!isProfilComplete(newProfile.profile) && request.url.endsWith('/complete-profil') === false) {
-        return redirect('/complete-profil');
+        throw redirect('/complete-profil');
     }
-
     if (isProfilComplete(newProfile.profile) && request.url.endsWith('/complete-profil')) {
-        return redirect(`/${payload.role.toLowerCase()}/dashboard`);
+        throw redirect(`/${payload.role.toLowerCase()}/dashboard`);
     }
 };

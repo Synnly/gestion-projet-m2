@@ -7,7 +7,7 @@ export const CustomForm = ({ label, children, ...rest }: CustomFormProps) => {
     return (
         <>
             {label && (
-                <div className="px-2 max-w-[80%] text-center w-full mx-2">
+                <div className="px-2 text-center w-full mx-2">
                     <p className="uppercase font-bold text-2xl">{label}</p>
                 </div>
             )}

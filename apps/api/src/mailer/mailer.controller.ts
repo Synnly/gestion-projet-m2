@@ -8,6 +8,7 @@ import {
     Request,
     BadRequestException,
     NotFoundException,
+    Logger,
 } from '@nestjs/common';
 import { MailerService } from './mailer.service';
 import { EmailDto, VerifyOtpDto, ResetPasswordDto } from './dto/mailer.dto';
@@ -38,7 +39,9 @@ export class MailerController {
                 message: 'Password reset code sent to your email. Valid for 5 minutes.',
             };
         } catch (error) {
+            Logger.log(error);
             if (error.message === 'User not found') {
+                Logger.log('No account found for email: ' + dto.email);
                 throw new NotFoundException('No account found with this email');
             }
             if (error.message === 'OTP rate limit exceeded. Try again later.') {
@@ -70,6 +73,7 @@ export class MailerController {
                 message: 'Password successfully reset',
             };
         } catch (error) {
+            Logger.log(error, 'reset');
             if (error.message === 'User not found') {
                 throw new NotFoundException('No account found with this email');
             }
@@ -93,6 +97,7 @@ export class MailerController {
     @Post('auth/send-verification')
     @HttpCode(HttpStatus.OK)
     async sendVerification(@Body() dto: EmailDto) {
+        Logger.log('Sending verification email to: ' + dto.email);
         try {
             await this.mailerService.sendVerificationEmail(dto.email);
             return {
@@ -100,6 +105,7 @@ export class MailerController {
                 message: 'Verification code sent to your email. Valid for 1 hour.',
             };
         } catch (error) {
+            Logger.log(error.message);
             if (error.message === 'User not found') {
                 throw new NotFoundException('No account found with this email');
             }

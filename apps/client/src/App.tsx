@@ -1,5 +1,5 @@
 import './App.css';
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, Outlet } from 'react-router';
 import { RouterProvider } from 'react-router';
 import { CompanySignup } from './auth/companySignup/index';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -11,51 +11,42 @@ import { CompleteProfil } from './company/completeProfil/index';
 import { protectedLoader } from './loader/protectAuthLoader';
 import { completeProfilLoader } from './loader/completeProfilLoader';
 import { notAuthLoader } from './loader/notAuthLoader';
+import { VerifyEmail } from './user/verifyMail';
+import { userStore } from './store/userStore';
+import { ForgotPassword } from './user/ForgotPassword';
 
 function App() {
+    userStore.persist.rehydrate();
     const queryClient = new QueryClient();
     // Replace the code below with your own components
     const route = [
         {
-            loader: completeProfilLoader,
+            path: '/',
+            id: 'root',
+            middleware: [completeProfilLoader],
+            element: <Outlet />,
             children: [
                 {
                     loader: notAuthLoader,
                     children: [
-                        {
-                            path: '/',
-                            element: <div>Hello World</div>,
-                        },
-                        {
-                            path: '/signin',
-                            element: <Login />,
-                        },
-                        {
-                            path: '/company/signup',
-                            element: <CompanySignup />,
-                        },
+                        { index: true, element: <div>Hello World</div> },
+                        { path: 'signin', element: <Login /> },
+                        { path: 'forgot-password', element: <ForgotPassword /> },
+                        { path: 'company/signup', element: <CompanySignup /> },
                     ],
                 },
                 {
                     loader: protectedLoader,
                     element: <AuthRoutes />,
                     children: [
+                        { path: 'verify', element: <VerifyEmail /> },
+                        { path: 'complete-profil', element: <CompleteProfil /> },
                         {
-                            path: '/verify',
-                            element: <div>verify</div>,
-                        },
-                        {
-                            path: '/complete-profil',
-                            element: <CompleteProfil />,
-                        },
-                        {
-                            path: '/company',
+                            path: 'company',
                             element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
                             children: [
-                                {
-                                    path: '/company/dashboard',
-                                    element: <div>Company Dashboard</div>,
-                                },
+                                { path: 'dashboard', element: <div>Company Dashboard</div> },
+                                { path: 'projects', element: <div>Company Projects</div> },
                                 {
                                     element: <VerifiedRoutes redirectPath="/company/dashboard" />,
                                     children: [],

@@ -23,6 +23,7 @@ export const SignupForm = () => {
 
     const setAccess = userStore((state) => state.set);
     const navigate = useNavigate();
+
     const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
 
     const { mutateAsync, isPending, isError, error, reset } = useMutation({
@@ -35,6 +36,10 @@ export const SignupForm = () => {
                 body: JSON.stringify(data),
                 credentials: 'include',
             });
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(translateError(errorData.message) || 'Une erreur est survenue');
+            }
             return res;
         },
     });
@@ -54,7 +59,12 @@ export const SignupForm = () => {
 
             const accessToken = await loginRes.text();
             setAccess(accessToken);
-            navigate('/');
+            //send code mail to verify
+            await mutateAsync({
+                url: `${API_URL}/api/mailer/auth/send-verification`,
+                data: { email: registerData.email },
+            });
+            navigate('/verify');
         }
     };
 
@@ -118,3 +128,9 @@ export const SignupForm = () => {
         </div>
     );
 };
+function translateError(message: string): string | undefined {
+    const regex = /Company with email ([\w.-]+@[\w.-]+\.\w+) already exists/i;
+    if (regex.test(message)) {
+        return 'Une entreprise avec cet email existe déjà.';
+    }
+}

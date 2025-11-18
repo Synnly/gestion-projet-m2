@@ -11,6 +11,7 @@ import {
     NotFoundException,
     ValidationPipe,
     UseGuards,
+    ConflictException,
 } from '@nestjs/common';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
@@ -67,7 +68,15 @@ export class CompanyController {
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
         dto: CreateCompanyDto,
     ) {
-        await this.companyService.create(dto);
+        try {
+            await this.companyService.create(dto);
+        } catch (error) {
+            if (error.code === 11000) {
+                throw new ConflictException(`Company with email ${dto.email} already exists`);
+            } else {
+                throw error;
+            }
+        }
     }
 
     /**

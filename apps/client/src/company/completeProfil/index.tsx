@@ -16,6 +16,7 @@ export const CompleteProfil = () => {
     const API_URL = import.meta.env.VITE_APIURL;
     const user = useOutletContext<userContext>();
     const payload = user.get(user.accessToken);
+
     const {
         register,
         handleSubmit,
@@ -54,13 +55,12 @@ export const CompleteProfil = () => {
             setProfile(variables);
         },
     });
+
     const onSubmit = async (data: completeProfilFormType) => {
         await mutateAsync(data);
         setProfile(data);
     };
-    if (!profil) {
-        return <></>;
-    }
+
     return (
         <div className="flex flex-col w-full min-h-screen flex-grow items-start bg-(--color-base-200)">
             <div className="w-full max-w-7xl mx-auto flex flex-col px-4 py-8 items-center">

@@ -1,5 +1,5 @@
 import { userStore } from '../store/userStore';
-import { Outlet } from 'react-router';
+import { Outlet, useLoaderData } from 'react-router';
 /**
  * @description Function which refresh user session.
  *  @returns {Promise<string>} - The refreshed access token.
@@ -10,7 +10,7 @@ import { Outlet } from 'react-router';
  *
  */
 export const AuthRoutes = () => {
-    const access = userStore((state) => state.access);
+    const access = useLoaderData() as string;
     const get = userStore((state) => state.get);
-    return <Outlet context={{ access, get }} />;
+    return <Outlet context={{ accessToken: access, get }} />;
 };

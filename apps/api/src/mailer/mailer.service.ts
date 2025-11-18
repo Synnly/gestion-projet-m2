@@ -26,8 +26,6 @@ export class MailerService {
         return crypto.randomInt(0, 1000000).toString().padStart(6, '0');
     }
 
-
-
     /**
      * Get the configured "from" email address and name from environment variables
      * @returns Object containing sender name, email address, and formatted from string
@@ -42,8 +40,6 @@ export class MailerService {
         };
     }
 
-
-
     /**
      * Hash OTP using bcrypt with salt before storing in database
      * @param otp Plain text OTP to hash
@@ -53,8 +49,6 @@ export class MailerService {
         const salt = await bcrypt.genSalt(10);
         return bcrypt.hash(otp, salt);
     }
-
-
 
     /**
      * Verify plain OTP against hashed value using constant-time comparison
@@ -66,7 +60,6 @@ export class MailerService {
         return bcrypt.compare(plainOtp, hashedOtp);
     }
 
-
     /**
      * Enforce rate limiting for OTP requests to prevent spam
      * @param user User document to check rate limits for
@@ -74,7 +67,7 @@ export class MailerService {
      */
     private async enforceRateLimit(user: UserDocument) {
         const now = new Date();
-        const windowMs = 60 * 60 * 1000; // 1 hour window
+        const windowMs = 60 * 60 * 1; // 1 hour window
 
         if (!user.lastOtpRequestAt || !user.otpRequestCount) {
             user.otpRequestCount = 0;
@@ -90,8 +83,6 @@ export class MailerService {
             throw new Error('OTP rate limit exceeded. Try again later.');
         }
     }
-
-
 
     /**
      * Send account verification OTP email to user
@@ -110,7 +101,7 @@ export class MailerService {
         const otp = providedOtp ?? this.generateOtp();
         const hashedOtp = await this.hashOtp(otp);
         const now = new Date();
-        
+
         user.emailVerificationCode = hashedOtp;
         user.emailVerificationExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
         user.emailVerificationAttempts = 0; // Reset attempts counter when new OTP is generated
@@ -134,8 +125,6 @@ export class MailerService {
         return true;
     }
 
-
-
     /**
      * Send password reset OTP email to user
      * @param email Email address of the user requesting password reset
@@ -153,7 +142,7 @@ export class MailerService {
         const otp = providedOtp ?? this.generateOtp();
         const hashedOtp = await this.hashOtp(otp);
         const now = new Date();
-        
+
         user.passwordResetCode = hashedOtp;
         user.passwordResetExpires = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes
         user.passwordResetAttempts = 0; // Reset attempts counter when new OTP is generated
@@ -176,8 +165,6 @@ export class MailerService {
 
         return true;
     }
-
-
 
     /**
      * Send a simple information email using the info-message template
@@ -205,8 +192,6 @@ export class MailerService {
         return true;
     }
 
-
-
     /**
      * Send a custom template email to a user
      * @param email Email address of the recipient
@@ -217,7 +202,7 @@ export class MailerService {
     async sendCustomTemplateEmail(email: string, templateName: string) {
         const normalized = email.toLowerCase();
         const { from, name } = this.getFromAddress();
-        
+
         await this.mailer.sendMail({
             to: normalized,
             subject: `Notification from ${name}`,
@@ -230,8 +215,6 @@ export class MailerService {
 
         return true;
     }
-
-
 
     /**
      * Update user password after successful OTP verification
@@ -249,8 +232,6 @@ export class MailerService {
         await user.save();
         return true;
     }
-
-
 
     /**
      * Verify a previously issued signup OTP with brute-force protection
@@ -291,7 +272,7 @@ export class MailerService {
 
         // Verify OTP using constant-time comparison
         const isValid = await this.verifyOtp(otp, user.emailVerificationCode);
-        
+
         if (!isValid) {
             // Increment failed attempts counter
             user.emailVerificationAttempts = (user.emailVerificationAttempts || 0) + 1;
@@ -307,8 +288,6 @@ export class MailerService {
         await user.save();
         return true;
     }
-
-
 
     /**
      * Verify a password reset OTP with brute-force protection
@@ -349,7 +328,7 @@ export class MailerService {
 
         // Verify OTP using constant-time comparison
         const isValid = await this.verifyOtp(otp, user.passwordResetCode);
-        
+
         if (!isValid) {
             // Increment failed attempts counter
             user.passwordResetAttempts = (user.passwordResetAttempts || 0) + 1;
