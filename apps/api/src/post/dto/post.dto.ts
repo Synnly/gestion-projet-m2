@@ -2,10 +2,14 @@
  * Data Transfer Object for post
  * Represents the structure of post data for their creation
  */
+import { Types } from 'mongoose';
 
-import { IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class PostDto {
+
+    /** Unique identifier of the company */
+    _id: Types.ObjectId;
+
     /**
      * Post's title
      * Is required for the creation
@@ -70,11 +74,13 @@ export class PostDto {
     /**
      * Only for the client dev, for the post display
      */
-    isVisible: boolean = true;
+    isVisible?: boolean;
 
     constructor(partial?: Partial<PostDto>) {
         if (partial) {
+
             Object.assign(this, partial);
+            this.isVisible = !!this.title && !!this.description;
         }
     }
 }

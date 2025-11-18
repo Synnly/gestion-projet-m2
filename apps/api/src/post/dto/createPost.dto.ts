@@ -1,6 +1,9 @@
 import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { Types } from 'mongoose';
 
 export class CreatePostDto {
+    /** Unique identifier of the company */
+    _id: Types.ObjectId;
     /**
      * Post's title
      * Is required for the creation
@@ -86,11 +89,12 @@ export class CreatePostDto {
      */
     @IsOptional()
     @IsBoolean()
-    isVisible: boolean = true;
+    isVisible?: boolean;
 
     constructor(partial?: Partial<CreatePostDto>) {
         if (partial) {
             Object.assign(this, partial);
+            this.isVisible = !!this.title && !!this.description;
         }
     }
 }
