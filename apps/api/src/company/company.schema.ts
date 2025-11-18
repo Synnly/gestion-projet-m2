@@ -107,6 +107,10 @@ export class Company {
     /** Whether the company account has been validated by an administrator */
     @Prop({ default: false })
     isValid?: boolean;
+
+    /** Date when the company was soft-deleted (for soft-delete functionality) */
+    @Prop({ required: false })
+    deletedAt?: Date;
 }
 
 /**

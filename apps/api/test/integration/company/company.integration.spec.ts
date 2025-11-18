@@ -663,7 +663,9 @@ describe('Company Integration Tests', () => {
                 .expect(204);
 
             const deleted = await companyModel.findById(company._id);
-            expect(deleted).toBeNull();
+            expect(deleted).not.toBeNull();
+            expect(deleted.deletedAt).toBeDefined();
+            expect(deleted.deletedAt).toBeInstanceOf(Date);
         });
 
         it('should delete company with COMPANY role', async () => {
@@ -681,7 +683,9 @@ describe('Company Integration Tests', () => {
                 .expect(204);
 
             const deleted = await companyModel.findById(company._id);
-            expect(deleted).toBeNull();
+            expect(deleted).not.toBeNull();
+            expect(deleted.deletedAt).toBeDefined();
+            expect(deleted.deletedAt).toBeInstanceOf(Date);
         });
 
         it('should fail with STUDENT role (forbidden)', async () => {
@@ -724,12 +728,12 @@ describe('Company Integration Tests', () => {
                 .expect(400);
         });
 
-        it('should not fail when deleting non-existent company', async () => {
+        it('should return 404 when deleting non-existent company', async () => {
             const nonExistentId = new Types.ObjectId();
             await request(app.getHttpServer())
                 .delete(`/api/companies/${nonExistentId}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
-                .expect(204);
+                .expect(404);
         });
 
         it('should deny COMPANY role from deleting another company (companyA cannot delete companyB)', async () => {
@@ -1118,7 +1122,9 @@ describe('Company Integration Tests', () => {
                 .expect(204);
 
             company = await companyModel.findById(companyId).lean();
-            expect(company).toBeNull();
+            expect(company).not.toBeNull();
+            expect(company.deletedAt).toBeDefined();
+            expect(company.deletedAt).toBeInstanceOf(Date);
         });
 
         it('should correctly hash different passwords', async () => {
