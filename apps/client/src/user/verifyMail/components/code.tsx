@@ -39,9 +39,7 @@ export const CodeInput = ({
         }
         if (lastDigit && idx === 6) {
             refsInputs.current[idx]?.blur();
-            console.log(refsInputs.current);
             if (refsInputs.current.every((input) => input?.value !== '')) {
-                console.log('submitting');
                 handleSubmit((data: VerifyEmailForm) => onSubmit(data))();
             }
         }

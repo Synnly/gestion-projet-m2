@@ -1,11 +1,12 @@
 import { redirect } from 'react-router';
-import { profileStore } from '../store/profileStore';
+import { profileStore, type companyProfileStoreType } from '../store/profileStore';
 import { userStore } from '../store/userStore';
-import { type completeProfilFormType, completeProfilFormCheck } from '../company/completeProfil/type';
+import { completeProfilFormCheck } from '../company/completeProfil/type';
+import type { companyProfile } from '../types';
 /** @description use zod schema to check if required fields of priofil are complete
  * @returns a boolean which indicates if the profil is complete
  */
-function isProfilComplete(profile: completeProfilFormType | null): boolean {
+function isProfilComplete(profile: companyProfile | null): boolean {
     //check
     return profile !== null && completeProfilFormCheck.safeParse(profile).success;
 }
@@ -14,14 +15,11 @@ export const completeProfilLoader = async ({ request }: { request: Request }) =>
     const API_URL = import.meta.env.VITE_APIURL;
     const { access, get } = userStore.getState();
     const { setProfil, profile } = profileStore.getState();
+
     const pathname = new URL(request.url).pathname;
     if (!access) return;
-    console.log('completeProfilLoader called');
     const payload = get(access);
     if (!payload.isVerified && pathname === '/verify') {
-        return;
-    }
-    if (!isProfilComplete(profile) && pathname === '/complete-profil') {
         return;
     }
     //if user try to access verify and already verified redirect to dashboard
@@ -32,7 +30,6 @@ export const completeProfilLoader = async ({ request }: { request: Request }) =>
     //if user is not verified and is not already on verify page redirect to verify
     if (!payload.isVerified && pathname !== '/verify') {
         throw redirect('/verify');
-        return null;
     }
 
     if (!profile) {
@@ -47,14 +44,20 @@ export const completeProfilLoader = async ({ request }: { request: Request }) =>
             return redirect('/signin');
         }
 
-        const newProfile: completeProfilFormType = await profileRes.json();
+        const newProfile: companyProfile = await profileRes.json();
+        console.log('fetched profile', newProfile);
         setProfil(newProfile);
     }
-    const newProfile = profileStore.getState();
-    if (!isProfilComplete(newProfile.profile) && request.url.endsWith('/complete-profil') === false) {
+    const newProfile: companyProfileStoreType = profileStore.getState();
+
+    const isComplete = isProfilComplete(newProfile.profile);
+    if (!isComplete && pathname === '/complete-profil') {
+        return;
+    }
+    if (!isComplete && pathname !== '/complete-profil') {
         throw redirect('/complete-profil');
     }
-    if (isProfilComplete(newProfile.profile) && request.url.endsWith('/complete-profil')) {
+    if (isComplete && pathname === '/complete-profil') {
         throw redirect(`/${payload.role.toLowerCase()}/dashboard`);
     }
 };

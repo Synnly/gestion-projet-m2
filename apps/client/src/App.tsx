@@ -3,10 +3,7 @@ import { createBrowserRouter, Outlet } from 'react-router';
 import { RouterProvider } from 'react-router';
 import { CompanySignup } from './auth/companySignup/index';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthRoutes } from './authRoutes/index';
-import { ProtectedRoutesByRole } from './authRoutes/protectedRouteByRole';
 import { Login } from './auth/Login/index';
-import { VerifiedRoutes } from './authRoutes/verifiedRoute';
 import { CompleteProfil } from './company/completeProfil/index';
 import { protectedLoader } from './loader/protectAuthLoader';
 import { completeProfilLoader } from './loader/completeProfilLoader';
@@ -14,6 +11,9 @@ import { notAuthLoader } from './loader/notAuthLoader';
 import { VerifyEmail } from './user/verifyMail';
 import { userStore } from './store/userStore';
 import { ForgotPassword } from './user/ForgotPassword';
+import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
+import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
+import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
 
 function App() {
     userStore.persist.rehydrate();

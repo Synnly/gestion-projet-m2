@@ -28,7 +28,6 @@ export function ForgotPassword() {
             });
             if (!res.ok) {
                 const errorData = await res.json();
-                console.log('errorData', errorData);
                 throw new Error(errorData.message);
             }
             return res;
@@ -40,17 +39,13 @@ export function ForgotPassword() {
             otp: code.current,
             newPassword: data.password,
         };
-        console.log(payload);
         try {
             await mutateAsync(payload);
             setStep(4);
         } catch (err) {
             if (!(err instanceof Error)) return;
 
-            console.log('err', err.message);
             if (err.message === 'Invalid OTP' || err.message === 'OTP expired') {
-                console.log('invalid or expired');
-                console.log('error');
                 setStep(2);
                 code.current = '';
             } else {

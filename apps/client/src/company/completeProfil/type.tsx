@@ -1,4 +1,5 @@
 import z from 'zod';
+import { IMAGE_SIZE_MAX } from '../../constantes';
 
 // Definition of structure types for companies
 export const StructureType = {
@@ -784,41 +785,43 @@ export type NafCode = (typeof nafCode)[keyof typeof nafCode];
 
 export const completeProfilForm = z.object({
     siretNumber: z.preprocess(
-        (val) => (typeof val === 'string' && val.trim() === '' ? null : val),
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
         z
             .string()
             .length(14, { message: "le siret n'est pas au bon format, il doit être un nombre de 14 caractères" })
-            .refine((val) => !isNaN(Number(val)), { message: 'Le numéro siret doit être un nombre' }).optional(),
+            .refine((val) => !isNaN(Number(val)), { message: 'Le numéro siret doit être un nombre' })
+            .nullable(),
     ),
     nafCode: z
         .preprocess(
-            (val) => (typeof val === 'string' && val.trim() === '' ? null : val),
-            z.enum(Object.values(nafCode)).optional(),
+            (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+            z.enum(Object.values(nafCode)).nullable(),
         )
         .refine((val) => !val || Object.values(nafCode).includes(val), {
             message: 'Veuillez choisir un code NAF valide',
         }), //is a optional valid structured type
     structureType: z.preprocess(
-        (val) => (typeof val === 'string' && val.trim() === '' ? null : val),
-        z.enum(Object.values(StructureType), { message: 'Type de structure invalide' }).optional(),
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.enum(Object.values(StructureType), { message: 'Type de structure invalide' }).nullable(),
     ),
 
     //is valid legal status
     legalStatus: z.preprocess(
-        (val) => (typeof val === 'string' && val.trim() === '' ? null : val),
-        z.enum(Object.values(LegalStatus), { message: 'Statut légal invalide' }).optional(),
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.enum(Object.values(LegalStatus), { message: 'Statut légal invalide' }).nullable(),
     ),
     streetNumber: z.preprocess(
-        (val) => (typeof val === 'string' && val.trim() === '' ? null : val),
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
         z
             .string()
             .min(1, { message: 'Le numéro de rue est requis' })
             .regex(/^\d+[A-Za-z]?(?:[-/]\d+[A-Za-z]?)?$/, {
                 message: 'Numéro de rue invalide (ex: 12, 12B, 12-14)',
-            }).optional().nullable(),
+            })
+            .nullable(),
     ),
     streetName: z.preprocess(
-        (val) => (typeof val === 'string' && val.trim() === '' ? null : val),
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
         z
             .string()
             .min(1, { message: 'Le nom de rue est requis' })
@@ -826,38 +829,76 @@ export const completeProfilForm = z.object({
             .regex(/^[a-zA-ZÀ-ÖØ-öø-ÿ0-9' \-]+$/, {
                 message:
                     'Le nom de rue contient des caractères invalides (lettres, chiffres, espaces, tirets et apostrophes autorisés)',
-            }).optional(),
+            })
+            .nullable(),
     ),
     postalCode: z.preprocess(
-        (val) => (typeof val === 'string' && val.trim() === '' ? null : val),
-        z.string().regex(/^[0-9]{5}$/, { message: 'Le code postal doit contenir 5 chiffres' }).optional(),
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z
+            .string()
+            .regex(/^[0-9]{5}$/, { message: 'Le code postal doit contenir 5 chiffres' })
+            .nullable(),
     ),
     city: z.preprocess(
-        (val) => (typeof val === 'string' && val.trim() === '' ? null : val),
-        z.string().optional(),
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.string().nullable(),
     ),
     country: z.preprocess(
-        (val) => (typeof val === 'string' && val.trim() === '' ? null : val),
-        z.string().max(100, { message: 'Le nom du pays est trop long' }).optional(),
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.string().max(100, { message: 'Le nom du pays est trop long' }).nullable(),
     ),
+    logo: z
+        .custom<File | null | undefined>()
+        .refine(
+            (file) => {
+                if (!(file instanceof FileList)) return;
+                return !file[0] || file[0] instanceof File;
+            },
+            {
+                message: 'Format invalide',
+            },
+        )
+        .refine(
+            (file) => {
+                if (!(file instanceof FileList)) return;
+                return !file[0] || file[0].size <= IMAGE_SIZE_MAX;
+            },
+            {
+                message: 'Le fichier doit faire moins de 5MB',
+            },
+        )
+        .refine(
+            (file) => {
+                if (!(file instanceof FileList)) return;
+                return !file[0] || ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'].includes(file[0].type);
+            },
+            {
+                message: 'Format non supporté : PNG, JPG, JPEG uniquement',
+            },
+        )
+        .nullable(),
 });
 
-export type completeProfilFormType = z.infer<typeof completeProfilForm>; // preprocess will transform empty strings to null for optional fields
-
+export type completeProfilFormType = z.infer<typeof completeProfilForm>;
 
 export const completeProfilFormCheck = z.object({
     siretNumber: z.string().min(1),
-    nafCode: z.enum(Object.values(nafCode)), 
-    structureType:z.enum(Object.values(StructureType), { message: 'Type de structure invalide' }),
+    nafCode: z.enum(Object.values(nafCode)),
+    structureType: z.enum(Object.values(StructureType), { message: 'Type de structure invalide' }),
 
-    legalStatus:z.enum(Object.values(LegalStatus), { message: 'Statut légal invalide' }),
-    streetNumber: z.string()
-            .min(1, { message: 'Le numéro de rue est requis' }),
-    streetName: 
-        z.string()
-            .min(1, { message: 'Le nom de rue est requis' })
-            .max(100, { message: 'Le nom de rue est trop long' }),
+    legalStatus: z.enum(Object.values(LegalStatus), { message: 'Statut légal invalide' }),
+    streetNumber: z.string().min(1, { message: 'Le numéro de rue est requis' }),
+    streetName: z
+        .string()
+        .min(1, { message: 'Le nom de rue est requis' })
+        .max(100, { message: 'Le nom de rue est trop long' }),
     postalCode: z.string().min(1),
     city: z.string().min(1, { message: 'La ville est requise' }),
     country: z.string().min(1).max(100),
+    logo: z.string().optional(),
 });
+
+export type SignedUrlResponse = {
+    fileName: string;
+    uploadUrl: string;
+};

@@ -1,3 +1,5 @@
+import type { NafCode, StructureType } from './company/completeProfil/type';
+
 export type companyProfile = {
     /** Unique identifier of the company */
     _id: string;
@@ -12,10 +14,10 @@ export type companyProfile = {
     siretNumber?: string;
 
     /** NAF code (French business activity code) */
-    nafCode?: string;
+    nafCode: NafCode | undefined;
 
     /** Type of organizational structure */
-    structureType?: string;
+    structureType: StructureType | undefined;
 
     /** Legal status of the company */
     legalStatus?: string;
@@ -36,8 +38,9 @@ export type companyProfile = {
     country?: string;
 
     /** Whether the company account is validated */
-    isValid?: boolean;
+    isValid: boolean;
 
+    isVerified: boolean;
     /** Logo URL or path for the company */
     logo?: string;
 };

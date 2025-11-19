@@ -1,22 +1,32 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+
+import penSvg from '../../../assets/edit-pen-svgrepo-com.svg?url';
 import { useForm, type Resolver } from 'react-hook-form';
-import { type completeProfilFormType, nafCode, StructureType, LegalStatus, completeProfilForm } from './type';
+import { type completeProfilFormType, nafCode, StructureType, LegalStatus, completeProfilForm, type SignedUrlResponse } from './type';
 import { FormSection } from '../../components/FormSection';
 import { FormInput } from '../../components/FormInput';
 import { CustomSelect } from '../../components/select';
 import { FormSubmit } from '../../components/FormSubmit';
 import { useMutation } from '@tanstack/react-query';
 import { useOutletContext } from 'react-router';
-import type { userContext } from '../../authRoutes/type';
 import { profileStore } from '../../store/profileStore';
+import { ProfilePicture } from '../../components/profilPicture';
+import type { companyProfile } from '../../types';
+import { useFile } from '../../hooks/useFile';
+import { useBlob } from '../../hooks/useBlob';
+import type { userContext } from '../../protectedRoutes/type';
+import { useUploadFile } from '../../hooks/useUploadFile';
 export const CompleteProfil = () => {
     const formInputStyle = 'p-3';
-    const profil: completeProfilFormType | null = profileStore((state) => state.profile);
-    const setProfile = profileStore((state) => state.setProfil);
+    const profil: companyProfile | null = profileStore((state) => state.profile);
+    const updateProfil = profileStore((state) => state.updateProfil);
     const API_URL = import.meta.env.VITE_APIURL;
     const user = useOutletContext<userContext>();
     const payload = user.get(user.accessToken);
-
+    const logoBlob = useBlob(profil?.logo ?? '');
+    const logoFile = useFile(logoBlob,profil?.logo);
+    const logoUrl = logoFile ? URL.createObjectURL(logoFile) : null;
+    const upload = useUploadFile()
     const {
         register,
         handleSubmit,
@@ -35,11 +45,12 @@ export const CompleteProfil = () => {
             country: profil?.country ?? '',
             city: profil?.city ?? '',
             streetName: profil?.streetName ?? '',
+            logo: logoFile,
         },
     });
 
     const { isPending, isError, error, mutateAsync } = useMutation({
-        mutationFn: async (data: completeProfilFormType) => {
+        mutationFn: async (data: Omit<completeProfilFormType, "logo"> & { logo?: string }) => {
             const res = await fetch(`${API_URL}/api/companies/${payload.id}`, {
                 method: 'PUT',
                 headers: {
@@ -51,14 +62,49 @@ export const CompleteProfil = () => {
             });
             return res;
         },
-        onSuccess: (data, variables) => {
-            setProfile(variables);
+        onSuccess: (_data, variables) => {
+        //
+            const payload: Partial<companyProfile> = {
+                ...variables,
+                siretNumber: variables.siretNumber ?? undefined,
+                logo: variables.logo ?? undefined,
+                nafCode:variables.nafCode ?? undefined,
+                structureType:variables.structureType ?? undefined,
+                legalStatus:variables.legalStatus ?? undefined,
+                streetNumber:variables.streetNumber ?? undefined,
+                streetName:variables.streetName ?? undefined,
+                postalCode:variables.postalCode ?? undefined,
+                city:variables.city ?? undefined,
+                country:variables.country ?? undefined
+            };
+            updateProfil(payload);
         },
     });
-
+    /* it's a disgusting code but i'll clean after*/
     const onSubmit = async (data: completeProfilFormType) => {
-        await mutateAsync(data);
-        setProfile(data);
+        const {logo:fileLogo, ...rest} = data;
+        if(fileLogo instanceof FileList){
+            if (fileLogo.length !== 0) {  
+                const url = `${API_URL}/files/signed/logo`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ originalFileName:fileLogo[0].name}),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Erreur lors de la récupération du lien signé');
+                }
+                const {fileName:logo,uploadUrl}: SignedUrlResponse = await response.json(); 
+                upload(fileLogo[0],uploadUrl) 
+                await mutateAsync({...rest,logo});
+                return
+            } 
+            await mutateAsync({...rest})
+        }
+         console.log(data) 
     };
 
     return (
@@ -74,6 +120,29 @@ export const CompleteProfil = () => {
                     onSubmit={handleSubmit(onSubmit)}
                     role="form"
                 >
+                    <FormSection
+                        title="Photo de profil de l'entreprise"
+                        className="bg-(--color-base-100) p-6 rounded-(--radius-box) shadow-md mb-6 flex flex-col gap-4"
+                    >
+                        <div className="flex flex-row items-center justify-around gap-4">
+                            <div className="w-[110px] h-[110px]">
+                                <ProfilePicture
+                                    src={logoUrl || "https://placehold.co/600x400"}
+                                    overlay
+                                    overlayPicture={penSvg}
+                                    register={register('logo')}
+                                    error={errors.logo}
+                                />
+                            </div>
+
+                            <div className="flex flex-col">
+                                <span className="font-stretch-105% italic mb-1">
+                                    Téléchargez le logo de votre entreprise, il sera visible publiquement.
+                                </span>
+                                <span className="text-sm text-gray-600 italic">PNG, JPG jusqu'à 5MB.</span>
+                            </div>
+                        </div>
+                    </FormSection>
                     <FormSection
                         title="Informations légales et administratives"
                         className=" bg-(--color-base-100) p-6 rounded-(--radius-box) shadow-md mb-6 flex flex-col gap-4"
@@ -122,7 +191,6 @@ export const CompleteProfil = () => {
                             />
                         </div>
                     </FormSection>
-
                     <FormSection
                         title="Adresse du siège social"
                         className=" bg-(--color-base-100) p-6 rounded-(--radius-box) shadow-md mb-6 flex flex-col gap-4"
