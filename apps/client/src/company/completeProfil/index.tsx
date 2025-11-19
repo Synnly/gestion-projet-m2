@@ -15,7 +15,7 @@ import { FormInput } from '../../components/FormInput';
 import { CustomSelect } from '../../components/select';
 import { FormSubmit } from '../../components/FormSubmit';
 import { useMutation } from '@tanstack/react-query';
-import { Navigate, useNavigate, useOutletContext } from 'react-router';
+import { useNavigate, useOutletContext } from 'react-router';
 import { profileStore } from '../../store/profileStore';
 import { ProfilePicture } from '../../components/profilPicture';
 import type { companyProfile } from '../../types';

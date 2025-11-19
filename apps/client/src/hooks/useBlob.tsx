@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { userStore } from '../store/userStore';
-import { useState } from 'react';
 /**
 A faire évoluer pour le cv
 */
