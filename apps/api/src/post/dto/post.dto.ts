@@ -3,7 +3,7 @@
  * Represents the structure of post data for their creation
  */
 import { Types } from 'mongoose';
-import { PostType } from '../post-type.enum';
+import { PostType } from '../post.schema';
 
 export class PostDto {
     /** Unique identifier of the company */

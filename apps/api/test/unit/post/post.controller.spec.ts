@@ -4,7 +4,7 @@ import { PostService } from '../../../src/post/post.service';
 import { NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { CreatePostDto } from '../../../src/post/dto/createPost.dto';
-import { PostType } from '../../../src/post/post-type.enum';
+import { PostType } from '../../../src/post/post.schema';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 

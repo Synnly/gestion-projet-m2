@@ -1,6 +1,6 @@
 import { validate } from 'class-validator';
 import { CreatePostDto } from '../../../../src/post/dto/createPost.dto';
-import { PostType } from '../../../../src/post/post-type.enum';
+import { PostType } from '../../../../src/post/post.schema';
 
 describe('CreatePostDto', () => {
     describe('validation', () => {

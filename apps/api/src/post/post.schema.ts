@@ -1,6 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
-import { PostType } from './post-type.enum';
+
+export enum PostType {
+    Presentiel = 'Présentiel',
+    Teletravail = 'Télétravail',
+    Hybride = 'Hybride',
+}
+
 
 @Schema({ timestamps: true })
 export class Post {

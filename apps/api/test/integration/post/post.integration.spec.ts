@@ -10,7 +10,7 @@ import cookieParser from 'cookie-parser';
 import { PostModule } from '../../../src/post/post.module';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { Post, PostDocument } from '../../../src/post/post.schema';
-import { PostType } from '../../../src/post/post-type.enum';
+import { PostType } from '../../../src/post/post.schema';
 import { AuthModule } from '../../../src/auth/auth.module';
 import { CompanyModule } from '../../../src/company/company.module';
 import { User, CompanyUserDocument } from '../../../src/user/user.schema';

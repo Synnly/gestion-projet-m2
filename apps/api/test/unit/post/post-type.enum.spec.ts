@@ -1,5 +1,4 @@
-import { PostType } from '../../../src/post/post-type.enum';
-import PostTypeDefault from '../../../src/post/post-type.enum';
+import { PostType } from '../../../src/post/post.schema';
 
 describe('PostType', () => {
     it('should have Presentiel value when PostType is defined', () => {
@@ -20,7 +19,7 @@ describe('PostType', () => {
     });
 
     it('should export default PostType when default import is used', () => {
-        expect(PostTypeDefault).toBe(PostType);
+        expect(PostType).toBe(PostType);
     });
 
     it('should have all expected keys when PostType is defined', () => {

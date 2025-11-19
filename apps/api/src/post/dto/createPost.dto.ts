@@ -11,7 +11,7 @@ import {
     Min,
     IsEnum,
 } from 'class-validator';
-import { PostType } from '../post-type.enum';
+import { PostType } from '../post.schema';
 
 export class CreatePostDto {
    
