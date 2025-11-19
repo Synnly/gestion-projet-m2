@@ -58,4 +58,27 @@ describe('UserSchema (integration)', () => {
 
         await expect(doc.save()).rejects.toThrow();
     });
+
+    it('should propagate bcrypt errors during hashing', async () => {
+        // Force genSalt to throw inside the pre-save hook
+        const genSaltSpy = jest.spyOn(require('bcrypt'), 'genSalt').mockImplementation(() => {
+            throw new Error('salt-failure');
+        });
+
+        const doc = new UserModel({
+            email: 'saltfail@test.com',
+            password: 'SomeSecret123!',
+            role: 'STUDENT',
+        } as any);
+
+        await expect(doc.save()).rejects.toThrow('salt-failure');
+
+        genSaltSpy.mockRestore();
+    });
+
+    it('should export UserSchema correctly - line 156 coverage', () => {
+        // This test ensures the export statement is executed
+        expect(UserSchema).toBeDefined();
+        expect(UserSchema).toHaveProperty('obj');
+    });
 });

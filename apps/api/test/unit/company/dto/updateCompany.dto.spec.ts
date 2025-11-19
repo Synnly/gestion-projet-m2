@@ -1,7 +1,61 @@
 import { validate } from 'class-validator';
 import { UpdateCompanyDto } from '../../../../src/company/dto/updateCompany.dto';
-import { NafCode } from '../../../../src/company/naf-codes.enum';
+import { NafCode } from '../../../../src/company/nafCodes.enum';
 import { LegalStatus, StructureType } from '../../../../src/company/company.schema';
+
+describe('UpdateCompanyDto - decorator branches', () => {
+    it('should validate all optional enum fields when provided', async () => {
+        const dto = new UpdateCompanyDto({
+            nafCode: NafCode['6202A'],
+            structureType: StructureType.Association,
+            legalStatus: LegalStatus.SA,
+        });
+
+        const errors = await validate(dto);
+        expect(errors).toHaveLength(0);
+    });
+
+    it('should validate all optional string address fields when provided', async () => {
+        const dto = new UpdateCompanyDto({
+            streetNumber: '42',
+            streetName: 'Avenue Test',
+            postalCode: '69000',
+            city: 'Lyon',
+            country: 'France',
+            logo: 'http://example.com/new-logo.png',
+        });
+
+        const errors = await validate(dto);
+        expect(errors).toHaveLength(0);
+    });
+
+    it('should fail when nafCode is invalid', async () => {
+        const dto = new UpdateCompanyDto({
+            nafCode: 'NOTVALID' as any,
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+    });
+
+    it('should fail when structureType is invalid', async () => {
+        const dto = new UpdateCompanyDto({
+            structureType: 'WRONG' as any,
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+    });
+
+    it('should fail when legalStatus is invalid', async () => {
+        const dto = new UpdateCompanyDto({
+            legalStatus: 'BAD' as any,
+        });
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+    });
+});
 
 describe('UpdateCompanyDto', () => {
     describe('Validation', () => {
@@ -409,7 +463,7 @@ describe('UpdateCompanyDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const errorProperties = errors.map(e => e.property);
+            const errorProperties = errors.map((e) => e.property);
             expect(errorProperties).toContain('password');
             expect(errorProperties).toContain('nafCode');
         });

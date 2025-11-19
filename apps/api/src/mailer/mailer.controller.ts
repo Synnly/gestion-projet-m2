@@ -8,10 +8,11 @@ import {
     Request,
     BadRequestException,
     NotFoundException,
+    ValidationPipe,
 } from '@nestjs/common';
 import { MailerService } from './mailer.service';
 import { EmailDto, VerifyOtpDto, ResetPasswordDto } from './dto/mailer.dto';
-import { SendCustomTemplateDto } from './dto/send-custom-template.dto';
+import { SendCustomTemplateDto } from './dto/sendCustomTemplate.dto';
 import { AuthGuard } from '../auth/auth.guard';
 
 /**
@@ -30,7 +31,7 @@ export class MailerController {
      */
     @Post('password/forgot')
     @HttpCode(HttpStatus.OK)
-    async forgotPassword(@Body() dto: EmailDto) {
+    async forgotPassword(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: EmailDto) {
         try {
             await this.mailerService.sendPasswordResetEmail(dto.email);
             return {
@@ -57,7 +58,7 @@ export class MailerController {
      */
     @Post('password/reset')
     @HttpCode(HttpStatus.OK)
-    async resetPassword(@Body() dto: ResetPasswordDto) {
+    async resetPassword(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: ResetPasswordDto) {
         try {
             // Verify OTP first
             await this.mailerService.verifyPasswordResetOtp(dto.email, dto.otp);
@@ -92,7 +93,7 @@ export class MailerController {
      */
     @Post('auth/send-verification')
     @HttpCode(HttpStatus.OK)
-    async sendVerification(@Body() dto: EmailDto) {
+    async sendVerification(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: EmailDto) {
         try {
             await this.mailerService.sendVerificationEmail(dto.email);
             return {
@@ -119,7 +120,7 @@ export class MailerController {
      */
     @Post('auth/verify')
     @HttpCode(HttpStatus.OK)
-    async verifyAccount(@Body() dto: VerifyOtpDto) {
+    async verifyAccount(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: VerifyOtpDto) {
         try {
             await this.mailerService.verifySignupOtp(dto.email, dto.otp);
             return {
@@ -151,7 +152,7 @@ export class MailerController {
     @Post('send-template')
     @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
-    async sendCustomTemplate(@Request() req, @Body() dto: SendCustomTemplateDto) {
+    async sendCustomTemplate(@Request() req, @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: SendCustomTemplateDto) {
         try {
             const userEmail = req.user.email;
 

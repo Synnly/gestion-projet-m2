@@ -9,7 +9,10 @@ describe('main bootstrap (import)', () => {
             jest.doMock('cookie-parser', () => jest.fn());
 
             const main = require('../../src/main');
-            expect(createMock).toHaveBeenCalled();
+            return new Promise((resolve) => setImmediate(resolve)).then(() => {
+                expect(createMock).toHaveBeenCalled();
+                expect(listenMock).toHaveBeenCalled();
+            });
         });
     });
 });

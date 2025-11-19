@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
-import { Company, CompanyDocument } from './company.schema';
+import { Company } from './company.schema';
 import { CompanyUserDocument } from '../user/user.schema';
 
 /**
@@ -160,7 +160,16 @@ export class CompanyService {
      * or allow data recovery. This operation is irreversible.
      */
     async remove(id: string): Promise<void> {
-        await this.companyModel.findOneAndDelete({ _id: id, deletedAt: { $exists: false } }).exec();
+        const updated = await this.companyModel
+            .findOneAndUpdate(
+                { _id: id, deletedAt: { $exists: false } },
+                { $set: { deletedAt: new Date() } },
+            )
+            .exec();
+
+        if (!updated) {
+            throw new NotFoundException('Company not found or already deleted');
+        }
         return;
     }
 }

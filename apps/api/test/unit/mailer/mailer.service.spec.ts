@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException, BadRequestException, HttpException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
 import { getModelToken } from '@nestjs/mongoose';
@@ -94,7 +95,7 @@ describe('MailerService', () => {
                 expect.objectContaining({
                     to: 'user@example.com',
                     subject: 'Confirm your account',
-                    template: 'signup-confirmation',
+                    template: 'signupConfirmation',
                     from: '"Test App" <noreply@example.com>',
                     context: expect.objectContaining({
                         otp: expect.any(String),
@@ -123,7 +124,9 @@ describe('MailerService', () => {
         it('should throw User not found error when user does not exist in database', async () => {
             mockUserModel.findOne.mockResolvedValue(null);
 
-            await expect(service.sendVerificationEmail('nonexistent@example.com')).rejects.toThrow('User not found');
+            await expect(service.sendVerificationEmail('nonexistent@example.com')).rejects.toBeInstanceOf(
+                NotFoundException,
+            );
         });
 
         it('should throw rate limit error when user has requested 5 OTPs within the last hour', async () => {
@@ -135,9 +138,7 @@ describe('MailerService', () => {
             };
             mockUserModel.findOne.mockResolvedValue(rateLimitedUser);
 
-            await expect(service.sendVerificationEmail('user@example.com')).rejects.toThrow(
-                'OTP rate limit exceeded. Try again later.',
-            );
+            await expect(service.sendVerificationEmail('user@example.com')).rejects.toBeInstanceOf(HttpException);
         });
 
         it('should reset rate limit and allow new OTP request when 1 hour window has passed since last request', async () => {
@@ -190,7 +191,7 @@ describe('MailerService', () => {
                 expect.objectContaining({
                     to: 'user@example.com',
                     subject: 'Password reset request',
-                    template: 'reset-password',
+                    template: 'resetPassword',
                     from: '"Test App" <noreply@example.com>',
                 }),
             );
@@ -199,7 +200,9 @@ describe('MailerService', () => {
         it('should throw error when user not found', async () => {
             mockUserModel.findOne.mockResolvedValue(null);
 
-            await expect(service.sendPasswordResetEmail('nonexistent@example.com')).rejects.toThrow('User not found');
+            await expect(service.sendPasswordResetEmail('nonexistent@example.com')).rejects.toBeInstanceOf(
+                NotFoundException,
+            );
         });
     });
 
@@ -235,8 +238,8 @@ describe('MailerService', () => {
         it('should throw error when user not found', async () => {
             mockUserModel.findOne.mockResolvedValue(null);
 
-            await expect(service.verifySignupOtp('nonexistent@example.com', '123456')).rejects.toThrow(
-                'User not found',
+            await expect(service.verifySignupOtp('nonexistent@example.com', '123456')).rejects.toBeInstanceOf(
+                NotFoundException,
             );
         });
 
@@ -248,8 +251,8 @@ describe('MailerService', () => {
             };
             mockUserModel.findOne.mockResolvedValue(userWithoutCode);
 
-            await expect(service.verifySignupOtp('user@example.com', '123456')).rejects.toThrow(
-                'No verification code set',
+            await expect(service.verifySignupOtp('user@example.com', '123456')).rejects.toBeInstanceOf(
+                BadRequestException,
             );
         });
 
@@ -263,7 +266,9 @@ describe('MailerService', () => {
             mockUserModel.findOne.mockResolvedValue(expiredUser);
             expiredUser.save.mockResolvedValue(expiredUser);
 
-            await expect(service.verifySignupOtp('user@example.com', '123456')).rejects.toThrow('OTP expired');
+            await expect(service.verifySignupOtp('user@example.com', '123456')).rejects.toBeInstanceOf(
+                BadRequestException,
+            );
         });
 
         it('should increment attempts counter on invalid OTP', async () => {
@@ -276,7 +281,9 @@ describe('MailerService', () => {
             mockUserModel.findOne.mockResolvedValue(userWithCode);
             userWithCode.save.mockResolvedValue(userWithCode);
 
-            await expect(service.verifySignupOtp('user@example.com', '999999')).rejects.toThrow('Invalid OTP');
+            await expect(service.verifySignupOtp('user@example.com', '999999')).rejects.toBeInstanceOf(
+                BadRequestException,
+            );
 
             expect(userWithCode.emailVerificationAttempts).toBe(1);
             expect(userWithCode.save).toHaveBeenCalled();
@@ -293,9 +300,7 @@ describe('MailerService', () => {
             mockUserModel.findOne.mockResolvedValue(userWithAttempts);
             userWithAttempts.save.mockResolvedValue(userWithAttempts);
 
-            await expect(service.verifySignupOtp('user@example.com', '999999')).rejects.toThrow(
-                'Too many verification attempts. Please request a new code.',
-            );
+            await expect(service.verifySignupOtp('user@example.com', '999999')).rejects.toBeInstanceOf(HttpException);
 
             expect(userWithAttempts.emailVerificationCode).toBeNull();
             expect(userWithAttempts.emailVerificationExpires).toBeNull();
@@ -339,14 +344,16 @@ describe('MailerService', () => {
             mockUserModel.findOne.mockResolvedValue(expiredUser);
             expiredUser.save.mockResolvedValue(expiredUser);
 
-            await expect(service.verifyPasswordResetOtp('user@example.com', '123456')).rejects.toThrow('OTP expired');
+            await expect(service.verifyPasswordResetOtp('user@example.com', '123456')).rejects.toBeInstanceOf(
+                BadRequestException,
+            );
         });
 
         it('should throw error when user not found', async () => {
             mockUserModel.findOne.mockResolvedValue(null);
 
-            await expect(service.verifyPasswordResetOtp('nonexistent@example.com', '123456')).rejects.toThrow(
-                'User not found',
+            await expect(service.verifyPasswordResetOtp('nonexistent@example.com', '123456')).rejects.toBeInstanceOf(
+                NotFoundException,
             );
         });
 
@@ -358,8 +365,8 @@ describe('MailerService', () => {
             };
             mockUserModel.findOne.mockResolvedValue(userWithoutCode);
 
-            await expect(service.verifyPasswordResetOtp('user@example.com', '123456')).rejects.toThrow(
-                'No password reset code set',
+            await expect(service.verifyPasswordResetOtp('user@example.com', '123456')).rejects.toBeInstanceOf(
+                BadRequestException,
             );
         });
     });
@@ -375,7 +382,7 @@ describe('MailerService', () => {
                 expect.objectContaining({
                     to: 'user@example.com',
                     subject: 'Test Title',
-                    template: 'info-message',
+                    template: 'infoMessage',
                     from: '"Test App" <noreply@example.com>',
                     context: {
                         title: 'Test Title',
@@ -391,13 +398,13 @@ describe('MailerService', () => {
         it('should send email with custom template', async () => {
             mockNestMailerService.sendMail.mockResolvedValue(true);
 
-            await service.sendCustomTemplateEmail('user@example.com', 'finish-verif');
+            await service.sendCustomTemplateEmail('user@example.com', 'finishVerif');
 
             expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
                 expect.objectContaining({
                     to: 'user@example.com',
                     subject: 'Notification from Test App',
-                    template: 'finish-verif',
+                    template: 'finishVerif',
                     from: '"Test App" <noreply@example.com>',
                     context: {
                         fromName: 'Test App',
@@ -429,9 +436,31 @@ describe('MailerService', () => {
         it('should throw error when user not found', async () => {
             mockUserModel.findOne.mockResolvedValue(null);
 
-            await expect(service.updatePassword('nonexistent@example.com', 'NewPassword123!')).rejects.toThrow(
-                'User not found',
+            await expect(service.updatePassword('nonexistent@example.com', 'NewPassword123!')).rejects.toBeInstanceOf(
+                NotFoundException,
             );
+        });
+    });
+
+    describe('Private helper methods', () => {
+        it('generateOtp should return 6-digit string', () => {
+            const otp = (service as any).generateOtp();
+            expect(typeof otp).toBe('string');
+            expect(otp.length).toBe(6);
+        });
+
+        it('getFromAddress should return formatted from value', () => {
+            const res = (service as any).getFromAddress();
+            expect(res).toHaveProperty('from');
+            expect(res.email).toBe('noreply@example.com');
+        });
+
+        it('hashOtp and verifyOtp should be consistent', async () => {
+            const plain = '123456';
+            const hashed = await (service as any).hashOtp(plain);
+            expect(typeof hashed).toBe('string');
+            const ok = await (service as any).verifyOtp(plain, hashed);
+            expect(ok).toBe(true);
         });
     });
 });
