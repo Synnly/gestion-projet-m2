@@ -1,4 +1,4 @@
-import { useState, forwardRef } from 'react';
+import { useState, forwardRef, useEffect } from 'react';
 import { cn } from '../utils/cn';
 import type { FieldError, UseFormRegisterReturn } from 'react-hook-form';
 type ProfilePictureProps = {
@@ -17,8 +17,10 @@ export const ProfilePicture = forwardRef<File | null, ProfilePictureProps>(
         { src, overlay = false, overlayPicture, className, handleModif, imgRef, register, error }: ProfilePictureProps,
         ref,
     ) => {
+        
         const [srcPicture, setSrcPicture] = useState(src);
-
+       
+        
         const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
             const file = event.target.files?.[0];
             if (file && file?.size > 3000000) {
@@ -45,6 +47,12 @@ export const ProfilePicture = forwardRef<File | null, ProfilePictureProps>(
             reader.readAsDataURL(file);
         };
 
+        useEffect(()=>{
+            setSrcPicture(src)
+        },[src])
+        if(!src){
+            return <></>
+        }
         return (
             <>
                 <div className={cn('relative group rounded-full overflow-hidden w-24 h-24', className)}>

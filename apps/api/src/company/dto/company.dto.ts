@@ -1,6 +1,6 @@
 import { Expose, Exclude } from 'class-transformer';
 import { StructureType, LegalStatus } from '../company.schema';
-import { NafCode } from '../naf-codes.enum';
+import { NafCode } from '../nafCodes.enum';
 import { Types } from 'mongoose';
 
 /**

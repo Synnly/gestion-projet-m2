@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { MailerController } from '../../../src/mailer/mailer.controller';
 import { MailerService } from '../../../src/mailer/mailer.service';
 import { AuthGuard } from '../../../src/auth/auth.guard';
@@ -65,8 +66,8 @@ describe('MailerController', () => {
         it('should throw NotFoundException when user not found', async () => {
             mockMailerService.sendPasswordResetEmail.mockRejectedValue(new Error('User not found'));
 
-            await expect(controller.forgotPassword({ email: 'nonexistent@example.com' })).rejects.toThrow(
-                'No account found with this email',
+            await expect(controller.forgotPassword({ email: 'nonexistent@example.com' })).rejects.toBeInstanceOf(
+                NotFoundException,
             );
         });
 
@@ -75,8 +76,8 @@ describe('MailerController', () => {
                 new Error('OTP rate limit exceeded. Try again later.'),
             );
 
-            await expect(controller.forgotPassword({ email: 'user@example.com' })).rejects.toThrow(
-                'Too many requests. Please try again later.',
+            await expect(controller.forgotPassword({ email: 'user@example.com' })).rejects.toBeInstanceOf(
+                BadRequestException,
             );
         });
 
@@ -122,7 +123,7 @@ describe('MailerController', () => {
                     otp: '999999',
                     newPassword: 'NewSecurePass123!',
                 }),
-            ).rejects.toThrow('Invalid OTP');
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
 
         it('should throw BadRequestException when OTP is expired', async () => {
@@ -146,7 +147,7 @@ describe('MailerController', () => {
                     otp: '123456',
                     newPassword: 'NewSecurePass123!',
                 }),
-            ).rejects.toThrow('No account found with this email');
+            ).rejects.toBeInstanceOf(NotFoundException);
         });
 
         it('should throw BadRequestException when too many attempts', async () => {
@@ -160,7 +161,7 @@ describe('MailerController', () => {
                     otp: '123456',
                     newPassword: 'NewSecurePass123!',
                 }),
-            ).rejects.toThrow('Too many verification attempts. Please request a new code.');
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
 
         it('should throw BadRequestException for generic errors', async () => {
@@ -192,8 +193,8 @@ describe('MailerController', () => {
         it('should throw NotFoundException when user not found', async () => {
             mockMailerService.sendVerificationEmail.mockRejectedValue(new Error('User not found'));
 
-            await expect(controller.sendVerification({ email: 'nonexistent@example.com' })).rejects.toThrow(
-                'No account found with this email',
+            await expect(controller.sendVerification({ email: 'nonexistent@example.com' })).rejects.toBeInstanceOf(
+                NotFoundException,
             );
         });
 
@@ -202,8 +203,8 @@ describe('MailerController', () => {
                 new Error('OTP rate limit exceeded. Try again later.'),
             );
 
-            await expect(controller.sendVerification({ email: 'user@example.com' })).rejects.toThrow(
-                'Too many requests. Please try again later.',
+            await expect(controller.sendVerification({ email: 'user@example.com' })).rejects.toBeInstanceOf(
+                BadRequestException,
             );
         });
 
@@ -253,7 +254,7 @@ describe('MailerController', () => {
                     email: 'user@example.com',
                     otp: '999999',
                 }),
-            ).rejects.toThrow();
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
 
         it('should throw BadRequestException when OTP is expired', async () => {
@@ -264,7 +265,7 @@ describe('MailerController', () => {
                     email: 'user@example.com',
                     otp: '123456',
                 }),
-            ).rejects.toThrow('OTP expired');
+            ).rejects.toBeInstanceOf(BadRequestException);
         });
 
         it('should throw NotFoundException when user not found', async () => {
@@ -275,7 +276,7 @@ describe('MailerController', () => {
                     email: 'nonexistent@example.com',
                     otp: '123456',
                 }),
-            ).rejects.toThrow('No account found with this email');
+            ).rejects.toBeInstanceOf(NotFoundException);
         });
 
         it('should throw BadRequestException for generic errors', async () => {
@@ -297,13 +298,13 @@ describe('MailerController', () => {
             };
             mockMailerService.sendCustomTemplateEmail.mockResolvedValue(undefined);
 
-            const result = await controller.sendCustomTemplate(mockRequest as any, { templateName: 'finish-verif' });
+            const result = await controller.sendCustomTemplate(mockRequest as any, { templateName: 'finishVerif' });
 
             expect(result).toEqual({
                 success: true,
-                message: 'Email sent successfully using template: finish-verif',
+                message: 'Email sent successfully using template: finishVerif',
             });
-            expect(mockMailerService.sendCustomTemplateEmail).toHaveBeenCalledWith('user@example.com', 'finish-verif');
+            expect(mockMailerService.sendCustomTemplateEmail).toHaveBeenCalledWith('user@example.com', 'finishVerif');
         });
 
         it('should throw NotFoundException when template does not exist', async () => {
@@ -323,7 +324,7 @@ describe('MailerController', () => {
             };
 
             await expect(
-                controller.sendCustomTemplate(mockRequest as any, { templateName: 'finish-verif' }),
+                controller.sendCustomTemplate(mockRequest as any, { templateName: 'finishVerif' }),
             ).rejects.toThrow();
         });
 
@@ -333,7 +334,7 @@ describe('MailerController', () => {
             };
 
             await expect(
-                controller.sendCustomTemplate(mockRequest as any, { templateName: 'finish-verif' }),
+                controller.sendCustomTemplate(mockRequest as any, { templateName: 'finishVerif' }),
             ).rejects.toThrow('User email not found in token');
         });
 
@@ -344,8 +345,100 @@ describe('MailerController', () => {
             mockMailerService.sendCustomTemplateEmail.mockRejectedValue(new Error('Some other error'));
 
             await expect(
-                controller.sendCustomTemplate(mockRequest as any, { templateName: 'finish-verif' }),
+                controller.sendCustomTemplate(mockRequest as any, { templateName: 'finishVerif' }),
             ).rejects.toThrow('Failed to send email');
         });
+    });
+});
+
+describe('MailerController - Success branches coverage', () => {
+    let controller: MailerController;
+    const mockSvc: Partial<MailerService> = {};
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        controller = new MailerController(mockSvc as MailerService);
+    });
+
+    it('forgotPassword success', async () => {
+        mockSvc.sendPasswordResetEmail = jest.fn().mockResolvedValue(true);
+        const res = await controller.forgotPassword({ email: 'a@a.com' } as any);
+        expect(res.success).toBe(true);
+    });
+
+    it('resetPassword success', async () => {
+        mockSvc.verifyPasswordResetOtp = jest.fn().mockResolvedValue(true);
+        mockSvc.updatePassword = jest.fn().mockResolvedValue(true);
+        const dto = { email: 'a@a.com', otp: '000000', newPassword: 'P@ssw0rd' };
+        const res = await controller.resetPassword(dto as any);
+        expect(res.success).toBe(true);
+    });
+
+    it('sendVerification success', async () => {
+        mockSvc.sendVerificationEmail = jest.fn().mockResolvedValue(true);
+        const res = await controller.sendVerification({ email: 'a@a.com' } as any);
+        expect(res.success).toBe(true);
+    });
+
+    it('verifyAccount success', async () => {
+        mockSvc.verifySignupOtp = jest.fn().mockResolvedValue(true);
+        const res = await controller.verifyAccount({ email: 'a@a.com', otp: '123456' } as any);
+        expect(res.success).toBe(true);
+    });
+
+    it('sendCustomTemplate success', async () => {
+        mockSvc.sendCustomTemplateEmail = jest.fn().mockResolvedValue(true);
+        const req = { user: { email: 'a@a.com' } } as any;
+        const res = await controller.sendCustomTemplate(req, { templateName: 'welcome' } as any);
+        expect(res.success).toBe(true);
+    });
+});
+
+describe('MailerController - Error mapping branches', () => {
+    let controller: MailerController;
+    const mockSvc: Partial<MailerService> = {};
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        controller = new MailerController(mockSvc as MailerService);
+    });
+
+    it('forgotPassword should translate "User not found" to NotFoundException', async () => {
+        mockSvc.sendPasswordResetEmail = jest.fn().mockRejectedValue(new Error('User not found'));
+        await expect(controller.forgotPassword({ email: 'a@a.com' } as any)).rejects.toThrow('No account found');
+    });
+
+    it('forgotPassword should translate rate limit error to BadRequestException', async () => {
+        mockSvc.sendPasswordResetEmail = jest
+            .fn()
+            .mockRejectedValue(new Error('OTP rate limit exceeded. Try again later.'));
+        await expect(controller.forgotPassword({ email: 'a@a.com' } as any)).rejects.toThrow('Too many requests');
+    });
+
+    it('resetPassword should translate Invalid OTP to BadRequestException', async () => {
+        mockSvc.verifyPasswordResetOtp = jest.fn().mockRejectedValue(new Error('Invalid OTP'));
+        mockSvc.updatePassword = jest.fn();
+        const dto = { email: 'a@a.com', otp: '000000', newPassword: 'P@ssw0rd' };
+        await expect(controller.resetPassword(dto as any)).rejects.toThrow('Invalid OTP');
+    });
+
+    it('sendVerification should translate User not found', async () => {
+        mockSvc.sendVerificationEmail = jest.fn().mockRejectedValue(new Error('User not found'));
+        await expect(controller.sendVerification({ email: 'a@a.com' } as any)).rejects.toThrow('No account found');
+    });
+
+    it('verifyAccount should translate OTP expired to BadRequestException', async () => {
+        mockSvc.verifySignupOtp = jest.fn().mockRejectedValue(new Error('OTP expired'));
+        await expect(controller.verifyAccount({ email: 'a@a.com', otp: '123456' } as any)).rejects.toThrow(
+            'OTP expired',
+        );
+    });
+
+    it('sendCustomTemplate should throw NotFoundException when template-related error is thrown', async () => {
+        mockSvc.sendCustomTemplateEmail = jest.fn().mockRejectedValue(new Error('template not found on disk'));
+        const req = { user: { email: 'a@a.com' } } as any;
+        await expect(controller.sendCustomTemplate(req, { templateName: 'missing' } as any)).rejects.toThrow(
+            "Template 'missing' not found",
+        );
     });
 });

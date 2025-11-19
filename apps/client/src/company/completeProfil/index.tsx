@@ -2,13 +2,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import penSvg from '../../../assets/edit-pen-svgrepo-com.svg?url';
 import { useForm, type Resolver } from 'react-hook-form';
-import { type completeProfilFormType, nafCode, StructureType, LegalStatus, completeProfilForm, type SignedUrlResponse } from './type';
+import {
+    type completeProfilFormType,
+    nafCode,
+    StructureType,
+    LegalStatus,
+    completeProfilForm,
+    type SignedUrlResponse,
+} from './type';
 import { FormSection } from '../../components/FormSection';
 import { FormInput } from '../../components/FormInput';
 import { CustomSelect } from '../../components/select';
 import { FormSubmit } from '../../components/FormSubmit';
 import { useMutation } from '@tanstack/react-query';
-import { useOutletContext } from 'react-router';
+import { Navigate, useNavigate, useOutletContext } from 'react-router';
 import { profileStore } from '../../store/profileStore';
 import { ProfilePicture } from '../../components/profilPicture';
 import type { companyProfile } from '../../types';
@@ -16,17 +23,32 @@ import { useFile } from '../../hooks/useFile';
 import { useBlob } from '../../hooks/useBlob';
 import type { userContext } from '../../protectedRoutes/type';
 import { useUploadFile } from '../../hooks/useUploadFile';
+import { useEffect, useState } from 'react';
 export const CompleteProfil = () => {
     const formInputStyle = 'p-3';
+    const navigate = useNavigate();
     const profil: companyProfile | null = profileStore((state) => state.profile);
     const updateProfil = profileStore((state) => state.updateProfil);
     const API_URL = import.meta.env.VITE_APIURL;
     const user = useOutletContext<userContext>();
     const payload = user.get(user.accessToken);
     const logoBlob = useBlob(profil?.logo ?? '');
-    const logoFile = useFile(logoBlob,profil?.logo);
-    const logoUrl = logoFile ? URL.createObjectURL(logoFile) : null;
-    const upload = useUploadFile()
+    const logoFile = useFile(logoBlob, profil?.logo);
+    const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    useEffect(() => {
+    if (!logoBlob) {
+        setLogoUrl(null);
+        return;
+    }
+
+    const objectUrl = URL.createObjectURL(logoBlob);
+    setLogoUrl(objectUrl);
+   
+    return () => {
+        URL.revokeObjectURL(objectUrl);
+    };
+}, [logoBlob]); 
+    const upload = useUploadFile();
     const {
         register,
         handleSubmit,
@@ -50,7 +72,7 @@ export const CompleteProfil = () => {
     });
 
     const { isPending, isError, error, mutateAsync } = useMutation({
-        mutationFn: async (data: Omit<completeProfilFormType, "logo"> & { logo?: string }) => {
+        mutationFn: async (data: Omit<completeProfilFormType, 'logo'> & { logo?: string }) => {
             const res = await fetch(`${API_URL}/api/companies/${payload.id}`, {
                 method: 'PUT',
                 headers: {
@@ -63,50 +85,56 @@ export const CompleteProfil = () => {
             return res;
         },
         onSuccess: (_data, variables) => {
-        //
+            //
             const payload: Partial<companyProfile> = {
                 ...variables,
                 siretNumber: variables.siretNumber ?? undefined,
-                logo: variables.logo ?? undefined,
-                nafCode:variables.nafCode ?? undefined,
-                structureType:variables.structureType ?? undefined,
-                legalStatus:variables.legalStatus ?? undefined,
-                streetNumber:variables.streetNumber ?? undefined,
-                streetName:variables.streetName ?? undefined,
-                postalCode:variables.postalCode ?? undefined,
-                city:variables.city ?? undefined,
-                country:variables.country ?? undefined
+                nafCode: variables.nafCode ?? undefined,
+                structureType: variables.structureType ?? undefined,
+                legalStatus: variables.legalStatus ?? undefined,
+                streetNumber: variables.streetNumber ?? undefined,
+                streetName: variables.streetName ?? undefined,
+                postalCode: variables.postalCode ?? undefined,
+                city: variables.city ?? undefined,
+                country: variables.country ?? undefined,
             };
             updateProfil(payload);
         },
     });
-    /* it's a disgusting code but i'll clean after*/
-    const onSubmit = async (data: completeProfilFormType) => {
-        const {logo:fileLogo, ...rest} = data;
-        if(fileLogo instanceof FileList){
-            if (fileLogo.length !== 0) {  
-                const url = `${API_URL}/files/signed/logo`;
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ originalFileName:fileLogo[0].name}),
-                });
+ const onSubmit = async (data: completeProfilFormType) => {
+    const { logo: fileLogo, ...rest } = data;
 
-                if (!response.ok) {
-                    throw new Error('Erreur lors de la récupération du lien signé');
-                }
-                const {fileName:logo,uploadUrl}: SignedUrlResponse = await response.json(); 
-                upload(fileLogo[0],uploadUrl) 
-                await mutateAsync({...rest,logo});
-                return
-            } 
-            await mutateAsync({...rest})
+    const base: Omit<completeProfilFormType, "logo"> = rest;
+    const dataToSend: Omit<completeProfilFormType, "logo"> & { logo?: string } = { ...base };
+
+    if (fileLogo instanceof FileList && fileLogo.length > 0) {
+        const file = fileLogo[0];
+
+        const response = await fetch(`${API_URL}/api/files/signed/logo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ originalFilename: file.name }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Erreur lors de la récupération du lien signé');
         }
-         console.log(data) 
-    };
 
+        const { fileName: logo, uploadUrl }: SignedUrlResponse = await response.json();
+
+        await upload(file, uploadUrl);
+
+        // On ajoute logo typé automatiquement comme string
+        dataToSend.logo = logo;
+    }
+
+    else if (typeof fileLogo === "string" && fileLogo ) {
+        dataToSend.logo = fileLogo;
+    }
+    await mutateAsync(dataToSend);
+    navigate(`/${payload.role.toLowerCase}/dashboard`)
+};   
     return (
         <div className="flex flex-col w-full min-h-screen flex-grow items-start bg-(--color-base-200)">
             <div className="w-full max-w-7xl mx-auto flex flex-col px-4 py-8 items-center">
@@ -127,7 +155,7 @@ export const CompleteProfil = () => {
                         <div className="flex flex-row items-center justify-around gap-4">
                             <div className="w-[110px] h-[110px]">
                                 <ProfilePicture
-                                    src={logoUrl || "https://placehold.co/600x400"}
+                                    src={logoUrl!}
                                     overlay
                                     overlayPicture={penSvg}
                                     register={register('logo')}

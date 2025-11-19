@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { TokensMiddleware } from './common/middleware/tokens.middleware';
+import { S3Module } from './s3/s3.module';
 import { MailerModule } from './mailer/mailer.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { MailerModule } from './mailer/mailer.module';
         }),
         AuthModule,
         CompanyModule,
+        S3Module,
         MailerModule,
     ],
     controllers: [],

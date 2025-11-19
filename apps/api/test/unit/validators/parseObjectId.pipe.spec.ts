@@ -1,4 +1,4 @@
-import { ParseObjectIdPipe } from '../../../src/validators/parse-objectid.pipe';
+import { ParseObjectIdPipe } from '../../../src/validators/parseObjectId.pipe';
 import { Types } from 'mongoose';
 import { BadRequestException } from '@nestjs/common';
 

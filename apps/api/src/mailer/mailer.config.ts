@@ -1,8 +1,9 @@
 import { MailerOptions, MailerOptionsFactory } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as path from 'path';
+import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
 
 @Injectable()
 export class MailerConfigService implements MailerOptionsFactory {
@@ -23,7 +24,7 @@ export class MailerConfigService implements MailerOptionsFactory {
             process.env.NODE_ENV === 'production' ? 'templates' : '../../src/mailer/templates',
         );
         if (!user || !pass || !fromName || !fromEmail) {
-            throw new Error(
+            throw new InvalidConfigurationException(
                 'Missing required email configuration: MAIL_USER, MAIL_PASS, MAIL_FROM_NAME, and MAIL_FROM_EMAIL must be set',
             );
         }
