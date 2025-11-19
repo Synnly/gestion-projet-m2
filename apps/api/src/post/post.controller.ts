@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';
-import { ParseObjectIdPipe } from '../validators/parse-objectid.pipe';
+import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';

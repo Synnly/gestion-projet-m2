@@ -9,12 +9,12 @@ import {
     IsOptional,
     IsString,
     Min,
+    IsEnum,
 } from 'class-validator';
-import { Types } from 'mongoose';
+import { PostType } from '../post-type.enum';
 
 export class CreatePostDto {
-    /** Unique identifier of the company */
-    _id: Types.ObjectId;
+   
     /**
      * Post's title
      * Is required for the creation
@@ -89,7 +89,8 @@ export class CreatePostDto {
      * Must be either in-person, remote, or hybrid
      */
     @IsOptional()
-    type?: string;
+    @IsEnum(PostType)
+    type?: PostType;
 
     /**
      * Only for the client dev, for the post display

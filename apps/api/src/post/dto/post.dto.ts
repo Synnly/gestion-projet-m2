@@ -3,10 +3,9 @@
  * Represents the structure of post data for their creation
  */
 import { Types } from 'mongoose';
-
+import { PostType } from '../post-type.enum';
 
 export class PostDto {
-
     /** Unique identifier of the company */
     _id: Types.ObjectId;
 
@@ -63,7 +62,7 @@ export class PostDto {
      * Work mode of the internship
      * Must be either in-person, remote, or hybrid
      */
-    type?: string;
+    type?: PostType;
 
     /**
      * Only for the client dev, for the post display
@@ -72,7 +71,6 @@ export class PostDto {
 
     constructor(partial?: Partial<PostDto>) {
         if (partial) {
-
             Object.assign(this, partial);
             this.isVisible = !!this.title && !!this.description;
         }

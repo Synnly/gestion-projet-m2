@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
+import { PostType } from './post-type.enum';
 
 @Schema({ timestamps: true })
 export class Post {
@@ -43,12 +44,14 @@ export class Post {
     adress: string;
 
     /** Work mode of the internship (in-person, remote or hybrid) */
-    @Prop({ enum: ['Présentiel', 'Télétravail', 'Hybride'], default: 'Présentiel' })
-    type: string;
+    @Prop({ required: true, type: String, enum: PostType, default: PostType.Presentiel })
+    type: PostType;
 
     /** Does the post is visible on the client or not */
     @Prop({ default: true })
     isVisible: boolean;
 }
+
+export type PostDocument = Post & Document;
 
 export const PostSchema = SchemaFactory.createForClass(Post);
