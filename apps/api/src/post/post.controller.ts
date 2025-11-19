@@ -1,4 +1,15 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, NotFoundException, Param, Post, UseGuards } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    NotFoundException,
+    Param,
+    Post,
+    UseGuards,
+    ValidationPipe,
+} from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';
 import { ParseObjectIdPipe } from '../validators/parse-objectid.pipe';
@@ -48,7 +59,9 @@ export class PostController {
     @UseGuards(RolesGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.CREATED)
-    async create(@Body() dto: CreatePostDto) {
+    async create(
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: CreatePostDto,
+    ) {
         await this.postService.create(dto);
     }
 }

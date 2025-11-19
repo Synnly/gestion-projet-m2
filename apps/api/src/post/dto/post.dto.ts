@@ -49,12 +49,6 @@ export class PostDto {
     sector?: string;
 
     /**
-     * Post's creation Date
-     * Must be the exact date
-     */
-    creationDate?: string;
-
-    /**
      * Skills required for the internship
      * Must be a maximum of 5
      */

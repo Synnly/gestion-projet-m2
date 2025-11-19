@@ -1,4 +1,15 @@
-import { IsBoolean, IsDateString, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import {
+    ArrayMaxSize,
+    ArrayMinSize,
+    ArrayUnique,
+    IsArray,
+    IsBoolean,
+    IsDateString,
+    IsNumber,
+    IsOptional,
+    IsString,
+    Min,
+} from 'class-validator';
 import { Types } from 'mongoose';
 
 export class CreatePostDto {
@@ -57,17 +68,13 @@ export class CreatePostDto {
     sector?: string;
 
     /**
-     * Post's creation Date
-     * Must be the exact date
-     */
-    @IsOptional()
-    @IsDateString()
-    creationDate?: string;
-
-    /**
      * Skills required for the internship
      * Must be a maximum of 5
      */
+    @IsArray()
+    @ArrayMaxSize(5)
+    @ArrayUnique()
+    @IsString({ each: true })
     keySkills?: string[];
 
     /**

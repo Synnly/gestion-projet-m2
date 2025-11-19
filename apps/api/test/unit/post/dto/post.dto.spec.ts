@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { PostDto } from '../../../src/post/dto/post.dto';
+import { PostDto } from '../../../../src/post/dto/post.dto';
 
 describe('PostDto', () => {
     describe('constructor', () => {
@@ -9,7 +9,6 @@ describe('PostDto', () => {
                 title: 'Titre Offre',
                 description: 'Développeur Front End',
                 duration: '6 mois',
-                creationDate: '18/11/2025',
                 startDate: '21/03/2026',
                 minSalary: 1500,
                 maxSalary: 2000,
@@ -25,7 +24,6 @@ describe('PostDto', () => {
             expect(dto.title).toBe('Titre Offre');
             expect(dto.description).toBe('Développeur Front End');
             expect(dto.duration).toBe('6 mois');
-            expect(dto.creationDate).toBe('18/11/2025');
             expect(dto.startDate).toBe('21/03/2026');
             expect(dto.minSalary).toBe(1500);
             expect(dto.maxSalary).toBe(2000);
@@ -57,7 +55,6 @@ describe('PostDto', () => {
             expect(dto.title).toBe('');
             expect(dto.description).toBe('Développeur Back End');
             expect(dto.duration).toBe('2 mois');
-            expect(dto.creationDate).toBe('18/11/2025');
             expect(dto.startDate).toBe('15/04/2026');
             expect(dto.minSalary).toBe(1300);
             expect(dto.maxSalary).toBe(2200);
@@ -87,7 +84,6 @@ describe('PostDto', () => {
             expect(dto.title).toBe('Titre Offre développeur');
             expect(dto.description).toBe('');
             expect(dto.duration).toBe('4 mois');
-            expect(dto.creationDate).toBe('18/11/2025');
             expect(dto.startDate).toBe('03/05/2026');
             expect(dto.minSalary).toBe(1200);
             expect(dto.maxSalary).toBe(1900);

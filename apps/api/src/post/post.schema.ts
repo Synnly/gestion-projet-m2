@@ -34,10 +34,6 @@ export class Post {
     @Prop()
     sector: string;
 
-    /** Creation's date of the post */
-    @Prop()
-    creationDate: string;
-
     /** Skills required for the internship */
     @Prop({ type: [String], default: [] })
     keySkills: string[];
