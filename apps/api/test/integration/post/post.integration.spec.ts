@@ -129,16 +129,22 @@ describe('Post Integration Tests', () => {
         });
     };
 
+    const buildPostsPath = (suffix = '', targetCompanyId?: Types.ObjectId | string) => {
+        const resolvedId = targetCompanyId ?? companyId;
+        if (!resolvedId) throw new Error('Company id not initialized');
+        return `/api/company/${resolvedId.toString()}/posts${suffix}`;
+    };
+
     const normalizeBody = (obj: any) => {
         if (!obj) return obj;
         if (Array.isArray(obj)) return obj.map((o) => (o && o._doc ? o._doc : o));
         return obj._doc ? obj._doc : obj;
     };
 
-    describe('GET /api/posts - Find All Posts', () => {
+    describe('GET /api/company/:companyId/posts - Find All Posts', () => {
         it('should return empty array when no posts exist and findAll is called', async () => {
             const res = await request(app.getHttpServer())
-                .get('/api/posts')
+                .get(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
@@ -162,7 +168,7 @@ describe('Post Integration Tests', () => {
             });
 
             const res = await request(app.getHttpServer())
-                .get('/api/posts')
+                .get(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
@@ -189,7 +195,7 @@ describe('Post Integration Tests', () => {
             });
 
             const res = await request(app.getHttpServer())
-                .get('/api/posts')
+                .get(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
@@ -200,12 +206,12 @@ describe('Post Integration Tests', () => {
         });
 
         it('should return 401 when no authorization token is provided and findAll is called', async () => {
-            await request(app.getHttpServer()).get('/api/posts').expect(401);
+            await request(app.getHttpServer()).get(buildPostsPath()).expect(401);
         });
 
         it('should return 401 when invalid authorization token is provided and findAll is called', async () => {
             await request(app.getHttpServer())
-                .get('/api/posts')
+                .get(buildPostsPath())
                 .set('Authorization', 'Bearer invalid-token')
                 .expect(401);
         });
@@ -226,7 +232,7 @@ describe('Post Integration Tests', () => {
             });
 
             const res = await request(app.getHttpServer())
-                .get('/api/posts')
+                .get(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
@@ -246,7 +252,7 @@ describe('Post Integration Tests', () => {
         });
     });
 
-    describe('GET /api/posts/:id - Find One Post', () => {
+    describe('GET /api/company/:companyId/posts/:id - Find One Post', () => {
         it('should return a post when valid id is provided and findOne is called', async () => {
             const post = await createPost({
                 title: 'Développeur Full Stack',
@@ -256,7 +262,7 @@ describe('Post Integration Tests', () => {
             });
 
             const res = await request(app.getHttpServer())
-                .get(`/api/posts/${post._id}`)
+                .get(buildPostsPath(`/${post._id}`))
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
@@ -269,7 +275,7 @@ describe('Post Integration Tests', () => {
             const nonExistentId = new Types.ObjectId().toString();
 
             const res = await request(app.getHttpServer())
-                .get(`/api/posts/${nonExistentId}`)
+                .get(buildPostsPath(`/${nonExistentId}`))
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(404);
 
@@ -278,7 +284,7 @@ describe('Post Integration Tests', () => {
 
         it('should return 400 when invalid ObjectId is provided and findOne is called', async () => {
             await request(app.getHttpServer())
-                .get('/api/posts/invalid-id')
+                .get(buildPostsPath('/invalid-id'))
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(400);
         });
@@ -291,7 +297,7 @@ describe('Post Integration Tests', () => {
                 type: PostType.Presentiel,
             });
 
-            await request(app.getHttpServer()).get(`/api/posts/${post._id}`).expect(401);
+            await request(app.getHttpServer()).get(buildPostsPath(`/${post._id}`)).expect(401);
         });
 
         it('should return post with all fields when post has complete data and findOne is called', async () => {
@@ -310,7 +316,7 @@ describe('Post Integration Tests', () => {
             });
 
             const res = await request(app.getHttpServer())
-                .get(`/api/posts/${post._id}`)
+                .get(buildPostsPath(`/${post._id}`))
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
@@ -329,7 +335,7 @@ describe('Post Integration Tests', () => {
         });
     });
 
-    describe('POST /api/posts - Create Post', () => {
+    describe('POST /api/company/:companyId/posts - Create Post', () => {
         it('should create a post when valid data is provided and create is called', async () => {
             const postData = {
                 title: 'Nouveau Poste',
@@ -345,7 +351,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(postData)
                 .expect(201);
@@ -364,7 +370,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(minimalData)
                 .expect(201);
@@ -381,7 +387,7 @@ describe('Post Integration Tests', () => {
             };
 
             const res = await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(invalidData)
                 .expect(400);
@@ -396,7 +402,7 @@ describe('Post Integration Tests', () => {
             };
 
             const res = await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(invalidData)
                 .expect(400);
@@ -412,7 +418,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(invalidData)
                 .expect(400);
@@ -426,7 +432,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(invalidData)
                 .expect(400);
@@ -441,7 +447,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(invalidData)
                 .expect(400);
@@ -456,7 +462,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(invalidData)
                 .expect(400);
@@ -470,7 +476,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(invalidData)
                 .expect(400);
@@ -484,7 +490,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(invalidData)
                 .expect(400);
@@ -498,7 +504,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(invalidData)
                 .expect(400);
@@ -513,7 +519,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(invalidData)
                 .expect(400);
@@ -528,7 +534,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(invalidData)
                 .expect(400);
@@ -543,7 +549,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(invalidData)
                 .expect(400);
@@ -556,7 +562,7 @@ describe('Post Integration Tests', () => {
                 keySkills: ['Skill1'],
             };
 
-            await request(app.getHttpServer()).post('/api/posts').send(postData).expect(401);
+            await request(app.getHttpServer()).post(buildPostsPath()).send(postData).expect(401);
         });
 
         it('should create post with type Presentiel when valid data is provided and create is called', async () => {
@@ -568,7 +574,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(postData)
                 .expect(201);
@@ -586,7 +592,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(postData)
                 .expect(201);
@@ -604,7 +610,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(postData)
                 .expect(201);
@@ -628,7 +634,7 @@ describe('Post Integration Tests', () => {
             };
 
             await request(app.getHttpServer())
-                .post('/api/posts')
+                .post(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .send(postData)
                 .expect(201);
