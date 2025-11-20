@@ -25,7 +25,8 @@ export class PostService {
      * @returns Promise resolving to an array of all active posts
      */
     async findAll(): Promise<Post[]> {
-        const posts = this.postModel.find().exec();
+        const posts = await this.postModel.find().exec();
+        for (const post of posts) await post.populate('company');
         return posts;
     }
 
@@ -38,7 +39,8 @@ export class PostService {
      * @returns Promise resolving to the post if found and active, null otherwise
      */
     async findOne(id: string): Promise<Post | null> {
-        const post = this.postModel.findById(id).exec();
+        const post = await this.postModel.findById(id).exec();
+        if (post) await post.populate('company');
         return post;
     }
 }

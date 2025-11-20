@@ -22,6 +22,9 @@ import { CompanyOwnerGuard } from '../common/roles/companyOwner.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { AuthGuard } from '../auth/auth.guard';
+import { PostDto } from '../post/dto/post.dto';
+import { PostDocument } from '../post/post.schema';
+import { Company } from './company.schema';
 
 /**
  * Controller handling company-related HTTP requests
@@ -39,7 +42,10 @@ export class CompanyController {
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<CompanyDto[]> {
         const companies = await this.companyService.findAll();
-        return companies.map((company) => new CompanyDto(company));
+        return companies.map(
+            (company: Company) =>
+                new CompanyDto({ ...company, posts: company.posts.map((post: PostDocument) => new PostDto(post)) }),
+        );
     }
 
     /**
@@ -53,7 +59,7 @@ export class CompanyController {
     async findOne(@Param('id', ParseObjectIdPipe) id: string): Promise<CompanyDto> {
         const company = await this.companyService.findOne(id);
         if (!company) throw new NotFoundException(`Company with id ${id} not found`);
-        return new CompanyDto(company);
+        return new CompanyDto({ ...company, posts: company.posts.map((post: PostDocument) => new PostDto(post)) });
     }
 
     /**
