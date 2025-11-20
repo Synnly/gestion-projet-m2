@@ -1,6 +1,7 @@
 import {
     Body,
     Controller,
+    Delete,
     Get,
     HttpCode,
     HttpStatus,
@@ -18,6 +19,7 @@ import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { CreatePostDto } from './dto/createPost.dto';
+import { CompanyOwnerGuard } from 'src/common/roles/companyOwner.guard';
 
 /**
  * Controller handling post-related HTTP requests
@@ -63,5 +65,18 @@ export class PostController {
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: CreatePostDto,
     ) {
         await this.postService.create(dto);
+    }
+
+    /**
+     * Deletes a post
+     * Requires authentication and COMPANY or ADMIN role
+     * @param id The post identifier to delete
+     */
+    @Delete('/:id')
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async remove(@Param('id', ParseObjectIdPipe) id: string) {
+        await this.postService.remove(id);
     }
 }

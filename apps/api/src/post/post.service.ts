@@ -41,4 +41,24 @@ export class PostService {
         const post = this.postModel.findById(id).exec();
         return post;
     }
+
+
+    /**
+     * Permanently removes a post from the database
+     *
+     * This performs a hard delete operation, removing the post document entirely.
+     *
+     * @param id - The MongoDB ObjectId of the company to delete
+     * @returns Promise resolving to void upon successful deletion
+     * 
+     * @example
+     * ```typescript
+     * await postService.remove('507f1f77bcf86cd799439011');
+     * 
+     */
+    async remove(id: string): Promise<void> {
+        await this.postModel.deleteOne({ _id: id})
+        // await this.postModel.findOneAndDelete({ _id: id}).exec(); // Utilise s'il faut retourner l'annonce
+        return;
+    }
 }

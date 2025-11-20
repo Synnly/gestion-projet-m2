@@ -167,6 +167,8 @@ export class CompanyService {
             )
             .exec();
 
+        //todo: vérifier que les annonces de l'entreprise sont supprimées
+
         if (!updated) {
             throw new NotFoundException('Company not found or already deleted');
         }
