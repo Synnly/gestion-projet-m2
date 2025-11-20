@@ -88,11 +88,10 @@ export class PostService {
         return;
     }
 
+
     
     /**
-     * Retrieves all active posts made by a specific company (or admin)
-     *
-     * @returns Promise resolving to an array of all active posts
+     * Removes all posts made by a specific company (set them as "deleted")
      */
     async removeAllByCompany(userId: string): Promise<void> {
         const postList = await this.findAllByCompany(userId);
@@ -107,9 +106,18 @@ export class PostService {
             if (!updated) {
                 throw new NotFoundException('Post not found or already deleted');
             }
+        }
+        return;
+    }
 
-            // console.log(updated);
-            //todo: lancer un job pour supprimer l'annonce dans 30 jours
+    
+    /**
+     * Deletes permanently all posts made by a specific company
+     */
+    async hardDeleteAllByCompany(userId: string): Promise<void> {
+        const postList = await this.findAllByCompany(userId);
+        for(let post of postList) {
+            await this.remove(post._id.toString());
         }
         return;
     }

@@ -3,9 +3,11 @@ import { CompanyController } from './company.controller';
 import { CompanyService } from './company.service';
 import { UsersModule } from '../user/user.module';
 import { PostModule } from '../post/post.module';
+import { S3Module } from 'src/s3/s3.module';
+import { AgendaModule } from 'src/agenda/agenda.module';
 
 @Module({
-    imports: [UsersModule, PostModule],
+    imports: [UsersModule, PostModule, S3Module, AgendaModule],
     controllers: [CompanyController],
     providers: [CompanyService],
     exports: [CompanyService],

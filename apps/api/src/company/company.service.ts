@@ -6,6 +6,8 @@ import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { Company } from './company.schema';
 import { CompanyUserDocument } from '../user/user.schema';
 import { PostService } from 'src/post/post.service';
+import { S3Service } from 'src/s3/s3.service';
+import { AgendaService } from 'src/agenda/agenda.service';
 
 /**
  * Service handling business logic for company operations
@@ -30,6 +32,8 @@ export class CompanyService {
      */
     constructor(
         private readonly postService: PostService,
+        private readonly s3Service: S3Service,
+        private readonly agendaService: AgendaService,
 
         @InjectModel(Company.name)
         private readonly companyModel: Model<CompanyUserDocument>
@@ -148,7 +152,7 @@ export class CompanyService {
     }
 
     /**
-     * Permanently removes a company from the database
+     * Permanently removes a company from the database (after 30 days)
      * 
      * This performs a hard delete operation, removing the company document entirely.
      * Only affects companies that have not been previously soft-deleted.
@@ -160,10 +164,6 @@ export class CompanyService {
      * ```typescript
      * await companyService.remove('507f1f77bcf86cd799439011');
      * ```
-     * 
-     * @remarks
-     * Consider implementing soft-delete logic if you need to maintain audit trails
-     * or allow data recovery. This operation is irreversible.
      */
     async remove(id: string): Promise<void> {
         // Remove the company in 30 days
@@ -179,11 +179,58 @@ export class CompanyService {
         }
 
         // Remove all the post made by the company in 30 days
-        this.postService.removeAllByCompany(id); // Starts all the jobs to remove the posts in 30 days
+        this.postService.removeAllByCompany(id);
 
-        //todo: lancer un job pour la suppression d'entreprise (et de chaque annonce)
-        
+        // Start a job to delete all the company info (company and its posts)
+        await this.agendaService.scheduleCompanyDeletion(id);
 
         return;
     }
+
+    /**
+     * Permanently delete a company
+     * 
+     * This function is called 30 days after the company is set to be deleted.
+     * 
+     * @param id - The MongoDB ObjectId of the company to delete
+     * @returns Promise resolving to void upon successful deletion
+     */
+    async hardDelete(id: string): Promise<void> {
+        await this.postService.hardDeleteAllByCompany(id);
+        await this.companyModel.deleteOne({ $_id: id });
+        await this.removeCompanyLogo(id);
+        return;
+    }
+
+
+    /**
+     * Permanently delete the company logo
+     * 
+     * This function is called 30 days after the company is set to be deleted.
+     * 
+     * @param id - The MongoDB ObjectId of the company to delete
+     * @returns Promise resolving to void upon successful deletion
+     */
+    async removeCompanyLogo(companyId: string): Promise<void> {
+        const company = await this.companyModel.findById(companyId);
+
+        if (!company) {
+            throw new NotFoundException('Company not found');
+        }
+
+        if (!company.logo) return; // nothing to delete
+
+        const fileName = company.logo;
+        const ownerId = company.id?.toString();
+
+        if (!ownerId) {
+            throw new Error('Company has no associated id');
+        }
+
+        await this.s3Service.deleteFile(fileName, ownerId);
+
+        company.logo = undefined;
+        await company.save();
+    }
+
 }
