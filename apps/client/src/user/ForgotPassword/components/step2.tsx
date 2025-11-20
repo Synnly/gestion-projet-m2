@@ -49,7 +49,6 @@ export const ForgotPasswordStep2 = ({
                     className="mx-auto h-10 w-auto"
                 />
             </div>
-            {/* Title & description */}
             <div className="text-center space-y-4">
                 <h1 className="text-2xl font-bold tracking-tight text-black">Saisissez le code</h1>
                 <p className="text-sm text-gray-700 dark:text-gray-400">Un code a été envoyé à votre adresse email.</p>
