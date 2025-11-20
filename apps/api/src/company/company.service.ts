@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateCompanyDto } from './dto/createCompany.dto';
@@ -7,7 +7,6 @@ import { Company } from './company.schema';
 import { CompanyUserDocument } from '../user/user.schema';
 import { PostService } from 'src/post/post.service';
 import { S3Service } from 'src/s3/s3.service';
-import { AgendaService } from 'src/agenda/agenda.service';
 
 /**
  * Service handling business logic for company operations
@@ -33,7 +32,6 @@ export class CompanyService {
     constructor(
         private readonly postService: PostService,
         private readonly s3Service: S3Service,
-        private readonly agendaService: AgendaService,
 
         @InjectModel(Company.name)
         private readonly companyModel: Model<CompanyUserDocument>
@@ -166,7 +164,7 @@ export class CompanyService {
      * ```
      */
     async remove(id: string): Promise<void> {
-        // Remove the company in 30 days
+        // Set the company as "deleted" for 30 days, before being deleted from the database
         const updated = await this.companyModel
             .findOneAndUpdate(
                 { _id: id, deletedAt: { $exists: false } },
@@ -178,14 +176,30 @@ export class CompanyService {
             throw new NotFoundException('Company not found or already deleted');
         }
 
-        // Remove all the post made by the company in 30 days
+        // Set all the posts made by the company as "deleted" for 30 days, before being deleted from the database
         this.postService.removeAllByCompany(id);
-
-        // Start a job to delete all the company info (company and its posts)
-        await this.agendaService.scheduleCompanyDeletion(id);
 
         return;
     }
+
+
+    /**
+     * 
+     */
+    async deleteExpiredCompanies(): Promise<void> {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        // We collect all soft-deleted companies
+        const expired = await this.companyModel.find({
+            deletedAt: { $lte: thirtyDaysAgo },
+        });
+
+        for (const company of expired) {
+            await this.hardDelete(company._id.toString());
+        }
+    }
+
 
     /**
      * Permanently delete a company
@@ -196,9 +210,18 @@ export class CompanyService {
      * @returns Promise resolving to void upon successful deletion
      */
     async hardDelete(id: string): Promise<void> {
+        Logger.debug("Deleting posts of company'" + id + "'...");
         await this.postService.hardDeleteAllByCompany(id);
-        await this.companyModel.deleteOne({ $_id: id });
+        Logger.debug("Completed !");
+
+        Logger.debug("Deleting logo of company'" + id + "'...");
         await this.removeCompanyLogo(id);
+        Logger.debug("Completed !");
+
+        Logger.debug("Deleting company'" + id + "'...");
+        await this.companyModel.deleteOne({ _id: id }); //new Types.ObjectId(id)
+        Logger.debug("Completed !");
+
         return;
     }
 

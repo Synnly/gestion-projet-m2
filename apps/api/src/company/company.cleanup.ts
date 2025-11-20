@@ -1,0 +1,19 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
+import { CompanyService } from './company.service';
+
+@Injectable()
+export class CompanyCleanup {
+  private readonly logger = new Logger(CompanyCleanup.name);
+
+  constructor(private readonly companyService: CompanyService) {}
+
+
+  // @Cron('*/30 * * * * *')   // Every 30 seconds (for testing)
+  @Cron(process.env.COMPANY_CLEANUP_CRON || '0 3 * * *')   // Everyday at 3AM
+  async deleteExpired() {
+    this.logger.log('Auto-cleanup of soft-deleted companies...');
+    await this.companyService.deleteExpiredCompanies();
+    this.logger.log('Cleanup completed.');
+  }
+}

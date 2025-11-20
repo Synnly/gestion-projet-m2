@@ -1,7 +1,7 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { getModelToken, InjectModel } from '@nestjs/mongoose';
 import { Post } from './post.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreatePostDto } from './dto/createPost.dto';
 import { Company } from 'src/company/company.schema';
 
@@ -42,7 +42,7 @@ export class PostService {
      * @returns Promise resolving to an array of all active posts
      */
     async findAll(): Promise<Post[]> {
-        const posts = this.postModel.find().exec();
+        const posts = await this.postModel.find().exec();
         return posts;
     }
 
@@ -51,8 +51,8 @@ export class PostService {
      *
      * @returns Promise resolving to an array of all active posts
      */
-    async findAllByCompany(userId: string): Promise<Post[]> {
-        return this.postModel.find({ companyId: userId }).exec();
+    async findAllByCompany(companyId: string): Promise<Post[]> {
+        return await this.postModel.find({ companyId: new Types.ObjectId(companyId) }).exec();
     }
 
     /**
@@ -64,7 +64,7 @@ export class PostService {
      * @returns Promise resolving to the post if found and active, null otherwise
      */
     async findOne(id: string): Promise<Post | null> {
-        const post = this.postModel.findById(id).exec();
+        const post = await this.postModel.findById(id).exec();
         return post;
     }
 
@@ -114,9 +114,11 @@ export class PostService {
     /**
      * Deletes permanently all posts made by a specific company
      */
-    async hardDeleteAllByCompany(userId: string): Promise<void> {
-        const postList = await this.findAllByCompany(userId);
+    async hardDeleteAllByCompany(companyId: string): Promise<void> {
+        const postList = await this.findAllByCompany(companyId);
+
         for(let post of postList) {
+            Logger.debug("Deleting post with id '" + post._id.toString() + "'...");
             await this.remove(post._id.toString());
         }
         return;

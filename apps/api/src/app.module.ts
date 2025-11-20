@@ -7,7 +7,7 @@ import { TokensMiddleware } from './common/middleware/tokens.middleware';
 import { S3Module } from './s3/s3.module';
 import { MailerModule } from './mailer/mailer.module';
 import { PostModule } from './post/post.module';
-import { AgendaModule } from './agenda/agenda.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
     imports: [
@@ -26,7 +26,7 @@ import { AgendaModule } from './agenda/agenda.module';
         S3Module,
         PostModule,
         MailerModule,
-        AgendaModule,
+        ScheduleModule.forRoot(),
     ],
     controllers: [],
     providers: [],
