@@ -25,7 +25,10 @@ const fetchSignedUrl = async (fileName: string): Promise<string | null> => {
   }
   return res.blob();
 };
-
+/**
+*@description hook to get blob of minio
+*@param fileName the fileName of your file
+**/
 export const useBlob = (fileName: string) => {
   const userId = userStore((state) => state.get(state.access!)?.id);
   const { data, isLoading } = useQuery({
@@ -42,5 +45,5 @@ export const useBlob = (fileName: string) => {
 
   if (!fileName || isLoading) return null;
 
-  return data; // Blob ou null
+  return data;
 };

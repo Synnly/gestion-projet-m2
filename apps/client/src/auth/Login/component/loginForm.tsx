@@ -46,15 +46,15 @@ export const LoginForm = () => {
                         register={register('password', { required: true })}
                         label="Mot de passe"
                         type="password"
-                        error={errors.email}
+                        error={errors.password}
                     />
                 </div>
                 <FormSubmit
                     isPending={isPending}
                     isError={isError}
                     error={error}
-                    title="S'inscrire"
-                    pendingTitle="Inscription"
+                    title="Se connecter"
+                    pendingTitle="connexion..."
                     className="bg-primary p-3 rounded-lg cursor-pointer w-full text-black"
                 />
             </CustomForm>

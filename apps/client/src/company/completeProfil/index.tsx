@@ -133,7 +133,7 @@ export const CompleteProfil = () => {
         dataToSend.logo = fileLogo;
     }
     await mutateAsync(dataToSend);
-    navigate(`/${payload.role.toLowerCase}/dashboard`)
+    navigate(`/${payload.role.toLowerCase()}/dashboard`)
 };   
     return (
         <div className="flex flex-col w-full min-h-screen flex-grow items-start bg-(--color-base-200)">
@@ -227,7 +227,7 @@ export const CompleteProfil = () => {
                             <div className="w-1/2">
                                 <FormInput<completeProfilFormType>
                                     type="text"
-                                    label="Numéro du rue"
+                                    label="Numéro de rue"
                                     placeholder="ex:12 bis"
                                     className={`${formInputStyle}`}
                                     register={register('streetNumber', {
@@ -295,7 +295,7 @@ export const CompleteProfil = () => {
                     <FormSubmit
                         className="bg-primary w-min p-5 self-end font-bold"
                         title="Completer le profile"
-                        pendingTitle="Completion"
+                        pendingTitle="Complétion..."
                         error={error}
                         isError={isError}
                         isPending={isPending}

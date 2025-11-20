@@ -65,7 +65,7 @@ export function VerifyEmail() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Autorization': `Bearer ${accessToken}`,
+                    'Authorization': `Bearer ${accessToken}`,
                 },
                 credentials: 'include',
                 body: JSON.stringify(body),
@@ -84,7 +84,7 @@ export function VerifyEmail() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    autorization: `Bearer ${accessToken}`,
+                    'Authorization': `Bearer ${accessToken}`,
                 },
                 credentials: 'include',
                 body: JSON.stringify(body),

@@ -74,7 +74,7 @@ export function ForgotPasswordStep3({
             <FormSubmit
                 title="Définir le nouveau mot de passe"
                 isPending={isPending}
-                pendingTitle="Envoie en cours..."
+                pendingTitle="Envoi en cours..."
                 className="bg-primary p-3 rounded-lg cursor-pointer w-full text-black"
                 isError={isError}
                 error={error}

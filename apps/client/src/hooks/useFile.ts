@@ -1,4 +1,7 @@
-
+/**
+@description hook to create file from blob
+@Param Blob the blob of file
+*/
 export function useFile(blob: Blob | undefined | null, defaultName = 'file'): File | null {
 
     if (!blob) return null;
