@@ -2,7 +2,7 @@ import { Mock, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useMutation } from '@tanstack/react-query';
 import { userStore } from '../src/store/userStore';
-import { SignupForm } from '../src/auth/companySignup/component/signupForm
+import { SignupForm } from '../src/auth/companySignup/component/signupForm';
 vi.mock('@tanstack/react-query', () => ({
     useMutation: vi.fn(),
 }));
@@ -31,7 +31,7 @@ describe('Test of FormSignupComponent', () => {
     });
 
     it('should display error when email is not correct', async () => {
-        render(<SignupForm/>);
+        render(<SignupForm />);
         const form = screen.getByRole('form');
 
         fireEvent.change(screen.getByLabelText(/email*/i), {
@@ -52,14 +52,14 @@ describe('Test of FormSignupComponent', () => {
 
         fireEvent.submit(form);
         await waitFor(() => {
-            expect(screen.getByText(/Email invalide/i)).toBeGreaterThan(0);
+            expect(screen.getByText(/Email invalide/i)).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });
     });
-    
+
     it('should display error when email is not correct', async () => {
-        render(<SignupForm/>);
+        render(<SignupForm />);
         const form = screen.getByRole('form');
 
         fireEvent.change(screen.getByLabelText(/email*/i), {
@@ -80,14 +80,14 @@ describe('Test of FormSignupComponent', () => {
 
         fireEvent.submit(form);
         await waitFor(() => {
-            expect(screen.getByText(/L'email est requis/i)).toBeGreaterThan(0);
+            expect(screen.getByText(/L'email est requis/i)).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });
     });
 
     it('should display error when password is too short', async () => {
-        render(<SignupForm/>);
+        render(<SignupForm />);
         const form = screen.getByRole('form');
 
         fireEvent.change(screen.getByLabelText(/email*/i), {
@@ -108,15 +108,14 @@ describe('Test of FormSignupComponent', () => {
 
         fireEvent.submit(form);
         await waitFor(() => {
-            expect(screen.getByText(/le mot de passe doit contenir au moins 8 caractères/i)).toBeGreaterThan(0);
+            expect(screen.getByText(/le mot de passe doit contenir au moins 8 caractères/i)).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });
     });
 
-    
     it('should display error when password is too short', async () => {
-        render(<SignupForm/>);
+        render(<SignupForm />);
         const form = screen.getByRole('form');
 
         fireEvent.change(screen.getByLabelText(/email*/i), {
@@ -137,15 +136,14 @@ describe('Test of FormSignupComponent', () => {
 
         fireEvent.submit(form);
         await waitFor(() => {
-            expect(screen.getByText(/le mot de passe doit contenir au moins 8 caractères/i)).toBeGreaterThan(0);
+            expect(screen.getByText(/le mot de passe doit contenir au moins 8 caractères/i)).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });
     });
 
-    
     it('should display error when password is not contain lowercases', async () => {
-        render(<SignupForm/>);
+        render(<SignupForm />);
         const form = screen.getByRole('form');
 
         fireEvent.change(screen.getByLabelText(/email*/i), {
@@ -166,14 +164,14 @@ describe('Test of FormSignupComponent', () => {
 
         fireEvent.submit(form);
         await waitFor(() => {
-            expect(screen.getByText(/le mot de passe doit contenir au moins une lettre minuscule/i)).toBeGreaterThan(0);
+            expect(screen.getByText(/le mot de passe doit contenir au moins une lettre minuscule/i)).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });
     });
 
     it('should display error when password is not contain uppercases', async () => {
-        render(<SignupForm/>);
+        render(<SignupForm />);
         const form = screen.getByRole('form');
 
         fireEvent.change(screen.getByLabelText(/email*/i), {
@@ -194,15 +192,14 @@ describe('Test of FormSignupComponent', () => {
 
         fireEvent.submit(form);
         await waitFor(() => {
-            expect(screen.getByText(/le mot de passe doit contenir au moins une lettre majuscule/i)).toBeGreaterThan(0);
+            expect(screen.getByText(/le mot de passe doit contenir au moins une lettre majuscule/i)).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });
     });
-    
 
     it('should display error when password is not contain special caracters', async () => {
-        render(<SignupForm/>);
+        render(<SignupForm />);
         const form = screen.getByRole('form');
 
         fireEvent.change(screen.getByLabelText(/email*/i), {
@@ -223,14 +220,14 @@ describe('Test of FormSignupComponent', () => {
 
         fireEvent.submit(form);
         await waitFor(() => {
-            expect(screen.getByText(/le mot de passe doit contenir au moins un caractère spécial/i)).toBeGreaterThan(0);
+            expect(screen.getByText(/le mot de passe doit contenir au moins un caractère spécial/i)).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });
     });
 
-  it('should display error when password is not contain special caracters', async () => {
-        render(<SignupForm/>);
+    it('should display error when password is not contain special caracters', async () => {
+        render(<SignupForm />);
         const form = screen.getByRole('form');
 
         fireEvent.change(screen.getByLabelText(/email*/i), {
@@ -251,14 +248,14 @@ describe('Test of FormSignupComponent', () => {
 
         fireEvent.submit(form);
         await waitFor(() => {
-            expect(screen.getByText(/le mot de passe doit contenir au moins un caractère spécial/i)).toBeGreaterThan(0);
+            expect(screen.getByText(/le mot de passe doit contenir au moins un caractère spécial/i)).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });
     });
 
     it("should display error when passwords don't match", async () => {
-           render(<SignupForm/>);
+        render(<SignupForm />);
         const form = screen.getByRole('form');
 
         fireEvent.change(screen.getByLabelText(/email*/i), {
@@ -279,18 +276,18 @@ describe('Test of FormSignupComponent', () => {
 
         fireEvent.submit(form);
         await waitFor(() => {
-            expect(screen.getByText(/passe doit contenir au moins un caractère spécial/i)).toBeGreaterThan(0);
+            expect(screen.getByText(/passe doit contenir au moins un caractère spécial/i)).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });
-    }); 
+    });
 
-    it("should display error when name is empty", async () => {
-        render(<SignupForm/>);
+    it('should display error when name is empty', async () => {
+        render(<SignupForm />);
         const form = screen.getByRole('form');
         fireEvent.change(screen.getByLabelText(/email*/i), {
-            target: { value: 'test@test.com'},
-        })
+            target: { value: 'test@test.com' },
+        });
 
         fireEvent.change(screen.getByLabelText(/mot de passe/i), {
             target: { value: 'Pass123' },
@@ -305,31 +302,31 @@ describe('Test of FormSignupComponent', () => {
         });
 
         fireEvent.submit(form);
-        await waitFor(() => {
-             const error = await screen.findByText(/L'email est requis/i);
-            expect(error).toBeInTheDocument()
+        await waitFor(async () => {
+            const error = await screen.findByText(/L'email est requis/i);
+            expect(error).toBeInTheDocument();
             expect(screen.getByText(/L'email est requis/i)).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });
-    })
+    });
 
-    it("should mutateAsync got always good object if all is valid", async () => {
-        const signUpData = {            
-            mail:'test@test.com',
-            password:"Pass123!",
-            name:"Maboite",
-            role:'COMPANY'
-        }
+    it('should mutateAsync got always good object if all is valid', async () => {
+        const signUpData = {
+            mail: 'test@test.com',
+            password: 'Pass123!',
+            name: 'Maboite',
+            role: 'COMPANY',
+        };
         const loginData = {
-            mail:"test@test.com",
-            password:"Pass123!"
-        }
-        render(<SignupForm/>);
+            mail: 'test@test.com',
+            password: 'Pass123!',
+        };
+        render(<SignupForm />);
         const form = screen.getByRole('form');
         fireEvent.change(screen.getByLabelText(/email*/i), {
-            target: { value: 'test@test.com'},
-        })
+            target: { value: 'test@test.com' },
+        });
 
         fireEvent.change(screen.getByLabelText(/mot de passe/i), {
             target: { value: 'Pass123!' },
@@ -340,18 +337,16 @@ describe('Test of FormSignupComponent', () => {
         });
 
         fireEvent.change(screen.getByLabelText(/nom de l'entreprise/i), {
-            target: { value: "Maboite" },
+            target: { value: 'Maboite' },
         });
 
         fireEvent.submit(form);
 
         await waitFor(() => {
-            expect(screen.getByText(/L'email est requis/i)).toBeInTheDocument();
             expect(mutateAsyncMock).toHaveBeenCalledTimes(2);
             expect(setMock).toHaveBeenCalled();
-            expect(mutateAsyncMock.mock.calls[0][0]).toEqual(signUpData)
-            expect(mutateAsyncMock.mock.calls[1][0]).toEqual(loginData)
+            expect(mutateAsyncMock.mock.calls[0][0]).toEqual(signUpData);
+            expect(mutateAsyncMock.mock.calls[1][0]).toEqual(loginData);
         });
-    })
-
+    });
 });

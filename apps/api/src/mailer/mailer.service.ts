@@ -67,7 +67,7 @@ export class MailerService {
      */
     private async enforceRateLimit(user: UserDocument) {
         const now = new Date();
-        const windowMs = 60 * 60 * 1; // 1 hour window
+        const windowMs = 60 * 60 * 1000; // 1 hour window
 
         if (!user.lastOtpRequestAt || !user.otpRequestCount) {
             user.otpRequestCount = 0;
@@ -80,10 +80,7 @@ export class MailerService {
         }
 
         if (user.otpRequestCount >= 5) {
-            throw new HttpException(
-                'OTP rate limit exceeded. Try again later.',
-                HttpStatus.TOO_MANY_REQUESTS,
-            );
+            throw new HttpException('OTP rate limit exceeded. Try again later.', HttpStatus.TOO_MANY_REQUESTS);
         }
     }
 

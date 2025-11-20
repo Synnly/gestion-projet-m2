@@ -3,6 +3,7 @@ import { profileStore, type companyProfileStoreType } from '../store/profileStor
 import { userStore } from '../store/userStore';
 import { completeProfilFormCheck } from '../company/completeProfil/type';
 import type { companyProfile } from '../types';
+
 /** @description use zod schema to check if required fields of priofil are complete
  * @returns a boolean which indicates if the profil is complete
  */
@@ -10,7 +11,11 @@ function isProfilComplete(profile: companyProfile | null): boolean {
     //check
     return profile !== null && completeProfilFormCheck.safeParse(profile).success;
 }
-export const completeProfilLoader = async ({ request }: { request: Request }) => {
+/**
+* @description Middleware to ensure user profile completeness and verification status
+* @param {Object} param0 - The request object to get target URL
+*/
+export const completeProfilMiddleware = async ({ request }: { request: Request }) => {
     await userStore.persist.rehydrate();
     const API_URL = import.meta.env.VITE_APIURL;
     const { access, get } = userStore.getState();
@@ -45,7 +50,6 @@ export const completeProfilLoader = async ({ request }: { request: Request }) =>
         }
 
         const newProfile: companyProfile = await profileRes.json();
-        console.log('fetched profile', newProfile);
         setProfil(newProfile);
     }
     const newProfile: companyProfileStoreType = profileStore.getState();

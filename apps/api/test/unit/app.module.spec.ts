@@ -22,6 +22,9 @@ describe('AppModule import (mongoose factory executed)', () => {
                             }
                             return {};
                         },
+                        forFeature: (opts: any) => {
+                            return {};
+                        },
                     },
                 };
             });

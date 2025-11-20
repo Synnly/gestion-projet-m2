@@ -1,4 +1,4 @@
-import { useRef, type ChangeEvent } from 'react';
+import { type ChangeEvent } from 'react';
 import type { VerifyEmailForm } from '..';
 import { FormSubmit } from '../../../components/FormSubmit';
 import type { FieldErrors, SubmitHandler, UseFormRegister } from 'react-hook-form';

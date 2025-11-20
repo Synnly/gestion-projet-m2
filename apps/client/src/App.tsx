@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Login } from './auth/Login/index';
 import { CompleteProfil } from './company/completeProfil/index';
 import { protectedLoader } from './loader/protectAuthLoader';
-import { completeProfilLoader } from './loader/completeProfilLoader';
+import { completeProfilMiddleware } from './middleware/completeProfilMiddleware';
 import { notAuthLoader } from './loader/notAuthLoader';
 import { VerifyEmail } from './user/verifyMail';
 import { userStore } from './store/userStore';
@@ -23,7 +23,7 @@ function App() {
         {
             path: '/',
             id: 'root',
-            middleware: [completeProfilLoader],
+            middleware: [completeProfilMiddleware],
             element: <Outlet />,
             children: [
                 {

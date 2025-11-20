@@ -1,8 +1,7 @@
-import React, { useRef, type ChangeEvent } from 'react';
+import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
-import { FormSubmit } from '../../components/FormSubmit';
 
-import type { userContext } from '../../authRoutes/type';
+import type { userContext } from '../../protectedRoutes/type';
 import { useNavigate, useOutletContext } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
 import { userStore } from '../../store/userStore';
@@ -66,7 +65,7 @@ export function VerifyEmail() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    autorization: `Bearer ${accessToken}`,
+                    'Autorization': `Bearer ${accessToken}`,
                 },
                 credentials: 'include',
                 body: JSON.stringify(body),

@@ -22,9 +22,9 @@ export function ForgotPasswordStep4() {
                 />
             </div>
             <div className="text-center space-y-4">
-                <h1 className="text-2xl font-bold tracking-tight text-black">Mot de passe reinitialisé</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-black">Mot de passe réinitialisé</h1>
                 <p className="text-sm text-gray-700 dark:text-gray-400">
-                    Votre mot de passe à été reinitalisé, vous pouvez maintenant vous connecter.
+                    Votre mot de passe à été réinitalisé, vous pouvez maintenant vous connectez.
                 </p>
             </div>
         </div>
