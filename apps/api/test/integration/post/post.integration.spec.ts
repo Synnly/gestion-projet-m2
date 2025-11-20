@@ -22,6 +22,7 @@ describe('Post Integration Tests', () => {
     let postModel: Model<PostDocument>;
     let userModel: Model<CompanyUserDocument>;
     let accessToken: string;
+    let companyId: Types.ObjectId;
 
     const ACCESS_TOKEN_SECRET = 'test-access-secret';
     const REFRESH_TOKEN_SECRET = 'test-refresh-secret';
@@ -93,6 +94,7 @@ describe('Post Integration Tests', () => {
             role: Role.COMPANY,
             isValid: true,
         });
+        companyId = createdUser._id as Types.ObjectId;
 
         console.log('Created user:', { email: createdUser.email, role: createdUser.role });
 
@@ -121,7 +123,10 @@ describe('Post Integration Tests', () => {
     });
 
     const createPost = async (data: any) => {
-        return await postModel.create(data);
+        return await postModel.create({
+            company: companyId,
+            ...data,
+        });
     };
 
     const normalizeBody = (obj: any) => {

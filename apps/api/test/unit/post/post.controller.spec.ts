@@ -150,6 +150,7 @@ describe('PostController', () => {
     });
 
     describe('create', () => {
+        const mockRequest = { user: { sub: '507f1f77bcf86cd799439099' } };
         const validCreatePostDto: CreatePostDto = {
             title: 'Nouveau poste',
             description: 'Description du nouveau poste',
@@ -167,9 +168,9 @@ describe('PostController', () => {
         it('should create a post when valid dto is provided and create is called', async () => {
             mockPostService.create.mockResolvedValue(mockPost);
 
-            await controller.create(validCreatePostDto);
+            await controller.create(mockRequest as any, validCreatePostDto);
 
-            expect(service.create).toHaveBeenCalledWith(validCreatePostDto);
+            expect(service.create).toHaveBeenCalledWith(validCreatePostDto, mockRequest.user.sub);
             expect(service.create).toHaveBeenCalledTimes(1);
         });
 
@@ -181,16 +182,16 @@ describe('PostController', () => {
             };
             mockPostService.create.mockResolvedValue({ ...mockPost, ...minimalDto });
 
-            await controller.create(minimalDto);
+            await controller.create(mockRequest as any, minimalDto);
 
-            expect(service.create).toHaveBeenCalledWith(minimalDto);
+            expect(service.create).toHaveBeenCalledWith(minimalDto, mockRequest.user.sub);
             expect(service.create).toHaveBeenCalledTimes(1);
         });
 
         it('should create a post with all optional fields when create is called', async () => {
             mockPostService.create.mockResolvedValue(mockPost);
 
-            await controller.create(validCreatePostDto);
+            await controller.create(mockRequest as any, validCreatePostDto);
 
             expect(service.create).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -205,6 +206,7 @@ describe('PostController', () => {
                     adress: validCreatePostDto.adress,
                     type: validCreatePostDto.type,
                 }),
+                mockRequest.user.sub,
             );
         });
     });

@@ -48,11 +48,10 @@ export class CompanyService {
      * ```
      */
     async findAll(): Promise<Company[]> {
-        const companies = await this.companyModel.find({ deletedAt: { $exists: false } }).exec();
-        companies.forEach((company) => {
-            company.populate('posts');
-        });
-        return companies;
+        return this.companyModel
+            .find({ deletedAt: { $exists: false } })
+            .populate('posts')
+            .exec();
     }
 
     /**
@@ -73,7 +72,9 @@ export class CompanyService {
      */
     async findOne(id: string): Promise<Company | null> {
         const company = await this.companyModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
-        if (company) await company.populate('posts');
+        if (company && typeof (company as any).populate === 'function') {
+            await company.populate('posts');
+        }
         return company;
     }
 

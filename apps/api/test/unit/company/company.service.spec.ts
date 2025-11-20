@@ -7,6 +7,7 @@ import { Company, CompanyDocument, StructureType, LegalStatus } from '../../../s
 import { CreateCompanyDto } from '../../../src/company/dto/createCompany.dto';
 import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
 import { NafCode } from '../../../src/company/nafCodes.enum';
+import { PostService } from '../../../src/post/post.service';
 
 describe('CompanyService', () => {
     let service: CompanyService;
@@ -21,6 +22,14 @@ describe('CompanyService', () => {
     };
 
     const mockExec = jest.fn();
+    const mockPostService = {
+        findOne: jest.fn(),
+    };
+    const setupFindMock = () => {
+        const populate = jest.fn().mockReturnValue({ exec: mockExec });
+        mockCompanyModel.find.mockReturnValue({ populate });
+        return populate;
+    };
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -29,6 +38,10 @@ describe('CompanyService', () => {
                 {
                     provide: getModelToken(Company.name),
                     useValue: mockCompanyModel,
+                },
+                {
+                    provide: PostService,
+                    useValue: mockPostService,
                 },
             ],
         }).compile();
@@ -61,9 +74,7 @@ describe('CompanyService', () => {
             ];
 
             mockExec.mockResolvedValue(companies);
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
 
             const result = await service.findAll();
 
@@ -75,9 +86,7 @@ describe('CompanyService', () => {
 
     it('should return an empty array when findAll is called and no companies exist', async () => {
             mockExec.mockResolvedValue([]);
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
 
             const result = await service.findAll();
 
@@ -106,9 +115,7 @@ describe('CompanyService', () => {
             ];
 
             mockExec.mockResolvedValue(companies);
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
 
             const result = await service.findAll();
 
@@ -128,9 +135,7 @@ describe('CompanyService', () => {
             ];
 
             mockExec.mockResolvedValue(companies);
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
 
             await service.findAll();
 
@@ -140,9 +145,7 @@ describe('CompanyService', () => {
     it('should throw when findAll encounters a database error', async () => {
             const error = new Error('Database connection error');
             mockExec.mockRejectedValue(error);
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
 
             await expect(service.findAll()).rejects.toThrow('Database connection error');
             expect(mockCompanyModel.find).toHaveBeenCalledTimes(1);
@@ -158,9 +161,7 @@ describe('CompanyService', () => {
             }));
 
             mockExec.mockResolvedValue(companies);
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
 
             const result = await service.findAll();
 
@@ -897,9 +898,7 @@ it('should throw when create encounters a database error', async () => {
                 .mockResolvedValueOnce({ _id: '507f1f77bcf86cd799439011' })
                 .mockResolvedValueOnce(companiesAfterDelete);
 
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
             mockCompanyModel.findOneAndDelete.mockReturnValue({
                 exec: mockExec,
             });

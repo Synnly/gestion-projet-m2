@@ -18,12 +18,13 @@ import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { CreatePostDto } from './dto/createPost.dto';
+import { CompanyOwnerGuard } from '../common/roles/companyOwner.guard';
 
 /**
  * Controller handling post-related HTTP requests
  */
 @UseGuards(AuthGuard)
-@Controller('/api/posts')
+@Controller('/api/company/:companyId/posts')
 export class PostController {
     constructor(private readonly postService: PostService) {}
 
@@ -53,15 +54,17 @@ export class PostController {
 
     /**
      * Creates a new post
+     * @param companyId The company identifier
      * @param dto The post data for creation
      */
     @Post('')
-    @UseGuards(RolesGuard)
+    @UseGuards(RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.CREATED)
     async create(
+        @Param('companyId', ParseObjectIdPipe) companyId: string,
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: CreatePostDto,
     ) {
-        await this.postService.create(dto);
+        await this.postService.create(dto, companyId);
     }
 }
