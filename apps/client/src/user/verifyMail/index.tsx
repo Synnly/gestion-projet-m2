@@ -38,6 +38,7 @@ function translateMessage(message: string): string {
 export function VerifyEmail() {
     const {
         register,
+        setValue,
         handleSubmit,
         setError,
         reset,
@@ -65,7 +66,7 @@ export function VerifyEmail() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`,
+                    Authorization: `Bearer ${accessToken}`,
                 },
                 credentials: 'include',
                 body: JSON.stringify(body),
@@ -84,7 +85,7 @@ export function VerifyEmail() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`,
+                    Authorization: `Bearer ${accessToken}`,
                 },
                 credentials: 'include',
                 body: JSON.stringify(body),
@@ -144,6 +145,7 @@ export function VerifyEmail() {
                     </p>
                 </div>
                 <CodeInput
+                    setValue={setValue}
                     refsInputs={refsInputs}
                     errors={errors}
                     handleSubmit={handleSubmit}

@@ -1,5 +1,6 @@
 import { useState, forwardRef, useEffect } from 'react';
 import { cn } from '../utils/cn';
+import profilPlaceholder from '../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg';
 import type { FieldError, UseFormRegisterReturn } from 'react-hook-form';
 type ProfilePictureProps = {
     src?: string;
@@ -17,10 +18,8 @@ export const ProfilePicture = forwardRef<File | null, ProfilePictureProps>(
         { src, overlay = false, overlayPicture, className, handleModif, imgRef, register, error }: ProfilePictureProps,
         ref,
     ) => {
-        
         const [srcPicture, setSrcPicture] = useState(src);
-       
-        
+
         const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
             const file = event.target.files?.[0];
             if (file && file?.size > 3000000) {
@@ -47,17 +46,19 @@ export const ProfilePicture = forwardRef<File | null, ProfilePictureProps>(
             reader.readAsDataURL(file);
         };
 
-        useEffect(()=>{
-            setSrcPicture(src)
-        },[src])
-        if(!src){
-            return <></>
-        }
+        useEffect(() => {
+            setSrcPicture(src);
+        }, [src]);
+
         return (
             <>
                 <div className={cn('relative group rounded-full overflow-hidden w-24 h-24', className)}>
                     <label className="cursor-pointer relative flex w-full h-full">
-                        <img src={srcPicture} ref={imgRef} className="object-cover w-full h-full" />
+                        <img
+                            src={srcPicture || profilPlaceholder}
+                            ref={imgRef}
+                            className="object-cover w-full h-full"
+                        />
                         <input
                             type="file"
                             accept=".png,.jpg,.jpeg,.svg"
