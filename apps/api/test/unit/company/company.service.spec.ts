@@ -30,6 +30,11 @@ describe('CompanyService', () => {
         mockCompanyModel.find.mockReturnValue({ populate });
         return populate;
     };
+    const setupFindOnePopulate = () => {
+        const populate = jest.fn().mockReturnValue({ exec: mockExec });
+        mockCompanyModel.findOne.mockReturnValue({ populate });
+        return populate;
+    };
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -180,9 +185,7 @@ describe('CompanyService', () => {
             };
 
             mockExec.mockResolvedValue(company);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             const result = await service.findOne('507f1f77bcf86cd799439011');
 
@@ -197,9 +200,7 @@ describe('CompanyService', () => {
 
     it('should return null when findOne is called with a non-existent id', async () => {
             mockExec.mockResolvedValue(null);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             const result = await service.findOne('507f1f77bcf86cd799439999');
 
@@ -212,9 +213,7 @@ describe('CompanyService', () => {
 
     it('should return null when findOne is called for a deleted company', async () => {
             mockExec.mockResolvedValue(null);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             const result = await service.findOne('507f1f77bcf86cd799439011');
 
@@ -243,9 +242,7 @@ describe('CompanyService', () => {
             };
 
             mockExec.mockResolvedValue(company);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             const result = await service.findOne('507f1f77bcf86cd799439011');
 
@@ -263,9 +260,7 @@ describe('CompanyService', () => {
             };
 
             mockExec.mockResolvedValue(company);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             const result = await service.findOne('507f1f77bcf86cd799439011');
 
@@ -277,9 +272,7 @@ describe('CompanyService', () => {
     it('should throw when findOne encounters a database error', async () => {
             const error = new Error('Database error');
             mockExec.mockRejectedValue(error);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             await expect(service.findOne('507f1f77bcf86cd799439011')).rejects.toThrow('Database error');
             expect(mockCompanyModel.findOne).toHaveBeenCalledTimes(1);
@@ -290,9 +283,7 @@ describe('CompanyService', () => {
 
             for (const id of ids) {
                 mockExec.mockResolvedValue({ _id: id, email: 'test@example.com', name: 'Test' });
-                mockCompanyModel.findOne.mockReturnValue({
-                    exec: mockExec,
-                });
+                setupFindOnePopulate();
 
                 await service.findOne(id);
 
@@ -830,9 +821,7 @@ it('should throw when create encounters a database error', async () => {
 
             mockCompanyModel.create.mockResolvedValue(createdCompany);
             mockExec.mockResolvedValue(createdCompany);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             await service.create(createDto);
             const result = await service.findOne('507f1f77bcf86cd799439011');
@@ -916,9 +905,7 @@ it('should throw when create encounters a database error', async () => {
     describe('Edge cases', () => {
     it('should return null when findOne returns null', async () => {
             mockExec.mockResolvedValue(null);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             const result = await service.findOne('507f1f77bcf86cd799439011');
 

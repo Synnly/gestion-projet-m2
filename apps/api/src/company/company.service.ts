@@ -72,11 +72,10 @@ export class CompanyService {
      * ```
      */
     async findOne(id: string): Promise<Company | null> {
-        const company = await this.companyModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
-        if (company && typeof (company as any).populate === 'function') {
-            await company.populate('posts');
-        }
-        return company;
+        return this.companyModel
+            .findOne({ _id: id, deletedAt: { $exists: false } })
+            .populate('posts')
+            .exec();
     }
 
     /**
