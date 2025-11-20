@@ -1,21 +1,38 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Post, PostDocument } from './post.schema';
-import { Model } from 'mongoose';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { getModelToken, InjectModel } from '@nestjs/mongoose';
+import { Post } from './post.schema';
+import { Model, Types } from 'mongoose';
 import { CreatePostDto } from './dto/createPost.dto';
+import { Company } from 'src/company/company.schema';
 
 @Injectable()
-export class PostService {
-    constructor(@InjectModel(Post.name) private readonly postModel: Model<PostDocument>) {}
+export class PostService { 
+    constructor(
+        @InjectModel(Post.name)
+        private readonly postModel: Model<Post>,
+
+        @Inject(getModelToken(Company.name))
+        private readonly companyModel: Model<Company>,
+    ) {}
+
 
     /**
      * Creates a new post in the database
      *
      * @param dto - The complete post data required for creation
+     * @param userId - The id of the company (or admin) creating the post
      * @returns Promise resolving to void upon successful creation
      */
-    async create(dto: CreatePostDto): Promise<Post> {
-        const createdPost = new this.postModel(dto);
+    async create(dto: CreatePostDto, userId: string) {
+        const company = await this.companyModel.findOne({ _id: userId });
+
+        if (!company) throw new NotFoundException('Company not found');
+
+        const createdPost = new this.postModel({
+            ...dto,
+            companyId: company._id,
+        });
+
         return createdPost.save();
     }
 

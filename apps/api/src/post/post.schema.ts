@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
+import { Company } from 'src/company/company.schema';
 
 export enum PostType {
     Presentiel = 'Présentiel',
@@ -12,6 +13,10 @@ export enum PostType {
 export class Post {
     /** Unique MongoDB identifier */
     _id: Types.ObjectId;
+
+    /** Post's company id */
+    @Prop({ type: Types.ObjectId, ref: Company.name, required: true })
+    companyId: Types.ObjectId;
 
     /** Post's title */
     @Prop({ required: true })

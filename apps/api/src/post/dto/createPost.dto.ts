@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import {
     ArrayMaxSize,
     ArrayMinSize,
@@ -14,7 +15,6 @@ import {
 import { PostType } from '../post.schema';
 
 export class CreatePostDto {
-   
     /**
      * Post's title
      * Is required for the creation

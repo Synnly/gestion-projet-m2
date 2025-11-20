@@ -10,6 +10,12 @@ export class PostDto {
     _id: Types.ObjectId;
 
     /**
+     * Post's company id
+     * Is required for the creation
+     */
+    companyId: Types.ObjectId;
+
+    /**
      * Post's title
      * Is required for the creation
      */

@@ -8,6 +8,7 @@ import {
     NotFoundException,
     Param,
     Post,
+    Req,
     UseGuards,
     ValidationPipe,
 } from '@nestjs/common';
@@ -62,9 +63,11 @@ export class PostController {
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.CREATED)
     async create(
+        @Req() req,
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: CreatePostDto,
     ) {
-        await this.postService.create(dto);
+        const userId = req.user.sub;
+        await this.postService.create(dto, userId);
     }
 
     /**
