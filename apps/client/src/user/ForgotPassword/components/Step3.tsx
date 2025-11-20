@@ -5,7 +5,6 @@ import { CustomForm } from '../../../components/CustomForm';
 import { FormInput } from '../../../components/FormInput';
 import { FormSubmit } from '../../../components/FormSubmit';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { motion } from 'motion/react';
 
 const forgotPasswordTypeStep3Schema = z
     .object({
