@@ -1,3 +1,4 @@
+// This file is made to check everyday for company set as "deleted". If they were set as "deleted" for 30 days, they get removed from the database.
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { CompanyService } from './company.service';
@@ -7,7 +8,6 @@ export class CompanyCleanup {
   private readonly logger = new Logger(CompanyCleanup.name);
 
   constructor(private readonly companyService: CompanyService) {}
-
 
   // @Cron('*/30 * * * * *')   // Every 30 seconds (for testing)
   @Cron(process.env.COMPANY_CLEANUP_CRON || '0 3 * * *')   // Everyday at 3AM
