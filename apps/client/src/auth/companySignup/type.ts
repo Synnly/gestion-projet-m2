@@ -22,7 +22,7 @@ export const companyFormSignUpSchema = z
         repeatPassword: z.string(),
         name: z.string().min(1, { message: "Le nom de l'entreprise est requis" }),
     })
-    .refine((data) => data.password && data.repeatPassword && data.password === data.repeatPassword, {
+    .refine((data) => !data.password || !data.repeatPassword || data.password === data.repeatPassword, {
         message: 'Les mots de passe ne correspondent pas',
         path: ['repeatPassword'],
     });
