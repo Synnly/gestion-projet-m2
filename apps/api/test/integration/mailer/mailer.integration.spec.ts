@@ -158,11 +158,16 @@ describe('MailerController (Integration)', () => {
                 passwordResetAttempts: 0,
             });
 
+            // First verify OTP
+            await request(app.getHttpServer())
+                .post('/api/mailer/password/reset/verify-otp')
+                .send({ email: 'test@example.com', otp: '123456' })
+                .expect(200);
+
             const response = await request(app.getHttpServer())
                 .post('/api/mailer/password/reset')
                 .send({
                     email: 'test@example.com',
-                    otp: '123456',
                     newPassword: 'NewPassword123!',
                 })
                 .expect(200);
@@ -199,12 +204,8 @@ describe('MailerController (Integration)', () => {
             });
 
             const response = await request(app.getHttpServer())
-                .post('/api/mailer/password/reset')
-                .send({
-                    email: 'test@example.com',
-                    otp: '123456',
-                    newPassword: 'NewPassword123!',
-                })
+                .post('/api/mailer/password/reset/verify-otp')
+                .send({ email: 'test@example.com', otp: '123456' })
                 .expect(400);
 
             expect(response.body.message).toContain('expired');
@@ -228,12 +229,8 @@ describe('MailerController (Integration)', () => {
             });
 
             const response = await request(app.getHttpServer())
-                .post('/api/mailer/password/reset')
-                .send({
-                    email: 'test@example.com',
-                    otp: '999999', // Wrong OTP
-                    newPassword: 'NewPassword123!',
-                })
+                .post('/api/mailer/password/reset/verify-otp')
+                .send({ email: 'test@example.com', otp: '999999' })
                 .expect(400);
 
             expect(response.body.message).toContain('Invalid');
@@ -256,11 +253,16 @@ describe('MailerController (Integration)', () => {
                 passwordResetAttempts: 0,
             });
 
+            // Verify OTP first
+            await request(app.getHttpServer())
+                .post('/api/mailer/password/reset/verify-otp')
+                .send({ email: 'test@example.com', otp: '123456' })
+                .expect(200);
+
             const response = await request(app.getHttpServer())
                 .post('/api/mailer/password/reset')
                 .send({
                     email: 'test@example.com',
-                    otp: '123456',
                     newPassword: 'weak', // Too weak
                 })
                 .expect(400);
@@ -285,26 +287,18 @@ describe('MailerController (Integration)', () => {
                 passwordResetAttempts: 0,
             });
 
-            // 5 failed attempts
+            // 5 failed attempts (verify endpoint)
             for (let i = 0; i < 5; i++) {
                 await request(app.getHttpServer())
-                    .post('/api/mailer/password/reset')
-                    .send({
-                        email: 'test@example.com',
-                        otp: '999999',
-                        newPassword: 'NewPassword123!',
-                    })
+                    .post('/api/mailer/password/reset/verify-otp')
+                    .send({ email: 'test@example.com', otp: '999999' })
                     .expect(400);
             }
 
-            // Should be blocked now
+            // Should be blocked now even if correct OTP
             const response = await request(app.getHttpServer())
-                .post('/api/mailer/password/reset')
-                .send({
-                    email: 'test@example.com',
-                    otp: '123456', // Even correct OTP should fail
-                    newPassword: 'NewPassword123!',
-                })
+                .post('/api/mailer/password/reset/verify-otp')
+                .send({ email: 'test@example.com', otp: '123456' })
                 .expect(400);
 
             expect(response.body.message).toContain('Too many verification attempts');

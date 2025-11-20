@@ -92,7 +92,7 @@ describe('Auth Integration Tests', () => {
         expect(cookie).toContain('HttpOnly');
         expect(cookie).toContain('Secure');
         expect(cookie).toContain('SameSite=Lax');
-        expect(cookie).toContain('Path=/api/auth/refresh');
+        expect(cookie).toContain('Path=/api');
     };
 
     describe('POST /api/auth/login - Login', () => {
@@ -338,7 +338,7 @@ describe('Auth Integration Tests', () => {
             const res = await loginRequest('path@company.com', DEFAULT_PASSWORD).expect(201);
             const refreshCookie = extractRefreshCookie(res);
 
-            expect(refreshCookie).toContain('Path=/api/auth/refresh');
+            expect(refreshCookie).toContain('Path=/api');
         });
     });
 });

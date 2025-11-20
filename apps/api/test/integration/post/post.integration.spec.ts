@@ -94,13 +94,11 @@ describe('Post Integration Tests', () => {
             isValid: true,
         });
 
-        console.log('Created user:', { email: createdUser.email, role: createdUser.role });
 
         const loginRes = await request(app.getHttpServer())
             .post('/api/auth/login')
             .send({ email: 'company@test.com', password: 'TestP@ss123' });
 
-        console.log('Login response:', { status: loginRes.status, body: loginRes.body, text: loginRes.text });
 
         if (loginRes.status !== 201) {
             console.error('Login failed:', loginRes.status, loginRes.body);

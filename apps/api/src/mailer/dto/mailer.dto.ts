@@ -28,7 +28,11 @@ export class VerifyOtpDto {
 /**
  * DTO for resetting password with OTP
  */
-export class ResetPasswordDto extends VerifyOtpDto {
+export class ResetPasswordDto {
+    @IsEmail({}, { message: 'Invalid email format' })
+    @IsNotEmpty({ message: 'Email is required' })
+    email: string;
+    
     @IsString()
     @IsNotEmpty({ message: 'New password is required' })
     @IsStrongPassword(

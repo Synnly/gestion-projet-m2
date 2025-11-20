@@ -41,4 +41,24 @@ describe('FileValidationPipe (extensions only)', () => {
         const dto = { originalFilename: 'my.company.logo.png', fileType: 'logo' };
         await expect(pipe.transform(dto)).resolves.toEqual(dto);
     });
+
+    it('rejects filename with path traversal', async () => {
+        const dto = { originalFilename: '../secret.png', fileType: 'logo' };
+        await expect(pipe.transform(dto as any)).rejects.toThrow('Invalid filename: path traversal detected');
+    });
+
+    it('rejects filename containing null byte', async () => {
+        const dto = { originalFilename: 'logo\0.png', fileType: 'logo' };
+        await expect(pipe.transform(dto as any)).rejects.toThrow('Invalid filename: null byte detected');
+    });
+
+    it('rejects invalid extension for cv', async () => {
+        const dto = { originalFilename: 'image.png', fileType: 'cv' };
+        await expect(pipe.transform(dto as any)).rejects.toThrow('Invalid file extension for cv');
+    });
+
+    it('defaults to cv when fileType is missing and accepts pdf', async () => {
+        const dto = { originalFilename: 'resume.PDF' };
+        await expect(pipe.transform(dto as any)).resolves.toEqual(dto);
+    });
 });

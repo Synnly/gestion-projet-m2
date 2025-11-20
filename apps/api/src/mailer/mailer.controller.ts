@@ -51,6 +51,33 @@ export class MailerController {
         }
     }
 
+    @Post('password/reset/verify-otp')
+    @HttpCode(HttpStatus.OK)
+    async verifyOtp(
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        dto: VerifyOtpDto,
+    ) {
+        try {
+            await this.mailerService.verifyPasswordResetOtp(dto.email, dto.otp);
+        } catch (error) {
+            if (error.message === 'User not found') {
+                throw new NotFoundException('No account found with this email');
+            }
+            if (error.message === 'Invalid OTP' || error.message === 'OTP expired') {
+                throw new BadRequestException(error.message);
+            }
+            if (error.message === 'Too many verification attempts. Please request a new code.') {
+                throw new BadRequestException(error.message);
+            }
+            throw new BadRequestException('Failed to verify OTP');
+        }
+
+        return {
+            success: true,
+            message: 'OTP successfully verified',
+        };
+    }
+
     /**
      * Reset user password using OTP verification
      * @param dto Contains email, OTP code and new password
@@ -65,8 +92,6 @@ export class MailerController {
         dto: ResetPasswordDto,
     ) {
         try {
-            // Verify OTP first
-            await this.mailerService.verifyPasswordResetOtp(dto.email, dto.otp);
 
             // Update password
             await this.mailerService.updatePassword(dto.email, dto.newPassword);
@@ -78,12 +103,6 @@ export class MailerController {
         } catch (error) {
             if (error.message === 'User not found') {
                 throw new NotFoundException('No account found with this email');
-            }
-            if (error.message === 'Invalid OTP' || error.message === 'OTP expired') {
-                throw new BadRequestException(error.message);
-            }
-            if (error.message === 'Too many verification attempts. Please request a new code.') {
-                throw new BadRequestException(error.message);
             }
             throw new BadRequestException('Failed to reset password');
         }
