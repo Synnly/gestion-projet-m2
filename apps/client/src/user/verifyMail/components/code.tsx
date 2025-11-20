@@ -1,7 +1,7 @@
-import { type ChangeEvent } from 'react';
+import { useEffect, type ChangeEvent } from 'react';
 import type { VerifyEmailForm } from '..';
 import { FormSubmit } from '../../../components/FormSubmit';
-import type { FieldErrors, SubmitHandler, UseFormRegister } from 'react-hook-form';
+import type { FieldErrors, SubmitHandler, UseFormRegister, UseFormSetValue } from 'react-hook-form';
 
 export type CodeInputProps = {
     handleSubmit: (onValid: SubmitHandler<VerifyEmailForm>) => (e?: React.BaseSyntheticEvent) => Promise<void>;
@@ -10,12 +10,14 @@ export type CodeInputProps = {
     onSubmit: SubmitHandler<VerifyEmailForm>;
     isSendingError?: boolean;
     sendingError?: Error;
+    setValue: UseFormSetValue<VerifyEmailForm>;
     isPending?: boolean;
     refsInputs: React.MutableRefObject<Array<HTMLInputElement | null>>;
 } & Omit<React.FormHTMLAttributes<HTMLFormElement>, 'onSubmit'>;
 
 export const CodeInput = ({
     handleSubmit,
+    setValue,
     register,
     onSubmit,
     refsInputs,
@@ -25,24 +27,79 @@ export const CodeInput = ({
     isPending,
     ...rest
 }: CodeInputProps) => {
+    useEffect(() => {
+        refsInputs.current[0]?.focus();
+    }, [refsInputs]);
+
     const handleChange = (e: ChangeEvent<HTMLInputElement>, idx: number) => {
         const rawValue = e.target.value;
-        // on filtre les caractères non numériques
+        //filter only digits
         const digits = rawValue.replace(/\D/g, '');
         const lastDigit = digits.slice(-1);
         e.target.value = lastDigit;
-        if (!lastDigit && idx > 1) {
-            refsInputs.current[idx - 1]?.focus();
-        }
-        if (lastDigit && idx < 6) {
+        if (lastDigit && idx < 5) {
             refsInputs.current[idx + 1]?.focus();
         }
-        if (lastDigit && idx === 6) {
+        if (lastDigit && idx === 5) {
             refsInputs.current[idx]?.blur();
             if (refsInputs.current.every((input) => input?.value !== '')) {
                 handleSubmit((data: VerifyEmailForm) => onSubmit(data))();
             }
         }
+    };
+    const keyDownHandler = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
+        const inputs = refsInputs.current;
+
+        if (e.key === 'Backspace') {
+            e.preventDefault();
+
+            if (inputs[idx]?.value) {
+                inputs[idx].value = '';
+                setValue(`code${idx + 1}` as keyof VerifyEmailForm, '', { shouldValidate: true });
+            } else if (idx > 0) {
+                inputs[idx - 1]?.focus();
+                inputs[idx - 1]!.value = '';
+                setValue(`code${idx}` as keyof VerifyEmailForm, '', { shouldValidate: true });
+            }
+        }
+
+        if (e.key === 'ArrowRight' && idx < inputs.length - 1) {
+            inputs[idx + 1]?.focus();
+        }
+
+        if (e.key === 'ArrowLeft' && idx > 0) {
+            inputs[idx - 1]?.focus();
+        }
+    };
+    const pasteHandler = (e: React.ClipboardEvent<HTMLInputElement>, startIndex: number) => {
+        e.preventDefault();
+
+        const pasteData = e.clipboardData.getData('text').replace(/\D/g, '');
+        if (!pasteData) return;
+
+        const inputs = refsInputs.current;
+        const maxIndex = inputs.length - 1;
+
+        const allEmpty = inputs.every((input) => input?.value === '');
+        const pasteStart = allEmpty ? 0 : startIndex;
+
+        for (let i = 0; i < pasteData.length && pasteStart + i <= maxIndex; i++) {
+            const idx = pasteStart + i;
+            const char = pasteData[i];
+            console.log('Pasting char:', char, 'into input index:', idx);
+            setValue(`code${idx + 1}` as keyof VerifyEmailForm, char, { shouldValidate: true });
+            if (inputs[idx]) inputs[idx]!.value = char; // mettre à jour l'UI
+        }
+
+        const nextEmpty = inputs.slice(pasteStart).find((input) => input && input.value === '');
+        if (nextEmpty) {
+            nextEmpty.focus();
+            return;
+        }
+
+        inputs[maxIndex]?.blur();
+        const allFilled = inputs.every((input) => input?.value !== '');
+        if (allFilled) handleSubmit(onSubmit)();
     };
     return (
         <>
@@ -62,11 +119,13 @@ export const CodeInput = ({
                                     type="text"
                                     className="w-12 h-12 sm:w-14 sm:h-14 text-center text-xl sm:text-2xl font-semibold rounded-lg border text-black   focus:border-yellow-500 focus:ring-yellow-500"
                                     {...register(`code${i}` as keyof VerifyEmailForm)}
-                                    onChange={(e) => handleChange(e, i)}
+                                    onChange={(e) => handleChange(e, i - 1)}
+                                    onKeyDown={(e) => keyDownHandler(e, i - 1)}
+                                    onPaste={(e) => pasteHandler(e, i - 1)}
                                     //react hook form has his own ref, we need to combine both refs
                                     ref={(e) => {
                                         register(`code${i}` as keyof VerifyEmailForm).ref(e);
-                                        refsInputs.current[i] = e;
+                                        refsInputs.current[i - 1] = e;
                                     }}
                                 />
                             </div>
