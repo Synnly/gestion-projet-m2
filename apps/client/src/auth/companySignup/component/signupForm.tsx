@@ -90,7 +90,7 @@ export const SignupForm = () => {
                         placeholder="Nom"
                         label="Nom de l'entreprise"
                         type="text"
-                        error={errors.email}
+                        error={errors.name}
                     />
                     <FormInput<companyFormSignUp>
                         register={register('email')}
