@@ -42,10 +42,7 @@ export class CompanyController {
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<CompanyDto[]> {
         const companies = await this.companyService.findAll();
-        return companies.map((company: Company) => {
-            const posts = company.posts ?? [];
-            return new CompanyDto({ ...company, posts: posts.map((post: PostDocument) => new PostDto(post)) });
-        });
+        return companies.map((company) => this.mapToDto(company));
     }
 
     /**
@@ -105,5 +102,18 @@ export class CompanyController {
     @HttpCode(HttpStatus.NO_CONTENT)
     async remove(@Param('companyId', ParseObjectIdPipe) companyId: string) {
         await this.companyService.remove(companyId);
+    }
+
+    /**
+     * Maps a Company entity to a CompanyDto with nested PostDtos
+     * @param company The company entity to map
+     * @returns The mapped CompanyDto
+     */
+    private mapToDto(company: Company): CompanyDto {
+        const posts = company.posts ?? [];
+        return new CompanyDto({
+            ...company,
+            posts: posts.map((post: PostDocument) => new PostDto(post)),
+        });
     }
 }

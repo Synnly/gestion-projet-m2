@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateCompanyDto } from './dto/createCompany.dto';
@@ -6,6 +6,7 @@ import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { Company } from './company.schema';
 import { CompanyUserDocument } from '../user/user.schema';
 import { PostService } from '../post/post.service';
+import { Post } from '../post/post.schema';
 
 /**
  * Service handling business logic for company operations
@@ -124,6 +125,7 @@ export class CompanyService {
      * @param dto - Partial company data with fields to update
      * @returns Promise resolving to void upon successful update
      * @throws NotFoundException if any of the post IDs provided do not exist
+     * @throws BadRequestException if any of the post IDs provided are invalid
      * @example
      * ```typescript
      * await companyService.update('507f1f77bcf86cd799439011', {
@@ -139,9 +141,13 @@ export class CompanyService {
         if (company) {
             // Validate that all provided post IDs exist
             for (const postId of dto.posts ?? []) {
-                if (!(await this.postService.findOne(postId))) {
-                    throw new NotFoundException('Post with id ' + postId + ' not found');
+                let post: Post | null | undefined = undefined;
+                try {
+                    post = await this.postService.findOne(postId);
+                } catch (error) {
+                    throw new BadRequestException('Invalid post ID: ' + postId);
                 }
+                if (post === null) throw new NotFoundException('Post with id ' + postId + ' not found');
             }
 
             // Update existing active company

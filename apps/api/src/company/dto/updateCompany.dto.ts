@@ -1,14 +1,4 @@
-import {
-    IsOptional,
-    IsString,
-    IsEmail,
-    IsEnum,
-    IsBoolean,
-    IsStrongPassword,
-    Matches,
-    IsObject,
-    IsMongoId,
-} from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsBoolean, IsStrongPassword, IsMongoId } from 'class-validator';
 import { StructureType, LegalStatus } from '../company.schema';
 import { NafCode } from '../nafCodes.enum';
 
