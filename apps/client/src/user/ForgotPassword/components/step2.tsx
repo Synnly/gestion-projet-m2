@@ -17,6 +17,7 @@ export const ForgotPasswordStep2 = ({
     const {
         register,
         handleSubmit,
+        setValue,
         setError,
         clearErrors,
         formState: { errors },
@@ -26,6 +27,7 @@ export const ForgotPasswordStep2 = ({
 
     const onSubmit = (data: VerifyEmailForm) => {
         const code = `${data.code1}${data.code2}${data.code3}${data.code4}${data.code5}${data.code6}`;
+        console.log('Submitted code:', code);
         if (code.length !== 6) {
             setError('root', { message: 'Veuillez entrer un code valide de 6 chiffres.' });
             return;
@@ -56,6 +58,7 @@ export const ForgotPasswordStep2 = ({
             </div>
 
             <CodeInput
+                setValue={setValue}
                 handleSubmit={handleSubmit}
                 register={register}
                 onSubmit={onSubmit}

@@ -68,7 +68,7 @@ export const SignupForm = () => {
         }
     };
 
-    const handleInputChange = async () => {
+    const handleBlur = async () => {
         await trigger(['password', 'repeatPassword']);
     };
 
@@ -102,7 +102,7 @@ export const SignupForm = () => {
 
                     <FormInput<companyFormSignUp>
                         placeholder="Mot de passe"
-                        register={register('password', { required: true, onChange: handleInputChange })}
+                        register={register('password', { required: true, onBlur: handleBlur })}
                         label="Mot de passe"
                         type="password"
                         error={errors.password}
@@ -110,7 +110,7 @@ export const SignupForm = () => {
 
                     <FormInput<companyFormSignUp>
                         label="Repeter le mot de passe"
-                        register={register('repeatPassword')}
+                        register={register('repeatPassword', { required: true, onBlur: handleBlur })}
                         error={errors.repeatPassword}
                         type="password"
                         placeholder="Repeter le mot de passe"
