@@ -15,5 +15,8 @@
         "test:seq": "npm run test:seq --workspace=apps/api",
         "build": "npm run build --workspace=apps/client && npm run build --workspace=apps/api",
         "start": "NODE_ENV=production npm run start --workspace=apps/api"
+    },
+    "dependencies": {
+        "@nestjs/schedule": "^6.0.1"
     }
 }
