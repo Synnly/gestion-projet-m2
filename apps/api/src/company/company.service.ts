@@ -5,6 +5,7 @@ import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { Company } from './company.schema';
 import { CompanyUserDocument } from '../user/user.schema';
+import { PostService } from 'src/post/post.service';
 
 /**
  * Service handling business logic for company operations
@@ -27,7 +28,12 @@ export class CompanyService {
      * Creates a new CompanyService instance
      * @param companyModel - Injected Mongoose model for Company operations
      */
-    constructor(@InjectModel(Company.name) private readonly companyModel: Model<CompanyUserDocument>) {}
+    constructor(
+        private readonly postService: PostService,
+
+        @InjectModel(Company.name)
+        private readonly companyModel: Model<CompanyUserDocument>
+    ) {}
 
     /**
      * Retrieves all active (non-deleted) companies
@@ -160,6 +166,7 @@ export class CompanyService {
      * or allow data recovery. This operation is irreversible.
      */
     async remove(id: string): Promise<void> {
+        // Remove the company in 30 days
         const updated = await this.companyModel
             .findOneAndUpdate(
                 { _id: id, deletedAt: { $exists: false } },
@@ -167,11 +174,16 @@ export class CompanyService {
             )
             .exec();
 
-        //todo: vérifier que les annonces de l'entreprise sont supprimées
-
         if (!updated) {
             throw new NotFoundException('Company not found or already deleted');
         }
+
+        // Remove all the post made by the company in 30 days
+        this.postService.removeAllByCompany(id); // Starts all the jobs to remove the posts in 30 days
+
+        //todo: lancer un job pour la suppression d'entreprise (et de chaque annonce)
+        
+
         return;
     }
 }

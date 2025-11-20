@@ -61,6 +61,10 @@ export class Post {
     /** Does the post is visible on the client or not */
     @Prop({ default: true })
     isVisible: boolean;
+
+    /** Date when the post was soft-deleted (for soft-delete functionality) */
+    @Prop({ required: false })
+    deletedAt?: Date;
 }
 
 export type PostDocument = Post & Document;

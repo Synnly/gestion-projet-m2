@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { getModelToken, InjectModel } from '@nestjs/mongoose';
 import { Post } from './post.schema';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import { CreatePostDto } from './dto/createPost.dto';
 import { Company } from 'src/company/company.schema';
 
@@ -47,6 +47,15 @@ export class PostService {
     }
 
     /**
+     * Retrieves all active posts made by a specific company (or admin)
+     *
+     * @returns Promise resolving to an array of all active posts
+     */
+    async findAllByCompany(userId: string): Promise<Post[]> {
+        return this.postModel.find({ companyId: userId }).exec();
+    }
+
+    /**
      * Retrieves a single post by its unique identifier
      *
      * Only returns the post if it exists
@@ -75,7 +84,33 @@ export class PostService {
      */
     async remove(id: string): Promise<void> {
         await this.postModel.deleteOne({ _id: id})
-        // await this.postModel.findOneAndDelete({ _id: id}).exec(); // Utilise s'il faut retourner l'annonce
+        // await this.postModel.findOneAndDelete({ _id: id}).exec(); // Usefull to return the post
+        return;
+    }
+
+    
+    /**
+     * Retrieves all active posts made by a specific company (or admin)
+     *
+     * @returns Promise resolving to an array of all active posts
+     */
+    async removeAllByCompany(userId: string): Promise<void> {
+        const postList = await this.findAllByCompany(userId);
+        for(let post of postList) {
+            const updated = await this.postModel
+            .findOneAndUpdate(
+                { _id: post._id, deletedAt: { $exists: false } },
+                { $set: { deletedAt: new Date() } },
+            )
+            .exec();
+
+            if (!updated) {
+                throw new NotFoundException('Post not found or already deleted');
+            }
+
+            // console.log(updated);
+            //todo: lancer un job pour supprimer l'annonce dans 30 jours
+        }
         return;
     }
 }
