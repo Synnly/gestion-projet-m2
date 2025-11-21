@@ -19,6 +19,7 @@ import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { CreatePostDto } from './dto/createPost.dto';
 import { CompanyOwnerGuard } from '../common/roles/companyOwner.guard';
+import { plainToInstance } from 'class-transformer';
 
 /**
  * Controller handling post-related HTTP requests
@@ -36,7 +37,11 @@ export class PostController {
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<PostDto[]> {
         const posts = await this.postService.findAll();
-        return posts.map((post) => new PostDto(post));
+        return posts.map((post) =>
+            plainToInstance(PostDto, post, {
+                excludeExtraneousValues: true,
+            }),
+        );
     }
 
     /**
@@ -49,7 +54,9 @@ export class PostController {
     async findOne(@Param('id', ParseObjectIdPipe) id: string): Promise<PostDto> {
         const post = await this.postService.findOne(id);
         if (!post) throw new NotFoundException(`Post with id ${id} not found`);
-        return new PostDto(post);
+        return plainToInstance(PostDto, post, {
+            excludeExtraneousValues: true,
+        });
     }
 
     /**

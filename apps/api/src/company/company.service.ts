@@ -51,7 +51,10 @@ export class CompanyService {
     async findAll(): Promise<Company[]> {
         return this.companyModel
             .find({ deletedAt: { $exists: false } })
-            .populate('posts')
+            .populate({
+                path: 'posts',
+                select: '_id title description duration startDate minSalary maxSalary sector keySkills adress type',
+            })
             .exec();
     }
 
@@ -74,7 +77,10 @@ export class CompanyService {
     async findOne(id: string): Promise<Company | null> {
         return this.companyModel
             .findOne({ _id: id, deletedAt: { $exists: false } })
-            .populate('posts')
+            .populate({
+                path: 'posts',
+                select: '_id title description duration startDate minSalary maxSalary sector keySkills adress type',
+            })
             .exec();
     }
 

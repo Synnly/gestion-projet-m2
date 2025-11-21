@@ -20,7 +20,12 @@ export class PostService {
             ...dto,
             company: new Types.ObjectId(companyId),
         });
-        return createdPost.save();
+        await createdPost.save();
+
+        return await createdPost.populate({
+            path: 'company',
+            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+        });
     }
 
     /**
@@ -29,7 +34,13 @@ export class PostService {
      * @returns Promise resolving to an array of all active posts
      */
     async findAll(): Promise<Post[]> {
-        return this.postModel.find().populate('company').exec();
+        return this.postModel
+            .find()
+            .populate({
+                path: 'company',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            })
+            .exec();
     }
 
     /**
@@ -41,6 +52,12 @@ export class PostService {
      * @returns Promise resolving to the post if found and active, null otherwise
      */
     async findOne(id: string): Promise<Post | null> {
-        return this.postModel.findById(id).populate('company').exec();
+        return this.postModel
+            .findById(id)
+            .populate({
+                path: 'company',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            })
+            .exec();
     }
 }
