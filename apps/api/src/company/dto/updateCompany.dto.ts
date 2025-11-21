@@ -1,18 +1,18 @@
-import { IsOptional, IsString, IsEmail, IsEnum, IsBoolean, IsStrongPassword, Matches } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsBoolean, IsStrongPassword, IsMongoId } from 'class-validator';
 import { StructureType, LegalStatus } from '../company.schema';
-import { NafCode } from '../naf-codes.enum';
+import { NafCode } from '../nafCodes.enum';
 
 /**
  * Data Transfer Object for updating an existing company
- * 
+ *
  * All fields are optional, allowing partial updates of company information.
- * 
+ *
  * **Important immutable fields:**
  * - Email: Cannot be modified after company creation (not included in this DTO)
  * - SIRET number: Cannot be modified after company creation (not included in this DTO)
- * 
+ *
  * These restrictions ensure data integrity and compliance with business rules.
- * 
+ *
  * @example
  * ```typescript
  * const updateDto = new UpdateCompanyDto({
@@ -22,9 +22,9 @@ import { NafCode } from '../naf-codes.enum';
  * ```
  */
 export class UpdateCompanyDto {
-    /** 
+    /**
      * New password for the company account
-     * Must meet strong password requirements: minimum 8 characters with at least 
+     * Must meet strong password requirements: minimum 8 characters with at least
      * one uppercase letter, one lowercase letter, one number, and one symbol
      * Password will be automatically hashed before storage via User schema pre-save hook
      */
@@ -32,7 +32,7 @@ export class UpdateCompanyDto {
     @IsStrongPassword({ minLength: 8, minUppercase: 1, minLowercase: 1, minNumbers: 1, minSymbols: 1 })
     password?: string;
 
-    /** 
+    /**
      * Company name
      * Can be updated to reflect name changes, rebranding, etc.
      */
@@ -40,7 +40,7 @@ export class UpdateCompanyDto {
     @IsString()
     name?: string;
 
-    /** 
+    /**
      * NAF code (French business activity code - Nomenclature des Activités Françaises)
      * Classifies the main business activity of the company
      * Must be a valid code from the NafCode enum
@@ -49,7 +49,7 @@ export class UpdateCompanyDto {
     @IsEnum(NafCode)
     nafCode?: NafCode;
 
-    /** 
+    /**
      * Type of organizational structure
      * Defines whether the company is a private company, association, NGO, etc.
      */
@@ -57,7 +57,7 @@ export class UpdateCompanyDto {
     @IsEnum(StructureType)
     structureType?: StructureType;
 
-    /** 
+    /**
      * Legal status of the company
      * Specifies the legal form (SAS, SARL, EURL, etc.) under French law
      */
@@ -65,7 +65,7 @@ export class UpdateCompanyDto {
     @IsEnum(LegalStatus)
     legalStatus?: LegalStatus;
 
-    /** 
+    /**
      * Street number of the company's physical address
      * Example: "123", "45 bis"
      */
@@ -73,7 +73,7 @@ export class UpdateCompanyDto {
     @IsString()
     streetNumber?: string;
 
-    /** 
+    /**
      * Street name of the company's physical address
      * Example: "Avenue des Champs-Élysées", "Rue de la Paix"
      */
@@ -81,7 +81,7 @@ export class UpdateCompanyDto {
     @IsString()
     streetName?: string;
 
-    /** 
+    /**
      * Postal code of the company's physical address
      * Example: "75008", "69001"
      */
@@ -89,7 +89,7 @@ export class UpdateCompanyDto {
     @IsString()
     postalCode?: string;
 
-    /** 
+    /**
      * City where the company is located
      * Example: "Paris", "Lyon", "Marseille"
      */
@@ -97,7 +97,7 @@ export class UpdateCompanyDto {
     @IsString()
     city?: string;
 
-    /** 
+    /**
      * Country where the company is located
      * Example: "France", "Belgique"
      */
@@ -105,7 +105,7 @@ export class UpdateCompanyDto {
     @IsString()
     country?: string;
 
-    /** 
+    /**
      * Account validation status
      * Set to true when the company account has been verified and approved by administrators
      * Controls whether the company can access full platform features
@@ -114,7 +114,7 @@ export class UpdateCompanyDto {
     @IsBoolean()
     isValid?: boolean;
 
-    /** 
+    /**
      * Logo URL or file path for the company
      * Used for branding and visual identification on the platform
      */
@@ -123,11 +123,18 @@ export class UpdateCompanyDto {
     logo?: string;
 
     /**
+     * Internship posts associated with the company
+     */
+    @IsOptional()
+    @IsMongoId({ each: true })
+    posts?: string[];
+
+    /**
      * Constructs an UpdateCompanyDto instance
-     * 
+     *
      * @param partial - Partial company data to initialize the DTO
      *                  Only provided fields will be set, others remain undefined
-     * 
+     *
      * @example
      * ```typescript
      * const dto = new UpdateCompanyDto({

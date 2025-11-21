@@ -1,6 +1,41 @@
 import { validate } from 'class-validator';
-import { CreateUserDto } from '../../../../src/user/dto/create-user.dto';
+import { CreateUserDto } from '../../../../src/user/dto/createUser.dto';
 import { Role } from '../../../../src/common/roles/roles.enum';
+
+describe('CreateUserDto - decorator branches', () => {
+    it('should validate role enum decorator', async () => {
+        const dto = new CreateUserDto();
+        dto.email = 'test@test.com';
+        dto.password = 'Password123!';
+        dto.role = Role.STUDENT;
+
+        const errors = await validate(dto);
+        expect(errors).toHaveLength(0);
+    });
+
+    it('should fail when role is invalid enum value', async () => {
+        const dto = new CreateUserDto();
+        dto.email = 'test@test.com';
+        dto.password = 'Password123!';
+        dto.role = 'INVALID_ROLE' as any;
+
+        const errors = await validate(dto);
+        expect(errors.length).toBeGreaterThan(0);
+        expect(errors[0].property).toBe('role');
+    });
+
+    it('should validate all Role enum values', async () => {
+        for (const role of Object.values(Role)) {
+            const dto = new CreateUserDto();
+            dto.email = 'test@test.com';
+            dto.password = 'Password123!';
+            dto.role = role;
+
+            const errors = await validate(dto);
+            expect(errors).toHaveLength(0);
+        }
+    });
+});
 
 describe('CreateUserDto', () => {
     describe('Validation', () => {
@@ -53,7 +88,7 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const emailError = errors.find(e => e.property === 'email');
+            const emailError = errors.find((e) => e.property === 'email');
             expect(emailError).toBeDefined();
             expect(emailError?.constraints?.isEmail).toBeDefined();
         });
@@ -66,7 +101,7 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const emailError = errors.find(e => e.property === 'email');
+            const emailError = errors.find((e) => e.property === 'email');
             expect(emailError).toBeDefined();
             expect(emailError?.constraints?.isEmail).toBeDefined();
         });
@@ -79,7 +114,7 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const emailError = errors.find(e => e.property === 'email');
+            const emailError = errors.find((e) => e.property === 'email');
             expect(emailError).toBeDefined();
         });
 
@@ -112,7 +147,7 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 
@@ -124,7 +159,7 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
             expect(passwordError?.constraints?.isStrongPassword).toBeDefined();
         });
@@ -137,7 +172,7 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 
@@ -149,7 +184,7 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 
@@ -161,7 +196,7 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 
@@ -173,7 +208,7 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 
@@ -185,7 +220,7 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 
@@ -218,7 +253,7 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const roleError = errors.find(e => e.property === 'role');
+            const roleError = errors.find((e) => e.property === 'role');
             expect(roleError).toBeDefined();
             expect(roleError?.constraints?.isEnum).toBeDefined();
         });
@@ -231,7 +266,7 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const roleError = errors.find(e => e.property === 'role');
+            const roleError = errors.find((e) => e.property === 'role');
             expect(roleError).toBeDefined();
             expect(roleError?.constraints?.isEnum).toBeDefined();
         });
@@ -244,7 +279,7 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const roleError = errors.find(e => e.property === 'role');
+            const roleError = errors.find((e) => e.property === 'role');
             expect(roleError).toBeDefined();
         });
 
@@ -285,8 +320,8 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            
-            const errorProperties = errors.map(e => e.property);
+
+            const errorProperties = errors.map((e) => e.property);
             expect(errorProperties).toContain('email');
             expect(errorProperties).toContain('password');
             expect(errorProperties).toContain('role');
@@ -300,8 +335,8 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            
-            const errorProperties = errors.map(e => e.property);
+
+            const errorProperties = errors.map((e) => e.property);
             expect(errorProperties).toContain('email');
             expect(errorProperties).toContain('password');
         });
@@ -314,8 +349,8 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            
-            const errorProperties = errors.map(e => e.property);
+
+            const errorProperties = errors.map((e) => e.property);
             expect(errorProperties).toContain('email');
             expect(errorProperties).toContain('role');
         });
@@ -328,8 +363,8 @@ describe('CreateUserDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            
-            const errorProperties = errors.map(e => e.property);
+
+            const errorProperties = errors.map((e) => e.property);
             expect(errorProperties).toContain('password');
             expect(errorProperties).toContain('role');
         });

@@ -11,7 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { CompanyModule } from '../../../src/company/company.module';
 import { AuthModule } from '../../../src/auth/auth.module';
 import { Company, CompanyDocument, StructureType, LegalStatus } from '../../../src/company/company.schema';
-import { NafCode } from '../../../src/company/naf-codes.enum';
+import { NafCode } from '../../../src/company/nafCodes.enum';
 import { Role } from '../../../src/common/roles/roles.enum';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
@@ -71,8 +71,8 @@ describe('Company Integration Tests', () => {
             })
             .compile();
 
-    // Disable Nest logger during tests to avoid noisy output
-    app = moduleFixture.createNestApplication({ logger: false });
+        // Disable Nest logger during tests to avoid noisy output
+        app = moduleFixture.createNestApplication({ logger: false });
         app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
         await app.init();
 
@@ -327,7 +327,13 @@ describe('Company Integration Tests', () => {
             const hashed2 = await bcrypt.hash('StrongP@ss2', 10);
 
             await companyModel.create([
-                { role: Role.COMPANY, email: 'company1@test.com', password: hashed1, name: 'Company 1', isValid: false },
+                {
+                    role: Role.COMPANY,
+                    email: 'company1@test.com',
+                    password: hashed1,
+                    name: 'Company 1',
+                    isValid: false,
+                },
                 { role: Role.COMPANY, email: 'company2@test.com', password: hashed2, name: 'Company 2', isValid: true },
             ]);
 
@@ -663,7 +669,9 @@ describe('Company Integration Tests', () => {
                 .expect(204);
 
             const deleted = await companyModel.findById(company._id);
-            expect(deleted).toBeNull();
+            expect(deleted).not.toBeNull();
+            expect(deleted.deletedAt).toBeDefined();
+            expect(deleted.deletedAt).toBeInstanceOf(Date);
         });
 
         it('should delete company with COMPANY role', async () => {
@@ -681,7 +689,9 @@ describe('Company Integration Tests', () => {
                 .expect(204);
 
             const deleted = await companyModel.findById(company._id);
-            expect(deleted).toBeNull();
+            expect(deleted).not.toBeNull();
+            expect(deleted.deletedAt).toBeDefined();
+            expect(deleted.deletedAt).toBeInstanceOf(Date);
         });
 
         it('should fail with STUDENT role (forbidden)', async () => {
@@ -724,12 +734,12 @@ describe('Company Integration Tests', () => {
                 .expect(400);
         });
 
-        it('should not fail when deleting non-existent company', async () => {
+        it('should return 404 when deleting non-existent company', async () => {
             const nonExistentId = new Types.ObjectId();
             await request(app.getHttpServer())
                 .delete(`/api/companies/${nonExistentId}`)
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
-                .expect(204);
+                .expect(404);
         });
 
         it('should deny COMPANY role from deleting another company (companyA cannot delete companyB)', async () => {
@@ -917,9 +927,27 @@ describe('Company Integration Tests', () => {
             const hashed = await bcrypt.hash('StrongP@ss1', 10);
 
             await companyModel.create([
-                { role: Role.COMPANY, email: 'first@test.com', password: hashed, name: 'First Company', isValid: false },
-                { role: Role.COMPANY, email: 'second@test.com', password: hashed, name: 'Second Company', isValid: false },
-                { role: Role.COMPANY, email: 'third@test.com', password: hashed, name: 'Third Company', isValid: false },
+                {
+                    role: Role.COMPANY,
+                    email: 'first@test.com',
+                    password: hashed,
+                    name: 'First Company',
+                    isValid: false,
+                },
+                {
+                    role: Role.COMPANY,
+                    email: 'second@test.com',
+                    password: hashed,
+                    name: 'Second Company',
+                    isValid: false,
+                },
+                {
+                    role: Role.COMPANY,
+                    email: 'third@test.com',
+                    password: hashed,
+                    name: 'Third Company',
+                    isValid: false,
+                },
             ]);
 
             const res = await request(app.getHttpServer()).get('/api/companies').expect(200);
@@ -954,7 +982,6 @@ describe('Company Integration Tests', () => {
     });
 
     describe('PATCH /api/companies/:id - Additional Update Tests', () => {
-
         it('should update enum field to different value', async () => {
             const hashed = await bcrypt.hash('StrongP@ss1', 10);
             const company = await companyModel.create({
@@ -1118,7 +1145,9 @@ describe('Company Integration Tests', () => {
                 .expect(204);
 
             company = await companyModel.findById(companyId).lean();
-            expect(company).toBeNull();
+            expect(company).not.toBeNull();
+            expect(company.deletedAt).toBeDefined();
+            expect(company.deletedAt).toBeInstanceOf(Date);
         });
 
         it('should correctly hash different passwords', async () => {

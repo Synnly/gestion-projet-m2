@@ -1,12 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { NotFoundException } from '@nestjs/common';
 import { CompanyService } from '../../../src/company/company.service';
 import { Company, CompanyDocument, StructureType, LegalStatus } from '../../../src/company/company.schema';
 import { CreateCompanyDto } from '../../../src/company/dto/createCompany.dto';
 import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
-import { NafCode } from '../../../src/company/naf-codes.enum';
-import * as bcrypt from 'bcrypt';
+import { NafCode } from '../../../src/company/nafCodes.enum';
+import { PostService } from '../../../src/post/post.service';
 
 describe('CompanyService', () => {
     let service: CompanyService;
@@ -21,6 +22,19 @@ describe('CompanyService', () => {
     };
 
     const mockExec = jest.fn();
+    const mockPostService = {
+        findOne: jest.fn(),
+    };
+    const setupFindMock = () => {
+        const populate = jest.fn().mockReturnValue({ exec: mockExec });
+        mockCompanyModel.find.mockReturnValue({ populate });
+        return populate;
+    };
+    const setupFindOnePopulate = () => {
+        const populate = jest.fn().mockReturnValue({ exec: mockExec });
+        mockCompanyModel.findOne.mockReturnValue({ populate });
+        return populate;
+    };
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -29,6 +43,10 @@ describe('CompanyService', () => {
                 {
                     provide: getModelToken(Company.name),
                     useValue: mockCompanyModel,
+                },
+                {
+                    provide: PostService,
+                    useValue: mockPostService,
                 },
             ],
         }).compile();
@@ -61,9 +79,7 @@ describe('CompanyService', () => {
             ];
 
             mockExec.mockResolvedValue(companies);
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
 
             const result = await service.findAll();
 
@@ -75,9 +91,7 @@ describe('CompanyService', () => {
 
     it('should return an empty array when findAll is called and no companies exist', async () => {
             mockExec.mockResolvedValue([]);
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
 
             const result = await service.findAll();
 
@@ -106,9 +120,7 @@ describe('CompanyService', () => {
             ];
 
             mockExec.mockResolvedValue(companies);
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
 
             const result = await service.findAll();
 
@@ -128,9 +140,7 @@ describe('CompanyService', () => {
             ];
 
             mockExec.mockResolvedValue(companies);
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
 
             await service.findAll();
 
@@ -140,9 +150,7 @@ describe('CompanyService', () => {
     it('should throw when findAll encounters a database error', async () => {
             const error = new Error('Database connection error');
             mockExec.mockRejectedValue(error);
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
 
             await expect(service.findAll()).rejects.toThrow('Database connection error');
             expect(mockCompanyModel.find).toHaveBeenCalledTimes(1);
@@ -158,9 +166,7 @@ describe('CompanyService', () => {
             }));
 
             mockExec.mockResolvedValue(companies);
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
 
             const result = await service.findAll();
 
@@ -179,9 +185,7 @@ describe('CompanyService', () => {
             };
 
             mockExec.mockResolvedValue(company);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             const result = await service.findOne('507f1f77bcf86cd799439011');
 
@@ -196,9 +200,7 @@ describe('CompanyService', () => {
 
     it('should return null when findOne is called with a non-existent id', async () => {
             mockExec.mockResolvedValue(null);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             const result = await service.findOne('507f1f77bcf86cd799439999');
 
@@ -211,9 +213,7 @@ describe('CompanyService', () => {
 
     it('should return null when findOne is called for a deleted company', async () => {
             mockExec.mockResolvedValue(null);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             const result = await service.findOne('507f1f77bcf86cd799439011');
 
@@ -242,9 +242,7 @@ describe('CompanyService', () => {
             };
 
             mockExec.mockResolvedValue(company);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             const result = await service.findOne('507f1f77bcf86cd799439011');
 
@@ -262,9 +260,7 @@ describe('CompanyService', () => {
             };
 
             mockExec.mockResolvedValue(company);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             const result = await service.findOne('507f1f77bcf86cd799439011');
 
@@ -276,9 +272,7 @@ describe('CompanyService', () => {
     it('should throw when findOne encounters a database error', async () => {
             const error = new Error('Database error');
             mockExec.mockRejectedValue(error);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             await expect(service.findOne('507f1f77bcf86cd799439011')).rejects.toThrow('Database error');
             expect(mockCompanyModel.findOne).toHaveBeenCalledTimes(1);
@@ -289,9 +283,7 @@ describe('CompanyService', () => {
 
             for (const id of ids) {
                 mockExec.mockResolvedValue({ _id: id, email: 'test@example.com', name: 'Test' });
-                mockCompanyModel.findOne.mockReturnValue({
-                    exec: mockExec,
-                });
+                setupFindOnePopulate();
 
                 await service.findOne(id);
 
@@ -728,25 +720,25 @@ it('should throw when create encounters a database error', async () => {
     });
 
     describe('remove', () => {
-    it('should delete a company when remove is called with a valid id', async () => {
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndDelete.mockReturnValue({
+    it('should soft-delete a company when remove is called with a valid id', async () => {
+            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011', deletedAt: new Date() });
+            mockCompanyModel.findOneAndUpdate.mockReturnValue({
                 exec: mockExec,
             });
 
             await service.remove('507f1f77bcf86cd799439011');
 
-            expect(mockCompanyModel.findOneAndDelete).toHaveBeenCalledWith({
-                _id: '507f1f77bcf86cd799439011',
-                deletedAt: { $exists: false },
-            });
-            expect(mockCompanyModel.findOneAndDelete).toHaveBeenCalledTimes(1);
+            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
+                expect.objectContaining({ $set: { deletedAt: expect.any(Date) } }),
+            );
+            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
             expect(mockExec).toHaveBeenCalledTimes(1);
         });
 
-    it('should return void after successful deletion when remove resolves', async () => {
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndDelete.mockReturnValue({
+    it('should return void after successful soft-delete when remove resolves', async () => {
+            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011', deletedAt: new Date() });
+            mockCompanyModel.findOneAndUpdate.mockReturnValue({
                 exec: mockExec,
             });
 
@@ -755,60 +747,60 @@ it('should throw when create encounters a database error', async () => {
             expect(result).toBeUndefined();
         });
 
-    it('should only delete non-deleted companies when remove is called', async () => {
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndDelete.mockReturnValue({
+    it('should only soft-delete non-deleted companies when remove is called', async () => {
+            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011', deletedAt: new Date() });
+            mockCompanyModel.findOneAndUpdate.mockReturnValue({
                 exec: mockExec,
             });
 
             await service.remove('507f1f77bcf86cd799439011');
 
-            expect(mockCompanyModel.findOneAndDelete).toHaveBeenCalledWith({
-                _id: '507f1f77bcf86cd799439011',
-                deletedAt: { $exists: false },
-            });
+            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
+                expect.objectContaining({ $set: { deletedAt: expect.any(Date) } }),
+            );
         });
 
-    it('should handle deletion of non-existent company when remove is called with missing id', async () => {
+    it('should throw NotFoundException when removing non-existent company', async () => {
             mockExec.mockResolvedValue(null);
-            mockCompanyModel.findOneAndDelete.mockReturnValue({
+            mockCompanyModel.findOneAndUpdate.mockReturnValue({
                 exec: mockExec,
             });
 
-            await service.remove('507f1f77bcf86cd799439999');
-
-            expect(mockCompanyModel.findOneAndDelete).toHaveBeenCalledWith({
-                _id: '507f1f77bcf86cd799439999',
-                deletedAt: { $exists: false },
-            });
+            await expect(service.remove('507f1f77bcf86cd799439999')).rejects.toThrow(
+                NotFoundException,
+            );
+            await expect(service.remove('507f1f77bcf86cd799439999')).rejects.toThrow(
+                'Company not found or already deleted',
+            );
         });
 
     it('should throw when remove encounters a database error', async () => {
             const error = new Error('Database error');
             mockExec.mockRejectedValue(error);
-            mockCompanyModel.findOneAndDelete.mockReturnValue({
+            mockCompanyModel.findOneAndUpdate.mockReturnValue({
                 exec: mockExec,
             });
 
             await expect(service.remove('507f1f77bcf86cd799439011')).rejects.toThrow('Database error');
-            expect(mockCompanyModel.findOneAndDelete).toHaveBeenCalledTimes(1);
+            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
         });
 
-    it('should delete companies with different ids when remove is called for each id', async () => {
+    it('should soft-delete companies with different ids when remove is called for each id', async () => {
             const ids = ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012', '507f1f77bcf86cd799439013'];
 
             for (const id of ids) {
-                mockExec.mockResolvedValue({ _id: id });
-                mockCompanyModel.findOneAndDelete.mockReturnValue({
+                mockExec.mockResolvedValue({ _id: id, deletedAt: new Date() });
+                mockCompanyModel.findOneAndUpdate.mockReturnValue({
                     exec: mockExec,
                 });
 
                 await service.remove(id);
 
-                expect(mockCompanyModel.findOneAndDelete).toHaveBeenCalledWith({
-                    _id: id,
-                    deletedAt: { $exists: false },
-                });
+                expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
+                    { _id: id, deletedAt: { $exists: false } },
+                    expect.objectContaining({ $set: { deletedAt: expect.any(Date) } }),
+                );
             }
         });
     });
@@ -829,9 +821,7 @@ it('should throw when create encounters a database error', async () => {
 
             mockCompanyModel.create.mockResolvedValue(createdCompany);
             mockExec.mockResolvedValue(createdCompany);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             await service.create(createDto);
             const result = await service.findOne('507f1f77bcf86cd799439011');
@@ -897,9 +887,7 @@ it('should throw when create encounters a database error', async () => {
                 .mockResolvedValueOnce({ _id: '507f1f77bcf86cd799439011' })
                 .mockResolvedValueOnce(companiesAfterDelete);
 
-            mockCompanyModel.find.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindMock();
             mockCompanyModel.findOneAndDelete.mockReturnValue({
                 exec: mockExec,
             });
@@ -917,9 +905,7 @@ it('should throw when create encounters a database error', async () => {
     describe('Edge cases', () => {
     it('should return null when findOne returns null', async () => {
             mockExec.mockResolvedValue(null);
-            mockCompanyModel.findOne.mockReturnValue({
-                exec: mockExec,
-            });
+            setupFindOnePopulate();
 
             const result = await service.findOne('507f1f77bcf86cd799439011');
 

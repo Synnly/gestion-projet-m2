@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { NafCode } from './naf-codes.enum';
+import { NafCode } from './nafCodes.enum';
+import { Post } from '../post/post.schema';
 
 /**
  * Enumeration of organizational structure types
@@ -107,6 +108,17 @@ export class Company {
     /** Whether the company account has been validated by an administrator */
     @Prop({ default: false })
     isValid?: boolean;
+
+    /** Date when the company was soft-deleted (for soft-delete functionality) */
+    @Prop({ required: false })
+    deletedAt?: Date;
+
+    /** Internships posts associated with the company */
+    @Prop({
+        type: [{ type: Types.ObjectId, ref: 'Post' }],
+        default: [],
+    })
+    posts: Post[];
 }
 
 /**

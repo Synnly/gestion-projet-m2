@@ -1,6 +1,7 @@
 import { StructureType, LegalStatus } from '../company.schema';
-import { NafCode } from '../naf-codes.enum';
+import { NafCode } from '../nafCodes.enum';
 import { Types } from 'mongoose';
+import { PostDto } from '../../post/dto/post.dto';
 
 /**
  * Data Transfer Object for company responses
@@ -46,8 +47,11 @@ export class CompanyDto {
     /** Whether the company account is validated */
     isValid?: boolean;
 
-     /** Logo URL or path for the company */
+    /** Logo URL or path for the company */
     logo?: string;
+
+    /** Internships posts associated with the company */
+    posts: PostDto[];
 
     /**
      * Constructs a CompanyDto instance
