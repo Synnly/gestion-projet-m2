@@ -93,8 +93,7 @@ describe('Post Integration Tests', () => {
             role: Role.COMPANY,
             isValid: true,
         });
-
-
+      
         const loginRes = await request(app.getHttpServer())
             .post('/api/auth/login')
             .send({ email: 'company@test.com', password: 'TestP@ss123' });
