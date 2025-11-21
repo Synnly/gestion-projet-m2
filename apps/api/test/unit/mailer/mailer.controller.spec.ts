@@ -124,6 +124,46 @@ describe('MailerController', () => {
                 }),
             ).rejects.toBeInstanceOf(NotFoundException);
         });
+
+        it('should throw BadRequestException when password reset not verified', async () => {
+            mockMailerService.updatePassword.mockRejectedValue(
+                new Error('Password reset not verified. Please verify OTP first.'),
+            );
+
+            await expect(
+                controller.resetPassword({
+                    email: 'user@example.com',
+                    otp: '123456',
+                    newPassword: 'NewSecurePass123!',
+                }),
+            ).rejects.toThrow('Password reset not verified. Please verify OTP first.');
+        });
+
+        it('should throw BadRequestException when validation expired', async () => {
+            mockMailerService.updatePassword.mockRejectedValue(
+                new Error('Password reset validation expired. Please verify OTP again.'),
+            );
+
+            await expect(
+                controller.resetPassword({
+                    email: 'user@example.com',
+                    otp: '123456',
+                    newPassword: 'NewSecurePass123!',
+                }),
+            ).rejects.toThrow('Password reset validation expired. Please verify OTP again.');
+        });
+
+        it('should throw generic BadRequestException for unknown errors in resetPassword', async () => {
+            mockMailerService.updatePassword.mockRejectedValue(new Error('Database connection failed'));
+
+            await expect(
+                controller.resetPassword({
+                    email: 'user@example.com',
+                    otp: '123456',
+                    newPassword: 'NewSecurePass123!',
+                }),
+            ).rejects.toThrow('Failed to reset password');
+        });
     });
 
     describe('verifyOtp', () => {
@@ -151,6 +191,22 @@ describe('MailerController', () => {
 
             await expect(controller.verifyOtp({ email: 'user@example.com', otp: '000000' })).rejects.toBeInstanceOf(
                 BadRequestException,
+            );
+        });
+
+        it('should throw NotFoundException when user not found in verifyOtp', async () => {
+            mockMailerService.verifyPasswordResetOtp.mockRejectedValue(new Error('User not found'));
+
+            await expect(controller.verifyOtp({ email: 'nonexistent@example.com', otp: '123456' })).rejects.toThrow(
+                'No account found with this email',
+            );
+        });
+
+        it('should throw generic BadRequestException for unknown errors in verifyOtp', async () => {
+            mockMailerService.verifyPasswordResetOtp.mockRejectedValue(new Error('Some unknown error'));
+
+            await expect(controller.verifyOtp({ email: 'user@example.com', otp: '123456' })).rejects.toThrow(
+                'Failed to verify OTP',
             );
         });
     });

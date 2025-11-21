@@ -303,6 +303,56 @@ describe('MailerController (Integration)', () => {
 
             expect(response.body.message).toContain('Too many verification attempts');
         });
+
+        it('should reject password reset without OTP verification', async () => {
+            const hashedPassword = await bcrypt.hash('Password123!', 10);
+            
+            await userModel.create({
+                email: 'test@example.com',
+                password: hashedPassword,
+                firstName: 'Test',
+                lastName: 'User',
+                isVerified: true,
+                role: Role.STUDENT,
+            });
+
+            // Try to reset password without verifying OTP first
+            const response = await request(app.getHttpServer())
+                .post('/api/mailer/password/reset')
+                .send({
+                    email: 'test@example.com',
+                    newPassword: 'NewPassword123!',
+                })
+                .expect(400);
+
+            expect(response.body.message).toContain('Password reset not verified');
+        });
+
+        it('should reject password reset if validation window expired', async () => {
+            const hashedPassword = await bcrypt.hash('Password123!', 10);
+            
+            await userModel.create({
+                email: 'test@example.com',
+                password: hashedPassword,
+                firstName: 'Test',
+                lastName: 'User',
+                isVerified: true,
+                role: Role.STUDENT,
+                passwordResetValidatedAt: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes ago
+                passwordResetValidatedExpires: new Date(Date.now() - 5 * 60 * 1000), // Expired 5 minutes ago
+            });
+
+            // Try to reset password after validation expired
+            const response = await request(app.getHttpServer())
+                .post('/api/mailer/password/reset')
+                .send({
+                    email: 'test@example.com',
+                    newPassword: 'NewPassword123!',
+                })
+                .expect(400);
+
+            expect(response.body.message).toContain('Password reset validation expired');
+        });
     });
 
     describe('POST /auth/send-verification', () => {

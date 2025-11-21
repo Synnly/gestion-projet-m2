@@ -201,14 +201,37 @@ export class S3Service implements OnModuleInit {
     }
 
     /**
-     * Check if a file exists in the bucket
-     * @param fileName Full path of the file
-     * @returns True if file exists, false otherwise
+     * Check if a file exists in the bucket (ignores extension)
+     * @param fileName Full path of the file (extension is ignored)
+     * @returns True if file exists (with any extension), false otherwise
      */
     async fileExists(fileName: string): Promise<boolean> {
         try {
-            await this.minioClient.statObject(this.bucket, fileName);
-            return true;
+            // Remove extension from fileName to get base name
+            const baseFileName = fileName.substring(0, fileName.lastIndexOf('.'));
+            
+            // List all objects in bucket with this base name prefix
+            const stream = this.minioClient.listObjectsV2(this.bucket, baseFileName, false);
+            
+            return new Promise((resolve, reject) => {
+                let found = false;
+                
+                stream.on('data', (obj) => {
+                    // Check if object name starts with base name (ignoring extension)
+                    if (obj.name && obj.name.startsWith(baseFileName + '.')) {
+                        found = true;
+                        stream.destroy();
+                    }
+                });
+                
+                stream.on('end', () => {
+                    resolve(found);
+                });
+                
+                stream.on('error', (err) => {
+                    resolve(false);
+                });
+            });
         } catch {
             return false;
         }

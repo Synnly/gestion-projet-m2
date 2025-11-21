@@ -27,6 +27,11 @@ describe('FileValidationPipe (extensions only)', () => {
         await expect(pipe.transform(dto)).rejects.toThrow(BadRequestException);
     });
 
+    it('rejects filename ending with dot (empty extension)', async () => {
+        const dto = { originalFilename: 'filename.', fileType: 'logo' };
+        await expect(pipe.transform(dto)).rejects.toThrow('File must have an extension');
+    });
+
     it('rejects invalid extension for logo', async () => {
         const dto = { originalFilename: 'document.pdf', fileType: 'logo' };
         await expect(pipe.transform(dto)).rejects.toThrow(BadRequestException);

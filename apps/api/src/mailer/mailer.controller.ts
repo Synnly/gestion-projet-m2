@@ -79,11 +79,11 @@ export class MailerController {
     }
 
     /**
-     * Reset user password using OTP verification
-     * @param dto Contains email, OTP code and new password
+     * Reset user password after OTP verification
+     * @param dto Contains email and new password (OTP must have been verified via /verify-otp first)
      * @returns Success response confirming password reset
      * @throws {NotFoundException} If no account is found with the provided email
-     * @throws {BadRequestException} If OTP is invalid, expired, or password reset fails
+     * @throws {BadRequestException} If OTP was not verified, validation expired, or password reset fails
      */
     @Post('password/reset')
     @HttpCode(HttpStatus.OK)
@@ -92,8 +92,7 @@ export class MailerController {
         dto: ResetPasswordDto,
     ) {
         try {
-
-            // Update password
+            // Update password (will verify that OTP was validated recently)
             await this.mailerService.updatePassword(dto.email, dto.newPassword);
 
             return {
@@ -103,6 +102,12 @@ export class MailerController {
         } catch (error) {
             if (error.message === 'User not found') {
                 throw new NotFoundException('No account found with this email');
+            }
+            if (
+                error.message === 'Password reset not verified. Please verify OTP first.' ||
+                error.message === 'Password reset validation expired. Please verify OTP again.'
+            ) {
+                throw new BadRequestException(error.message);
             }
             throw new BadRequestException('Failed to reset password');
         }

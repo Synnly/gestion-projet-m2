@@ -221,14 +221,38 @@ export class MailerService {
      * @param email Email address of the user
      * @param newPassword New password to set for the user
      * @returns True if password was updated successfully
-     * @throws {Error} If user is not found
+     * @throws {Error} If user is not found, OTP not verified, or validation expired
      */
     async updatePassword(email: string, newPassword: string): Promise<boolean> {
         const normalized = email.toLowerCase();
         const user = await this.userModel.findOne({ email: normalized });
         if (!user) throw new NotFoundException('User not found');
 
+        // Verify that OTP was successfully validated
+        if (!user.passwordResetValidatedAt || !user.passwordResetValidatedExpires) {
+            throw new BadRequestException('Password reset not verified. Please verify OTP first.');
+        }
+
+        // Check if validation window has expired
+        const now = new Date();
+        if (now.getTime() > user.passwordResetValidatedExpires.getTime()) {
+            // Clear expired validation
+            user.passwordResetCode = null;
+            user.passwordResetExpires = null;
+            user.passwordResetAttempts = 0;
+            user.passwordResetValidatedAt = null;
+            user.passwordResetValidatedExpires = null;
+            await user.save();
+            throw new BadRequestException('Password reset validation expired. Please verify OTP again.');
+        }
+
+        // Update password and clear all password reset related fields (single-use)
         user.password = newPassword;
+        user.passwordResetCode = null;
+        user.passwordResetExpires = null;
+        user.passwordResetAttempts = 0;
+        user.passwordResetValidatedAt = null;
+        user.passwordResetValidatedExpires = null;
         await user.save();
         return true;
     }
@@ -339,10 +363,11 @@ export class MailerService {
             throw new BadRequestException('Invalid OTP');
         }
 
-        // Success: Clear OTP (single-use) but keep user object for password update
-        user.passwordResetCode = null;
-        user.passwordResetExpires = null;
-        user.passwordResetAttempts = 0;
+        // Success: Mark OTP as validated with a short expiration window (5 minutes)
+        // This allows the user to call resetPassword endpoint within this window
+        const validationWindow = 5 * 60 * 1000; // 5 minutes
+        user.passwordResetValidatedAt = new Date();
+        user.passwordResetValidatedExpires = new Date(now.getTime() + validationWindow);
         await user.save();
 
         return user;
