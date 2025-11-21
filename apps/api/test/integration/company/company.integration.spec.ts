@@ -71,8 +71,8 @@ describe('Company Integration Tests', () => {
             })
             .compile();
 
-    // Disable Nest logger during tests to avoid noisy output
-    app = moduleFixture.createNestApplication({ logger: false });
+        // Disable Nest logger during tests to avoid noisy output
+        app = moduleFixture.createNestApplication({ logger: false });
         app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
         await app.init();
 
@@ -327,7 +327,13 @@ describe('Company Integration Tests', () => {
             const hashed2 = await bcrypt.hash('StrongP@ss2', 10);
 
             await companyModel.create([
-                { role: Role.COMPANY, email: 'company1@test.com', password: hashed1, name: 'Company 1', isValid: false },
+                {
+                    role: Role.COMPANY,
+                    email: 'company1@test.com',
+                    password: hashed1,
+                    name: 'Company 1',
+                    isValid: false,
+                },
                 { role: Role.COMPANY, email: 'company2@test.com', password: hashed2, name: 'Company 2', isValid: true },
             ]);
 
@@ -921,9 +927,27 @@ describe('Company Integration Tests', () => {
             const hashed = await bcrypt.hash('StrongP@ss1', 10);
 
             await companyModel.create([
-                { role: Role.COMPANY, email: 'first@test.com', password: hashed, name: 'First Company', isValid: false },
-                { role: Role.COMPANY, email: 'second@test.com', password: hashed, name: 'Second Company', isValid: false },
-                { role: Role.COMPANY, email: 'third@test.com', password: hashed, name: 'Third Company', isValid: false },
+                {
+                    role: Role.COMPANY,
+                    email: 'first@test.com',
+                    password: hashed,
+                    name: 'First Company',
+                    isValid: false,
+                },
+                {
+                    role: Role.COMPANY,
+                    email: 'second@test.com',
+                    password: hashed,
+                    name: 'Second Company',
+                    isValid: false,
+                },
+                {
+                    role: Role.COMPANY,
+                    email: 'third@test.com',
+                    password: hashed,
+                    name: 'Third Company',
+                    isValid: false,
+                },
             ]);
 
             const res = await request(app.getHttpServer()).get('/api/companies').expect(200);
@@ -958,7 +982,6 @@ describe('Company Integration Tests', () => {
     });
 
     describe('PATCH /api/companies/:id - Additional Update Tests', () => {
-
         it('should update enum field to different value', async () => {
             const hashed = await bcrypt.hash('StrongP@ss1', 10);
             const company = await companyModel.create({

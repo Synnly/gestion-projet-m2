@@ -1,7 +1,9 @@
-import { Expose, Exclude } from 'class-transformer';
+import { Expose, Exclude, Type } from 'class-transformer';
 import { StructureType, LegalStatus } from '../company.schema';
 import { NafCode } from '../nafCodes.enum';
 import { Types } from 'mongoose';
+import { PostDto } from '../../post/dto/post.dto';
+import { ValidateNested } from 'class-validator';
 
 /**
  * Data Transfer Object for company responses
@@ -64,6 +66,12 @@ export class CompanyDto {
     /** Logo URL or path for the company */
     @Expose()
     logo?: string;
+
+    /** Internships posts associated with the company */
+    @Expose()
+    @ValidateNested({ each: true })
+    @Type(() => PostDto)
+    posts: PostDto[];
 
     /**
      * Constructs a CompanyDto instance

@@ -12,9 +12,9 @@ function isProfilComplete(profile: companyProfile | null): boolean {
     return profile !== null && completeProfilFormCheck.safeParse(profile).success;
 }
 /**
-* @description Middleware to ensure user profile completeness and verification status
-* @param {Object} param0 - The request object to get target URL
-*/
+ * @description Middleware to ensure user profile completeness and verification status
+ * @param {Object} param0 - The request object to get target URL
+ */
 export const completeProfilMiddleware = async ({ request }: { request: Request }) => {
     await userStore.persist.rehydrate();
     const API_URL = import.meta.env.VITE_APIURL;
@@ -50,6 +50,7 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
         }
 
         const newProfile: companyProfile = await profileRes.json();
+        console.log(newProfile);
         setProfil(newProfile);
     }
     const newProfile: companyProfileStoreType = profileStore.getState();

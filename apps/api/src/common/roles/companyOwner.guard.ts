@@ -25,7 +25,7 @@ export class CompanyOwnerGuard implements CanActivate {
         if (user.role !== Role.COMPANY) {
             throw new ForbiddenException("You can't access this resource");
         }
-        const companyId = params?.id;
+        const companyId = params?.companyId;
         const userSub = user.sub;
 
         // If token does not carry a subject or route id is missing, deny
