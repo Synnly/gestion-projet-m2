@@ -35,6 +35,7 @@ export class TokensMiddleware implements NestMiddleware {
                 const accessPayload = this.jwtService.verify<AccessTokenPayload>(token, {
                     secret: this.ACCESS_TOKEN_SECRET,
                 });
+                req['accessToken'] = token;
                 this.setUser(req, accessPayload);
             } catch {
                 // Access token invalid, no user set
