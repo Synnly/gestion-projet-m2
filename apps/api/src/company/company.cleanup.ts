@@ -1,4 +1,4 @@
-// This file is made to check everyday for company set as "deleted". If they were set as "deleted" for 30 days, they get removed from the database.
+// This file is made to check everyday for companies set as "deleted". If they were set as "deleted" for 30 days, they get removed from the database.
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { CompanyService } from './company.service';
@@ -10,10 +10,10 @@ export class CompanyCleanup {
   constructor(private readonly companyService: CompanyService) {}
 
   // @Cron('*/30 * * * * *')   // Every 30 seconds (for testing)
-  @Cron(process.env.COMPANY_CLEANUP_CRON || '0 3 * * *')   // Everyday at 3AM
+  @Cron(process.env.CLEANUP_CRON || '0 3 * * *')   // Everyday at 3AM
   async deleteExpired() {
     this.logger.log('Auto-cleanup of soft-deleted companies...');
     await this.companyService.deleteExpiredCompanies();
-    this.logger.log('Cleanup completed.');
+    this.logger.log('Companies cleanup completed.');
   }
 }
