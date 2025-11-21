@@ -11,22 +11,24 @@ export class AuthGuard implements CanActivate {
     ) {}
 
     /**
-     * Validates the refresh token from the request.
+     * Validates the access token from the request.
      * @param context The execution context containing the HTTP request
      * @returns True if the token is valid
      * @throws {UnauthorizedException} if the token is missing or invalid
-     * @throws {InvalidConfigurationException} if the refresh token secret is not configured
+     * @throws {InvalidConfigurationException} if the access token secret is not configured
      */
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest<Request>();
-        const refreshToken = request['refreshToken'];
+        const accessToken = request['accessToken'];
 
-        if (!refreshToken) throw new UnauthorizedException('Refresh token not found');
+        if (!accessToken) throw new UnauthorizedException('Access token not found');
 
-        const secret = this.configService.get<string>('REFRESH_TOKEN_SECRET');
-        if (!secret) throw new InvalidConfigurationException('Refresh token secret not configured');
+        const secret = this.configService.get<string>('ACCESS_TOKEN_SECRET');
+        if (!secret) throw new InvalidConfigurationException('Access token secret not configured');
 
-        request['user'] = await this.jwtService.verifyAsync(refreshToken, { secret });
+        request['user'] = await this.jwtService.verifyAsync(accessToken, { secret }).catch(() => {
+            throw new UnauthorizedException('Invalid access token');
+        });
 
         return true;
     }
