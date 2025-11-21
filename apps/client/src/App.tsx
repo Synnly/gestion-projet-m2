@@ -14,6 +14,7 @@ import { ForgotPassword } from './user/ForgotPassword';
 import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
 import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
+import { InternshipPage } from './pages/IntershipPage';
 
 function App() {
     userStore.persist.rehydrate();
@@ -33,6 +34,7 @@ function App() {
                         { path: 'signin', element: <Login /> },
                         { path: 'forgot-password', element: <ForgotPassword /> },
                         { path: 'company/signup', element: <CompanySignup /> },
+                        { path: 'internships/list', element: <InternshipPage /> }, //Pour test le style uniquement
                     ],
                 },
                 {
