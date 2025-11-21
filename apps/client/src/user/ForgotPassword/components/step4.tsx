@@ -7,7 +7,7 @@ export function ForgotPasswordStep4() {
     useEffect(() => {
         const timer = setTimeout(() => {
             navigate('/signin');
-        }, 5000);
+        }, 3000);
 
         return () => clearTimeout(timer);
     }, [navigate]);

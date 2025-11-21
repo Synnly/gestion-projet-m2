@@ -36,18 +36,18 @@ export const CompleteProfil = () => {
     const logoFile = useFile(logoBlob, profil?.logo);
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     useEffect(() => {
-    if (!logoBlob) {
-        setLogoUrl(null);
-        return;
-    }
+        if (!logoBlob) {
+            setLogoUrl(null);
+            return;
+        }
 
-    const objectUrl = URL.createObjectURL(logoBlob);
-    setLogoUrl(objectUrl);
-   
-    return () => {
-        URL.revokeObjectURL(objectUrl);
-    };
-}, [logoBlob]); 
+        const objectUrl = URL.createObjectURL(logoBlob);
+        setLogoUrl(objectUrl);
+
+        return () => {
+            URL.revokeObjectURL(objectUrl);
+        };
+    }, [logoBlob]);
     const upload = useUploadFile();
     const {
         register,
@@ -73,16 +73,22 @@ export const CompleteProfil = () => {
 
     const { isPending, isError, error, mutateAsync } = useMutation({
         mutationFn: async (data: Omit<completeProfilFormType, 'logo'> & { logo?: string }) => {
-            const res = await fetch(`${API_URL}/api/companies/${payload.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${user.accessToken}`,
-                },
-                credentials: 'include',
-                body: JSON.stringify(data),
-            });
-            return res;
+            try {
+                const res = await fetch(`${API_URL}/api/companies/${payload.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${user.accessToken}`,
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(data),
+                });
+                return res;
+            } catch (err) {
+                if (err instanceof Error) {
+                    throw new Error('Une erreur est survenue');
+                }
+            }
         },
         onSuccess: (_data, variables) => {
             //
@@ -101,40 +107,37 @@ export const CompleteProfil = () => {
             updateProfil(payload);
         },
     });
- const onSubmit = async (data: completeProfilFormType) => {
-    const { logo: fileLogo, ...rest } = data;
+    const onSubmit = async (data: completeProfilFormType) => {
+        const { logo: fileLogo, ...rest } = data;
 
-    const base: Omit<completeProfilFormType, "logo"> = rest;
-    const dataToSend: Omit<completeProfilFormType, "logo"> & { logo?: string } = { ...base };
+        const base: Omit<completeProfilFormType, 'logo'> = rest;
+        const dataToSend: Omit<completeProfilFormType, 'logo'> & { logo?: string } = { ...base };
 
-    if (fileLogo instanceof FileList && fileLogo.length > 0) {
-        const file = fileLogo[0];
+        if (fileLogo instanceof FileList && fileLogo.length > 0) {
+            const file = fileLogo[0];
 
-        const response = await fetch(`${API_URL}/api/files/signed/logo`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ originalFilename: file.name }),
-        });
+            const response = await fetch(`${API_URL}/api/files/signed/logo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ originalFilename: file.name }),
+            });
 
-        if (!response.ok) {
-            throw new Error('Erreur lors de la récupération du lien signé');
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération du lien signé');
+            }
+
+            const { fileName: logo, uploadUrl }: SignedUrlResponse = await response.json();
+
+            await upload(file, uploadUrl);
+
+            dataToSend.logo = logo;
+        } else if (typeof fileLogo === 'string' && fileLogo) {
+            dataToSend.logo = fileLogo;
         }
-
-        const { fileName: logo, uploadUrl }: SignedUrlResponse = await response.json();
-
-        await upload(file, uploadUrl);
-
-        // On ajoute logo typé automatiquement comme string
-        dataToSend.logo = logo;
-    }
-
-    else if (typeof fileLogo === "string" && fileLogo ) {
-        dataToSend.logo = fileLogo;
-    }
-    await mutateAsync(dataToSend);
-    navigate(`/${payload.role.toLowerCase()}/dashboard`)
-};   
+        await mutateAsync(dataToSend);
+        navigate(`/${payload.role.toLowerCase()}/dashboard`);
+    };
     return (
         <div className="flex flex-col w-full min-h-screen flex-grow items-start bg-(--color-base-200)">
             <div className="w-full max-w-7xl mx-auto flex flex-col px-4 py-8 items-center">
@@ -180,10 +183,8 @@ export const CompleteProfil = () => {
                             label="Numéro SIRET"
                             placeholder="14 chiffres"
                             className={`${formInputStyle}`}
-                            register={register('siretNumber', {
-                                required: true,
-                                onChange: () => clearErrors('siretNumber'),
-                            })}
+                            register={register('siretNumber')}
+                            onChange={() => clearErrors('siretNumber')}
                             error={errors.siretNumber}
                         />
                         <div className="flex w-full flex-row">
@@ -230,10 +231,8 @@ export const CompleteProfil = () => {
                                     label="Numéro de rue"
                                     placeholder="ex:12 bis"
                                     className={`${formInputStyle}`}
-                                    register={register('streetNumber', {
-                                        required: true,
-                                        onChange: () => clearErrors('streetNumber'),
-                                    })}
+                                    register={register('streetNumber')}
+                                    onChange={() => clearErrors('streetNumber')}
                                     error={errors.streetNumber}
                                 />
                             </div>
@@ -243,10 +242,8 @@ export const CompleteProfil = () => {
                                     label="Nom de rue"
                                     placeholder="ex:Avenue des champs-élysées"
                                     className={`${formInputStyle}`}
-                                    register={register('streetName', {
-                                        required: true,
-                                        onChange: () => clearErrors('streetName'),
-                                    })}
+                                    register={register('streetName')}
+                                    onChange={() => clearErrors('streetName')}
                                     error={errors.streetName}
                                 />
                             </div>
@@ -258,10 +255,8 @@ export const CompleteProfil = () => {
                                     label="Code postal"
                                     placeholder="ex: 75008"
                                     className={`${formInputStyle}`}
-                                    register={register('postalCode', {
-                                        required: true,
-                                        onChange: () => clearErrors('postalCode'),
-                                    })}
+                                    register={register('postalCode')}
+                                    onChange={() => clearErrors('postalCode')}
                                     error={errors.postalCode}
                                 />
                             </div>
@@ -271,10 +266,8 @@ export const CompleteProfil = () => {
                                     label="Ville"
                                     placeholder="ex: Paris"
                                     className={`${formInputStyle}`}
-                                    register={register('city', {
-                                        required: true,
-                                        onChange: () => clearErrors('city'),
-                                    })}
+                                    register={register('city')}
+                                    onChange={() => clearErrors('city')}
                                     error={errors.city}
                                 />
                             </div>
@@ -285,10 +278,8 @@ export const CompleteProfil = () => {
                             label="Pays"
                             placeholder="ex: France"
                             className={`${formInputStyle}`}
-                            register={register('country', {
-                                required: true,
-                                onChange: () => clearErrors('country'),
-                            })}
+                            register={register('country')}
+                            onChange={() => clearErrors('country')}
                             error={errors.country}
                         />
                     </FormSection>

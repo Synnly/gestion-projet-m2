@@ -11,7 +11,6 @@ export const LoginForm = () => {
         register,
         handleSubmit,
         formState: { errors },
-        clearErrors,
     } = useForm<companyFormLogin>({
         mode: 'onSubmit',
     });
@@ -23,11 +22,10 @@ export const LoginForm = () => {
     return (
         <div className=" rounded-(--radius-box) flex-col flex items-center just py-10 px-5 my-5 max-w-[700px]">
             <CustomForm
-                label="Accèder à votre compte entreprise"
+                label="Accéder à votre compte"
                 role="form"
                 onSubmit={handleSubmit(onSubmit)}
                 onClick={() => {
-                    clearErrors();
                     reset();
                 }}
                 className=" flex flex-col gap-8 mt-4 items-center"
@@ -58,7 +56,7 @@ export const LoginForm = () => {
                     className="bg-primary p-3 rounded-lg cursor-pointer w-full text-black"
                 />
             </CustomForm>
-            <div className="flex flex-row justify-around w-full mt-2">
+            <div className="flex flex-row gap-5 w-full mt-2">
                 <NavLink to="/company/signup" className="mt-4 text-blue-600 underline">
                     Créer un compte entreprise
                 </NavLink>

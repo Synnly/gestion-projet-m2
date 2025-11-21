@@ -29,26 +29,34 @@ export const ForgotPasswordStep1 = ({
     const {
         register,
         handleSubmit,
+        clearErrors,
         formState: { errors },
     } = useForm<ForgotPasswordType>({
         resolver: zodResolver(passwordSchema) as Resolver<ForgotPasswordType>,
+        mode: 'onSubmit',
     });
 
     const { mutateAsync, isPending, isError, error, reset, isSuccess } = useMutation({
         mutationFn: async (data: ForgotPasswordType) => {
-            const res = await fetch(`${API_URL}/api/mailer/password/forgot`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-                credentials: 'include',
-            });
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || 'Une erreur est survenue');
+            try {
+                const res = await fetch(`${API_URL}/api/mailer/password/forgot`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                    credentials: 'include',
+                });
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message);
+                }
+                return res;
+            } catch (err) {
+                if (err instanceof Error) {
+                    throw new Error(translateError(err.message) || 'Une erreur est survenue');
+                }
             }
-            return res;
         },
     });
     const onSubmit = async (data: ForgotPasswordType) => {
@@ -81,9 +89,12 @@ export const ForgotPasswordStep1 = ({
                     placeholder="Email"
                     error={errors.email}
                     label="Email"
-                    type="email"
+                    type="text"
                     className="mt-0"
                     register={register('email')}
+                    onChange={() => {
+                        clearErrors('email');
+                    }}
                 />
 
                 <FormSubmit
@@ -108,3 +119,16 @@ export const ForgotPasswordStep1 = ({
         </>
     );
 };
+function translateError(message: string): string | undefined {
+    let translateMessage = "Une erreur est survenue, impossible d'envoyer l'e-mail";
+    if (message === 'No account found with this email') {
+        translateMessage = 'Aucun compte trouvé avec cet e-mail';
+    }
+    if (message === 'Too many requests. Please try again later.') {
+        translateMessage = 'Veuillez réessayer plus tard.';
+    }
+    if (message === 'Failed to send password reset email') {
+        translateMessage = "Échec de l'envoi de l'e-mail de réinitialisation du mot de passe";
+    }
+    return translateMessage;
+}

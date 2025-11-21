@@ -8,7 +8,6 @@ import { ForgotPasswordStep4 } from './components/step4';
 
 type forgotPasswordType = {
     email: string;
-    otp: string;
     newPassword: string;
 };
 export function ForgotPassword() {
@@ -36,7 +35,6 @@ export function ForgotPassword() {
     const sendRequest = async (data: forgotPasswordTypeStep3) => {
         const payload = {
             email: email.current,
-            otp: code.current,
             newPassword: data.password,
         };
         try {
@@ -45,6 +43,7 @@ export function ForgotPassword() {
         } catch (err) {
             if (!(err instanceof Error)) return;
 
+            console.log('err', err.message);
             if (err.message === 'Invalid OTP' || err.message === 'OTP expired') {
                 setStep(2);
                 code.current = '';
@@ -86,12 +85,7 @@ export function ForgotPassword() {
                         transition={{ duration: 0.5, ease: 'easeOut' }}
                         className="flex flex-col p-2 mb-10 bg-[var(--color-base-200)] shadow-zinc-950 rounded-[var(--radius-box)] max-w-md gap-5 justify-center"
                     >
-                        <ForgotPasswordStep2
-                            setStep={setStep}
-                            codeRef={code}
-                            errorCode={error ?? undefined}
-                            resetMain={reset}
-                        />
+                        <ForgotPasswordStep2 setStep={setStep} mailRef={email} />
                     </motion.div>
                 )}
                 {step === 3 && (

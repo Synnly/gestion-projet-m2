@@ -2,17 +2,14 @@ import { useRef, type Dispatch, type SetStateAction } from 'react';
 import { useForm } from 'react-hook-form';
 import { CodeInput } from '../../verifyMail/components/code';
 import type { VerifyEmailForm } from '../../verifyMail';
+import { useMutation } from '@tanstack/react-query';
 
 export const ForgotPasswordStep2 = ({
     setStep,
-    codeRef,
-    errorCode,
-    resetMain,
+    mailRef,
 }: {
     setStep: Dispatch<SetStateAction<number>>;
-    codeRef: React.MutableRefObject<string>;
-    errorCode?: Error;
-    resetMain: () => void;
+    mailRef: React.MutableRefObject<string>;
 }) => {
     const {
         register,
@@ -20,20 +17,52 @@ export const ForgotPasswordStep2 = ({
         setValue,
         setError,
         clearErrors,
+        reset,
         formState: { errors },
     } = useForm<VerifyEmailForm>({
         mode: 'onSubmit',
     });
 
-    const onSubmit = (data: VerifyEmailForm) => {
+    const verifyPasswordResetOtpMutation = useMutation({
+        mutationFn: async (code: string) => {
+            const API_URL = import.meta.env.VITE_APIURL;
+            try {
+                const response = await fetch(`${API_URL}/api/mailer/password/reset/verify-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: mailRef.current, otp: code }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message);
+                }
+
+                return response;
+            } catch (error) {
+                if (error instanceof Error) {
+                    throw new Error(translateError(error.message) || 'Une erreur est survenue');
+                }
+            }
+        },
+    });
+    const { isPending, isError, error, mutateAsync } = verifyPasswordResetOtpMutation;
+    const onSubmit = async (data: VerifyEmailForm) => {
         const code = `${data.code1}${data.code2}${data.code3}${data.code4}${data.code5}${data.code6}`;
-        console.log('Submitted code:', code);
         if (code.length !== 6) {
             setError('root', { message: 'Veuillez entrer un code valide de 6 chiffres.' });
             return;
         }
-        codeRef.current = code;
-        setStep(3);
+        try {
+            const res = await mutateAsync(code);
+            if (res && res.ok) {
+                setStep(3);
+            }
+        } catch {
+            reset();
+        }
     };
     /* Refs for input fields */
     const refsInputs = useRef<(HTMLInputElement | null)[]>([]);
@@ -62,18 +91,19 @@ export const ForgotPasswordStep2 = ({
                 handleSubmit={handleSubmit}
                 register={register}
                 onSubmit={onSubmit}
+                isSendingError={isError}
+                sendingError={error as Error}
+                isPending={isPending}
                 refsInputs={refsInputs}
                 errors={errors}
                 onClick={() => {
                     clearErrors();
-                    resetMain();
+                    reset();
                 }}
             />
-            {errorCode && (
-                <span className="text-red-500 mx-auto mt-1 bg-red-100 text-center p-3 text-sm">
-                    {errorCode.message}
-                </span>
-            )}
         </div>
     );
 };
+function translateError(message: string): string | undefined {
+    if (message === 'Invalid OTP') return 'Le code saisi est invalide.';
+}

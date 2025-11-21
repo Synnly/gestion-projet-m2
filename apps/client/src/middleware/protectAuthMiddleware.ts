@@ -7,7 +7,7 @@ import { userStore } from '../store/userStore';
  * @param {Request} param0.request - The request object.
  * @returns {Promise<Response|void>} - Redirects to signin if not authenticated, or to complete-profil if profile is incomplete.
  */
-export async function protectedLoader(): Promise<Response | string> {
+export async function protectedMiddleware(): Promise<Response | string> {
     const API_URL = import.meta.env.VITE_APIURL;
     const { access, set: setAccess, logout } = userStore.getState();
 

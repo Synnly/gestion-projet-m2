@@ -53,7 +53,7 @@ export function FormInput<T extends FieldValues>({
                     </button>
                 )}
             </div>
-            {error && <span className="text-red-500 mt-1 bg-red-300  p-3">{error.message}</span>}
+            {error && error.message && <span className="text-red-500 mt-1 bg-red-300 p-3">{error.message}</span>}
         </div>
     );
 }

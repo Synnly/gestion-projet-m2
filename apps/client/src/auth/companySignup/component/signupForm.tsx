@@ -28,19 +28,25 @@ export const SignupForm = () => {
 
     const { mutateAsync, isPending, isError, error, reset } = useMutation({
         mutationFn: async ({ url, data }: registerForm) => {
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-                credentials: 'include',
-            });
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(translateError(errorData.message) || 'Une erreur est survenue');
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                    credentials: 'include',
+                });
+                if (!res.ok) {
+                    const message = await res.json();
+                    throw new Error(message.message);
+                }
+                return res;
+            } catch (err) {
+                if (err instanceof Error) {
+                    throw new Error(
+                        translateError(err.message) || 'Une erreur est survenue, veuillez réessayer plus tard.',
+                    );
+                }
             }
-            return res;
         },
     });
 
@@ -51,25 +57,30 @@ export const SignupForm = () => {
             data: { ...registerData, role: 'COMPANY' },
         });
 
-        if (res.ok) {
+        if (res && res.ok) {
             const loginRes = await mutateAsync({
                 url: `${API_URL}/api/auth/login`,
                 data: { email: registerData.email, password: registerData.password },
             });
 
-            const accessToken = await loginRes.text();
-            setAccess(accessToken);
-            //send code mail to verify
-            await mutateAsync({
-                url: `${API_URL}/api/mailer/auth/send-verification`,
-                data: { email: registerData.email },
-            });
-            navigate('/verify');
+            if (loginRes) {
+                const accessToken = await loginRes.text();
+                setAccess(accessToken);
+                //send code mail to verify
+                await mutateAsync({
+                    url: `${API_URL}/api/mailer/auth/send-verification`,
+                    data: { email: registerData.email },
+                });
+                navigate('/verify');
+            }
         }
     };
 
     const handleBlur = async () => {
         await trigger(['password', 'repeatPassword']);
+    };
+    const onChange = (fieldName: 'name' | 'email' | 'password' | 'repeatPassword') => {
+        clearErrors(fieldName);
     };
 
     return (
@@ -80,13 +91,13 @@ export const SignupForm = () => {
                 onSubmit={handleSubmit((data) => onSubmit(data))}
                 className=" flex flex-col gap-8 mt-4 items-center"
                 onClick={() => {
-                    clearErrors();
                     reset();
                 }}
             >
                 <div className="w-full flex flex-col gap-5 justify-around">
                     <FormInput<companyFormSignUp>
                         register={register('name')}
+                        onChange={() => onChange('name')}
                         placeholder="Nom"
                         label="Nom de l'entreprise"
                         type="text"
@@ -94,6 +105,7 @@ export const SignupForm = () => {
                     />
                     <FormInput<companyFormSignUp>
                         register={register('email')}
+                        onChange={() => onChange('email')}
                         placeholder="Email"
                         label="Email"
                         type="email"
@@ -102,15 +114,19 @@ export const SignupForm = () => {
 
                     <FormInput<companyFormSignUp>
                         placeholder="Mot de passe"
-                        register={register('password', { required: true, onBlur: handleBlur })}
+                        register={register('password')}
+                        onBlur={handleBlur}
+                        onChange={() => onChange('password')}
                         label="Mot de passe"
                         type="password"
                         error={errors.password}
                     />
 
                     <FormInput<companyFormSignUp>
-                        label="Repeter le mot de passe"
-                        register={register('repeatPassword', { required: true, onBlur: handleBlur })}
+                        label="Confirmer le mot de passe"
+                        register={register('repeatPassword')}
+                        onChange={() => onChange('repeatPassword')}
+                        onBlur={handleBlur}
                         error={errors.repeatPassword}
                         type="password"
                         placeholder="Repeter le mot de passe"
@@ -129,6 +145,7 @@ export const SignupForm = () => {
     );
 };
 function translateError(message: string): string | undefined {
+    console.log('toto');
     const regex = /Company with email ([\w.-]+@[\w.-]+\.\w+) already exists/i;
     if (regex.test(message)) {
         return 'Une entreprise avec cet email existe déjà.';

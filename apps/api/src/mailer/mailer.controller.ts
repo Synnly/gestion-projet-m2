@@ -41,13 +41,15 @@ export class MailerController {
                 message: 'Password reset code sent to your email. Valid for 5 minutes.',
             };
         } catch (error) {
-            if (error.message === 'User not found') {
-                throw new NotFoundException('No account found with this email');
+            if (error instanceof Error) {
+                if (error.message === 'User not found') {
+                    throw new NotFoundException('No account found with this email');
+                }
+                if (error.message === 'OTP rate limit exceeded. Try again later.') {
+                    throw new BadRequestException('Too many requests. Please try again later.');
+                }
+                throw new BadRequestException('Failed to send password reset email');
             }
-            if (error.message === 'OTP rate limit exceeded. Try again later.') {
-                throw new BadRequestException('Too many requests. Please try again later.');
-            }
-            throw new BadRequestException('Failed to send password reset email');
         }
     }
 
@@ -60,16 +62,18 @@ export class MailerController {
         try {
             await this.mailerService.verifyPasswordResetOtp(dto.email, dto.otp);
         } catch (error) {
-            if (error.message === 'User not found') {
-                throw new NotFoundException('No account found with this email');
+            if (error instanceof Error) {
+                if (error.message === 'User not found') {
+                    throw new NotFoundException('No account found with this email');
+                }
+                if (error.message === 'Invalid OTP' || error.message === 'OTP expired') {
+                    throw new BadRequestException(error.message);
+                }
+                if (error.message === 'Too many verification attempts. Please request a new code.') {
+                    throw new BadRequestException(error.message);
+                }
+                throw new BadRequestException('Failed to verify OTP');
             }
-            if (error.message === 'Invalid OTP' || error.message === 'OTP expired') {
-                throw new BadRequestException(error.message);
-            }
-            if (error.message === 'Too many verification attempts. Please request a new code.') {
-                throw new BadRequestException(error.message);
-            }
-            throw new BadRequestException('Failed to verify OTP');
         }
 
         return {

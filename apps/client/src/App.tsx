@@ -5,9 +5,9 @@ import { CompanySignup } from './auth/companySignup/index';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Login } from './auth/Login/index';
 import { CompleteProfil } from './company/completeProfil/index';
-import { protectedLoader } from './loader/protectAuthLoader';
+import { protectedMiddleware } from './middleware/protectAuthMiddleware';
 import { completeProfilMiddleware } from './middleware/completeProfilMiddleware';
-import { notAuthLoader } from './loader/notAuthLoader';
+import { notAuthMiddleWare } from './middleware/notAuthMiddleware';
 import { VerifyEmail } from './user/verifyMail';
 import { userStore } from './store/userStore';
 import { ForgotPassword } from './user/ForgotPassword';
@@ -27,7 +27,7 @@ function App() {
             element: <Outlet />,
             children: [
                 {
-                    loader: notAuthLoader,
+                    loader: notAuthMiddleWare,
                     children: [
                         { index: true, element: <div>Hello World</div> },
                         { path: 'signin', element: <Login /> },
@@ -36,7 +36,7 @@ function App() {
                     ],
                 },
                 {
-                    loader: protectedLoader,
+                    loader: protectedMiddleware,
                     element: <AuthRoutes />,
                     children: [
                         { path: 'verify', element: <VerifyEmail /> },

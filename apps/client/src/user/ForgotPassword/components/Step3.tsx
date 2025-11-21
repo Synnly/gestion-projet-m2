@@ -11,7 +11,7 @@ const forgotPasswordTypeStep3Schema = z
         password: passwordSchema,
         confirmPassword: z.string(),
     })
-    .refine((data) => data.password === data.confirmPassword, {
+    .refine((data) => !data.password || !data.confirmPassword || data.password === data.confirmPassword, {
         message: 'Les mots de passe ne correspondent pas.',
         path: ['confirmPassword'],
     });
@@ -36,12 +36,19 @@ export function ForgotPasswordStep3({
         handleSubmit,
         formState: { errors },
         clearErrors,
+        trigger,
     } = useForm<forgotPasswordTypeStep3>({
         resolver: zodResolver(forgotPasswordTypeStep3Schema) as Resolver<forgotPasswordTypeStep3>,
         mode: 'onSubmit',
     });
     const onSubmit = (data: forgotPasswordTypeStep3) => {
         sendRequest(data);
+    };
+    const handleBlur = async () => {
+        await trigger(['password', 'confirmPassword']);
+    };
+    const onChange = (fieldName: 'password' | 'confirmPassword') => {
+        clearErrors(fieldName);
     };
     return (
         <CustomForm
@@ -50,13 +57,14 @@ export function ForgotPasswordStep3({
             onSubmit={handleSubmit(onSubmit)}
             className=" flex flex-col gap-8 mt-4 items-center "
             onClick={() => {
-                clearErrors();
                 reset();
             }}
         >
             <div className="w-full flex flex-col gap-5 justify-around">
                 <FormInput<forgotPasswordTypeStep3>
-                    register={register('password', { required: true })}
+                    register={register('password')}
+                    onBlur={handleBlur}
+                    onChange={() => onChange('password')}
                     placeholder="Nouveau mot de passe"
                     label="Nouveau mot de passe"
                     type="password"
@@ -65,7 +73,9 @@ export function ForgotPasswordStep3({
 
                 <FormInput<forgotPasswordTypeStep3>
                     placeholder="Confirmer le mot de passe"
-                    register={register('confirmPassword', { required: true })}
+                    register={register('confirmPassword')}
+                    onBlur={handleBlur}
+                    onChange={() => onChange('confirmPassword')}
                     label="Confirmer le mot de passe"
                     type="password"
                     error={errors.confirmPassword}
