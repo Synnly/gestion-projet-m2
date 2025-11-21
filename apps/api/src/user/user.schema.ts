@@ -144,6 +144,20 @@ export class User {
     passwordResetAttempts: number;
 
     /**
+     * Timestamp when the password reset OTP was successfully verified
+     * Used to ensure password reset endpoint can only be called after OTP verification
+     */
+    @Prop({ default: null, type: Date })
+    passwordResetValidatedAt: Date | null;
+
+    /**
+     * Expiration date for the password reset validation window
+     * Typically 5 minutes after OTP verification to complete password reset
+     */
+    @Prop({ default: null, type: Date })
+    passwordResetValidatedExpires: Date | null;
+
+    /**
      * User's role in the system
      *
      * - Serves as discriminator key for Mongoose schema inheritance

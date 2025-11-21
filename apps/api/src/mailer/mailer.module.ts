@@ -9,16 +9,16 @@ import { User, UserSchema } from '../user/user.schema';
 
 @Global()
 @Module({
-  imports: [
-    NestMailerModule.forRootAsync({
-      imports: [ConfigModule],
-      useClass: MailerConfigService,
-    }),
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-  ],
-  controllers: [MailerController],
-  providers: [MailerService, MailerConfigService],
-  exports: [MailerService],
+    imports: [
+        NestMailerModule.forRootAsync({
+            imports: [ConfigModule],
+            useClass: MailerConfigService,
+        }),
+        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    ],
+    controllers: [MailerController],
+    providers: [MailerService, MailerConfigService],
+    exports: [MailerService],
 })
 export class MailerModule {}
 

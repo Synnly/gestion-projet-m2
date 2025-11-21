@@ -252,7 +252,6 @@ startxref
                 await minioClient.removeObjects(testBucket, objectsList);
             }
         } catch (error) {
-            console.log('Cleanup warning:', (error as Error).message);
         }
         await app.close();
     });
@@ -260,7 +259,7 @@ startxref
     describe('POST /files/signed/logo', () => {
         it('should generate presigned URL for logo upload', async () => {
             const response = await request(app.getHttpServer())
-                .post('/files/signed/logo')
+                .post('/api/files/signed/logo')
                 .set('Cookie', `auth_token=${authToken}`)
                 .send({ originalFilename: 'company-logo.png' })
                 .expect(200);
@@ -272,7 +271,7 @@ startxref
 
         it('should reject invalid extension', async () => {
             await request(app.getHttpServer())
-                .post('/files/signed/logo')
+                .post('/api/files/signed/logo')
                 .set('Cookie', `auth_token=${authToken}`)
                 .send({ originalFilename: 'document.pdf' })
                 .expect(400);
@@ -280,7 +279,7 @@ startxref
 
         it('should reject without authentication', async () => {
             await request(app.getHttpServer())
-                .post('/files/signed/logo')
+                .post('/api/files/signed/logo')
                 .send({ originalFilename: 'logo.png' })
                 .expect(403); // Guard returns 403 Forbidden when no auth token
         });
@@ -291,7 +290,7 @@ startxref
 
         it('should complete full upload and download workflow', async () => {
             const uploadUrlResponse = await request(app.getHttpServer())
-                .post('/files/signed/logo')
+                .post('/api/files/signed/logo')
                 .set('Cookie', `auth_token=${authToken}`)
                 .send({ originalFilename: 'test.png' })
                 .expect(200);
@@ -307,7 +306,7 @@ startxref
             expect(fileExists).toBe(true);
 
             const downloadUrlResponse = await request(app.getHttpServer())
-                .get(`/files/signed/download/${encodeURIComponent(uploadedFileName)}`)
+                .get(`/api/files/signed/download/${encodeURIComponent(uploadedFileName)}`)
                 .set('Cookie', `auth_token=${authToken}`)
                 .expect(200);
 
@@ -318,7 +317,7 @@ startxref
 
         it('should delete uploaded file', async () => {
             await request(app.getHttpServer())
-                .delete(`/files/${encodeURIComponent(uploadedFileName)}`)
+                .delete(`/api/files/${encodeURIComponent(uploadedFileName)}`)
                 .set('Cookie', `auth_token=${authToken}`)
                 .expect(200);
 
@@ -330,7 +329,7 @@ startxref
     describe('POST /files/signed/cv', () => {
         it('should complete PDF CV upload workflow', async () => {
             const uploadUrlResponse = await request(app.getHttpServer())
-                .post('/files/signed/cv')
+                .post('/api/files/signed/cv')
                 .set('Cookie', `auth_token=${authToken}`)
                 .send({ originalFilename: 'resume.pdf' })
                 .expect(200);
@@ -348,7 +347,7 @@ startxref
             expect(fileExists).toBe(true);
 
             await request(app.getHttpServer())
-                .delete(`/files/${encodeURIComponent(fileName)}`)
+                .delete(`/api/files/${encodeURIComponent(fileName)}`)
                 .set('Cookie', `auth_token=${authToken}`)
                 .expect(200);
         });
@@ -361,7 +360,7 @@ startxref
             // the expected behavior when metadata is present.
 
             const uploadUrlResponse = await request(app.getHttpServer())
-                .post('/files/signed/logo')
+                .post('/api/files/signed/logo')
                 .set('Cookie', `auth_token=${authToken}`)
                 .send({ originalFilename: 'private.png' })
                 .expect(200);
@@ -389,7 +388,7 @@ startxref
             // For now, test that different user CAN access (since no metadata)
             // In a real app, you'd want to enforce metadata at upload time
             const downloadResponse = await request(app.getHttpServer())
-                .get(`/files/signed/download/${encodeURIComponent(fileName)}`)
+                .get(`/api/files/signed/download/${encodeURIComponent(fileName)}`)
                 .set('Cookie', `auth_token=${otherToken}`)
                 .expect(200); // Will succeed because no metadata to check
 
@@ -397,7 +396,7 @@ startxref
 
             // Cleanup
             await request(app.getHttpServer())
-                .delete(`/files/${encodeURIComponent(fileName)}`)
+                .delete(`/api/files/${encodeURIComponent(fileName)}`)
                 .set('Cookie', `auth_token=${authToken}`)
                 .expect(200);
         });

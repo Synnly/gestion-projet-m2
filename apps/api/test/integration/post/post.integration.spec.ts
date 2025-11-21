@@ -94,15 +94,14 @@ describe('Post Integration Tests', () => {
             role: Role.COMPANY,
             isValid: true,
         });
-        companyId = createdUser._id as Types.ObjectId;
+
+        companyId = createdUser._id;
 
         console.log('Created user:', { email: createdUser.email, role: createdUser.role });
 
         const loginRes = await request(app.getHttpServer())
             .post('/api/auth/login')
             .send({ email: 'company@test.com', password: 'TestP@ss123' });
-
-        console.log('Login response:', { status: loginRes.status, body: loginRes.body, text: loginRes.text });
 
         if (loginRes.status !== 201) {
             console.error('Login failed:', loginRes.status, loginRes.body);
@@ -297,7 +296,9 @@ describe('Post Integration Tests', () => {
                 type: PostType.Presentiel,
             });
 
-            await request(app.getHttpServer()).get(buildPostsPath(`/${post._id}`)).expect(401);
+            await request(app.getHttpServer())
+                .get(buildPostsPath(`/${post._id}`))
+                .expect(401);
         });
 
         it('should return post with all fields when post has complete data and findOne is called', async () => {
