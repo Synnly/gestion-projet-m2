@@ -35,13 +35,17 @@ export class CompanyOwnerGuard implements CanActivate {
         if (!companyId || !userSub) throw new ForbiddenException('Ownership cannot be verified');
 
         // Maybe the id given is a post id, so we check
-        const post = await this.postService.findOne(companyId);
+        const post = await this.postService.findOneEvenIfDeleted(companyId);
 
         if (post) {
             // We check if the post belong to this company
             if (String(post.companyId) !== String(userSub)) {
                 throw new ForbiddenException('You cannot modify this post');
             } else {
+                // We check if the post has already been deleted (we do this because otherwise, we get the error message "You can only modify your own company")
+                if (post.deletedAt) {
+                    throw new ForbiddenException("Post not found or already deleted")
+                }
                 return true;
             }
         }
