@@ -15,6 +15,7 @@ import {
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { CompanyService } from './company.service';
+import { PostService } from '../post/post.service';
 import { CompanyDto } from './dto/company.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { RolesGuard } from '../common/roles/roles.guard';
@@ -22,6 +23,7 @@ import { CompanyOwnerGuard } from '../common/roles/companyOwner.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { AuthGuard } from '../auth/auth.guard';
+import { PostDto } from 'src/post/dto/post.dto';
 
 /**
  * Controller handling company-related HTTP requests
@@ -29,7 +31,10 @@ import { AuthGuard } from '../auth/auth.guard';
  */
 @Controller('/api/companies')
 export class CompanyController {
-    constructor(private readonly companyService: CompanyService) {}
+    constructor(
+        private readonly companyService: CompanyService,
+        private readonly postService: PostService
+    ) {}
 
     /**
      * Retrieves all companies
@@ -40,6 +45,18 @@ export class CompanyController {
     async findAll(): Promise<CompanyDto[]> {
         const companies = await this.companyService.findAll();
         return companies.map((company) => new CompanyDto(company));
+    }
+
+    
+    /**
+     * Retrieves all posts made by the company
+     * @returns An array of all the posts of a company
+     */
+    @Get('/:id/posts')
+    @HttpCode(HttpStatus.OK)
+    async findAllPosts(@Param('id', ParseObjectIdPipe) id: string): Promise<PostDto[]> {
+        const posts = await this.postService.findAllByCompany(id);
+        return posts.map((post) => new PostDto(post));
     }
 
     /**

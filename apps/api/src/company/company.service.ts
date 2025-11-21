@@ -184,7 +184,9 @@ export class CompanyService {
 
 
     /**
+     * Removes all soft-deleted companies from the database completely
      * 
+     * @returns Promise resolving to void upon successful deletion
      */
     async deleteExpiredCompanies(): Promise<void> {
         const thirtyDaysAgo = new Date();
