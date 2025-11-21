@@ -49,10 +49,7 @@ export class CompanyService {
      * ```
      */
     async findAll(): Promise<Company[]> {
-        return this.companyModel
-            .find({ deletedAt: { $exists: false } })
-            .populate('posts')
-            .exec();
+        return this.companyModel.find({ deletedAt: { $exists: false } }).populate('posts').lean<Company[]>();
     }
 
     /**

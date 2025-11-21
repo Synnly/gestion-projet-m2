@@ -141,14 +141,16 @@ describe('Post Integration Tests', () => {
     };
 
     describe('GET /api/company/:companyId/posts - Find All Posts', () => {
-        it('should return empty array when no posts exist and findAll is called', async () => {
+        it('should return empty paginated result when no posts exist and findAll is called', async () => {
             const res = await request(app.getHttpServer())
                 .get(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(res.body).toEqual([]);
-            expect(Array.isArray(res.body)).toBe(true);
+            expect(res.body.data).toEqual([]);
+            expect(res.body.total).toBe(0);
+            expect(res.body.page).toBe(1);
+            expect(Array.isArray(res.body.data)).toBe(true);
         });
 
         it('should return all posts when posts exist and findAll is called', async () => {
@@ -171,8 +173,9 @@ describe('Post Integration Tests', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            const normalized = normalizeBody(res.body);
-            expect(normalized).toHaveLength(1);
+            expect(res.body.data).toHaveLength(1);
+            expect(res.body.total).toBe(1);
+            const normalized = normalizeBody(res.body.data);
             expect(normalized[0].title).toBe('Développeur Full Stack');
             expect(normalized[0].description).toBe('Recherche développeur expérimenté');
             expect(normalized[0]).toHaveProperty('_id');
@@ -198,8 +201,9 @@ describe('Post Integration Tests', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            const normalized = normalizeBody(res.body);
-            expect(normalized).toHaveLength(2);
+            expect(res.body.data).toHaveLength(2);
+            expect(res.body.total).toBe(2);
+            const normalized = normalizeBody(res.body.data);
             expect(normalized[0].title).toBe('Développeur Frontend');
             expect(normalized[1].title).toBe('Développeur Backend');
         });
@@ -235,7 +239,8 @@ describe('Post Integration Tests', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            const normalized = normalizeBody(res.body);
+            expect(res.body.data).toHaveLength(1);
+            const normalized = normalizeBody(res.body.data);
             expect(normalized[0]).toHaveProperty('title', 'Développeur Full Stack');
             expect(normalized[0]).toHaveProperty('description');
             expect(normalized[0]).toHaveProperty('duration', '6 mois');

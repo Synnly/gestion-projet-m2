@@ -5,6 +5,7 @@ import { PostService } from '../../../src/post/post.service';
 import { Post } from '../../../src/post/post.schema';
 import { CreatePostDto } from '../../../src/post/dto/createPost.dto';
 import { PostType } from '../../../src/post/post.schema';
+import { PaginationService } from '../../../src/common/pagination/pagination.service';
 
 const basePost = {
     _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
@@ -43,6 +44,10 @@ describe('PostService', () => {
         constructor: jest.fn(),
     };
 
+    const mockPaginationService = {
+        paginate: jest.fn(),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -50,6 +55,10 @@ describe('PostService', () => {
                 {
                     provide: getModelToken(Post.name),
                     useValue: mockPostModel,
+                },
+                {
+                    provide: PaginationService,
+                    useValue: mockPaginationService,
                 },
             ],
         }).compile();
@@ -145,48 +154,68 @@ describe('PostService', () => {
     });
 
     describe('findAll', () => {
-        it('should return an array of posts when findAll is called', async () => {
+        it('should return paginated posts when findAll is called', async () => {
             const mockPosts = [createMockPost()];
-            const execMock = jest.fn().mockResolvedValue(mockPosts);
-            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
-            mockPostModel.find.mockReturnValue({ populate: populateMock });
+            const paginationResult = {
+                data: mockPosts,
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
 
-            const result = await service.findAll();
+            const result = await service.findAll({ page: 1, limit: 10 } as any);
 
-            expect(result).toHaveLength(1);
-            expect(result[0].title).toBe('Développeur Full Stack');
-            expect(mockPostModel.find).toHaveBeenCalledTimes(1);
-            expect(populateMock).toHaveBeenCalledWith('company');
-            expect(execMock).toHaveBeenCalledTimes(1);
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0].title).toBe('Développeur Full Stack');
+            expect(result.total).toBe(1);
+            expect(mockPaginationService.paginate).toHaveBeenCalledTimes(1);
         });
 
-        it('should return an empty array when no posts exist and findAll is called', async () => {
-            const execMock = jest.fn().mockResolvedValue([]);
-            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
-            mockPostModel.find.mockReturnValue({ populate: populateMock });
+        it('should return empty paginated result when no posts exist and findAll is called', async () => {
+            const paginationResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
 
-            const result = await service.findAll();
+            const result = await service.findAll({ page: 1, limit: 10 } as any);
 
-            expect(result).toHaveLength(0);
-            expect(mockPostModel.find).toHaveBeenCalledTimes(1);
+            expect(result.data).toHaveLength(0);
+            expect(result.total).toBe(0);
         });
 
-        it('should return multiple posts when multiple posts exist and findAll is called', async () => {
+        it('should return multiple posts in paginated result when multiple posts exist and findAll is called', async () => {
             const mockPosts = [
                 createMockPost(),
                 createMockPost({ _id: new Types.ObjectId('507f1f77bcf86cd799439012'), title: 'Développeur Backend' }),
                 createMockPost({ _id: new Types.ObjectId('507f1f77bcf86cd799439013'), title: 'Développeur Frontend' }),
             ];
-            const execMock = jest.fn().mockResolvedValue(mockPosts);
-            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
-            mockPostModel.find.mockReturnValue({ populate: populateMock });
+            const paginationResult = {
+                data: mockPosts,
+                total: 3,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
 
-            const result = await service.findAll();
+            const result = await service.findAll({ page: 1, limit: 10 } as any);
 
-            expect(result).toHaveLength(3);
-            expect(result[0].title).toBe('Développeur Full Stack');
-            expect(result[1].title).toBe('Développeur Backend');
-            expect(result[2].title).toBe('Développeur Frontend');
+            expect(result.data).toHaveLength(3);
+            expect(result.data[0].title).toBe('Développeur Full Stack');
+            expect(result.data[1].title).toBe('Développeur Backend');
+            expect(result.data[2].title).toBe('Développeur Frontend');
         });
     });
 

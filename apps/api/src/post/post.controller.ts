@@ -9,6 +9,7 @@ import {
     Post,
     UseGuards,
     ValidationPipe,
+    Query,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';
@@ -19,6 +20,8 @@ import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { CreatePostDto } from './dto/createPost.dto';
 import { CompanyOwnerGuard } from '../common/roles/companyOwner.guard';
+import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
+import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
 
 /**
  * Controller handling post-related HTTP requests
@@ -30,13 +33,19 @@ export class PostController {
 
     /**
      * Retrieves all posts
-     * @returns An array of all posts
+     * @returns A paginated list of posts
      */
     @Get('')
     @HttpCode(HttpStatus.OK)
-    async findAll(): Promise<PostDto[]> {
-        const posts = await this.postService.findAll();
-        return posts.map((post) => new PostDto(post));
+    async findAll(
+        @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        query: PaginationDto,
+    ): Promise<PaginationResult<PostDto>> {
+        const posts = await this.postService.findAll(query);
+        return {
+            ...posts,
+            data: posts.data.map((post) => new PostDto(post)),
+        };
     }
 
     /**

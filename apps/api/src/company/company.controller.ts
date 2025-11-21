@@ -44,7 +44,6 @@ export class CompanyController {
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<CompanyDto[]> {
         const companies = await this.companyService.findAll();
-
         return companies.map((company) => plainToInstance(CompanyDto, company));
     }
 

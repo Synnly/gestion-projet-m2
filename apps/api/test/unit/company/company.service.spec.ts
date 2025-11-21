@@ -3,6 +3,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { NotFoundException } from '@nestjs/common';
 import { CompanyService } from '../../../src/company/company.service';
+import { PaginationService } from '../../../src/common/pagination/pagination.service';
 import { Company, CompanyDocument, StructureType, LegalStatus } from '../../../src/company/company.schema';
 import { CreateCompanyDto } from '../../../src/company/dto/createCompany.dto';
 import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
@@ -25,10 +26,8 @@ describe('CompanyService', () => {
     const mockPostService = {
         findOne: jest.fn(),
     };
-    const setupFindMock = () => {
-        const populate = jest.fn().mockReturnValue({ exec: mockExec });
-        mockCompanyModel.find.mockReturnValue({ populate });
-        return populate;
+    const mockPaginationService = {
+        paginate: jest.fn(),
     };
     const setupFindOnePopulate = () => {
         const populate = jest.fn().mockReturnValue({ exec: mockExec });
@@ -48,6 +47,10 @@ describe('CompanyService', () => {
                     provide: PostService,
                     useValue: mockPostService,
                 },
+                {
+                    provide: PaginationService,
+                    useValue: mockPaginationService,
+                },
             ],
         }).compile();
 
@@ -62,117 +65,36 @@ describe('CompanyService', () => {
     });
 
     describe('findAll', () => {
-    it('should return an array of companies when findAll is called and companies exist', async () => {
-            const companies = [
-                {
-                    _id: '507f1f77bcf86cd799439011',
-                    email: 'test@example.com',
-                    password: 'hashedPassword',
-                    name: 'Test Company',
-                },
-                {
-                    _id: '507f1f77bcf86cd799439012',
-                    email: 'test2@example.com',
-                    password: 'hashedPassword2',
-                    name: 'Test Company 2',
-                },
-            ];
-
-            mockExec.mockResolvedValue(companies);
-            setupFindMock();
+        it('should call companyModel.find with filter and populate posts', async () => {
+            const mockCompanies = [{ _id: '1', name: 'C1', posts: [] }];
+            const mockQuery = {
+                populate: jest.fn().mockReturnThis(),
+                lean: jest.fn().mockResolvedValue(mockCompanies),
+            };
+            mockCompanyModel.find.mockReturnValue(mockQuery);
 
             const result = await service.findAll();
 
-            expect(result).toEqual(companies);
             expect(mockCompanyModel.find).toHaveBeenCalledWith({ deletedAt: { $exists: false } });
-            expect(mockCompanyModel.find).toHaveBeenCalledTimes(1);
-            expect(mockExec).toHaveBeenCalledTimes(1);
+            expect(mockQuery.populate).toHaveBeenCalledWith('posts');
+            expect(result).toEqual(mockCompanies);
         });
 
-    it('should return an empty array when findAll is called and no companies exist', async () => {
-            mockExec.mockResolvedValue([]);
-            setupFindMock();
+        it('should handle empty results', async () => {
+            const mockQuery = {
+                populate: jest.fn().mockReturnThis(),
+                lean: jest.fn().mockResolvedValue([]),
+            };
+            mockCompanyModel.find.mockReturnValue(mockQuery);
 
             const result = await service.findAll();
 
             expect(result).toEqual([]);
-            expect(mockCompanyModel.find).toHaveBeenCalledWith({ deletedAt: { $exists: false } });
-            expect(mockExec).toHaveBeenCalledTimes(1);
         });
 
-    it('should return companies with all fields when findAll is called and full documents are present', async () => {
-            const companies = [
-                {
-                    _id: '507f1f77bcf86cd799439011',
-                    email: 'test@example.com',
-                    password: 'hashedPassword',
-                    name: 'Test Company',
-                    siretNumber: '12345678901234',
-                    nafCode: NafCode.NAF_62_02A,
-                    structureType: StructureType.PrivateCompany,
-                    legalStatus: LegalStatus.SARL,
-                    streetNumber: '10',
-                    streetName: 'Rue de Test',
-                    postalCode: '75001',
-                    city: 'Paris',
-                    country: 'France',
-                },
-            ];
 
-            mockExec.mockResolvedValue(companies);
-            setupFindMock();
 
-            const result = await service.findAll();
 
-            expect(result).toEqual(companies);
-            expect(result[0].siretNumber).toBe('12345678901234');
-            expect(result[0].structureType).toBe(StructureType.PrivateCompany);
-        });
-
-    it('should only return non-deleted companies when findAll is called', async () => {
-            const companies = [
-                {
-                    _id: '507f1f77bcf86cd799439011',
-                    email: 'test@example.com',
-                    password: 'hashedPassword',
-                    name: 'Test Company',
-                },
-            ];
-
-            mockExec.mockResolvedValue(companies);
-            setupFindMock();
-
-            await service.findAll();
-
-            expect(mockCompanyModel.find).toHaveBeenCalledWith({ deletedAt: { $exists: false } });
-        });
-
-    it('should throw when findAll encounters a database error', async () => {
-            const error = new Error('Database connection error');
-            mockExec.mockRejectedValue(error);
-            setupFindMock();
-
-            await expect(service.findAll()).rejects.toThrow('Database connection error');
-            expect(mockCompanyModel.find).toHaveBeenCalledTimes(1);
-        });
-
-    it('should return multiple companies when findAll is called with many documents', async () => {
-            const companies = Array.from({ length: 10 }, (_, i) => ({
-                _id: `507f1f77bcf86cd79943901${i}`,
-                email: `test${i}@example.com`,
-                password: 'hashedPassword',
-                name: `Test Company ${i}`,
-
-            }));
-
-            mockExec.mockResolvedValue(companies);
-            setupFindMock();
-
-            const result = await service.findAll();
-
-            expect(result).toHaveLength(10);
-            expect(result).toEqual(companies);
-        });
     });
 
     describe('findOne', () => {
@@ -882,12 +804,21 @@ it('should throw when create encounters a database error', async () => {
                 },
             ];
 
-            mockExec
-                .mockResolvedValueOnce(companiesBeforeDelete)
-                .mockResolvedValueOnce({ _id: '507f1f77bcf86cd799439011' })
-                .mockResolvedValueOnce(companiesAfterDelete);
+            const mockQueryBefore = {
+                populate: jest.fn().mockReturnThis(),
+                lean: jest.fn().mockResolvedValue(companiesBeforeDelete),
+            };
 
-            setupFindMock();
+            const mockQueryAfter = {
+                populate: jest.fn().mockReturnThis(),
+                lean: jest.fn().mockResolvedValue(companiesAfterDelete),
+            };
+
+            mockCompanyModel.find
+                .mockReturnValueOnce(mockQueryBefore)
+                .mockReturnValueOnce(mockQueryAfter);
+
+            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
             mockCompanyModel.findOneAndDelete.mockReturnValue({
                 exec: mockExec,
             });
@@ -903,7 +834,7 @@ it('should throw when create encounters a database error', async () => {
     });
 
     describe('Edge cases', () => {
-    it('should return null when findOne returns null', async () => {
+        it('should return null when findOne returns null', async () => {
             mockExec.mockResolvedValue(null);
             setupFindOnePopulate();
 

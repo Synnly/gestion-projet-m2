@@ -3,10 +3,17 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from './post.schema';
 import { Model, Types } from 'mongoose';
 import { CreatePostDto } from './dto/createPost.dto';
+import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
+import { PaginationService } from 'src/common/pagination/pagination.service';
+import { QueryBuilder } from 'src/common/pagination/query.builder';
+import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
 
 @Injectable()
 export class PostService {
-    constructor(@InjectModel(Post.name) private readonly postModel: Model<PostDocument>) {}
+    constructor(
+        @InjectModel(Post.name) private readonly postModel: Model<PostDocument>,
+        private readonly paginationService: PaginationService,
+    ) {}
 
     /**
      * Creates a new post in the database
@@ -24,12 +31,21 @@ export class PostService {
     }
 
     /**
-     * Retrieves all active posts
+     * Retrieves all active posts with pagination
      *
-     * @returns Promise resolving to an array of all active posts
+     * @returns Promise resolving to a paginated result of posts
      */
-    async findAll(): Promise<Post[]> {
-        return this.postModel.find().populate('company').exec();
+    async findAll(query: PaginationDto): Promise<PaginationResult<Post>> {
+        const { page, limit } = query;
+        const filter = new QueryBuilder(query).build();
+
+        return this.paginationService.paginate(
+            this.postModel,
+            filter,
+            page,
+            limit,
+            ['company'], // populate
+        );
     }
 
     /**
