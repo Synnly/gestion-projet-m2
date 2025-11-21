@@ -53,7 +53,11 @@ export function FormInput<T extends FieldValues>({
                     </button>
                 )}
             </div>
-            {error && error.message && <span className="text-red-500 mt-1 bg-red-300 p-3">{error.message}</span>}
+            {error && error.message && (
+                <span className="text-red-500 mt-1 rounded-lg bg-red-300 p-3">
+                    {error?.message.charAt(0).toUpperCase() + error?.message.slice(1)}
+                </span>
+            )}
         </div>
     );
 }

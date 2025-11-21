@@ -17,7 +17,7 @@ export const Login = () => {
                     <img src={signupImage} className="h-12" />
                 </div>
                 <LoginForm />
-                <NavLink to="/forgot-password" className=" text-blue-600 underline">
+                <NavLink to="/forgot-password" className="mt-4 text-sm text-center text-gray-500 underline">
                     Mot de passe oublié ?
                 </NavLink>
             </motion.div>

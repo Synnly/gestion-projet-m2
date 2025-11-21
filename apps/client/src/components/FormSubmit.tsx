@@ -16,7 +16,9 @@ export const FormSubmit = ({ isPending, isError, title, pendingTitle, error, cla
                 className={className}
                 {...rest}
             />
-            {isError && <p className="text-red-500">{error?.message}</p>}
+            {isError && (
+                <p className="text-red-500">{error?.message.charAt(0).toUpperCase() + error?.message.slice(1)}</p>
+            )}
         </>
     );
 };

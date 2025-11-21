@@ -57,10 +57,10 @@ export const LoginForm = () => {
                 />
             </CustomForm>
             <div className="flex flex-row gap-5 w-full mt-2">
-                <NavLink to="/company/signup" className="mt-4 text-blue-600 underline">
+                <NavLink to="/company/signup" className="mt-4 text-sm text-center text-gray-500 underline">
                     Créer un compte entreprise
                 </NavLink>
-                <NavLink to="" className="mt-4 text-blue-600 underline">
+                <NavLink to="" className="mt-4 text-sm text-center text-gray-500 underline">
                     Créer un compte étudiant
                 </NavLink>
             </div>

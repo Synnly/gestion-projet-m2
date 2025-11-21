@@ -18,7 +18,7 @@ export const CompanySignup = () => {
                     <img src={signupImage} className="h-12" />
                 </div>
                 <SignupForm />
-                <NavLink to="/signin" className="mt-4 text-blue-600 underline">
+                <NavLink to="/signin" className="mt-4 text-sm text-center text-gray-500 underline">
                     Déjà un compte entreprise ? Connectez-vous
                 </NavLink>
             </motion.div>

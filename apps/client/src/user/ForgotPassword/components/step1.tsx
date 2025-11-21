@@ -67,9 +67,9 @@ export const ForgotPasswordStep1 = ({
     return (
         <>
             <div className="text-center">
-                <img src={logo} alt="Logo de l'application" className="mx-auto h-10 w-auto" />
+                <img src={logo} alt="Logo de l'application" className="mx-auto h-12 w-auto" />
             </div>
-            <h1 className="text-4xl font-bold text-center">Réinitialisation du mot de passe</h1>
+            <h1 className="text-2xl py-10 font-bold text-center uppercase">Réinitialisation du mot de passe</h1>
             <p className="mt-4 text-sm text-center text-gray-500">
                 Un lien de réinitialisation du mot de passe a été envoyé à votre adresse e-mail si elle est associée à
                 un compte existant.
