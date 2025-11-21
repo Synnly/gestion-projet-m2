@@ -96,7 +96,12 @@ export const SignupForm = () => {
             >
                 <div className="w-full flex flex-col gap-5 justify-around">
                     <FormInput<companyFormSignUp>
-                        register={register('name')}
+                        register={register('name', {
+                            required: true,
+                            onChange: () => {
+                                onChange('name');
+                            },
+                        })}
                         onChange={() => onChange('name')}
                         placeholder="Nom"
                         label="Nom de l'entreprise"
@@ -104,8 +109,12 @@ export const SignupForm = () => {
                         error={errors.name}
                     />
                     <FormInput<companyFormSignUp>
-                        register={register('email')}
-                        onChange={() => onChange('email')}
+                        register={register('email', {
+                            required: true,
+                            onChange: () => {
+                                onChange('email');
+                            },
+                        })}
                         placeholder="Email"
                         label="Email"
                         type="email"
@@ -114,9 +123,11 @@ export const SignupForm = () => {
 
                     <FormInput<companyFormSignUp>
                         placeholder="Mot de passe"
-                        register={register('password')}
-                        onBlur={handleBlur}
-                        onChange={() => onChange('password')}
+                        register={register('password', {
+                            required: true,
+                            onBlur: handleBlur,
+                            onChange: () => onChange('password'),
+                        })}
                         label="Mot de passe"
                         type="password"
                         error={errors.password}
@@ -124,9 +135,11 @@ export const SignupForm = () => {
 
                     <FormInput<companyFormSignUp>
                         label="Confirmer le mot de passe"
-                        register={register('repeatPassword')}
-                        onChange={() => onChange('repeatPassword')}
-                        onBlur={handleBlur}
+                        register={register('repeatPassword', {
+                            required: true,
+                            onBlur: handleBlur,
+                            onChange: () => onChange('repeatPassword'),
+                        })}
                         error={errors.repeatPassword}
                         type="password"
                         placeholder="Repeter le mot de passe"
