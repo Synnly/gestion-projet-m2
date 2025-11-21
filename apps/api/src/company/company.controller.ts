@@ -22,6 +22,9 @@ import { CompanyOwnerGuard } from '../common/roles/companyOwner.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { AuthGuard } from '../auth/auth.guard';
+import { PostDto } from '../post/dto/post.dto';
+import { PostDocument } from '../post/post.schema';
+import { Company } from './company.schema';
 
 /**
  * Controller handling company-related HTTP requests
@@ -39,21 +42,22 @@ export class CompanyController {
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<CompanyDto[]> {
         const companies = await this.companyService.findAll();
-        return companies.map((company) => new CompanyDto(company));
+        return companies.map((company) => this.mapToDto(company));
     }
 
     /**
      * Retrieves a single company by its ID
-     * @param id The company identifier
+     * @param companyId The company identifier
      * @returns The company with the specified ID
      * @throws {NotFoundException} if no company exists with the given ID
      */
-    @Get('/:id')
+    @Get('/:companyId')
     @HttpCode(HttpStatus.OK)
-    async findOne(@Param('id', ParseObjectIdPipe) id: string): Promise<CompanyDto> {
-        const company = await this.companyService.findOne(id);
-        if (!company) throw new NotFoundException(`Company with id ${id} not found`);
-        return new CompanyDto(company);
+    async findOne(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyDto> {
+        const company = await this.companyService.findOne(companyId);
+        if (!company) throw new NotFoundException(`Company with id ${companyId} not found`);
+        const posts = company.posts ?? [];
+        return new CompanyDto({ ...company, posts: posts.map((post: PostDocument) => new PostDto(post)) });
     }
 
     /**
@@ -72,31 +76,44 @@ export class CompanyController {
     /**
      * Updates an existing company
      * Requires authentication and COMPANY or ADMIN role
-     * @param id The company identifier
+     * @param companyId The company identifier
      * @param dto The updated company data
      */
-    @Put('/:id')
+    @Put('/:companyId')
     @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
     async update(
-        @Param('id', ParseObjectIdPipe) id: string,
+        @Param('companyId', ParseObjectIdPipe) companyId: string,
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
         dto: UpdateCompanyDto | CreateCompanyDto,
     ) {
-        await this.companyService.update(id, dto);
+        await this.companyService.update(companyId, dto);
     }
 
     /**
      * Deletes a company
      * Requires authentication and COMPANY or ADMIN role
-     * @param id The company identifier to delete
+     * @param companyId The company identifier to delete
      */
-    @Delete('/:id')
+    @Delete('/:companyId')
     @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
-    async remove(@Param('id', ParseObjectIdPipe) id: string) {
-        await this.companyService.remove(id);
+    async remove(@Param('companyId', ParseObjectIdPipe) companyId: string) {
+        await this.companyService.remove(companyId);
+    }
+
+    /**
+     * Maps a Company entity to a CompanyDto with nested PostDtos
+     * @param company The company entity to map
+     * @returns The mapped CompanyDto
+     */
+    private mapToDto(company: Company): CompanyDto {
+        const posts = company.posts ?? [];
+        return new CompanyDto({
+            ...company,
+            posts: posts.map((post: PostDocument) => new PostDto(post)),
+        });
     }
 }

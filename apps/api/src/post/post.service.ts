@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from './post.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreatePostDto } from './dto/createPost.dto';
 
 @Injectable()
@@ -12,10 +12,14 @@ export class PostService {
      * Creates a new post in the database
      *
      * @param dto - The complete post data required for creation
+     * @param companyId - The MongoDB ObjectId of the company as a string
      * @returns Promise resolving to void upon successful creation
      */
-    async create(dto: CreatePostDto): Promise<Post> {
-        const createdPost = new this.postModel(dto);
+    async create(dto: CreatePostDto, companyId: string): Promise<Post> {
+        const createdPost = new this.postModel({
+            ...dto,
+            company: new Types.ObjectId(companyId),
+        });
         return createdPost.save();
     }
 
@@ -25,8 +29,7 @@ export class PostService {
      * @returns Promise resolving to an array of all active posts
      */
     async findAll(): Promise<Post[]> {
-        const posts = this.postModel.find().exec();
-        return posts;
+        return this.postModel.find().populate('company').exec();
     }
 
     /**
@@ -38,7 +41,6 @@ export class PostService {
      * @returns Promise resolving to the post if found and active, null otherwise
      */
     async findOne(id: string): Promise<Post | null> {
-        const post = this.postModel.findById(id).exec();
-        return post;
+        return this.postModel.findById(id).populate('company').exec();
     }
 }

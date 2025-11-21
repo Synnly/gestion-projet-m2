@@ -65,6 +65,10 @@ export class CreateCompanyDto extends CreateUserDto {
     @IsString()
     logo?: string;
 
+    /** Internships posts associated with the company, needed only for update of company */
+    @IsOptional()
+    readonly posts: string[] = [];
+
     constructor(partial: Partial<CreateCompanyDto>) {
         super();
         Object.assign(this, partial);

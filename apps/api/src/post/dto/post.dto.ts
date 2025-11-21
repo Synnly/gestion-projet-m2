@@ -3,7 +3,8 @@
  * Represents the structure of post data for their creation
  */
 import { Types } from 'mongoose';
-import { PostType } from '../post.schema';
+import { Post, PostType } from '../post.schema';
+import { CompanyDto } from '../../company/dto/company.dto';
 
 export class PostDto {
     /** Unique identifier of the company */
@@ -69,7 +70,10 @@ export class PostDto {
      */
     isVisible?: boolean;
 
-    constructor(partial?: Partial<PostDto>) {
+    /** Reference to the company offering the internship */
+    company: CompanyDto;
+
+    constructor(partial?: Partial<Post>) {
         if (partial) {
             Object.assign(this, partial);
             this.isVisible = !!this.title && !!this.description;
