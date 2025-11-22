@@ -6,7 +6,7 @@ import { userStore } from '../../store/userStore';
 import { profileStore } from '../../store/profileStore';
 import { Navbar } from '../../components/Navbar';
 import { FormSection } from '../../components/FormSection';
-import { FormInput } from '../../components/FormInput';
+import { FormInputEdit } from '../../components/FormInputEdit';
 import { CustomSelect } from '../../components/select';
 import { FormSubmit } from '../../components/FormSubmit';
 import { ProfilePicture } from '../../components/profilPicture';
@@ -160,18 +160,26 @@ export function EditCompanyProfile() {
             <Navbar />
             <div className="w-full max-w-4xl mx-auto my-6 px-4 py-8 flex flex-col items-center bg-white rounded-lg shadow">
                 <h1 className="text-3xl font-bold">Modifier le profil de votre entreprise</h1>
-                <p className="text-sm mt-4 italic text-gray-600">
+                <p className="text-sm mt-2 italic text-gray-600">
                     Mettez à jour les informations de votre entreprise
                 </p>
 
                 <form className="mt-8 w-full max-w-3xl flex flex-col flex-1" onSubmit={handleSubmit(onSubmit)}>
                     <FormSection title="Logo de l'entreprise" className="mb-8">
-                        <ProfilePicture
-                            src={logoUrl!}
-                            overlay
-                            register={register('logo')}
-                            error={errors.logo}
-                        />
+                        <div className='flex'>
+                            <ProfilePicture
+                                src={logoUrl!}
+                                overlay
+                                register={register('logo')}
+                                error={errors.logo}
+                            />
+                            <div className="flex flex-col justify-center ml-4">
+                                <span className="font-stretch-105% italic mb-1">
+                                    Téléchargez le logo de votre entreprise, il sera visible publiquement.
+                                </span>
+                                <span className="text-sm text-gray-600 italic">PNG, JPG jusqu'à 5MB.</span>
+                            </div>
+                        </div>
                     </FormSection>
 
                     <FormSection title="Informations non modifiables" className="mb-8">
@@ -244,7 +252,7 @@ export function EditCompanyProfile() {
 
                     <FormSection title="Adresse" className="mb-8 space-y-4">
                         <div className="flex gap-4">
-                            <FormInput<editProfilFormType>
+                            <FormInputEdit<editProfilFormType>
                                 label="Numéro"
                                 type="text"
                                 placeholder="Numéro"
@@ -252,9 +260,9 @@ export function EditCompanyProfile() {
                                     onChange: () => clearErrors('streetNumber'),
                                 })}
                                 error={errors.streetNumber}
-                                className="input input-primary border-primary w-1/4 border-1 normal-case"
+                                className="input input-primary"
                             />
-                            <FormInput<editProfilFormType>
+                            <FormInputEdit<editProfilFormType>
                                 label="Rue"
                                 type="text"
                                 placeholder="Rue"
@@ -262,11 +270,11 @@ export function EditCompanyProfile() {
                                     onChange: () => clearErrors('streetName'),
                                 })}
                                 error={errors.streetName}
-                                className="input input-primary border-primary w-full border-1"
+                                className="input input-primary"
                             />
                         </div>
                         <div className="flex gap-4">
-                            <FormInput<editProfilFormType>
+                            <FormInputEdit<editProfilFormType>
                                 label="Code postal"
                                 type="text"
                                 placeholder="Code postal"
@@ -274,9 +282,9 @@ export function EditCompanyProfile() {
                                     onChange: () => clearErrors('postalCode'),
                                 })}
                                 error={errors.postalCode}
-                                className="input input-primary border-primary border-1"
+                                className="input input-primary"
                             />
-                            <FormInput<editProfilFormType>
+                            <FormInputEdit<editProfilFormType>
                                 label="Ville"
                                 type="text"
                                 placeholder="Ville"
@@ -284,9 +292,9 @@ export function EditCompanyProfile() {
                                     onChange: () => clearErrors('city'),
                                 })}
                                 error={errors.city}
-                                className="input input-primary border-primary border-1"
+                                className="input input-primary"
                             />
-                            <FormInput<editProfilFormType>
+                            <FormInputEdit<editProfilFormType>
                                 label="Pays"
                                 type="text"
                                 placeholder="Pays"
@@ -294,7 +302,7 @@ export function EditCompanyProfile() {
                                     onChange: () => clearErrors('country'),
                                 })}
                                 error={errors.country}
-                                className="input input-primary border-primary border-1"
+                                className="input input-primary"
                             />
                         </div>
                     </FormSection>
