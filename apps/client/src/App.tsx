@@ -34,7 +34,6 @@ function App() {
                         { path: 'signin', element: <Login /> },
                         { path: 'forgot-password', element: <ForgotPassword /> },
                         { path: 'company/signup', element: <CompanySignup /> },
-                        { path: 'internships/list', element: <InternshipPage /> }, //Pour test le style uniquement
                     ],
                 },
                 {
@@ -55,6 +54,8 @@ function App() {
                                 },
                             ],
                         },
+                        { path: 'internships/list', element: <InternshipPage /> },
+
                     ],
                 },
             ],

@@ -1,33 +1,23 @@
 import React from 'react';
 import Card from '../../components/ui/card/Card';
-import { useJobStore } from '../../store/internShipStore';
+import { useInternShipStore } from '../../store/useInternShipStore';
+import type { InternShip } from '../../types/internship.types';
 
-export type Internship = {
-  id: string;
-  title: string;
-  company: string;
-  location?: string;
-  logo?: string;
-  postedAt?: string;
-  type?: string;
-  category?: string;
-};
+const InternshipCard: React.FC<{ internship: InternShip; isSelected: boolean }> = ({ internship, isSelected }) => {
+    const { setSelectedInternshipId } = useInternShipStore();
 
-const InternshipCard: React.FC<{ internship: Internship; isSelected: boolean }> = ({ internship, isSelected }) => {
-  const { setSelectedJobId } = useJobStore();
-
-  return (
-    <Card
-      id={internship.id}
-      title={internship.title}
-      subtitle={`${internship.company}${internship.location ? ` • ${internship.location}` : ''}`}
-      meta={internship.postedAt}
-      imageSrc={internship.logo}
-      isSelected={isSelected}
-      onClick={(id) => id && setSelectedJobId(id)}
-        className={`bg-base-100! border-base-300!`}
-    />
-  );
+    return (
+        <Card
+            id={internship._id}
+            title={internship.title}
+            subtitle={`${internship.company.name}${internship.adress ? ` • ${internship.adress}` : ''}`}
+            meta={internship.duration}
+            imageSrc={internship.company.logo}
+            isSelected={isSelected}
+            onClick={(id) => id && setSelectedInternshipId(id)}
+            className={`bg-base-100! border-base-300! cursor-pointer`}
+        />
+    );
 };
 
 export default InternshipCard;
