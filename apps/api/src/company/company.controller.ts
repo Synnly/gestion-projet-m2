@@ -19,7 +19,7 @@ import { PostService } from '../post/post.service';
 import { CompanyDto } from './dto/company.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { RolesGuard } from '../common/roles/roles.guard';
-import { CompanyOwnerGuard } from '../common/roles/companyOwner.guard';
+import { CompanyOwnerGuard } from './companyOwner.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { AuthGuard } from '../auth/auth.guard';

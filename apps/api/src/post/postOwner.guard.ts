@@ -1,6 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { Role } from './roles.enum';
-import { PostService } from '../../post/post.service';
+import { Role } from '../common/roles/roles.enum';
+import { PostService } from '../post/post.service';
 
 /**
  * Guard that ensures a COMPANY user can only update/delete their own posts.

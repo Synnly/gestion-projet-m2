@@ -1,6 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { Role } from './roles.enum';
-import { PostService } from '../../post/post.service';
+import { Role } from '../common/roles/roles.enum';
 
 /**
  * Guard that ensures a COMPANY user can only update/delete their own company resource.
@@ -8,8 +7,6 @@ import { PostService } from '../../post/post.service';
  */
 @Injectable()
 export class CompanyOwnerGuard implements CanActivate {
-    constructor(private readonly postService: PostService) {}
-
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const req = context.switchToHttp().getRequest();
         const { user, params } = req || {};

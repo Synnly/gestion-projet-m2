@@ -20,7 +20,7 @@ import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { CreatePostDto } from './dto/createPost.dto';
-import { PostOwnerGuard } from 'src/common/roles/postOwner.guard';
+import { PostOwnerGuard } from './postOwner.guard';
 
 /**
  * Controller handling post-related HTTP requests
@@ -63,7 +63,7 @@ export class PostController {
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.CREATED)
     async create(
-        @Req() req,
+        @Req() req: any,
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: CreatePostDto,
     ) {
         const userId = req.user.sub;
