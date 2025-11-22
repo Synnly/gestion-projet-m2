@@ -6,24 +6,35 @@ import { Post } from '../../../src/post/post.schema';
 import { CreatePostDto } from '../../../src/post/dto/createPost.dto';
 import { PostType } from '../../../src/post/post.schema';
 
+const basePost = {
+    _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
+    title: 'Développeur Full Stack',
+    description: 'Nous recherchons un développeur full stack expérimenté',
+    duration: '6 mois',
+    startDate: '2025-01-15',
+    minSalary: 2000,
+    maxSalary: 3000,
+    sector: 'IT',
+    keySkills: ['JavaScript', 'TypeScript', 'React', 'Node.js'],
+    adress: 'Paris, France',
+    type: PostType.Hybride,
+    isVisible: true,
+};
+
+const createMockPost = (overrides: Partial<Post> = {}) => {
+    const post: any = {
+        ...basePost,
+        ...overrides,
+    };
+    post.populate = jest.fn().mockResolvedValue(post);
+    return post;
+};
+
 describe('PostService', () => {
     let service: PostService;
     let model: Model<Post>;
 
-    const mockPost = {
-        _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
-        title: 'Développeur Full Stack',
-        description: 'Nous recherchons un développeur full stack expérimenté',
-        duration: '6 mois',
-        startDate: '2025-01-15',
-        minSalary: 2000,
-        maxSalary: 3000,
-        sector: 'IT',
-        keySkills: ['JavaScript', 'TypeScript', 'React', 'Node.js'],
-        adress: 'Paris, France',
-        type: PostType.Hybride,
-        isVisible: true,
-    };
+    const mockPost = createMockPost();
 
     const mockPostModel = {
         create: jest.fn(),
@@ -54,6 +65,7 @@ describe('PostService', () => {
     });
 
     describe('create', () => {
+        const companyId = '507f1f77bcf86cd799439099';
         const validCreatePostDto: CreatePostDto = {
             title: 'Nouveau poste',
             description: 'Description du nouveau poste',
@@ -83,7 +95,7 @@ describe('PostService', () => {
             (model as any) = jest.fn().mockReturnValue(postInstance);
             const serviceWithMock = new PostService(model);
 
-            const result = await serviceWithMock.create(validCreatePostDto);
+            const result = await serviceWithMock.create(validCreatePostDto, companyId);
 
             expect(mockSave).toHaveBeenCalledTimes(1);
             expect(result).toEqual(mockPost);
@@ -105,7 +117,7 @@ describe('PostService', () => {
             (model as any) = jest.fn().mockReturnValue(postInstance);
             const serviceWithMock = new PostService(model);
 
-            const result = await serviceWithMock.create(minimalDto);
+            const result = await serviceWithMock.create(minimalDto, companyId);
 
             expect(mockSave).toHaveBeenCalledTimes(1);
             expect(result.title).toBe('Titre minimal');
@@ -122,7 +134,7 @@ describe('PostService', () => {
             (model as any) = jest.fn().mockReturnValue(postInstance);
             const serviceWithMock = new PostService(model);
 
-            const result = await serviceWithMock.create(validCreatePostDto);
+            const result = await serviceWithMock.create(validCreatePostDto, companyId);
 
             expect(mockSave).toHaveBeenCalledTimes(1);
             expect(result).toHaveProperty('duration');
@@ -134,21 +146,24 @@ describe('PostService', () => {
 
     describe('findAll', () => {
         it('should return an array of posts when findAll is called', async () => {
-            const mockPosts = [mockPost];
+            const mockPosts = [createMockPost()];
             const execMock = jest.fn().mockResolvedValue(mockPosts);
-            mockPostModel.find.mockReturnValue({ exec: execMock });
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.find.mockReturnValue({ populate: populateMock });
 
             const result = await service.findAll();
 
             expect(result).toHaveLength(1);
             expect(result[0].title).toBe('Développeur Full Stack');
             expect(mockPostModel.find).toHaveBeenCalledTimes(1);
+            expect(populateMock).toHaveBeenCalledWith('company');
             expect(execMock).toHaveBeenCalledTimes(1);
         });
 
         it('should return an empty array when no posts exist and findAll is called', async () => {
             const execMock = jest.fn().mockResolvedValue([]);
-            mockPostModel.find.mockReturnValue({ exec: execMock });
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.find.mockReturnValue({ populate: populateMock });
 
             const result = await service.findAll();
 
@@ -158,20 +173,13 @@ describe('PostService', () => {
 
         it('should return multiple posts when multiple posts exist and findAll is called', async () => {
             const mockPosts = [
-                mockPost,
-                {
-                    ...mockPost,
-                    _id: new Types.ObjectId('507f1f77bcf86cd799439012'),
-                    title: 'Développeur Backend',
-                },
-                {
-                    ...mockPost,
-                    _id: new Types.ObjectId('507f1f77bcf86cd799439013'),
-                    title: 'Développeur Frontend',
-                },
+                createMockPost(),
+                createMockPost({ _id: new Types.ObjectId('507f1f77bcf86cd799439012'), title: 'Développeur Backend' }),
+                createMockPost({ _id: new Types.ObjectId('507f1f77bcf86cd799439013'), title: 'Développeur Frontend' }),
             ];
             const execMock = jest.fn().mockResolvedValue(mockPosts);
-            mockPostModel.find.mockReturnValue({ exec: execMock });
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.find.mockReturnValue({ populate: populateMock });
 
             const result = await service.findAll();
 
@@ -186,20 +194,23 @@ describe('PostService', () => {
         const validObjectId = '507f1f77bcf86cd799439011';
 
         it('should return a post when valid id is provided and findOne is called', async () => {
-            const execMock = jest.fn().mockResolvedValue(mockPost);
-            mockPostModel.findById.mockReturnValue({ exec: execMock });
+            const execMock = jest.fn().mockResolvedValue(createMockPost());
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.findById.mockReturnValue({ populate: populateMock });
 
             const result = await service.findOne(validObjectId);
 
             expect(result).toBeDefined();
             expect(result?.title).toBe('Développeur Full Stack');
             expect(mockPostModel.findById).toHaveBeenCalledWith(validObjectId);
+            expect(populateMock).toHaveBeenCalledWith('company');
             expect(execMock).toHaveBeenCalledTimes(1);
         });
 
         it('should return null when post is not found and findOne is called', async () => {
             const execMock = jest.fn().mockResolvedValue(null);
-            mockPostModel.findById.mockReturnValue({ exec: execMock });
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.findById.mockReturnValue({ populate: populateMock });
 
             const result = await service.findOne(validObjectId);
 
@@ -209,7 +220,8 @@ describe('PostService', () => {
 
         it('should return correct post data when post exists and findOne is called', async () => {
             const execMock = jest.fn().mockResolvedValue(mockPost);
-            mockPostModel.findById.mockReturnValue({ exec: execMock });
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.findById.mockReturnValue({ populate: populateMock });
 
             const result = await service.findOne(validObjectId);
 

@@ -3,7 +3,8 @@ describe('main bootstrap (import)', () => {
         jest.isolateModules(() => {
             const listenMock = jest.fn().mockResolvedValue(undefined);
             const useMock = jest.fn();
-            const createMock = jest.fn().mockResolvedValue({ use: useMock, listen: listenMock });
+            const enableCorsMock = jest.fn();
+            const createMock = jest.fn().mockResolvedValue({ use: useMock, listen: listenMock, enableCors: enableCorsMock });
 
             jest.doMock('@nestjs/core', () => ({ NestFactory: { create: createMock } }));
             jest.doMock('cookie-parser', () => jest.fn());

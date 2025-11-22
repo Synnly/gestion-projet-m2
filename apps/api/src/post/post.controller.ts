@@ -22,7 +22,7 @@ import { PostOwnerGuard } from './post.owner.guard';
  * Controller handling post-related HTTP requests
  */
 @UseGuards(AuthGuard)
-@Controller('/api/posts')
+@Controller('/api/company/:companyId/posts')
 export class PostController {
     constructor(private readonly postService: PostService) {}
 

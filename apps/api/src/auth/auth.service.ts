@@ -58,7 +58,6 @@ export class AuthService {
         if (!(await bcrypt.compare(password, user.password))) {
             throw new InvalidCredentialsException('Invalid email or password');
         }
-
         // Generating tokens
         const { token, rti } = await this.generateRefreshToken(user._id, user.role);
         const accessToken = await this.generateAccessToken(user._id, user.email, rti);
@@ -103,11 +102,13 @@ export class AuthService {
         if (!user) {
             throw new InvalidCredentialsException('User not found');
         }
-        let accessTokenPayload: AccessTokenPayload = {
+        const accessTokenPayload: AccessTokenPayload = {
             sub: userId,
             role: user.role,
             email: email,
             rti: rti,
+            isVerified: user.isVerified,
+            isValid: user.isValid,
         };
 
         return this.jwtService.signAsync(accessTokenPayload);
@@ -132,7 +133,7 @@ export class AuthService {
             expiresAt: refreshTokenExpiryDate,
         });
 
-        let refreshTokenPayload: RefreshTokenPayload = {
+        const refreshTokenPayload: RefreshTokenPayload = {
             _id: refreshToken._id,
             sub: userId,
             role: role,
@@ -161,7 +162,7 @@ export class AuthService {
             throw new InvalidCredentialsException('Invalid refresh token');
         }
 
-        const decodesRefreshToken = this.refreshJwtService.decode(refreshTokenString) as RefreshTokenPayload;
+        const decodesRefreshToken = this.refreshJwtService.decode(refreshTokenString);
         const refreshToken = await this.refreshTokenModel.findOne({ _id: decodesRefreshToken._id });
 
         if (!refreshToken) throw new InvalidCredentialsException('Refresh token not found');
@@ -200,7 +201,7 @@ export class AuthService {
             throw new InvalidCredentialsException('Invalid refresh token');
         }
 
-        const refreshToken = this.refreshJwtService.decode(refreshTokenString) as RefreshTokenPayload;
+        const refreshToken = this.refreshJwtService.decode(refreshTokenString);
 
         await this.refreshTokenModel.deleteOne({ _id: refreshToken._id });
     }

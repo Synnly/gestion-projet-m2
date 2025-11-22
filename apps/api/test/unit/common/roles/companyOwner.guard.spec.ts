@@ -31,14 +31,14 @@ describe('CompanyOwnerGuard', () => {
 
     describe('canActivate', () => {
         it('should throw ForbiddenException when user is not authenticated', () => {
-            const context = createMockExecutionContext(null, { id: '123' });
+            const context = createMockExecutionContext(null, { companyId: '123' });
 
             expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
             expect(() => guard.canActivate(context)).toThrow('User not authenticated');
         });
 
         it('should throw ForbiddenException when user is undefined', () => {
-            const context = createMockExecutionContext(undefined, { id: '123' });
+            const context = createMockExecutionContext(undefined, { companyId: '123' });
 
             expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
             expect(() => guard.canActivate(context)).toThrow('User not authenticated');
@@ -46,7 +46,7 @@ describe('CompanyOwnerGuard', () => {
 
         it('should allow access for ADMIN role regardless of company ID', () => {
             const user = { role: Role.ADMIN, sub: 'admin-id' };
-            const context = createMockExecutionContext(user, { id: 'different-company-id' });
+            const context = createMockExecutionContext(user, { companyId: 'different-company-id' });
 
             const result = guard.canActivate(context);
 
@@ -55,7 +55,7 @@ describe('CompanyOwnerGuard', () => {
 
         it('should throw ForbiddenException for non-COMPANY and non-ADMIN roles', () => {
             const user = { role: Role.STUDENT, sub: 'student-id' };
-            const context = createMockExecutionContext(user, { id: 'company-id' });
+            const context = createMockExecutionContext(user, { companyId: 'company-id' });
 
             expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
             expect(() => guard.canActivate(context)).toThrow("You can't access this resource");
@@ -71,7 +71,7 @@ describe('CompanyOwnerGuard', () => {
 
         it('should throw ForbiddenException when userSub is missing', () => {
             const user = { role: Role.COMPANY };
-            const context = createMockExecutionContext(user, { id: 'company-id' });
+            const context = createMockExecutionContext(user, { companyId: 'company-id' });
 
             expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
             expect(() => guard.canActivate(context)).toThrow('Ownership cannot be verified');
@@ -79,7 +79,7 @@ describe('CompanyOwnerGuard', () => {
 
         it('should throw ForbiddenException when company tries to access different company', () => {
             const user = { role: Role.COMPANY, sub: 'company-id-1' };
-            const context = createMockExecutionContext(user, { id: 'company-id-2' });
+            const context = createMockExecutionContext(user, { companyId: 'company-id-2' });
 
             expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
             expect(() => guard.canActivate(context)).toThrow('You can only modify your own company');
@@ -87,7 +87,7 @@ describe('CompanyOwnerGuard', () => {
 
         it('should allow access when company owns the resource', () => {
             const user = { role: Role.COMPANY, sub: 'company-id' };
-            const context = createMockExecutionContext(user, { id: 'company-id' });
+            const context = createMockExecutionContext(user, { companyId: 'company-id' });
 
             const result = guard.canActivate(context);
 
@@ -96,7 +96,7 @@ describe('CompanyOwnerGuard', () => {
 
         it('should allow access when IDs match as strings', () => {
             const user = { role: Role.COMPANY, sub: '507f1f77bcf86cd799439011' };
-            const context = createMockExecutionContext(user, { id: '507f1f77bcf86cd799439011' });
+            const context = createMockExecutionContext(user, { companyId: '507f1f77bcf86cd799439011' });
 
             const result = guard.canActivate(context);
 
@@ -107,7 +107,7 @@ describe('CompanyOwnerGuard', () => {
             const userId = { toString: () => '507f1f77bcf86cd799439011' };
             const companyId = { toString: () => '507f1f77bcf86cd799439011' };
             const user = { role: Role.COMPANY, sub: userId };
-            const context = createMockExecutionContext(user, { id: companyId });
+            const context = createMockExecutionContext(user, { companyId });
 
             const result = guard.canActivate(context);
 
@@ -118,7 +118,7 @@ describe('CompanyOwnerGuard', () => {
             const userId = { toString: () => '507f1f77bcf86cd799439011' };
             const companyId = { toString: () => '507f1f77bcf86cd799439012' };
             const user = { role: Role.COMPANY, sub: userId };
-            const context = createMockExecutionContext(user, { id: companyId });
+            const context = createMockExecutionContext(user, { companyId });
 
             expect(() => guard.canActivate(context)).toThrow('You can only modify your own company');
         });

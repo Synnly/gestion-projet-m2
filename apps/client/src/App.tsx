@@ -1,35 +1,69 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import './App.css';
+import { createBrowserRouter, Outlet } from 'react-router';
+import { RouterProvider } from 'react-router';
+import { CompanySignup } from './auth/companySignup/index';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Login } from './auth/Login/index';
+import { CompleteProfil } from './company/completeProfil/index';
+import { protectedMiddleware } from './middleware/protectAuthMiddleware';
+import { completeProfilMiddleware } from './middleware/completeProfilMiddleware';
+import { notAuthMiddleWare } from './middleware/notAuthMiddleware';
+import { VerifyEmail } from './user/verifyMail';
+import { userStore } from './store/userStore';
+import { ForgotPassword } from './user/ForgotPassword';
+import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
+import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
+import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
 
 function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    userStore.persist.rehydrate();
+    const queryClient = new QueryClient();
+    // Replace the code below with your own components
+    const route = [
+        {
+            path: '/',
+            id: 'root',
+            middleware: [completeProfilMiddleware],
+            element: <Outlet />,
+            children: [
+                {
+                    loader: notAuthMiddleWare,
+                    children: [
+                        { index: true, element: <div>Hello World</div> },
+                        { path: 'signin', element: <Login /> },
+                        { path: 'forgot-password', element: <ForgotPassword /> },
+                        { path: 'company/signup', element: <CompanySignup /> },
+                    ],
+                },
+                {
+                    loader: protectedMiddleware,
+                    element: <AuthRoutes />,
+                    children: [
+                        { path: 'verify', element: <VerifyEmail /> },
+                        { path: 'complete-profil', element: <CompleteProfil /> },
+                        {
+                            path: 'company',
+                            element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
+                            children: [
+                                { path: 'dashboard', element: <div>Company Dashboard</div> },
+                                { path: 'projects', element: <div>Company Projects</div> },
+                                {
+                                    element: <VerifiedRoutes redirectPath="/company/dashboard" />,
+                                    children: [],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
+    ];
+    const router = createBrowserRouter(route);
+    return (
+        <QueryClientProvider client={queryClient}>
+            <RouterProvider router={router} />
+        </QueryClientProvider>
+    );
 }
 
-export default App
+export default App;

@@ -101,7 +101,7 @@ describe('AuthController', () => {
                 httpOnly: true,
                 secure: true,
                 sameSite: 'lax',
-                path: '/api/auth/refresh',
+                path: '/api',
                 maxAge: REFRESH_TOKEN_LIFESPAN_MINUTES * 60 * 1000,
             };
             expect(mockRes.cookie).toHaveBeenCalledWith('refreshToken', refreshToken, expectedOptions);
@@ -204,7 +204,7 @@ describe('AuthController', () => {
             expect(mockRes.cookie).toHaveBeenCalledWith(
                 'refreshToken',
                 'refresh-token-456',
-                expect.objectContaining({ path: '/api/auth/refresh' }),
+                expect.objectContaining({ path: '/api' }),
             );
         });
     });

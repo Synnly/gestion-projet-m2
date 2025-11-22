@@ -1,4 +1,12 @@
-import { Injectable, OnModuleInit, NotFoundException, ForbiddenException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+    Injectable,
+    OnModuleInit,
+    NotFoundException,
+    ForbiddenException,
+    BadRequestException,
+    InternalServerErrorException,
+    Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
 import { BUCKET_PREFIXES, URL_EXPIRY, PATH_REGEX } from './s3.constants';
@@ -23,7 +31,7 @@ export interface FileMetadata {
 
 /**
  * S3Service - Simplified version for presigned URLs only
- * 
+ *
  * Handles:
  * - Generating presigned PUT URLs for uploads (logos & CVs)
  * - Generating presigned GET URLs for downloads
@@ -53,9 +61,13 @@ export class S3Service implements OnModuleInit {
         const useSSL = this.configService.get<string>('MINIO_USE_SSL') === 'true';
         const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY');
         const secretKey = this.configService.get<string>('MINIO_SECRET_KEY');
-
+        Logger.log(endpoint);
+        Logger.log(accessKey);
+        Logger.log(secretKey);
         if (!endpoint || !accessKey || !secretKey) {
-            throw new InvalidConfigurationException('MinIO configuration incomplete. Check MINIO_ENDPOINT, MINIO_ACCESS_KEY, and MINIO_SECRET_KEY');
+            throw new InvalidConfigurationException(
+                'MinIO configuration incomplete. Check MINIO_ENDPOINT, MINIO_ACCESS_KEY, and MINIO_SECRET_KEY',
+            );
         }
 
         this.bucket = this.configService.get<string>('MINIO_BUCKET') || 'uploads';
@@ -78,7 +90,7 @@ export class S3Service implements OnModuleInit {
 
             if (!exists) {
                 await this.minioClient.makeBucket(this.bucket, '');
-            } 
+            }
         } catch (error) {
             throw error;
         }
@@ -98,7 +110,7 @@ export class S3Service implements OnModuleInit {
     ): Promise<PresignedUploadResult> {
         // Extract extension from original filename
         const extension = originalFilename.split('.').pop()?.toLowerCase() || '';
-        
+
         // Generate filename: userId_logo.ext or userId_cv.ext (no folder prefix)
         const fileName = `${userId}_${fileType}.${extension}`;
 
@@ -119,11 +131,7 @@ export class S3Service implements OnModuleInit {
 
         try {
             // Generate presigned PUT URL with metadata
-            const uploadUrl = await this.minioClient.presignedPutObject(
-                this.bucket,
-                fileName,
-                URL_EXPIRY.UPLOAD,
-            );
+            const uploadUrl = await this.minioClient.presignedPutObject(this.bucket, fileName, URL_EXPIRY.UPLOAD);
 
             return {
                 fileName,
@@ -157,12 +165,7 @@ export class S3Service implements OnModuleInit {
         await this.verifyOwnership(fileName, userId);
 
         try {
-            const downloadUrl = await this.minioClient.presignedGetObject(
-                this.bucket,
-                fileName,
-                URL_EXPIRY.DOWNLOAD,
-            );
-
+            const downloadUrl = await this.minioClient.presignedGetObject(this.bucket, fileName, URL_EXPIRY.DOWNLOAD);
 
             return { downloadUrl };
         } catch (error) {
@@ -198,14 +201,37 @@ export class S3Service implements OnModuleInit {
     }
 
     /**
-     * Check if a file exists in the bucket
-     * @param fileName Full path of the file
-     * @returns True if file exists, false otherwise
+     * Check if a file exists in the bucket (ignores extension)
+     * @param fileName Full path of the file (extension is ignored)
+     * @returns True if file exists (with any extension), false otherwise
      */
     async fileExists(fileName: string): Promise<boolean> {
         try {
-            await this.minioClient.statObject(this.bucket, fileName);
-            return true;
+            // Remove extension from fileName to get base name
+            const baseFileName = fileName.substring(0, fileName.lastIndexOf('.'));
+            
+            // List all objects in bucket with this base name prefix
+            const stream = this.minioClient.listObjectsV2(this.bucket, baseFileName, false);
+            
+            return new Promise((resolve, reject) => {
+                let found = false;
+                
+                stream.on('data', (obj) => {
+                    // Check if object name starts with base name (ignoring extension)
+                    if (obj.name && obj.name.startsWith(baseFileName + '.')) {
+                        found = true;
+                        stream.destroy();
+                    }
+                });
+                
+                stream.on('end', () => {
+                    resolve(found);
+                });
+                
+                stream.on('error', (err) => {
+                    resolve(false);
+                });
+            });
         } catch {
             return false;
         }
@@ -223,14 +249,13 @@ export class S3Service implements OnModuleInit {
         try {
             const stat = await this.minioClient.statObject(this.bucket, fileName);
             const metadata = stat.metaData || {};
-            
+
             // Check if uploaderId metadata exists and matches
             const uploaderId = metadata['uploaderid'] || metadata['uploaderId'];
-            
+
             if (uploaderId && uploaderId !== userId) {
                 throw new ForbiddenException('You do not have permission to access this file');
             }
-
         } catch (error) {
             if (error instanceof ForbiddenException) {
                 throw error;

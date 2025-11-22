@@ -26,20 +26,17 @@ export class PostService {
      * Creates a new post in the database
      *
      * @param dto - The complete post data required for creation
-     * @param userId - The id of the company (or admin) creating the post
-     * @returns Promise resolving to the created post
+     * @param companyId - The MongoDB ObjectId of the company as a string
+     * @returns Promise resolving to void upon successful creation
      */
-    async create(dto: CreatePostDto, userId: string) {
-        // We check that the company exists and it has not been soft-deleted
-        const company = await this.companyModel.findOne({ _id: userId, deletedAt: { $exists: false } });
-
-        if (!company) throw new NotFoundException('Company not found');
+    async create(dto: CreatePostDto, companyId: string): Promise<Post> {
+        const company = await this.companyModel.findOne({ _id: companyId, deletedAt: { $exists: false } });
+        if (!company) throw new NotFoundException('Company not found, cannot create post');
 
         const createdPost = new this.postModel({
             ...dto,
-            companyId: company._id,
+            company: new Types.ObjectId(companyId),
         });
-
         return createdPost.save();
     }
 
@@ -49,8 +46,7 @@ export class PostService {
      * @returns Promise resolving to an array of all active posts
      */
     async findAll(): Promise<Post[]> {
-        const posts = await this.postModel.find({ deletedAt: { $exists: false } }).exec();
-        return posts;
+        return await this.postModel.find({ deletedAt: { $exists: false } }).populate('company').exec();
     }
 
     /**
@@ -66,7 +62,7 @@ export class PostService {
      * This function should only be used for internal operations, not for user-facing features.
      */
     async findAllByCompanyEvenIfDeleted(companyId: string): Promise<Post[]> {
-        return await this.postModel.find({ companyId: new Types.ObjectId(companyId) }).exec(); 
+        return await this.postModel.find({ company: new Types.ObjectId(companyId) }).exec(); 
     }
 
     /**
@@ -78,8 +74,7 @@ export class PostService {
      * @returns Promise resolving to the post if found and active, null otherwise
      */
     async findOne(id: string): Promise<Post | null> {
-        const post = await this.postModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
-        return post;
+        return await this.postModel.findOne({ _id: id, deletedAt: { $exists: false } }).populate('company').exec();
     }
 
     /**
@@ -92,8 +87,7 @@ export class PostService {
      * @returns Promise resolving to the post if found and active, null otherwise
      */
     async findOneEvenIfDeleted(id: string): Promise<Post | null> {
-        const post = await this.postModel.findOne({ _id: id }).exec();
-        return post;
+        return await this.postModel.findOne({ _id: id }).populate('company').exec();
     }
 
 
@@ -134,7 +128,7 @@ export class PostService {
      */
     async removeAllByCompany(companyId: string): Promise<void> {
         await this.postModel.updateMany(
-            { companyId: new Types.ObjectId(companyId), deletedAt: { $exists: false } },
+            { company: new Types.ObjectId(companyId), deletedAt: { $exists: false } },
             { $set: { deletedAt: new Date() } }
         ).exec();
         return;
@@ -147,7 +141,7 @@ export class PostService {
      * @returns Promise resolving to void upon successful deletion
      */
     async hardDeleteAllByCompany(companyId: string): Promise<void> {
-        await this.postModel.deleteMany({ companyId: new Types.ObjectId(companyId) }).exec();  
+        await this.postModel.deleteMany({ company: new Types.ObjectId(companyId) }).exec();  
         return;
     }
     

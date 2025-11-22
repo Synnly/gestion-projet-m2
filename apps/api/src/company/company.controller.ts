@@ -11,6 +11,7 @@ import {
     NotFoundException,
     ValidationPipe,
     UseGuards,
+    ConflictException,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { CreateCompanyDto } from './dto/createCompany.dto';
@@ -24,7 +25,9 @@ import { CompanyOwnerGuard } from './company.owner.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { AuthGuard } from '../auth/auth.guard';
-import { PostDto } from 'src/post/dto/post.dto';
+import { PostDto } from '../post/dto/post.dto';
+import { PostDocument } from '../post/post.schema';
+import { Company } from './company.schema';
 import { CreatePostDto } from 'src/post/dto/createPost.dto';
 
 /**
@@ -46,8 +49,8 @@ export class CompanyController {
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<CompanyDto[]> {
         const companies = await this.companyService.findAll();
-        // return companies.map((company) => new CompanyDto(company));
-        return plainToInstance(CompanyDto, companies);
+
+        return companies.map((company) => plainToInstance(CompanyDto, company));
     }
 
     /**
@@ -61,7 +64,7 @@ export class CompanyController {
     async findOne(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyDto> {
         const company = await this.companyService.findOne(companyId);
         if (!company) throw new NotFoundException(`Company with id ${companyId} not found`);
-        return new CompanyDto(company);
+        return plainToInstance(CompanyDto, company);
     }
 
     /**
@@ -74,7 +77,15 @@ export class CompanyController {
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
         dto: CreateCompanyDto,
     ) {
-        await this.companyService.create(dto);
+        try {
+            await this.companyService.create(dto);
+        } catch (error) {
+            if (error.code === 11000) {
+                throw new ConflictException(`Company with email ${dto.email} already exists`);
+            } else {
+                throw error;
+            }
+        }
     }
 
     /**
@@ -104,25 +115,8 @@ export class CompanyController {
     @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
-    async remove(@Param('companyId', ParseObjectIdPipe) companyId: string) {
-        await this.companyService.remove(companyId);
-    }
-
-
-    // ===================================
-    //          COMPANY'S POSTS
-    // ===================================
-    
-    /**
-     * Retrieves all posts made by the company
-     * @returns An array of all the posts of a company
-     */
-    @Get('/:companyId/posts')
-    @HttpCode(HttpStatus.OK)
-    async findAllPosts(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<PostDto[]> {
-        const posts = await this.postService.findAllByCompany(companyId);
-        // return posts.map((post) => new PostDto(post));
-        return plainToInstance(PostDto, posts);
+    async remove(@Param('id', ParseObjectIdPipe) id: string) {
+        await this.companyService.remove(id);
     }
 
     /**
