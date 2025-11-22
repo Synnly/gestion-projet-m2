@@ -22,7 +22,7 @@ import { PostService } from '../post/post.service';
 import { CompanyDto } from './dto/company.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { RolesGuard } from '../common/roles/roles.guard';
-import { CompanyOwnerGuard } from './companyOwner.guard';
+import { CompanyOwnerGuard } from './company.owner.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { AuthGuard } from '../auth/auth.guard';
@@ -136,7 +136,7 @@ export class CompanyController {
      * @param req The HTTP request object containing the authenticated user
      */
     @Post(':companyId/posts') // Maps to POST /api/companies/:companyId/posts
-    @UseGuards(RolesGuard)
+    @UseGuards(RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.CREATED)
     async createPost(
