@@ -8,6 +8,8 @@ import { Company } from 'src/company/company.schema';
 
 @Injectable()
 export class PostService { 
+    private readonly logger = new Logger(PostService.name);
+
     constructor(
         private readonly configService: ConfigService,
 
@@ -161,8 +163,15 @@ export class PostService {
         expirationDate.setDate(expirationDate.getDate() - retentionDays);
 
         // Delete all soft-deleted posts in a single operation  
-        await this.postModel.deleteMany({
+        const result = await this.postModel.deleteMany({
             deletedAt: { $lte: expirationDate }
         }).exec();
+
+        if (result.deletedCount > 0) {
+            const c = result.deletedCount;
+            this.logger.log(
+                `${c} soft-deleted post${c > 1 ? 's' : ''} ha${c > 1 ? 've' : 's'} been permanently deleted.`
+            );
+        }
     }
 }
