@@ -115,10 +115,39 @@ export class CompanyController {
     @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
-    async remove(@Param('id', ParseObjectIdPipe) id: string) {
-        await this.companyService.remove(id);
+    async remove(@Param('companyId', ParseObjectIdPipe) companyId: string) {
+        await this.companyService.remove(companyId);
     }
 
+    /**
+     * Maps a Company entity to a CompanyDto with nested PostDtos
+     * @param company The company entity to map
+     * @returns The mapped CompanyDto
+     */
+    private mapToDto(company: Company): CompanyDto {
+        const posts = company.posts ?? [];
+        return new CompanyDto({
+            ...company,
+            posts: posts.map((post: PostDocument) => new PostDto(post)),
+        });
+    }
+
+    // ===================================
+    //          COMPANY'S POSTS
+    // ===================================
+    
+    /**
+     * Retrieves all posts made by the company
+     * @returns An array of all the posts of a company
+     */
+    @Get('/:companyId/posts')
+    @HttpCode(HttpStatus.OK)
+    async findAllPosts(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<PostDto[]> {
+        const posts = await this.postService.findAllByCompany(companyId);
+        // return posts.map((post) => new PostDto(post));
+        return plainToInstance(PostDto, posts);
+    }
+    
     /**
      * Creates a new post for a specific company.
      * @param companyId The ID of the company creating the post (from URL)
