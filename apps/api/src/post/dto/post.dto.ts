@@ -88,7 +88,7 @@ export class PostDto {
     /** Reference to the company offering the internship */
     @Expose()
     @ValidateNested({ each: true })
-    @Type(() => PostDto)
+    @Type(() => CompanyDto)
     company: CompanyDto;
 
     constructor(partial?: Partial<Post>) {

@@ -34,7 +34,7 @@ export class CompanyService {
         @InjectModel(Company.name) private readonly companyModel: Model<CompanyUserDocument>,
         private readonly postService: PostService,
     ) {}
-
+    populateField = '_id title description duration startDate minSalary maxSalary sector keySkills address type';
     /**
      * Retrieves all active (non-deleted) companies
      *
@@ -53,7 +53,7 @@ export class CompanyService {
             .find({ deletedAt: { $exists: false } })
             .populate({
                 path: 'posts',
-                select: '_id title description duration startDate minSalary maxSalary sector keySkills adress type',
+                select: this.populateField,
             })
             .exec();
     }
@@ -79,7 +79,7 @@ export class CompanyService {
             .findOne({ _id: id, deletedAt: { $exists: false } })
             .populate({
                 path: 'posts',
-                select: '_id title description duration startDate minSalary maxSalary sector keySkills adress type',
+                select: this.populateField,
             })
             .exec();
     }
