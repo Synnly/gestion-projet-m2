@@ -1,5 +1,4 @@
 import {
-    Body,
     Controller,
     Delete,
     Get,
@@ -7,12 +6,8 @@ import {
     HttpStatus,
     NotFoundException,
     Param,
-    Post,
-    Req,
     UseGuards,
-    ValidationPipe,
 } from '@nestjs/common';
-import { Request } from 'express';
 import { plainToInstance } from 'class-transformer';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';
@@ -21,7 +16,6 @@ import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
-import { CreatePostDto } from './dto/createPost.dto';
 import { PostOwnerGuard } from './post.owner.guard';
 
 /**
@@ -40,7 +34,6 @@ export class PostController {
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<PostDto[]> {
         const posts = await this.postService.findAll();
-        // return posts.map((post) => new PostDto(post));
         return plainToInstance(PostDto, posts);
     }
 

@@ -14,9 +14,6 @@ export class PostOwnerGuard implements CanActivate {
         const req = context.switchToHttp().getRequest();
         const { user, params } = req || {};
 
-        console.log("User:", user);
-        console.log("Params:", params);
-
         // If no authenticated user, deny access (other guards should normally handle auth)
         if (!user) {
             throw new ForbiddenException('User not authenticated');
