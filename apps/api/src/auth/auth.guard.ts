@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
+import { Request } from 'express';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -17,37 +18,16 @@ export class AuthGuard implements CanActivate {
      * @throws {UnauthorizedException} if the token is missing or invalid
      * @throws {InvalidConfigurationException} if the refresh token secret is not configured
      */
-    // async canActivate(context: ExecutionContext): Promise<boolean> {
-    //     const request = context.switchToHttp().getRequest<Request>();
-    //     const refreshToken = request['refreshToken'];
-
-    //     if (!refreshToken) throw new UnauthorizedException('Refresh token not found');
-
-    //     const secret = this.configService.get<string>('REFRESH_TOKEN_SECRET');
-    //     if (!secret) throw new InvalidConfigurationException('Refresh token secret not configured');
-
-    //     request['user'] = await this.jwtService.verifyAsync(refreshToken, { secret });
-
-    //     return true;
-    // }
-
-    
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest<Request>();
+        const refreshToken = request.cookies['refreshToken'];
 
-        // Récupération du header Authorization
-        const auth = (request.headers as any).authorization;
-        if (!auth) throw new UnauthorizedException('Missing Authorization header');
+        if (!refreshToken) throw new UnauthorizedException('Refresh token not found');
 
-        const [type, token] = auth.split(' ');
-        if (type !== 'Bearer') throw new UnauthorizedException('Invalid token format');
+        const secret = this.configService.get<string>('REFRESH_TOKEN_SECRET');
+        if (!secret) throw new InvalidConfigurationException('Refresh token secret not configured');
 
-        const payload = await this.jwtService.verifyAsync(token, {
-            secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
-        });
-
-        request['user'] = payload;
+        request['user'] = await this.jwtService.verifyAsync(refreshToken, { secret });
         return true;
     }
-
 }
