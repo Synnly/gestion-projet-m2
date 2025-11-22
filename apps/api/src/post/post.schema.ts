@@ -12,14 +12,10 @@ export enum PostType {
 export class Post {
     /** Unique MongoDB identifier */
     _id: Types.ObjectId;
-
-    // /** Post's company id */
-    // @Prop({ type: Types.ObjectId, ref: Company.name, required: true })
-    // companyId: Types.ObjectId;
     
     /** Reference to the company offering the internship */
     @Prop({ required: true, type: Types.ObjectId, ref: 'Company' })
-    companyId: Company;
+    company: Company;
 
     /** Post's title */
     @Prop({ required: true })

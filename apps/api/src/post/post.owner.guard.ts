@@ -39,7 +39,7 @@ export class PostOwnerGuard implements CanActivate {
 
         if (post) {
             // We check if the post belong to the company requesting
-            if (String(post.companyId) !== String(userSub)) {
+            if (String(post.company._id) !== String(userSub)) {
                 throw new ForbiddenException('You cannot modify this post');
             } else {
                 // We check if the post has already been deleted (we do this because otherwise, we get the error message "You can only modify your own company")
