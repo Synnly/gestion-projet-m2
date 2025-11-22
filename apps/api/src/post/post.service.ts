@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from './post.schema';
 import { Model, Types } from 'mongoose';
 import { CreatePostDto } from './dto/createPost.dto';
+import { CreationFailedError } from '../errors/creationFailedError';
 
 @Injectable()
 export class PostService {
@@ -16,27 +17,23 @@ export class PostService {
      * @returns Promise resolving to void upon successful creation
      */
     async create(dto: CreatePostDto, companyId: string): Promise<Post> {
-    
         const createdPost = new this.postModel({
             ...dto,
             company: new Types.ObjectId(companyId),
         });
-       await createdPost.save();
 
-   const populatedPost = await this.postModel
-            .findById(createdPost._id)
-            .populate({
-                path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
-            })
-            .exec();
+        await createdPost.save();
+
+        const populatedPost = await this.postModel.findById(createdPost._id);
 
         if (!populatedPost) {
-            throw new Error('Post not found after creation');
+            throw new CreationFailedError('Post was not created successfully');
         }
 
-        return populatedPost; 
-
+        return await populatedPost.populate({
+            path: 'company',
+            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+        });
     }
     /**
      * Retrieves all active posts
