@@ -12,6 +12,7 @@ import {
     UseGuards,
     ValidationPipe,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { plainToInstance } from 'class-transformer';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';
@@ -54,22 +55,6 @@ export class PostController {
         const post = await this.postService.findOne(id);
         if (!post) throw new NotFoundException(`Post with id ${id} not found`);
         return new PostDto(post);
-    }
-
-    /**
-     * Creates a new post
-     * @param dto The post data for creation
-     */
-    @Post('')
-    @UseGuards(RolesGuard)
-    @Roles(Role.COMPANY, Role.ADMIN)
-    @HttpCode(HttpStatus.CREATED)
-    async create(
-        @Req() req: any,
-        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: CreatePostDto,
-    ) {
-        const userId = req.user.sub;
-        await this.postService.create(dto, userId);
     }
 
     /**
