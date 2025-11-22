@@ -8,7 +8,7 @@ import { CompleteProfil } from './company/completeProfil/index';
 import { CompanyDashboard } from './company/dashboard/index';
 import { CompanyProfile } from './company/profile/index';
 import { EditCompanyProfile } from './company/editProfile/index';
-import { ChangePassword } from './company/changePassword/index';
+import { ChangePassword } from './company/editProfile/changePassword/index';
 import { protectedMiddleware } from './middleware/protectAuthMiddleware';
 import { completeProfilMiddleware } from './middleware/completeProfilMiddleware';
 import { notAuthMiddleWare } from './middleware/notAuthMiddleware';

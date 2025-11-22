@@ -31,7 +31,7 @@ export const Navbar = ({ }: NavbarProps) => {
     }, [logoBlob]);
 
     return (
-        <nav className="sticky top-0 z-50 w-full container mx-auto bg-white shadow-sm px-8 py-2">
+        <nav className="sticky top-0 z-50 w-full mx-auto bg-white shadow-sm px-8 py-2">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 
                 <NavLink

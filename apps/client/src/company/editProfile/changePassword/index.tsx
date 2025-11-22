@@ -3,11 +3,11 @@ import { useForm, type Resolver } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { userStore } from '../../store/userStore';
-import { Navbar } from '../../components/Navbar';
-import { FormSection } from '../../components/FormSection';
-import { FormInput } from '../../components/FormInput';
-import { FormSubmit } from '../../components/FormSubmit';
+import { userStore } from '../../../store/userStore';
+import { Navbar } from '../../../components/Navbar';
+import { FormSection } from '../../../components/FormSection';
+import { FormInputEdit } from '../../../components/FormInputEdit';
+import { FormSubmit } from '../../../components/FormSubmit';
 
 // Schéma de validation pour le changement de mot de passe
 const changePasswordSchema = z
@@ -72,21 +72,20 @@ export function ChangePassword() {
     const onSubmit = async (data: ChangePasswordFormType) => {
         await mutateAsync(data.newPassword);
     };
-
-    const formInputStyle = 'p-3';
+    const formInputStyle = 'input input-primary w-full rounded-xl';
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="bg-gray-50">
             <Navbar />
-            <div className="w-full max-w-7xl mx-auto flex flex-col px-4 py-8 items-center">
-                <h1 className="text-3xl font-bold mt-10">Modifier le mot de passe</h1>
-                <p className="text-sm mt-4 italic text-gray-600">
+            <div className="w-full max-w-4xl mx-auto my-6 px-4 py-8 flex flex-col items-center bg-white rounded-lg shadow">
+                <h1 className="text-3xl font-bold">Modifier le mot de passe</h1>
+                <p className="text-sm mt-2 italic text-gray-600">
                     Choisissez un nouveau mot de passe sécurisé
                 </p>
 
                 <form className="mt-8 w-full max-w-md flex flex-col flex-1" onSubmit={handleSubmit(onSubmit)}>
                     <FormSection title="Nouveau mot de passe" className="mb-8">
-                        <FormInput<ChangePasswordFormType>
+                        <FormInputEdit<ChangePasswordFormType>
                             type="password"
                             placeholder="Nouveau mot de passe"
                             register={register('newPassword', {
@@ -108,7 +107,7 @@ export function ChangePassword() {
                     </FormSection>
 
                     <FormSection title="Confirmation" className="mb-8">
-                        <FormInput<ChangePasswordFormType>
+                        <FormInputEdit<ChangePasswordFormType>
                             type="password"
                             placeholder="Confirmez le mot de passe"
                             register={register('confirmPassword', {
@@ -125,11 +124,11 @@ export function ChangePassword() {
                         </div>
                     )}
 
-                    <div className="flex gap-4 mt-6">
+                    <div className="flex gap-4 mt-6 justify-end">
                         <button
                             type="button"
                             onClick={() => navigate('/company/profile')}
-                            className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="btn btn-base text-black rounded-xl"
                         >
                             Annuler
                         </button>
@@ -139,7 +138,7 @@ export function ChangePassword() {
                             pendingTitle="Modification..."
                             isError={isError}
                             error={error}
-                            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                            className="btn btn-primary text-black rounded-xl"
                         />
                     </div>
                 </form>

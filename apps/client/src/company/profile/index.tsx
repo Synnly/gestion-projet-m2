@@ -40,13 +40,13 @@ export function CompanyProfile() {
                         <div className='flex gap-4'>
                             <NavLink
                                 to="/company/profile/edit"
-                                className="px-4 py-2 bg-primary text-black rounded-lg hover:bg-primary-700 transition-colors"
+                                className="btn btn-primary text-black rounded-xl"
                             >
                                 Modifier le profil
                             </NavLink>
                             <NavLink
                                 to="/company/change-password"
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                className="btn btn-warning bg-red-500 text-white rounded-xl"
                             >
                                 Modifier le mot de passe
                             </NavLink>
@@ -77,7 +77,7 @@ export function CompanyProfile() {
                                         <img
                                             src={logoUrl}
                                             alt="Logo"
-                                            className="w-24 h-24 object-contain rounded-lg border"
+                                            className="w-24 h-24 object-contain"
                                         />
                                     )}
                                     <div className="flex-1">
