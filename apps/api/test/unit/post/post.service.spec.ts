@@ -81,27 +81,25 @@ describe('PostService', () => {
         };
 
         it('should create a new post when valid dto is provided and create is called', async () => {
-            const savedPost = { ...mockPost, save: jest.fn().mockResolvedValue(mockPost) };
-            jest.spyOn(model, 'constructor' as any).mockReturnValue(savedPost);
-
             const execMock = jest.fn().mockResolvedValue(createMockPost());
             const populateMock = jest.fn().mockReturnValue({ exec: execMock });
-            mockPostModel.findById.mockReturnValue({ populate: populateMock });
-            // Mock the constructor using Object.setPrototypeOf
             const mockSave = jest.fn().mockResolvedValue(mockPost);
             const postInstance = {
                 ...validCreatePostDto,
                 save: mockSave,
             };
 
-            // We need to mock the model instantiation
-            (model as any) = jest.fn().mockReturnValue(postInstance);
-            const serviceWithMock = new PostService(model);
+            const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
+                findById: jest.fn().mockReturnValue({ populate: populateMock }),
+            });
+            const serviceWithMock = new PostService(mockModel as any);
 
             const result = await serviceWithMock.create(validCreatePostDto, companyId);
 
             expect(mockSave).toHaveBeenCalledTimes(1);
-            expect(result).toEqual(mockPost);
+            expect(result._id?.toString()).toBe(mockPost._id.toString());
+            expect(result.title).toBe(mockPost.title);
+            expect(result.description).toBe(mockPost.description);
         });
 
         it('should create a post with minimal required fields when create is called', async () => {
@@ -117,8 +115,12 @@ describe('PostService', () => {
                 save: mockSave,
             };
 
-            (model as any) = jest.fn().mockReturnValue(postInstance);
-            const serviceWithMock = new PostService(model);
+            const execMock = jest.fn().mockResolvedValue(createMockPost({ ...minimalDto }));
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
+                findById: jest.fn().mockReturnValue({ populate: populateMock }),
+            });
+            const serviceWithMock = new PostService(mockModel as any);
 
             const result = await serviceWithMock.create(minimalDto, companyId);
 
@@ -134,8 +136,12 @@ describe('PostService', () => {
                 save: mockSave,
             };
 
-            (model as any) = jest.fn().mockReturnValue(postInstance);
-            const serviceWithMock = new PostService(model);
+            const execMock = jest.fn().mockResolvedValue(createMockPost());
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
+                findById: jest.fn().mockReturnValue({ populate: populateMock }),
+            });
+            const serviceWithMock = new PostService(mockModel as any);
 
             const result = await serviceWithMock.create(validCreatePostDto, companyId);
 
