@@ -81,7 +81,7 @@ export const Navbar = ({ }: NavbarProps) => {
                                     className="h-8 w-8 object-contain rounded"
                                 />
                             ) : (
-                                <span>Logo Entreprise</span>
+                                <span>Logo</span>
                             )}
                         </div>
 
