@@ -34,7 +34,7 @@ export class CompanyService {
         @InjectModel(Company.name) private readonly companyModel: Model<CompanyUserDocument>,
         private readonly postService: PostService,
     ) {}
-    populateField = '_id title description duration startDate minSalary maxSalary sector keySkills address type';
+    populateField = '_id title description duration startDate minSalary maxSalary sector keySkills adress type';
     /**
      * Retrieves all active (non-deleted) companies
      *
