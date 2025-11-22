@@ -3,6 +3,8 @@ import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { createPost } from "../../api/create_post";
 import { useCreatePostStore } from "../../store/CreatePostStore";
+import type { WorkMode } from "../../store/CreatePostStore";
+import { profileStore } from "../../store/profileStore";
 import MDEditor from "@uiw/react-md-editor";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
@@ -34,7 +36,15 @@ export function CreatePostForm() {
     setWorkMode,
   } = useCreatePostStore();
 
+  const profile = profileStore((state) => state.profile);
   const [skillInput, setSkillInput] = useState("");
+  const navigate = useNavigate();
+
+  const workModeMap: Record<WorkMode, string> = {
+    presentiel: "Présentiel",
+    teletravail: "Télétravail",
+    hybride: "Hybride",
+  };
 
   // Add the current skill chip when the user hits Enter inside the input.
   function handleSkillKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -46,52 +56,50 @@ export function CreatePostForm() {
     }
   }
 
-  const navigate = useNavigate();
-
   const mutation = useMutation({
-    mutationFn: createPost, // the payload is assembled in handleSubmit
+    mutationFn: createPost,
     onSuccess: () => {
       alert("L’offre de stage a été créée avec succès.");
-      // redirect to the dashboard when the offer is saved
       navigate("/company/dashboard");
     },
     onError: (error) => {
       console.error(error);
       alert(
-        "Une erreur est survenue lors de la création de l’offre de stage."
+        error instanceof Error
+          ? error.message
+          : "Une erreur est survenue lors de la création de l’offre de stage."
       );
     },
   });
 
   // Send the annonce payload to the API with the latest form state.
   function handleSubmit(event: FormEvent) {
-    console.log("submit")
     event.preventDefault();
-
     if (mutation.isLoading) return;
+
+    if (!profile?._id) {
+      alert("Impossible de créer l'annonce : identifiant entreprise manquant.");
+      return;
+    }
 
     const payload = {
       title,
       description,
-      location,
-      duration,
-      sector,
-      startDate,
-      minSalary,
-      maxSalary,
-      workMode,
-      skills,
-      isVisibleToStudents,
+      duration: duration || undefined,
+      sector: sector || undefined,
+      startDate: startDate || undefined,
+      minSalary: minSalary ? Number(minSalary) : undefined,
+      maxSalary: maxSalary ? Number(maxSalary) : undefined,
+      keySkills: skills,
+      adress: location || undefined,
+      type: workModeMap[workMode],
+      isVisible: isVisibleToStudents,
     };
 
-    console.log("Payload envoyé à l'API :", payload);
-
-    mutation.mutate(payload);
+    mutation.mutate({ companyId: profile._id, data: payload });
   }
 
-
   return (
-
     <div className="w-full max-w-xl">
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         {/* Header */}
@@ -188,7 +196,7 @@ export function CreatePostForm() {
                     className="badge badge-sm border-slate-200 bg-slate-100 text-[11px] text-slate-700 hover:border-slate-300 hover:bg-slate-200/80"
                   >
                     {skill}
-                    <span className="ml-1 text-[10px] text-slate-400">×</span>
+                    <span className="ml-1 text-[10px] text-slate-400">✕</span>
                   </button>
                 ))}
               </div>
@@ -251,7 +259,7 @@ export function CreatePostForm() {
                 </label>
                 <input
                   className="input input-sm w-full rounded-xl border-slate-200 bg-slate-50/60 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  placeholder="Ex : 900€ / mois (brut)"
+                  placeholder="Ex : 900 € / mois (brut)"
                   value={minSalary}
                   onChange={(e) => setMinSalary(e.target.value)}
                 />
@@ -262,7 +270,7 @@ export function CreatePostForm() {
                 </label>
                 <input
                   className="input input-sm w-full rounded-xl border-slate-200 bg-slate-50/60 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  placeholder="Ex : 1200€ / mois (brut)"
+                  placeholder="Ex : 1200 € / mois (brut)"
                   value={maxSalary}
                   onChange={(e) => setMaxSalary(e.target.value)}
                 />
@@ -278,30 +286,33 @@ export function CreatePostForm() {
                 <button
                   type="button"
                   onClick={() => setWorkMode("presentiel")}
-                  className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${workMode === "presentiel"
-                    ? "bg-white text-slate-900 border-slate-200"
-                    : "bg-transparent border-0 text-slate-500 hover:bg-slate-200/60"
-                    }`}
+                  className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${
+                    workMode === "presentiel"
+                      ? "bg-white text-slate-900 border-slate-200"
+                      : "bg-transparent border-0 text-slate-500 hover:bg-slate-200/60"
+                  }`}
                 >
                   Présentiel
                 </button>
                 <button
                   type="button"
                   onClick={() => setWorkMode("teletravail")}
-                  className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${workMode === "teletravail"
-                    ? "bg-white text-slate-900 border-slate-200"
-                    : "bg-transparent border-0 text-slate-500 hover:bg-slate-200/60"
-                    }`}
+                  className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${
+                    workMode === "teletravail"
+                      ? "bg-white text-slate-900 border-slate-200"
+                      : "bg-transparent border-0 text-slate-500 hover:bg-slate-200/60"
+                  }`}
                 >
                   Télétravail
                 </button>
                 <button
                   type="button"
                   onClick={() => setWorkMode("hybride")}
-                  className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${workMode === "hybride"
-                    ? "bg-white text-slate-900 border-slate-200"
-                    : "bg-transparent border-0 text-slate-500 hover:bg-slate-200/60"
-                    }`}
+                  className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${
+                    workMode === "hybride"
+                      ? "bg-white text-slate-900 border-slate-200"
+                      : "bg-transparent border-0 text-slate-500 hover:bg-slate-200/60"
+                  }`}
                 >
                   Hybride
                 </button>
@@ -324,9 +335,7 @@ export function CreatePostForm() {
                   type="checkbox"
                   className="toggle toggle-primary toggle-sm ml-4"
                   checked={isVisibleToStudents}
-                  onChange={(e) =>
-                    setIsVisibleToStudents(e.target.checked)
-                  }
+                  onChange={(e) => setIsVisibleToStudents(e.target.checked)}
                 />
               </label>
             </div>

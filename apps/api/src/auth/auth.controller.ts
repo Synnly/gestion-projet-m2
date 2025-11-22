@@ -45,7 +45,7 @@ export class AuthController {
             httpOnly: true,
             secure: true,
             sameSite: 'lax',
-            path: '/api/auth/refresh',
+            path: '/api',
             maxAge: this.COOKIE_LIFESPAN,
         });
         return access;

@@ -1,9 +1,10 @@
 import { CreatePostForm } from "../../components/posts/CreatePostForm";
 import { PostPreview } from "../../components/posts/PostPreview";
+import { profileStore } from "../../store/profileStore";
 
 export default function CreatePostPage() {
-  // TODO: replace with the real company name from auth context.
-  const companyName = "entreprise de test"
+  const profile = profileStore((state) => state.profile);
+  const companyName = profile?.name ?? "Mon entreprise";
 
   return (
     <div className="min-h-screen bg-slate-100 py-10">

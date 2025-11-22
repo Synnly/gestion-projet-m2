@@ -11,6 +11,7 @@ import {
     NotFoundException,
     ValidationPipe,
     UseGuards,
+    ConflictException,
 } from '@nestjs/common';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
@@ -22,6 +23,7 @@ import { CompanyOwnerGuard } from '../common/roles/companyOwner.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { AuthGuard } from '../auth/auth.guard';
+import { plainToInstance } from 'class-transformer';
 import { PostDto } from '../post/dto/post.dto';
 import { PostDocument } from '../post/post.schema';
 import { Company } from './company.schema';
@@ -42,7 +44,8 @@ export class CompanyController {
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<CompanyDto[]> {
         const companies = await this.companyService.findAll();
-        return companies.map((company) => this.mapToDto(company));
+
+        return companies.map((company) => plainToInstance(CompanyDto, company));
     }
 
     /**
@@ -56,8 +59,7 @@ export class CompanyController {
     async findOne(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyDto> {
         const company = await this.companyService.findOne(companyId);
         if (!company) throw new NotFoundException(`Company with id ${companyId} not found`);
-        const posts = company.posts ?? [];
-        return new CompanyDto({ ...company, posts: posts.map((post: PostDocument) => new PostDto(post)) });
+        return plainToInstance(CompanyDto, company);
     }
 
     /**
@@ -70,7 +72,15 @@ export class CompanyController {
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
         dto: CreateCompanyDto,
     ) {
-        await this.companyService.create(dto);
+        try {
+            await this.companyService.create(dto);
+        } catch (error) {
+            if (error.code === 11000) {
+                throw new ConflictException(`Company with email ${dto.email} already exists`);
+            } else {
+                throw error;
+            }
+        }
     }
 
     /**

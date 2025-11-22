@@ -31,7 +31,9 @@ export class MailerController {
      */
     @Post('password/forgot')
     @HttpCode(HttpStatus.OK)
-    async forgotPassword(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: EmailDto) {
+    async forgotPassword(
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: EmailDto,
+    ) {
         try {
             await this.mailerService.sendPasswordResetEmail(dto.email);
             return {
@@ -39,31 +41,62 @@ export class MailerController {
                 message: 'Password reset code sent to your email. Valid for 5 minutes.',
             };
         } catch (error) {
-            if (error.message === 'User not found') {
-                throw new NotFoundException('No account found with this email');
+            if (error instanceof Error) {
+                if (error.message === 'User not found') {
+                    throw new NotFoundException('No account found with this email');
+                }
+                if (error.message === 'OTP rate limit exceeded. Try again later.') {
+                    throw new BadRequestException('Too many requests. Please try again later.');
+                }
+                throw new BadRequestException('Failed to send password reset email');
             }
-            if (error.message === 'OTP rate limit exceeded. Try again later.') {
-                throw new BadRequestException('Too many requests. Please try again later.');
-            }
-            throw new BadRequestException('Failed to send password reset email');
         }
     }
 
+    @Post('password/reset/verify-otp')
+    @HttpCode(HttpStatus.OK)
+    async verifyOtp(
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        dto: VerifyOtpDto,
+    ) {
+        try {
+            await this.mailerService.verifyPasswordResetOtp(dto.email, dto.otp);
+        } catch (error) {
+            if (error instanceof Error) {
+                if (error.message === 'User not found') {
+                    throw new NotFoundException('No account found with this email');
+                }
+                if (error.message === 'Invalid OTP' || error.message === 'OTP expired') {
+                    throw new BadRequestException(error.message);
+                }
+                if (error.message === 'Too many verification attempts. Please request a new code.') {
+                    throw new BadRequestException(error.message);
+                }
+                throw new BadRequestException('Failed to verify OTP');
+            }
+        }
+
+        return {
+            success: true,
+            message: 'OTP successfully verified',
+        };
+    }
+
     /**
-     * Reset user password using OTP verification
-     * @param dto Contains email, OTP code and new password
+     * Reset user password after OTP verification
+     * @param dto Contains email and new password (OTP must have been verified via /verify-otp first)
      * @returns Success response confirming password reset
      * @throws {NotFoundException} If no account is found with the provided email
-     * @throws {BadRequestException} If OTP is invalid, expired, or password reset fails
+     * @throws {BadRequestException} If OTP was not verified, validation expired, or password reset fails
      */
     @Post('password/reset')
     @HttpCode(HttpStatus.OK)
-    async resetPassword(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: ResetPasswordDto) {
+    async resetPassword(
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        dto: ResetPasswordDto,
+    ) {
         try {
-            // Verify OTP first
-            await this.mailerService.verifyPasswordResetOtp(dto.email, dto.otp);
-
-            // Update password
+            // Update password (will verify that OTP was validated recently)
             await this.mailerService.updatePassword(dto.email, dto.newPassword);
 
             return {
@@ -74,10 +107,10 @@ export class MailerController {
             if (error.message === 'User not found') {
                 throw new NotFoundException('No account found with this email');
             }
-            if (error.message === 'Invalid OTP' || error.message === 'OTP expired') {
-                throw new BadRequestException(error.message);
-            }
-            if (error.message === 'Too many verification attempts. Please request a new code.') {
+            if (
+                error.message === 'Password reset not verified. Please verify OTP first.' ||
+                error.message === 'Password reset validation expired. Please verify OTP again.'
+            ) {
                 throw new BadRequestException(error.message);
             }
             throw new BadRequestException('Failed to reset password');
@@ -92,8 +125,11 @@ export class MailerController {
      * @throws {BadRequestException} If rate limit is exceeded or email sending fails
      */
     @Post('auth/send-verification')
+    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
-    async sendVerification(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: EmailDto) {
+    async sendVerification(
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: EmailDto,
+    ) {
         try {
             await this.mailerService.sendVerificationEmail(dto.email);
             return {
@@ -120,7 +156,10 @@ export class MailerController {
      */
     @Post('auth/verify')
     @HttpCode(HttpStatus.OK)
-    async verifyAccount(@Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: VerifyOtpDto) {
+    @UseGuards(AuthGuard)
+    async verifyAccount(
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: VerifyOtpDto,
+    ) {
         try {
             await this.mailerService.verifySignupOtp(dto.email, dto.otp);
             return {
@@ -152,7 +191,11 @@ export class MailerController {
     @Post('send-template')
     @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
-    async sendCustomTemplate(@Request() req, @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: SendCustomTemplateDto) {
+    async sendCustomTemplate(
+        @Request() req,
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        dto: SendCustomTemplateDto,
+    ) {
         try {
             const userEmail = req.user.email;
 

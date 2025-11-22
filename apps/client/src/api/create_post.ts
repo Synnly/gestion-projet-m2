@@ -1,30 +1,40 @@
 // API helper used by the annonce creation flow.
 export type CreatePostPayload = {
-  title: string;
-  description: string;
-  location: string;
-  duration: string;
-  sector: string;
-  startDate: string;
-  minSalary?: string;
-  maxSalary?: string;
-  workMode: string;
-  skills: string[];
-  isVisibleToStudents: boolean;
+  companyId: string;
+  data: {
+    title: string;
+    description: string;
+    duration?: string;
+    startDate?: string;
+    minSalary?: number;
+    maxSalary?: number;
+    sector?: string;
+    keySkills?: string[];
+    adress?: string;
+    type?: string;
+    isVisible?: boolean;
+  };
 };
 
-export async function createPost(payload: CreatePostPayload) {
-  const response = await fetch("http://localhost:3000/api/posts", {
+const API_URL = import.meta.env.VITE_APIURL || "http://localhost:3000";
+
+export async function createPost({ companyId, data }: CreatePostPayload) {
+  const response = await fetch(`${API_URL}/api/company/${companyId}/posts`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    credentials: "include",
+    body: JSON.stringify(data),
   });
 
   if (!response.ok) {
-    throw new Error("Erreur lors de la création de l’annonce");
+    const message =
+      (await response.json().catch(() => null))?.message ||
+      "Erreur lors de la création de l'annonce";
+    throw new Error(message);
   }
 
-  return response.json();
+  const raw = await response.text();
+  return raw ? JSON.parse(raw) : null;
 }
