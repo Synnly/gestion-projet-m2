@@ -156,181 +156,183 @@ export function EditCompanyProfile() {
     }
 
     return (
-        <div className="bg-gray-50">
+        <div className="min-h-screen bg-gray-50">
             <Navbar />
-            <div className="w-full max-w-4xl mx-auto my-6 px-4 py-8 flex flex-col items-center bg-white rounded-lg shadow">
-                <h1 className="text-3xl font-bold">Modifier le profil de votre entreprise</h1>
-                <p className="text-sm mt-2 italic text-gray-600">
-                    Mettez à jour les informations de votre entreprise
-                </p>
+            <div className="p-8">
+                <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center bg-white rounded-lg shadow">
+                    <h1 className="text-3xl font-bold">Modifier le profil de votre entreprise</h1>
+                    <p className="text-sm mt-2 italic text-gray-600">
+                        Mettez à jour les informations de votre entreprise
+                    </p>
 
-                <form className="mt-8 w-full max-w-3xl flex flex-col flex-1" onSubmit={handleSubmit(onSubmit)}>
-                    <FormSection title="Logo de l'entreprise" className="mb-8">
-                        <div className='flex'>
-                            <ProfilePicture
-                                src={logoUrl!}
-                                overlay
-                                register={register('logo')}
-                                error={errors.logo}
-                            />
-                            <div className="flex flex-col justify-center ml-4">
-                                <span className="font-stretch-105% italic mb-1">
-                                    Téléchargez le logo de votre entreprise, il sera visible publiquement.
-                                </span>
-                                <span className="text-sm text-gray-600 italic">PNG, JPG jusqu'à 5MB.</span>
-                            </div>
-                        </div>
-                    </FormSection>
-
-                    <FormSection title="Informations non modifiables" className="mb-8">
-                        <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-
-                            {/* EMAIL */}
-                            <div>
-                                <label className="text-sm font-medium">Email</label>
-                                <input
-                                    type="text"
-                                    value={profile?.email || ""}
-                                    readOnly
-                                    className="input input-primary w-full cursor-not-allowed"
+                    <form className="mt-8 w-full max-w-3xl flex flex-col flex-1" onSubmit={handleSubmit(onSubmit)}>
+                        <FormSection title="Logo de l'entreprise" className="mb-8">
+                            <div className='flex'>
+                                <ProfilePicture
+                                    src={logoUrl!}
+                                    overlay
+                                    register={register('logo')}
+                                    error={errors.logo}
                                 />
-                                <span className="text-xs text-gray-500 italic">
-                                    L'email ne peut pas être modifié
-                                </span>
+                                <div className="flex flex-col justify-center ml-4">
+                                    <span className="font-stretch-105% italic mb-1">
+                                        Téléchargez le logo de votre entreprise, il sera visible publiquement.
+                                    </span>
+                                    <span className="text-sm text-gray-600 italic">PNG, JPG jusqu'à 5MB.</span>
+                                </div>
                             </div>
+                        </FormSection>
 
-                            {/* SIRET */}
-                            {profile?.siretNumber && (
+                        <FormSection title="Informations non modifiables" className="mb-8">
+                            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+
+                                {/* EMAIL */}
                                 <div>
-                                    <label className="text-sm font-medium">SIRET</label>
+                                    <label className="text-sm font-medium">Email</label>
                                     <input
                                         type="text"
-                                        value={profile?.siretNumber || ""}
+                                        value={profile?.email || ""}
                                         readOnly
                                         className="input input-primary w-full cursor-not-allowed"
                                     />
                                     <span className="text-xs text-gray-500 italic">
-                                        Le SIRET ne peut pas être modifié
+                                        L'email ne peut pas être modifié
                                     </span>
                                 </div>
-                            )}
 
-                        </div>
+                                {/* SIRET */}
+                                {profile?.siretNumber && (
+                                    <div>
+                                        <label className="text-sm font-medium">SIRET</label>
+                                        <input
+                                            type="text"
+                                            value={profile?.siretNumber || ""}
+                                            readOnly
+                                            className="input input-primary w-full cursor-not-allowed"
+                                        />
+                                        <span className="text-xs text-gray-500 italic">
+                                            Le SIRET ne peut pas être modifié
+                                        </span>
+                                    </div>
+                                )}
 
-                    </FormSection>
+                            </div>
 
-                    <FormSection title="Informations légales" className="mb-8 space-y-4">
-                        <div className="grid grid-cols-2 gap-6">
-                            <CustomSelect
-                                label="Code NAF"
-                                data={Object.values(nafCode)}
-                                defaultText="Sélectionnez un code NAF"
-                                {...register('nafCode')}
-                                error={errors.nafCode}
-                                className="input input-primary w-full"
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-6">
-                            <CustomSelect
-                                label="Type de structure"
-                                data={Object.values(StructureType)}
-                                defaultText="Sélectionnez un type"
-                                {...register('structureType')}
-                                error={errors.structureType}
-                                className="input input-primary w-full"
-                            />
-                            <CustomSelect
-                                label="Statut juridique"
-                                data={Object.values(LegalStatus)}
-                                defaultText="Sélectionnez un statut"
-                                {...register('legalStatus')}
-                                error={errors.legalStatus}
-                                className="input input-primary w-full"
-                            />
-                        </div>
-                    </FormSection>
+                        </FormSection>
 
-                    <FormSection title="Adresse" className="mb-8 space-y-4">
-                        <div className="flex gap-4">
-                            <FormInputEdit<editProfilFormType>
-                                label="Numéro"
-                                type="text"
-                                placeholder="Numéro"
-                                register={register('streetNumber', {
-                                    onChange: () => clearErrors('streetNumber'),
-                                })}
-                                error={errors.streetNumber}
-                                className="input input-primary"
-                            />
-                            <FormInputEdit<editProfilFormType>
-                                label="Rue"
-                                type="text"
-                                placeholder="Rue"
-                                register={register('streetName', {
-                                    onChange: () => clearErrors('streetName'),
-                                })}
-                                error={errors.streetName}
-                                className="input input-primary"
-                            />
-                        </div>
-                        <div className="flex gap-4">
-                            <FormInputEdit<editProfilFormType>
-                                label="Code postal"
-                                type="text"
-                                placeholder="Code postal"
-                                register={register('postalCode', {
-                                    onChange: () => clearErrors('postalCode'),
-                                })}
-                                error={errors.postalCode}
-                                className="input input-primary"
-                            />
-                            <FormInputEdit<editProfilFormType>
-                                label="Ville"
-                                type="text"
-                                placeholder="Ville"
-                                register={register('city', {
-                                    onChange: () => clearErrors('city'),
-                                })}
-                                error={errors.city}
-                                className="input input-primary"
-                            />
-                            <FormInputEdit<editProfilFormType>
-                                label="Pays"
-                                type="text"
-                                placeholder="Pays"
-                                register={register('country', {
-                                    onChange: () => clearErrors('country'),
-                                })}
-                                error={errors.country}
-                                className="input input-primary"
-                            />
-                        </div>
-                    </FormSection>
+                        <FormSection title="Informations légales" className="mb-8 space-y-4">
+                            <div className="grid grid-cols-2 gap-6">
+                                <CustomSelect
+                                    label="Code NAF"
+                                    data={Object.values(nafCode)}
+                                    defaultText="Sélectionnez un code NAF"
+                                    {...register('nafCode')}
+                                    error={errors.nafCode}
+                                    className="input input-primary w-full"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-6">
+                                <CustomSelect
+                                    label="Type de structure"
+                                    data={Object.values(StructureType)}
+                                    defaultText="Sélectionnez un type"
+                                    {...register('structureType')}
+                                    error={errors.structureType}
+                                    className="input input-primary w-full"
+                                />
+                                <CustomSelect
+                                    label="Statut juridique"
+                                    data={Object.values(LegalStatus)}
+                                    defaultText="Sélectionnez un statut"
+                                    {...register('legalStatus')}
+                                    error={errors.legalStatus}
+                                    className="input input-primary w-full"
+                                />
+                            </div>
+                        </FormSection>
 
-                    {isError && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                            <p className="text-red-600">Erreur: {error?.message}</p>
-                        </div>
-                    )}
+                        <FormSection title="Adresse" className="mb-8 space-y-4">
+                            <div className="flex gap-4">
+                                <FormInputEdit<editProfilFormType>
+                                    label="Numéro"
+                                    type="text"
+                                    placeholder="Numéro"
+                                    register={register('streetNumber', {
+                                        onChange: () => clearErrors('streetNumber'),
+                                    })}
+                                    error={errors.streetNumber}
+                                    className="input input-primary"
+                                />
+                                <FormInputEdit<editProfilFormType>
+                                    label="Rue"
+                                    type="text"
+                                    placeholder="Rue"
+                                    register={register('streetName', {
+                                        onChange: () => clearErrors('streetName'),
+                                    })}
+                                    error={errors.streetName}
+                                    className="input input-primary"
+                                />
+                            </div>
+                            <div className="flex gap-4">
+                                <FormInputEdit<editProfilFormType>
+                                    label="Code postal"
+                                    type="text"
+                                    placeholder="Code postal"
+                                    register={register('postalCode', {
+                                        onChange: () => clearErrors('postalCode'),
+                                    })}
+                                    error={errors.postalCode}
+                                    className="input input-primary"
+                                />
+                                <FormInputEdit<editProfilFormType>
+                                    label="Ville"
+                                    type="text"
+                                    placeholder="Ville"
+                                    register={register('city', {
+                                        onChange: () => clearErrors('city'),
+                                    })}
+                                    error={errors.city}
+                                    className="input input-primary"
+                                />
+                                <FormInputEdit<editProfilFormType>
+                                    label="Pays"
+                                    type="text"
+                                    placeholder="Pays"
+                                    register={register('country', {
+                                        onChange: () => clearErrors('country'),
+                                    })}
+                                    error={errors.country}
+                                    className="input input-primary"
+                                />
+                            </div>
+                        </FormSection>
 
-                    <div className="flex gap-4 mt-6 justify-end">
-                        <button
-                            type="button"
-                            onClick={() => navigate('/company/profile')}
-                            className="btn btn-base text-black rounded-xl"
-                        >
-                            Annuler
-                        </button>
-                        <FormSubmit
-                            isPending={isPending}
-                            title="Enregistrer les modifications"
-                            pendingTitle="Enregistrement..."
-                            isError={isError}
-                            error={error}
-                            className="btn btn-primary text-black rounded-xl"
-                        />
-                    </div>
-                </form>
+                        {isError && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                                <p className="text-red-600">Erreur: {error?.message}</p>
+                            </div>
+                        )}
+
+                        <div className="flex gap-4 mt-6 justify-end">
+                            <button
+                                type="button"
+                                onClick={() => navigate('/company/profile')}
+                                className="btn btn-base text-black rounded-xl"
+                            >
+                                Annuler
+                            </button>
+                            <FormSubmit
+                                isPending={isPending}
+                                title="Enregistrer les modifications"
+                                pendingTitle="Enregistrement..."
+                                isError={isError}
+                                error={error}
+                                className="btn btn-primary text-black rounded-xl"
+                            />
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     );

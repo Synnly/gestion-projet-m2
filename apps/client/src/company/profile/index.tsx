@@ -45,7 +45,7 @@ export function CompanyProfile() {
                                 Modifier le profil
                             </NavLink>
                             <NavLink
-                                to="/company/change-password"
+                                to="/company/profile/change-password"
                                 className="btn btn-warning bg-red-500 text-white rounded-xl"
                             >
                                 Modifier le mot de passe

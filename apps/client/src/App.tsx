@@ -52,7 +52,7 @@ function App() {
                                 { path: 'dashboard', element: <CompanyDashboard/> },
                                 { path: 'profile', element: <CompanyProfile/> },
                                 { path: 'profile/edit', element: <EditCompanyProfile/> },
-                                { path: 'change-password', element: <ChangePassword/> },
+                                { path: 'profile/change-password', element: <ChangePassword/> },
                                 { path: 'projects', element: <div>Company Projects</div> },
                                 {
                                     element: <VerifiedRoutes redirectPath="/company/dashboard" />,
