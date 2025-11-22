@@ -50,7 +50,6 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
         }
 
         const newProfile: companyProfile = await profileRes.json();
-        console.log(newProfile);
         setProfil(newProfile);
     }
     const newProfile: companyProfileStoreType = profileStore.getState();

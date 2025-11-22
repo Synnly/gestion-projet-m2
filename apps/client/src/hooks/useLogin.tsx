@@ -3,7 +3,6 @@ import type { companyFormLogin } from '../auth/Login/type';
 import { userStore } from '../store/userStore';
 import { useNavigate } from 'react-router';
 function translateMessage(message: string): string {
-    console.log('Translating message:', message);
     if (message === 'Invalid email or password') {
         return 'email ou mot de passe invalide.';
     }

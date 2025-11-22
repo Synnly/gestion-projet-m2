@@ -4,7 +4,6 @@ export function useUploadFile() {
             method: 'PUT',
             body: file,
         }).catch((error) => {
-            console.error('Error uploading file:', error);
         });
     };
     return upload;
