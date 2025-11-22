@@ -14,6 +14,7 @@ import { ForgotPassword } from './user/ForgotPassword';
 import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
 import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
+import CreatePostPage from "./pages/posts/CreatePostPage";
 
 function App() {
     userStore.persist.rehydrate();
@@ -51,6 +52,7 @@ function App() {
                                     element: <VerifiedRoutes redirectPath="/company/dashboard" />,
                                     children: [],
                                 },
+                                { path: '/company/create-post', element: <CreatePostPage /> },
                             ],
                         },
                     ],
