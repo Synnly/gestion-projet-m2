@@ -39,7 +39,7 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
   maxSalary: "",
   isVisibleToStudents: true,
   workMode: "presentiel",
-  skills: ["React", "JavaScript", "Tailwind CSS"],
+  skills: [],
 
   setTitle: (value: string) => set({ title: value }),
   setDescription: (value: string) => set({ description: value }),
