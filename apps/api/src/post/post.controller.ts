@@ -20,7 +20,7 @@ import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { CreatePostDto } from './dto/createPost.dto';
-import { CompanyOwnerGuard } from 'src/common/roles/companyOwner.guard';
+import { PostOwnerGuard } from 'src/common/roles/postOwner.guard';
 
 /**
  * Controller handling post-related HTTP requests
@@ -76,7 +76,7 @@ export class PostController {
      * @param id The post identifier to delete
      */
     @Delete('/:id')
-    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
+    @UseGuards(RolesGuard, PostOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
     async remove(@Param('id', ParseObjectIdPipe) id: string) {
