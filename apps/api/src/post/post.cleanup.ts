@@ -7,13 +7,13 @@ import { PostService } from './post.service';
 export class PostCleanup {
   private readonly logger = new Logger(PostCleanup.name);
 
-  constructor(private readonly PostService: PostService) {}
+  constructor(private readonly postService: PostService) {}
 
   // @Cron('*/30 * * * * *')   // Every 30 seconds (for testing)
   @Cron(process.env.CLEANUP_CRON || '0 3 * * *')   // Everyday at 3AM
   async deleteExpired() {
     this.logger.log('Auto-cleanup of soft-deleted posts...');
-    await this.PostService.deleteExpiredPosts();
+    await this.postService.deleteExpiredPosts();
     this.logger.log('Posts cleanup completed.');
   }
 }

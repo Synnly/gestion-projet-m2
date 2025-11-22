@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { getModelToken, InjectModel } from '@nestjs/mongoose';
 import { Post } from './post.schema';
 import { Model, Types } from 'mongoose';
@@ -8,10 +9,13 @@ import { Company } from 'src/company/company.schema';
 @Injectable()
 export class PostService { 
     constructor(
+        private readonly configService: ConfigService,
+
         @InjectModel(Post.name)
         private readonly postModel: Model<Post>,
 
         @Inject(getModelToken(Company.name))
+        // @InjectModel(Company.name)
         private readonly companyModel: Model<Company>,
     ) {}
 
@@ -21,7 +25,7 @@ export class PostService {
      *
      * @param dto - The complete post data required for creation
      * @param userId - The id of the company (or admin) creating the post
-     * @returns Promise resolving to void upon successful creation
+     * @returns Promise resolving to the created post
      */
     async create(dto: CreatePostDto, userId: string) {
         // We check that the company exists and it has not been soft-deleted
@@ -56,7 +60,8 @@ export class PostService {
         return await this.postModel.find({ companyId: new Types.ObjectId(companyId), deletedAt: { $exists: false }  }).exec(); 
     }
     /**
-     * Copy of the above function, but returns all posts, even the ones set as "deleted"
+     * Retrieves all posts made by a specific company, including soft-deleted posts.
+     * This function should only be used for internal operations, not for user-facing features.
      */
     async findAllByCompanyEvenIfDeleted(companyId: string): Promise<Post[]> {
         return await this.postModel.find({ companyId: new Types.ObjectId(companyId) }).exec(); 
@@ -78,8 +83,7 @@ export class PostService {
     /**
      * Retrieves a single post by its unique identifier
      *
-     * Only returns the post if it exists.
-     * We should'nt use this function for anything else than verification.
+     * We shouldn't use this function for anything else than verification.
      * No user should see a deleted post.
      *
      * @param id - The MongoDB ObjectId of the post as a string
@@ -102,7 +106,7 @@ export class PostService {
      * @example
      * ```typescript
      * await postService.remove('507f1f77bcf86cd799439011');
-     * 
+     * ```
      */
     async remove(id: string): Promise<void> {
         // Set the post as "deleted" for 30 days, before being deleted from the database
@@ -123,19 +127,14 @@ export class PostService {
     /**
      * Sets all posts made by a specific company as "deleted"
      * 
-     * @param userId - The MongoDB ObjectId of a company
+     * @param companyId - The MongoDB ObjectId of a company
      * @returns Promise resolving to void upon successful deletion
      */
-    async removeAllByCompany(userId: string): Promise<void> {
-        const postList = await this.findAllByCompany(userId);
-        for(let post of postList) {
-            const updated = await this.postModel
-            .findOneAndUpdate(
-                { _id: post._id, deletedAt: { $exists: false } },
-                { $set: { deletedAt: new Date() } },
-            )
-            .exec();
-        }
+    async removeAllByCompany(companyId: string): Promise<void> {
+        await this.postModel.updateMany(
+            { companyId: new Types.ObjectId(companyId), deletedAt: { $exists: false } },
+            { $set: { deletedAt: new Date() } }
+        ).exec();
         return;
     }
 
@@ -146,23 +145,8 @@ export class PostService {
      * @returns Promise resolving to void upon successful deletion
      */
     async hardDeleteAllByCompany(companyId: string): Promise<void> {
-        const postList = await this.findAllByCompanyEvenIfDeleted(companyId);
-
-        for(let post of postList) {
-            await this.hardDelete(post._id.toString());
-        }
+        await this.postModel.deleteMany({ companyId: new Types.ObjectId(companyId) }).exec();  
         return;
-    }
-
-    /**
-     * Removes a post from the database completely
-     * 
-     * @param id - The MongoDB ObjectId of the post to delete
-     * @returns Promise resolving to void upon successful deletion
-     */
-    async hardDelete(id: string): Promise<void> {
-        Logger.debug("Deleting post with id '" + id + "'...");
-        await this.postModel.deleteOne({ _id: id});
     }
     
     /**
@@ -171,16 +155,14 @@ export class PostService {
      * @returns Promise resolving to void upon successful deletion
      */
     async deleteExpiredPosts(): Promise<void> {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const retentionDays = this.configService.get<number>('SOFT_DELETE_RETENTION_DAYS', 30);
 
-        // We collect all soft-deleted posts
-        const expired = await this.postModel.find({
-            deletedAt: { $lte: thirtyDaysAgo },
-        });
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() - retentionDays);
 
-        for (const post of expired) {
-            await this.hardDelete(post._id.toString());
-        }
+        // Delete all soft-deleted posts in a single operation  
+        await this.postModel.deleteMany({
+            deletedAt: { $lte: expirationDate }
+        }).exec();
     }
 }

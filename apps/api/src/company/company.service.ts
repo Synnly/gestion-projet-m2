@@ -7,6 +7,7 @@ import { Company } from './company.schema';
 import { CompanyUserDocument } from '../user/user.schema';
 import { PostService } from 'src/post/post.service';
 import { S3Service } from 'src/s3/s3.service';
+import { ConfigService } from '@nestjs/config';
 
 /**
  * Service handling business logic for company operations
@@ -30,6 +31,7 @@ export class CompanyService {
      * @param companyModel - Injected Mongoose model for Company operations
      */
     constructor(
+        private readonly configService: ConfigService,
         private readonly postService: PostService,
         private readonly s3Service: S3Service,
 
@@ -177,7 +179,7 @@ export class CompanyService {
         }
 
         // Set all the posts made by the company as "deleted" for 30 days, before being deleted from the database
-        this.postService.removeAllByCompany(id);
+        await this.postService.removeAllByCompany(id);
 
         return;
     }
@@ -189,12 +191,14 @@ export class CompanyService {
      * @returns Promise resolving to void upon successful deletion
      */
     async deleteExpiredCompanies(): Promise<void> {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const retentionDays = this.configService.get<number>('SOFT_DELETE_RETENTION_DAYS', 30);
+
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() - retentionDays);
 
         // We collect all soft-deleted companies
         const expired = await this.companyModel.find({
-            deletedAt: { $lte: thirtyDaysAgo },
+            deletedAt: { $lte: expirationDate },
         });
 
         for (const company of expired) {
@@ -212,15 +216,15 @@ export class CompanyService {
      * @returns Promise resolving to void upon successful deletion
      */
     async hardDelete(id: string): Promise<void> {
-        Logger.debug("Deleting posts of company'" + id + "'...");
+        Logger.debug("Deleting posts of company '" + id + "'...");
         await this.postService.hardDeleteAllByCompany(id);
         Logger.debug("Completed !");
 
-        Logger.debug("Deleting logo of company'" + id + "'...");
+        Logger.debug("Deleting logo of company '" + id + "'...");
         await this.removeCompanyLogo(id);
         Logger.debug("Completed !");
 
-        Logger.debug("Deleting company'" + id + "'...");
+        Logger.debug("Deleting company '" + id + "'...");
         await this.companyModel.deleteOne({ _id: id }); //new Types.ObjectId(id)
         Logger.debug("Completed !");
 
@@ -233,7 +237,7 @@ export class CompanyService {
      * 
      * This function is called 30 days after the company is set to be deleted.
      * 
-     * @param id - The MongoDB ObjectId of the company to delete
+     * @param companyId - The MongoDB ObjectId of the company to delete
      * @returns Promise resolving to void upon successful deletion
      */
     async removeCompanyLogo(companyId: string): Promise<void> {
