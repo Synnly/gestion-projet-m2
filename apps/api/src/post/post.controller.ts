@@ -12,6 +12,7 @@ import {
     UseGuards,
     ValidationPipe,
 } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
@@ -38,7 +39,8 @@ export class PostController {
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<PostDto[]> {
         const posts = await this.postService.findAll();
-        return posts.map((post) => new PostDto(post));
+        // return posts.map((post) => new PostDto(post));
+        return plainToInstance(PostDto, posts);
     }
 
     /**

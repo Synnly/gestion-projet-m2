@@ -12,6 +12,7 @@ import {
     ValidationPipe,
     UseGuards,
 } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { CompanyService } from './company.service';
@@ -44,7 +45,8 @@ export class CompanyController {
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<CompanyDto[]> {
         const companies = await this.companyService.findAll();
-        return companies.map((company) => new CompanyDto(company));
+        // return companies.map((company) => new CompanyDto(company));
+        return plainToInstance(CompanyDto, companies);
     }
 
     
@@ -56,7 +58,8 @@ export class CompanyController {
     @HttpCode(HttpStatus.OK)
     async findAllPosts(@Param('id', ParseObjectIdPipe) id: string): Promise<PostDto[]> {
         const posts = await this.postService.findAllByCompany(id);
-        return posts.map((post) => new PostDto(post));
+        // return posts.map((post) => new PostDto(post));
+        return plainToInstance(PostDto, posts);
     }
 
     /**
