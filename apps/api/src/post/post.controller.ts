@@ -37,11 +37,7 @@ export class PostController {
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<PostDto[]> {
         const posts = await this.postService.findAll();
-        return posts.map((post) =>
-            plainToInstance(PostDto, post, {
-                excludeExtraneousValues: true,
-            }),
-        );
+        return posts.map((post) => plainToInstance(PostDto, post));
     }
 
     /**
@@ -54,9 +50,7 @@ export class PostController {
     async findOne(@Param('id', ParseObjectIdPipe) id: string): Promise<PostDto> {
         const post = await this.postService.findOne(id);
         if (!post) throw new NotFoundException(`Post with id ${id} not found`);
-        return plainToInstance(PostDto, post, {
-            excludeExtraneousValues: true,
-        });
+        return plainToInstance(PostDto, post);
     }
 
     /**

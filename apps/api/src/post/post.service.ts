@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from './post.schema';
 import { Model, Types } from 'mongoose';
@@ -16,18 +16,28 @@ export class PostService {
      * @returns Promise resolving to void upon successful creation
      */
     async create(dto: CreatePostDto, companyId: string): Promise<Post> {
+    
         const createdPost = new this.postModel({
             ...dto,
             company: new Types.ObjectId(companyId),
         });
-        await createdPost.save();
+       await createdPost.save();
 
-        return await createdPost.populate({
-            path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
-        });
+   const populatedPost = await this.postModel
+            .findById(createdPost._id)
+            .populate({
+                path: 'company',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            })
+            .exec();
+
+        if (!populatedPost) {
+            throw new Error('Post not found after creation');
+        }
+
+        return populatedPost; 
+
     }
-
     /**
      * Retrieves all active posts
      *

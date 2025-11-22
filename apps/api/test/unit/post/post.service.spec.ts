@@ -84,6 +84,9 @@ describe('PostService', () => {
             const savedPost = { ...mockPost, save: jest.fn().mockResolvedValue(mockPost) };
             jest.spyOn(model, 'constructor' as any).mockReturnValue(savedPost);
 
+            const execMock = jest.fn().mockResolvedValue(createMockPost());
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.findById.mockReturnValue({ populate: populateMock });
             // Mock the constructor using Object.setPrototypeOf
             const mockSave = jest.fn().mockResolvedValue(mockPost);
             const postInstance = {
@@ -156,7 +159,10 @@ describe('PostService', () => {
             expect(result).toHaveLength(1);
             expect(result[0].title).toBe('Développeur Full Stack');
             expect(mockPostModel.find).toHaveBeenCalledTimes(1);
-            expect(populateMock).toHaveBeenCalledWith('company');
+            expect(populateMock).toHaveBeenCalledWith({
+                path: 'company',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            });
             expect(execMock).toHaveBeenCalledTimes(1);
         });
 
@@ -203,7 +209,10 @@ describe('PostService', () => {
             expect(result).toBeDefined();
             expect(result?.title).toBe('Développeur Full Stack');
             expect(mockPostModel.findById).toHaveBeenCalledWith(validObjectId);
-            expect(populateMock).toHaveBeenCalledWith('company');
+            expect(populateMock).toHaveBeenCalledWith({
+                path: 'company',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            });
             expect(execMock).toHaveBeenCalledTimes(1);
         });
 
