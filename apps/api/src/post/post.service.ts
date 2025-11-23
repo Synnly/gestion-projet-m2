@@ -21,7 +21,6 @@ export class PostService implements OnModuleInit {
         private readonly postModel: Model<Post>,
 
         @Inject(getModelToken(Company.name))
-        // @InjectModel(Company.name)
         private readonly companyModel: Model<Company>,
     ) {}
 
