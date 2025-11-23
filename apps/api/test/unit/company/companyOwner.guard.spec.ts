@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { CompanyOwnerGuard } from '../../../../src/common/roles/companyOwner.guard';
-import { Role } from '../../../../src/common/roles/roles.enum';
+import { CompanyOwnerGuard } from '../../../src/company/companyOwner.guard';
+import { Role } from '../../../src/common/roles/roles.enum';
 
 describe('CompanyOwnerGuard', () => {
     let guard: CompanyOwnerGuard;
