@@ -9,6 +9,7 @@ import { S3Service } from 'src/s3/s3.service';
 import { ConfigService } from '@nestjs/config';
 import { PostService } from '../post/post.service';
 import { Post } from '../post/post.schema';
+import { Cron } from '@nestjs/schedule';
 
 /**
  * Service handling business logic for company operations
@@ -27,6 +28,8 @@ import { Post } from '../post/post.schema';
  */
 @Injectable()
 export class CompanyService {
+    private readonly logger = new Logger(PostService.name);
+
     /**
      * Creates a new CompanyService instance
      * @param companyModel - Injected Mongoose model for Company operations
@@ -193,10 +196,19 @@ export class CompanyService {
 
         // Set all the posts made by the company as "deleted" for 30 days, before being deleted from the database
         await this.postService.removeAllByCompany(id);
-
         return;
     }
 
+    
+    /**
+     * Scheduled function: automatically checks everyday for expired soft-deleted companies to delete from the database
+     */
+    @Cron(process.env.CLEANUP_CRON || '0 3 * * *')   // Everyday at 3AM
+    async deleteExpired() {
+        this.logger.log('Auto-cleanup of soft-deleted companies...');
+        await this.deleteExpiredCompanies();
+        this.logger.log('Companies cleanup completed.');
+    }
 
     /**
      * Removes all soft-deleted companies from the database completely
@@ -229,17 +241,17 @@ export class CompanyService {
      * @returns Promise resolving to void upon successful deletion
      */
     async hardDelete(id: string): Promise<void> {
-        Logger.debug("Deleting posts of company '" + id + "'...");
+        this.logger.log("Deleting posts of company '" + id + "'...");
         await this.postService.hardDeleteAllByCompany(id);
-        Logger.debug("Completed !");
+        this.logger.log("Completed !");
 
-        Logger.debug("Deleting logo of company '" + id + "'...");
+        this.logger.log("Deleting logo of company '" + id + "'...");
         await this.removeCompanyLogo(id);
-        Logger.debug("Completed !");
+        this.logger.log("Completed !");
 
-        Logger.debug("Deleting company '" + id + "'...");
+        this.logger.log("Deleting company '" + id + "'...");
         await this.companyModel.deleteOne({ _id: id }); //new Types.ObjectId(id)
-        Logger.debug("Completed !");
+        this.logger.log("Completed !");
 
         return;
     }

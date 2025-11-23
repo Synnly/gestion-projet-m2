@@ -5,6 +5,7 @@ import { Post } from './post.schema';
 import { Model, Types } from 'mongoose';
 import { CreatePostDto } from './dto/createPost.dto';
 import { Company } from 'src/company/company.schema';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class PostService { 
@@ -145,6 +146,17 @@ export class PostService {
         return;
     }
     
+    
+    /**
+     * Scheduled function: automatically checks everyday for expired soft-deleted posts to delete from the database
+     */
+    @Cron(process.env.CLEANUP_CRON || '0 3 * * *')   // Everyday at 3AM
+    async deleteExpired() {
+        this.logger.log('Auto-cleanup of soft-deleted posts...');
+        await this.deleteExpiredPosts();
+        this.logger.log('Posts cleanup completed.');
+    }
+
     /**
      * Removes all soft-deleted posts from the database completely
      * 
