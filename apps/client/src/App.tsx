@@ -18,8 +18,8 @@ import { ForgotPassword } from './user/ForgotPassword';
 import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
 import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
-import { InternshipPage } from './pages/IntershipPage';
-import IntershipDetailPage from './pages/IntershipDetailPage';
+import { InternshipPage } from './pages/internship/IntershipPage';
+import IntershipDetailPage from './pages/internship/IntershipDetailPage';
 
 function App() {
     userStore.persist.rehydrate();
