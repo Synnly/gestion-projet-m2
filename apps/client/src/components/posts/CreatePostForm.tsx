@@ -5,6 +5,7 @@ import { createPost } from "../../api/create_post";
 import { useCreatePostStore } from "../../store/CreatePostStore";
 import type { WorkMode } from "../../store/CreatePostStore";
 import { profileStore } from "../../store/profileStore";
+import { useMemo } from "react";
 import MDEditor from "@uiw/react-md-editor";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
@@ -40,13 +41,56 @@ export function CreatePostForm() {
   const [skillInput, setSkillInput] = useState("");
   const navigate = useNavigate();
 
+  const mdEditorOptions = useMemo(
+    () => ({
+      spellChecker: false,
+      minHeight: "240px",
+      status: false,
+    }),
+    []
+  );
+
+  const locationOptions = [
+    "Paris, France",
+    "Lyon, France",
+    "Marseille, France",
+    "Bordeaux, France",
+    "Toulouse, France",
+    "Lille, France",
+    "Nice, France",
+    "Nantes, France",
+    "Strasbourg, France",
+    "Grenoble, France",
+    "Montpellier, France",
+    "Rennes, France",
+    "Metz, France",
+    "Nancy, France",
+  ];
+
+  const sectorOptions = [
+    "Technologie",
+    "Informatique / IT",
+    "Marketing",
+    "Design",
+    "Finance",
+    "Communication",
+    "Ressources Humaines",
+    "Juridique",
+    "Ingénierie",
+    "Data / IA",
+    "Product Management",
+    "Support / Customer Success",
+    "Opérations / Logistique",
+    "Santé / Biotech",
+    "Éducation / Formation",
+  ];
+
   const workModeMap: Record<WorkMode, string> = {
     presentiel: "Présentiel",
     teletravail: "Télétravail",
     hybride: "Hybride",
   };
 
-  // Add the current skill chip when the user hits Enter inside the input.
   function handleSkillKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -72,7 +116,6 @@ export function CreatePostForm() {
     },
   });
 
-  // Send the annonce payload to the API with the latest form state.
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (mutation.isLoading) return;
@@ -101,8 +144,7 @@ export function CreatePostForm() {
 
   return (
     <div className="w-full max-w-xl">
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        {/* Header */}
+      <div className="rounded-2xl border border-base-300 bg-base-100 shadow-sm">
         <div className="border-b border-slate-100 px-6 pb-4 pt-5">
           <h1 className="text-base font-semibold text-slate-900">
             Créer une offre de stage
@@ -110,45 +152,51 @@ export function CreatePostForm() {
         </div>
 
         <form className="space-y-8 px-6 py-5" onSubmit={handleSubmit}>
-          {/* Internship details */}
           <section className="space-y-4">
-            {/* Title field */}
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-700">
                 Intitulé du stage
               </label>
               <input
-                className="input input-sm w-full rounded-xl border-slate-200 bg-slate-50/60 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="Ex : Stagiaire Développeur Frontend"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
             </div>
 
-            {/* Description */}
             <div className="space-y-1" data-color-mode="light">
               <label className="text-xs font-medium text-slate-700">
                 Description du stage
               </label>
-              <div className="rounded-xl border border-slate-200 bg-white text-sm text-slate-900 shadow-sm">
+              <div className="rounded-xl border border-base-300 bg-base-100 text-sm text-base-content shadow-sm">
                 <MDEditor
                   value={description}
                   onChange={(value) => setDescription(value ?? "")}
+                  {...mdEditorOptions}
                   height={240}
-                  preview="edit"
+                  preview="live"
+                  visibleDragbar={true}
                   className="[&_.w-md-editor]:!bg-transparent"
+                  previewOptions={{
+                    disableCopy: true,
+                  }}
+                  textareaProps={{
+                    autoComplete: "off",
+                    spellCheck: false,
+                    style: { resize: "vertical" },
+                  }}
                 />
               </div>
             </div>
 
-            {/* Duration / sector */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-700">
                   Durée du stage
                 </label>
                 <input
-                  className="input input-sm w-full rounded-xl border-slate-200 bg-slate-50/60 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="Ex : 6 mois, temps plein"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
@@ -157,25 +205,24 @@ export function CreatePostForm() {
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-700">
-                  Secteur d&apos;activité
+                  Secteur d'activité
                 </label>
                 <select
-                  className="select select-sm w-full rounded-xl border-slate-200 bg-slate-50/60 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="select select-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                   value={sector}
                   onChange={(e) => setSector(e.target.value)}
                 >
                   <option value="">Choisir un secteur</option>
-                  <option value="Technologie">Technologie</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="Design">Design</option>
-                  <option value="Finance">Finance</option>
-                  <option value="Communication">Communication</option>
+                  {sectorOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
           </section>
 
-          {/* Skills section */}
           <section className="space-y-3 border-t border-slate-100 pt-5">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               Compétences & exigences du stagiaire
@@ -186,14 +233,13 @@ export function CreatePostForm() {
                 Compétences clés (techniques / soft skills)
               </label>
 
-              {/* Dynamic tags */}
               <div className="mb-1 flex flex-wrap gap-2">
                 {skills.map((skill) => (
                   <button
                     key={skill}
                     type="button"
                     onClick={() => removeSkill(skill)}
-                    className="badge badge-sm border-slate-200 bg-slate-100 text-[11px] text-slate-700 hover:border-slate-300 hover:bg-slate-200/80"
+                    className="badge badge-sm border-base-300 bg-base-200 text-[11px] text-base-content/80 hover:border-base-200 hover:bg-base-300/80"
                   >
                     {skill}
                     <span className="ml-1 text-[10px] text-slate-400">✕</span>
@@ -202,39 +248,39 @@ export function CreatePostForm() {
               </div>
 
               <input
-                className="input input-sm w-full rounded-xl border-slate-200 bg-slate-50/60 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="Ajouter une compétence et appuyer sur Entrée"
                 value={skillInput}
                 onChange={(e) => setSkillInput(e.target.value)}
                 onKeyDown={handleSkillKeyDown}
               />
               <p className="text-[11px] text-slate-500">
-                Ajoutez jusqu&apos;à 5 compétences clés attendues.
+                Ajoutez jusqu'à 5 compétences clés attendues.
               </p>
             </div>
           </section>
 
-          {/* Logistics & compensation */}
           <section className="space-y-4 border-t border-slate-100 pt-5">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               Logistique & rémunération
             </h2>
 
-            {/* Location / start date */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-700">
                   Lieu du stage
                 </label>
                 <select
-                  className="select select-sm w-full rounded-xl border-slate-200 bg-slate-50/60 text-sm text-slate-900 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="select select-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                 >
                   <option value="">Choisir un lieu</option>
-                  <option value="Paris, France">Paris, France</option>
-                  <option value="Lyon, France">Lyon, France</option>
-                  <option value="Marseille, France">Marseille, France</option>
+                  {locationOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -244,21 +290,20 @@ export function CreatePostForm() {
                 </label>
                 <input
                   type="date"
-                  className="input input-sm w-full rounded-xl border-slate-200 bg-slate-50/60 text-sm text-slate-900 [color-scheme:light] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content [color-scheme:light] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
               </div>
             </div>
 
-            {/* Salary range */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-700">
                   Gratification minimale (optionnel)
                 </label>
                 <input
-                  className="input input-sm w-full rounded-xl border-slate-200 bg-slate-50/60 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="Ex : 900 € / mois (brut)"
                   value={minSalary}
                   onChange={(e) => setMinSalary(e.target.value)}
@@ -269,7 +314,7 @@ export function CreatePostForm() {
                   Gratification maximale (optionnel)
                 </label>
                 <input
-                  className="input input-sm w-full rounded-xl border-slate-200 bg-slate-50/60 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                   placeholder="Ex : 1200 € / mois (brut)"
                   value={maxSalary}
                   onChange={(e) => setMaxSalary(e.target.value)}
@@ -277,19 +322,18 @@ export function CreatePostForm() {
               </div>
             </div>
 
-            {/* Work mode */}
             <div className="space-y-2">
               <label className="text-xs font-medium text-slate-700">
                 Organisation du travail
               </label>
-              <div className="join w-full rounded-xl bg-slate-100 p-0.5">
+              <div className="join w-full rounded-xl bg-base-200 p-0.5">
                 <button
                   type="button"
                   onClick={() => setWorkMode("presentiel")}
                   className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${
                     workMode === "presentiel"
-                      ? "bg-white text-slate-900 border-slate-200"
-                      : "bg-transparent border-0 text-slate-500 hover:bg-slate-200/60"
+                      ? "bg-base-100 text-base-content border-base-200"
+                      : "bg-transparent border-0 text-base-400 hover:bg-base-300/60"
                   }`}
                 >
                   Présentiel
@@ -299,8 +343,8 @@ export function CreatePostForm() {
                   onClick={() => setWorkMode("teletravail")}
                   className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${
                     workMode === "teletravail"
-                      ? "bg-white text-slate-900 border-slate-200"
-                      : "bg-transparent border-0 text-slate-500 hover:bg-slate-200/60"
+                      ? "bg-base-100 text-base-content border-base-200"
+                      : "bg-transparent border-0 text-base-400 hover:bg-base-300/60"
                   }`}
                 >
                   Télétravail
@@ -310,8 +354,8 @@ export function CreatePostForm() {
                   onClick={() => setWorkMode("hybride")}
                   className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${
                     workMode === "hybride"
-                      ? "bg-white text-slate-900 border-slate-200"
-                      : "bg-transparent border-0 text-slate-500 hover:bg-slate-200/60"
+                      ? "bg-base-100 text-base-content border-base-200"
+                      : "bg-transparent border-0 text-base-400 hover:bg-base-300/60"
                   }`}
                 >
                   Hybride
@@ -320,7 +364,6 @@ export function CreatePostForm() {
             </div>
           </section>
 
-          {/* Settings / visibility */}
           <section className="space-y-3 border-t border-slate-100 pt-5">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               Paramètres de publication
@@ -341,19 +384,16 @@ export function CreatePostForm() {
             </div>
           </section>
 
-          {/* Footer buttons */}
-          <div className="flex items-center justify-end rounded-b-2xl border-t border-slate-100 bg-slate-50/80 px-6 py-3">
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                className="btn btn-xs sm:btn-sm rounded-full px-4 btn-primary text-white"
-                disabled={mutation.isLoading}
-              >
-                {mutation.isLoading
-                  ? "Publication en cours..."
-                  : "Publier l'offre de stage"}
-              </button>
-            </div>
+          <div className="flex items-center justify-end pt-3">
+            <button
+              type="submit"
+              className="btn btn-sm rounded-full px-4 btn-primary text-white"
+              disabled={mutation.isLoading}
+            >
+              {mutation.isLoading
+                ? "Publication en cours..."
+                : "Publier l'offre de stage"}
+            </button>
           </div>
         </form>
       </div>

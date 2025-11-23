@@ -7,11 +7,11 @@ export default function CreatePostPage() {
   const companyName = profile?.name ?? "Mon entreprise";
 
   return (
-    <div className="min-h-screen bg-slate-100 py-10">
+    <div data-theme="bumblebee" className="min-h-screen bg-base-200 py-10">
       <div className="mx-auto max-w-6xl px-4 lg:px-6">
         {/* Page title */}
         <h1 className="mb-6 text-3xl font-bold text-slate-900">
-          Créer une nouvelle annonce de stage
+          Creer une nouvelle annonce de stage
         </h1>
 
         {/* Layout: form on the left, preview on the right */}
@@ -24,7 +24,7 @@ export default function CreatePostPage() {
           {/* Preview on the right, sticky on desktop */}
           <aside className="w-full md:w-[40%] space-y-3 md:sticky md:top-6">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Aperçu en direct
+              Apercu en direct
             </h2>
             <PostPreview companyName={companyName} />
           </aside>
