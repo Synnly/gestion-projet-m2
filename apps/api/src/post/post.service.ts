@@ -22,18 +22,22 @@ export class PostService {
             company: new Types.ObjectId(companyId),
         });
 
-        await createdPost.save();
+        const saved = await createdPost.save();
 
-        const populatedPost = await this.postModel.findById(createdPost._id);
+        const populatedPost = await this.postModel
+            .findById(saved._id)
+            .populate({
+                path: 'company',
+                select:
+                    '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            })
+            .exec();
 
         if (!populatedPost) {
             throw new CreationFailedError('Post was not created successfully');
         }
 
-        return await populatedPost.populate({
-            path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
-        });
+        return populatedPost;
     }
     /**
      * Retrieves all active posts
