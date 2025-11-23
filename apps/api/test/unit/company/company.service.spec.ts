@@ -69,21 +69,21 @@ describe('CompanyService', () => {
             const mockCompanies = [{ _id: '1', name: 'C1', posts: [] }];
             const mockQuery = {
                 populate: jest.fn().mockReturnThis(),
-                lean: jest.fn().mockResolvedValue(mockCompanies),
+                exec: jest.fn().mockResolvedValue(mockCompanies),
             };
             mockCompanyModel.find.mockReturnValue(mockQuery);
 
             const result = await service.findAll();
 
             expect(mockCompanyModel.find).toHaveBeenCalledWith({ deletedAt: { $exists: false } });
-            expect(mockQuery.populate).toHaveBeenCalledWith('posts');
+            expect(mockQuery.populate).toHaveBeenCalledWith({ path: 'posts', select: service.populateField });
             expect(result).toEqual(mockCompanies);
         });
 
         it('should handle empty results', async () => {
             const mockQuery = {
                 populate: jest.fn().mockReturnThis(),
-                lean: jest.fn().mockResolvedValue([]),
+                exec: jest.fn().mockResolvedValue([]),
             };
             mockCompanyModel.find.mockReturnValue(mockQuery);
 
@@ -806,12 +806,12 @@ it('should throw when create encounters a database error', async () => {
 
             const mockQueryBefore = {
                 populate: jest.fn().mockReturnThis(),
-                lean: jest.fn().mockResolvedValue(companiesBeforeDelete),
+                exec: jest.fn().mockResolvedValue(companiesBeforeDelete),
             };
 
             const mockQueryAfter = {
                 populate: jest.fn().mockReturnThis(),
-                lean: jest.fn().mockResolvedValue(companiesAfterDelete),
+                exec: jest.fn().mockResolvedValue(companiesAfterDelete),
             };
 
             mockCompanyModel.find

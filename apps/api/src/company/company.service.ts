@@ -34,7 +34,7 @@ export class CompanyService {
         @InjectModel(Company.name) private readonly companyModel: Model<CompanyUserDocument>,
         private readonly postService: PostService,
     ) {}
-
+    populateField = '_id title description duration startDate minSalary maxSalary sector keySkills adress type';
     /**
      * Retrieves all active (non-deleted) companies
      *
@@ -49,7 +49,13 @@ export class CompanyService {
      * ```
      */
     async findAll(): Promise<Company[]> {
-        return this.companyModel.find({ deletedAt: { $exists: false } }).populate('posts').lean<Company[]>();
+        return this.companyModel
+            .find({ deletedAt: { $exists: false } })
+            .populate({
+                path: 'posts',
+                select: this.populateField,
+            })
+            .exec();
     }
 
     /**
@@ -71,7 +77,10 @@ export class CompanyService {
     async findOne(id: string): Promise<Company | null> {
         return this.companyModel
             .findOne({ _id: id, deletedAt: { $exists: false } })
-            .populate('posts')
+            .populate({
+                path: 'posts',
+                select: this.populateField,
+            })
             .exec();
     }
 

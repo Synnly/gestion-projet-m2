@@ -1,96 +1,128 @@
-import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useInternShipStore } from '../store/useInternShipStore';
-import type { InternShip, PaginationResult } from '../types/internship.types';
+import type { PaginationResult, InternShip } from '../types/internship.types';
 import { fetchPublicSignedUrl } from './useBlob';
+import { useQuery } from '@tanstack/react-query';
 
-const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_APIURL;
 
-/**
- * Hook React Query pour récupérer les stages (internships)
- * - Récupère toutes les compagnies
- * - Pour chaque compagnie, récupère ses posts via /api/company/:companyId/posts
- * - Applique les filtres localement
- * - Met à jour le store avec les données récupérées
- * - Utilise un staleTime de 5 minutes
- * - Refetch automatiquement si les filtres changent
- */
-export const useFetchInternShips = () => {
-    const filters = useInternShipStore((state) => state.filters);
-    const setInternships = useInternShipStore((state) => state.setInternships);
+export function buildQueryParams(filters: any) {
+    return new URLSearchParams(
+        Object.entries({
+            page: filters.page ?? 1,
+            limit: filters.limit ?? 10,
+            searchQuery: filters.searchQuery,
+        })
+            .filter(([, v]) => v !== undefined && v !== null && v !== '')
+            .map(([k, v]) => [k, String(v)]),
+    );
+}
 
-    const query = useQuery<PaginationResult<InternShip>, Error>({
-        queryKey: ['internships', filters],
-        queryFn: async () => {
-            
-            // Construire les query params pour la pagination et les filtres
-            const params = new URLSearchParams();
-            params.append('page', String(filters.page ?? 1));
-            params.append('limit', String(filters.limit ?? 10));
-            if (filters.sector) params.append('sector', filters.sector);
-            if (filters.type) params.append('type', filters.type);
-            if (filters.minSalary !== undefined) params.append('minSalary', String(filters.minSalary));
-            if (filters.maxSalary !== undefined) params.append('maxSalary', String(filters.maxSalary));
-            if (filters.searchQuery) params.append('searchQuery', filters.searchQuery);
+export async function fetchPosts(API_URL: string, params: URLSearchParams) {
+    const res = await fetch(`${API_URL}/api/company/0/posts?${params}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+    });
 
-            const res = await fetch(`${API_URL}/api/company/0/posts?${params.toString()}`, {
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || 'Erreur lors de la récupération des posts');
+    }
+
+    return res.json();
+}
+
+export async function fetchCompanyProfiles(companyIds: string[], API_URL: string) {
+    return Promise.all(
+        companyIds.map(async (id) => {
+            const res = await fetch(`${API_URL}/api/companies/${id}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
             });
 
-            if (!res.ok) {
-                const error = await res.json().catch(() => ({ message: res.statusText }));
-                throw new Error(error.message || 'Erreur lors de la récupération des posts');
-            }
+            if (!res.ok) return { companyId: id, logo: null };
 
-            const paginationResult: PaginationResult<InternShip> = await res.json();
+            const json = await res.json().catch(() => null);
+            return { companyId: id, logo: json?.logo ?? null };
+        }),
+    );
+}
 
-            // Enrich companies with signed logo URLs
-            // Fetch one signed URL per unique logo (not per post)
-            const uniqueFileNames = Array.from(
+export async function signLogos(profiles: { logo: string | null }[]) {
+    const uniqueFiles = Array.from(new Set(profiles.map((p) => p.logo).filter((l): l is string => !!l)));
+
+    const signedResults = await Promise.all(
+        uniqueFiles.map(async (file) => {
+            const signed = await fetchPublicSignedUrl(file);
+            return [file, signed] as const;
+        }),
+    );
+
+    return new Map<string, string | null>(signedResults);
+}
+
+export function applyLogosToPosts(posts: any[], profiles: any[], signedMap: Map<string, string | null>) {
+    for (const post of posts) {
+        const profile = profiles.find((p) => p.companyId === post.company?._id);
+        const fileName = profile?.logo ?? post.company?.logo;
+
+        if (fileName) {
+            const url = signedMap.get(fileName);
+            if (url) post.company.logoUrl = url;
+        }
+    }
+}
+
+export function useFetchInternShips() {
+    const filters = useInternShipStore((state) => state.filters);
+    const setInternships = useInternShipStore((state) => state.setInternships);
+    const query = useQuery<PaginationResult<InternShip>, Error>({
+        queryKey: ['internships', filters],
+
+        queryFn: async () => {
+            /** 1) Query params */
+            const params = buildQueryParams(filters);
+
+            /** 2) Fetch base posts */
+            const paginationResult = await fetchPosts(API_URL, params);
+
+            /** 3) Extract company IDs */
+            const companyIds = Array.from(
                 new Set(
                     paginationResult.data
-                        .map((post) => post.company?.logo)
-                        .filter((f): f is string => typeof f === 'string' && f.length > 0),
+                        .map((p: any) => p.company?._id)
+                        .filter((id: string) => typeof id === 'string' && id.length > 0),
                 ),
-            );
+            ) as string[];
 
-            if (uniqueFileNames.length > 0) {
-                const results = await Promise.all(
-                    uniqueFileNames.map(async (fileName) => {
-                        const signed = await fetchPublicSignedUrl(fileName);
-                        return [fileName, signed] as const;
-                    }),
-                );
+            if (companyIds.length > 0) {
+                /** 4) Fetch profiles */
+                const profiles = await fetchCompanyProfiles(companyIds, API_URL);
 
-                const signedMap = new Map<string, string | null>(results);
+                /** 5) Sign logo URLs */
+                const signedMap = await signLogos(profiles);
 
-                // Apply to posts
-                for (const post of paginationResult.data) {
-                    const fileName = post.company?.logo;
-                    if (fileName) {
-                        const url = signedMap.get(fileName) ?? null;
-                        if (url) post.company.logoUrl = url;
-                    }
-                }
+                /** 6) Apply logos to posts */
+                applyLogosToPosts(paginationResult.data, profiles, signedMap);
             }
-            
-        
 
             return paginationResult;
         },
-        staleTime: 5 * 60 * 1000, // 5 minutes
+
+        staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
         retry: 2,
     });
 
     // Synchroniser le store avec les données retournées par React Query (y compris cache)
     useEffect(() => {
-        if (query.data) {
+        if (query.data && typeof setInternships === 'function') {
             setInternships(query.data);
         }
     }, [query.data, setInternships]);
 
+
     return query;
-};
+}

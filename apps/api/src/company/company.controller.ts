@@ -44,7 +44,12 @@ export class CompanyController {
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<CompanyDto[]> {
         const companies = await this.companyService.findAll();
-        return companies.map((company) => plainToInstance(CompanyDto, company));
+
+        return companies.map((company) =>
+            plainToInstance(CompanyDto, company, {
+                excludeExtraneousValues: true,
+            }),
+        );
     }
 
     /**
@@ -58,7 +63,9 @@ export class CompanyController {
     async findOne(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyDto> {
         const company = await this.companyService.findOne(companyId);
         if (!company) throw new NotFoundException(`Company with id ${companyId} not found`);
-        return plainToInstance(CompanyDto, company);
+        return plainToInstance(CompanyDto, company, {
+            excludeExtraneousValues: true,
+        });
     }
 
     /**

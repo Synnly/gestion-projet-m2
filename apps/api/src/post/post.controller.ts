@@ -22,6 +22,7 @@ import { CreatePostDto } from './dto/createPost.dto';
 import { CompanyOwnerGuard } from '../common/roles/companyOwner.guard';
 import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
 import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
+import { plainToInstance } from 'class-transformer';
 
 /**
  * Controller handling post-related HTTP requests
@@ -44,7 +45,7 @@ export class PostController {
         const posts = await this.postService.findAll(query);
         return {
             ...posts,
-            data: posts.data.map((post) => new PostDto(post)),
+            data: posts.data.map((post) => plainToInstance(PostDto, post)),
         };
     }
 
@@ -58,7 +59,7 @@ export class PostController {
     async findOne(@Param('id', ParseObjectIdPipe) id: string): Promise<PostDto> {
         const post = await this.postService.findOne(id);
         if (!post) throw new NotFoundException(`Post with id ${id} not found`);
-        return new PostDto(post);
+        return plainToInstance(PostDto, post);
     }
 
     /**

@@ -97,14 +97,11 @@ describe('Post Integration Tests', () => {
 
         companyId = createdUser._id;
 
-        console.log('Created user:', { email: createdUser.email, role: createdUser.role });
-
         const loginRes = await request(app.getHttpServer())
             .post('/api/auth/login')
             .send({ email: 'company@test.com', password: 'TestP@ss123' });
 
         if (loginRes.status !== 201) {
-            console.error('Login failed:', loginRes.status, loginRes.body);
             throw new Error('Failed to login for tests');
         }
 

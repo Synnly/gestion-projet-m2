@@ -166,7 +166,6 @@ export class S3Service implements OnModuleInit {
 
         try {
             const downloadUrl = await this.minioClient.presignedGetObject(this.bucket, fileName, URL_EXPIRY.DOWNLOAD);
-
             return { downloadUrl };
         } catch (error) {
             throw new InternalServerErrorException('Failed to generate download URL');
@@ -231,9 +230,9 @@ export class S3Service implements OnModuleInit {
     }
 
     /**
-     * Check if a file exists in the bucket (ignores extension)
-     * @param fileName Full path of the file (extension is ignored)
-     * @returns True if file exists (with any extension), false otherwise
+     * Check if a file exists in the bucket
+     * @param fileName Full path of the file
+     * @returns True if file exists, false otherwise
      */
     async fileExists(fileName: string): Promise<boolean> {
         try {
@@ -307,23 +306,32 @@ export class S3Service implements OnModuleInit {
 
     /**
      * Verify that the user owns the file
-     * This is a placeholder - in production, you should store metadata separately
-     * or use MinIO's metadata to track ownership
-     * @param fileName Full path of the file
+     * Checks if the fileName starts with the userId (format: userId_type.ext)
+     * @param fileName Full path of the file (format: userId_logo.ext or userId_cv.ext)
      * @param userId ID of the user
      * @throws ForbiddenException if user doesn't own the file
      */
     private async verifyOwnership(fileName: string, userId: string): Promise<void> {
         try {
-            const stat = await this.minioClient.statObject(this.bucket, fileName);
-            const metadata = stat.metaData || {};
+            // Extract userId from fileName (format: userId_logo.ext or userId_cv.ext)
+            const fileUserId = fileName.split('_')[0];
+            
+            // If the fileName doesn't contain the userId, check metadata as fallback
+            if (fileUserId !== userId) {
+                const stat = await this.minioClient.statObject(this.bucket, fileName);
+                const metadata = stat.metaData || {};
 
-            // Check if uploaderId metadata exists and matches
-            const uploaderId = metadata['uploaderid'] || metadata['uploaderId'];
+                // Accept various metadata key casings used in tests/clients
+                const uploaderId =
+                    metadata['uploaderid'] || metadata['uploaderId'] || metadata['userid'] || metadata['userId'];
 
-            if (uploaderId && uploaderId !== userId) {
-                throw new ForbiddenException('You do not have permission to access this file');
+                // If uploaderId exists but doesn't match, deny access
+                if (uploaderId && uploaderId !== userId) {
+                    throw new ForbiddenException('You do not have permission to access this file');
+                }
+                // If no uploaderId metadata exists, allow access (fallback to permissive behavior)
             }
+            // If fileUserId matches userId, ownership is verified
         } catch (error) {
             if (error instanceof ForbiddenException) {
                 throw error;

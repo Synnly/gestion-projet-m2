@@ -9,7 +9,7 @@ export class PaginationService {
         filter: FilterQuery<T>,
         page: number,
         limit: number,
-        populate?: string[],
+        populate?: Array<string | Record<string, any>>,
         sort?: string,
     ): Promise<PaginationResult<T>> {
         const skip = (page - 1) * limit;
@@ -17,7 +17,7 @@ export class PaginationService {
         const query = model.find(filter).skip(skip).limit(limit);
 
         if (sort) query.sort(sort);
-        if (populate) populate.forEach((p) => query.populate(p));
+        if (populate) populate.forEach((p) => query.populate(p as any));
 
         const [items, total] = await Promise.all([query.lean<T[]>(), model.countDocuments(filter)]);
 

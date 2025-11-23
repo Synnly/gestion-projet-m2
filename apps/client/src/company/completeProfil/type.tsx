@@ -881,6 +881,95 @@ export const completeProfilForm = z.object({
 
 export type completeProfilFormType = z.infer<typeof completeProfilForm>;
 
+// Schéma pour l'édition du profil (sans siretNumber ni email)
+export const editProfilForm = z.object({
+    nafCode: z
+        .preprocess(
+            (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+            z.enum(Object.values(nafCode)).nullable(),
+        )
+        .refine((val) => !val || Object.values(nafCode).includes(val), {
+            message: 'Veuillez choisir un code NAF valide',
+        }),
+    structureType: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.enum(Object.values(StructureType), { message: 'Type de structure invalide' }).nullable(),
+    ),
+    legalStatus: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.enum(Object.values(LegalStatus), { message: 'Statut légal invalide' }).nullable(),
+    ),
+    streetNumber: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z
+            .string()
+            .min(1, { message: 'Le numéro de rue est requis' })
+            .regex(/^\d+[A-Za-z]?(?:[-/]\d+[A-Za-z]?)?$/, {
+                message: 'Numéro de rue invalide (ex: 12, 12B, 12-14)',
+            })
+            .nullable(),
+    ),
+    streetName: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z
+            .string()
+            .min(1, { message: 'Le nom de rue est requis' })
+            .max(100, { message: 'Le nom de rue est trop long' })
+            .regex(/^[a-zA-ZÀ-ÖØ-öø-ÿ0-9' \-]+$/, {
+                message:
+                    'Le nom de rue contient des caractères invalides (lettres, chiffres, espaces, tirets et apostrophes autorisés)',
+            })
+            .nullable(),
+    ),
+    postalCode: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z
+            .string()
+            .regex(/^[0-9]{5}$/, { message: 'Le code postal doit contenir 5 chiffres' })
+            .nullable(),
+    ),
+    city: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.string().nullable(),
+    ),
+    country: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.string().max(100, { message: 'Le nom du pays est trop long' }).nullable(),
+    ),
+    logo: z
+        .custom<File | null | undefined>()
+        .refine(
+            (file) => {
+                if (!(file instanceof FileList)) return true;
+                return !file[0] || file[0] instanceof File;
+            },
+            {
+                message: 'Format invalide',
+            },
+        )
+        .refine(
+            (file) => {
+                if (!(file instanceof FileList)) return true;
+                return !file[0] || file[0].size <= IMAGE_SIZE_MAX;
+            },
+            {
+                message: 'Le fichier doit faire moins de 5MB',
+            },
+        )
+        .refine(
+            (file) => {
+                if (!(file instanceof FileList)) return true;
+                return !file[0] || ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'].includes(file[0].type);
+            },
+            {
+                message: 'Format non supporté : PNG, JPG, JPEG uniquement',
+            },
+        )
+        .nullable(),
+});
+
+export type editProfilFormType = z.infer<typeof editProfilForm>;
+
 export const completeProfilFormCheck = z.object({
     siretNumber: z.string().min(1),
     nafCode: z.enum(Object.values(nafCode)),

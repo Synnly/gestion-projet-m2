@@ -158,7 +158,6 @@ export const SignupForm = () => {
     );
 };
 function translateError(message: string): string | undefined {
-    console.log('toto');
     const regex = /Company with email ([\w.-]+@[\w.-]+\.\w+) already exists/i;
     if (regex.test(message)) {
         return 'Une entreprise avec cet email existe déjà.';

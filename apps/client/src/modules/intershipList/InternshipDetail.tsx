@@ -5,7 +5,6 @@ import type { InternShip } from '../../types/internship.types';
 import { Bookmark, ArrowUpRight, Share2 } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
-import '@uiw/react-markdown-preview/markdown.css';
 
 const InternshipDetail: React.FC<{ internship: InternShip }> = ({ internship }) => {
     const savedInternships = useInternShipStore((state) => state.savedInternships);
@@ -97,9 +96,9 @@ const InternshipDetail: React.FC<{ internship: InternShip }> = ({ internship }) 
 
                 <div className="mt-8 border-t border-base-300! pt-6">
                     <h4 className="text-lg font-bold">Description du stage</h4>
-                    <div className="mt-4 space-y-4 text-sm text-base-content">
-                        <div className="prose max-w-none">
-                            <MDEditor.Markdown source={internship.description ?? ''} />
+                        <div className="mt-4 space-y-4 text-sm text-base-content">
+                        <div className="prose max-w-none bg-transparent text-base-content shadow-none border-0">
+                            <MDEditor.Markdown source={internship.description ?? ''} className='bg-transparent! text-neutral!'/>
                         </div>
 
                         {internship.keySkills && internship.keySkills.length > 0 && (

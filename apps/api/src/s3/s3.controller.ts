@@ -31,6 +31,7 @@ import { OwnerGuard } from './owner.guard';
  * - DELETE /files/:fileName - Delete a file
  */
 @Controller('/api/files')
+@UseGuards(AuthGuard)
 export class S3Controller {
     constructor(private readonly s3Service: S3Service) {}
 

@@ -7,6 +7,7 @@ import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
 import { PaginationService } from 'src/common/pagination/pagination.service';
 import { QueryBuilder } from 'src/common/pagination/query.builder';
 import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
+import { CreationFailedError } from '../errors/creationFailedError';
 
 @Injectable()
 export class PostService {
@@ -27,24 +28,44 @@ export class PostService {
             ...dto,
             company: new Types.ObjectId(companyId),
         });
-        return createdPost.save();
-    }
 
+        const saved = await createdPost.save();
+
+        const populatedPost = await this.postModel
+            .findById(saved._id)
+            .populate({
+                path: 'company',
+                select:
+                    '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            })
+            .exec();
+
+        if (!populatedPost) {
+            throw new CreationFailedError('Post was not created successfully');
+        }
+
+        return populatedPost;
+    }
     /**
-     * Retrieves all active posts with pagination
-     *
-     * @returns Promise resolving to a paginated result of posts
+     * Retrieves posts with pagination. Returns a paginated result with the
+     * `company` field populated (selected fields) based on the provided query.
      */
     async findAll(query: PaginationDto): Promise<PaginationResult<Post>> {
         const { page, limit } = query;
         const filter = new QueryBuilder(query).build();
+
+        const companyPopulate = {
+            path: 'company',
+            select:
+                '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+        };
 
         return this.paginationService.paginate(
             this.postModel,
             filter,
             page,
             limit,
-            ['company'], // populate
+            [companyPopulate], // populate with selected fields
         );
     }
 
@@ -57,6 +78,12 @@ export class PostService {
      * @returns Promise resolving to the post if found and active, null otherwise
      */
     async findOne(id: string): Promise<Post | null> {
-        return this.postModel.findById(id).populate('company').exec();
+        return this.postModel
+            .findById(id)
+            .populate({
+                path: 'company',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            })
+            .exec();
     }
 }
