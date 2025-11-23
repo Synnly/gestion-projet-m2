@@ -63,6 +63,10 @@ export class CompanyDto {
     @Expose()
     isValid?: boolean;
 
+    /** Whether the company email is verified */
+    @Expose()
+    isVerified?: boolean;
+
     /** Logo URL or path for the company */
     @Expose()
     logo?: string;
