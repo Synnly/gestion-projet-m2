@@ -30,8 +30,8 @@ import { AuthGuard } from '../auth/auth.guard';
 import { PostDto } from '../post/dto/post.dto';
 import { PostDocument } from '../post/post.schema';
 import { Company } from './company.schema';
-import { CreatePostDto } from 'src/post/dto/createPost.dto';
-import { AuthService } from 'src/auth/auth.service';
+import { CreatePostDto } from '../post/dto/createPost.dto';
+import { AuthService } from '../auth/auth.service';
 
 /**
  * Controller handling company-related HTTP requests

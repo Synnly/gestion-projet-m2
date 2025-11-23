@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
-import { Company } from 'src/company/company.schema';
+import { Company } from '../company/company.schema';
 
 export enum PostType {
     Presentiel = 'Présentiel',

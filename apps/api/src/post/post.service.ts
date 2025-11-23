@@ -4,7 +4,7 @@ import { getModelToken, InjectModel } from '@nestjs/mongoose';
 import { Post } from './post.schema';
 import { Model, Types } from 'mongoose';
 import { CreatePostDto } from './dto/createPost.dto';
-import { Company } from 'src/company/company.schema';
+import { Company } from '../company/company.schema';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { CreationFailedError } from '../errors/creationFailedError';

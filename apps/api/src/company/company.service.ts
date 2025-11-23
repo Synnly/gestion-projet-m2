@@ -5,7 +5,7 @@ import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { Company } from './company.schema';
 import { CompanyUserDocument } from '../user/user.schema';
-import { S3Service } from 'src/s3/s3.service';
+import { S3Service } from '../s3/s3.service';
 import { ConfigService } from '@nestjs/config';
 import { PostService } from '../post/post.service';
 import { Post } from '../post/post.schema';
