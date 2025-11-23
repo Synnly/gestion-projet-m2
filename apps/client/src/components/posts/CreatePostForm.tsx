@@ -6,6 +6,7 @@ import { useCreatePostStore } from "../../store/CreatePostStore";
 import type { WorkMode } from "../../store/CreatePostStore";
 import { profileStore } from "../../store/profileStore";
 import { useMemo } from "react";
+import { toast } from "react-toastify";
 import MDEditor from "@uiw/react-md-editor";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
@@ -39,6 +40,7 @@ export function CreatePostForm() {
 
   const profile = profileStore((state) => state.profile);
   const [skillInput, setSkillInput] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const mdEditorOptions = useMemo(
@@ -103,27 +105,34 @@ export function CreatePostForm() {
   const mutation = useMutation({
     mutationFn: createPost,
     onSuccess: () => {
-      alert("L’offre de stage a été créée avec succès.");
+      toast.success("L'offre de stage a été créée avec succès.");
       navigate("/company/dashboard");
     },
     onError: (error) => {
       console.error(error);
-      alert(
+      toast.error(
         error instanceof Error
           ? error.message
-          : "Une erreur est survenue lors de la création de l’offre de stage."
+          : "Une erreur est survenue lors de la création de l'offre de stage."
       );
     },
   });
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (mutation.isLoading) return;
+    if (mutation.isPending) return;
 
     if (!profile?._id) {
       alert("Impossible de créer l'annonce : identifiant entreprise manquant.");
       return;
     }
+
+    if (!title.trim() || !description.trim()) {
+      setFormError("Le titre et la description sont obligatoires.");
+      return;
+    }
+
+    setFormError(null);
 
     const payload = {
       title,
@@ -143,7 +152,7 @@ export function CreatePostForm() {
   }
 
   return (
-    <div className="w-full max-w-xl">
+    <div className="w-full max-w-3xl">
       <div className="rounded-2xl border border-base-300 bg-base-100 shadow-sm">
         <div className="border-b border-slate-100 px-6 pb-4 pt-5">
           <h1 className="text-base font-semibold text-slate-900">
@@ -155,7 +164,7 @@ export function CreatePostForm() {
           <section className="space-y-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-700">
-                Intitulé du stage
+                Intitulé du stage <span className="text-error">*</span>
               </label>
               <input
                 className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -167,7 +176,7 @@ export function CreatePostForm() {
 
             <div className="space-y-1" data-color-mode="light">
               <label className="text-xs font-medium text-slate-700">
-                Description du stage
+                Description du stage <span className="text-error">*</span>
               </label>
               <div className="rounded-xl border border-base-300 bg-base-100 text-sm text-base-content shadow-sm">
                 <MDEditor
@@ -179,8 +188,9 @@ export function CreatePostForm() {
                   visibleDragbar={true}
                   className="[&_.w-md-editor]:!bg-transparent"
                   previewOptions={{
-                    disableCopy: true,
+                    disableCopy: true
                   }}
+                  highlightEnable={false}
                   textareaProps={{
                     autoComplete: "off",
                     spellCheck: false,
@@ -385,12 +395,15 @@ export function CreatePostForm() {
           </section>
 
           <div className="flex items-center justify-end pt-3">
+            {formError && (
+              <p className="text-sm text-error mr-auto">{formError}</p>
+            )}
             <button
               type="submit"
               className="btn btn-sm rounded-full px-4 btn-primary text-white"
-              disabled={mutation.isLoading}
+              disabled={mutation.isPending}
             >
-              {mutation.isLoading
+              {mutation.isPending
                 ? "Publication en cours..."
                 : "Publier l'offre de stage"}
             </button>

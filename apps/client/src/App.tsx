@@ -15,6 +15,8 @@ import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
 import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
 import CreatePostPage from "./pages/posts/CreatePostPage";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
     userStore.persist.rehydrate();
@@ -52,7 +54,7 @@ function App() {
                                     element: <VerifiedRoutes redirectPath="/company/dashboard" />,
                                     children: [],
                                 },
-                                { path: '/company/create-post', element: <CreatePostPage /> },
+                                { path: '/company/offers/add', element: <CreatePostPage /> },
                             ],
                         },
                     ],
@@ -64,6 +66,7 @@ function App() {
     return (
         <QueryClientProvider client={queryClient}>
             <RouterProvider router={router} />
+            <ToastContainer position="top-right" theme="light" />
         </QueryClientProvider>
     );
 }
