@@ -10,14 +10,14 @@ import {
     completeProfilForm,
     type SignedUrlResponse,
 } from './type';
-import { FormSection } from '../../components/FormSection';
-import { FormInput } from '../../components/FormInput';
-import { CustomSelect } from '../../components/select';
-import { FormSubmit } from '../../components/FormSubmit';
+import { FormSection } from '../../components/form/FormSection';
+import { FormInput } from '../../components/form/FormInput';
+import { CustomSelect } from '../../components/inputs/select/select';
+import { FormSubmit } from '../../components/form/FormSubmit';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useOutletContext } from 'react-router';
 import { profileStore } from '../../store/profileStore';
-import { ProfilePicture } from '../../components/profilPicture';
+import { ProfilePicture } from '../../components/profile/profilPicture';
 import type { companyProfile } from '../../types';
 import { useFile } from '../../hooks/useFile';
 import { useBlob } from '../../hooks/useBlob';

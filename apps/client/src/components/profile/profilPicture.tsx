@@ -1,6 +1,6 @@
 import { useState, forwardRef, useEffect } from 'react';
-import { cn } from '../utils/cn';
-import profilPlaceholder from '../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg';
+import { cn } from '../../utils/cn';
+import profilPlaceholder from '../../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg';
 import type { FieldError, UseFormRegisterReturn } from 'react-hook-form';
 type ProfilePictureProps = {
     src?: string;
