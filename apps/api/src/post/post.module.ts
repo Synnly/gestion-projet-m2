@@ -4,7 +4,6 @@ import { PostService } from './post.service';
 import { PostController } from './post.controller';
 import { Post, PostSchema } from './post.schema';
 import { UsersModule } from 'src/user/user.module';
-import { PostCleanup } from './post.cleanup';
 
 @Module({
     imports: [MongooseModule.forFeature([
@@ -13,7 +12,7 @@ import { PostCleanup } from './post.cleanup';
         UsersModule,
     ],
     controllers: [PostController],
-    providers: [PostService, PostCleanup],
+    providers: [PostService],
     exports: [PostService],
 })
 export class PostModule {}
