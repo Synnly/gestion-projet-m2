@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { userStore } from '../../../store/userStore';
-import { Navbar } from '../../../components/Navbar';
+import { Navbar } from '../../../components/navbar/Navbar';
 import { FormSection } from '../../../components/FormSection';
 import { FormInputEdit } from '../../../components/FormInputEdit';
 import { FormSubmit } from '../../../components/FormSubmit';

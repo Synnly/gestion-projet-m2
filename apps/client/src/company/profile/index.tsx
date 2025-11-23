@@ -1,4 +1,4 @@
-import { Navbar } from '../../components/Navbar';
+import { Navbar } from '../../components/navbar/Navbar';
 import { userStore } from '../../store/userStore';
 import { useGetCompanyProfile } from '../../hooks/useGetCompanyProfile';
 import { useBlob } from '../../hooks/useBlob';

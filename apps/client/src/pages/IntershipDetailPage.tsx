@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useInternShipStore } from '../store/useInternShipStore';
 import InternshipDetail from '../modules/intershipList/InternshipDetail';
-import Header from '../components/layout/Header';
+import { Navbar } from '../components/navbar/Navbar';
 
 export default function IntershipDetailPage() {
     const { id } = useParams() as { id?: string };
@@ -11,7 +11,7 @@ export default function IntershipDetailPage() {
 
     return (
         <div className="px-8">
-            <Header />
+            <Navbar />
             <main className="flex w-full flex-1 justify-center py-8">
                 <div className="w-full max-w-5xl px-4 md:px-8">
                     {internship ? (

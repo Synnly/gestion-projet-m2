@@ -1,8 +1,8 @@
 import { SearchBar } from '../components/inputs/searchBar';
 import InternshipList from '../modules/intershipList/InternshipList';
 import InternshipDetail from '../modules/intershipList/InternshipDetail';
-import Header from '../components/layout/Header';
 import { useInternShipStore } from '../store/useInternShipStore';
+import { Navbar } from '../components/navbar/Navbar';
 
 export function InternshipPage() {
     const selects = [
@@ -25,7 +25,7 @@ export function InternshipPage() {
 
     return (
         <div className="px-8">
-            <Header />
+            <Navbar />
             <main className="flex w-full flex-1 justify-center">
                 <div className="w-full flex-1 px-4 md:px-8">
                     <section className="hero bg-base-100 p-6 rounded-lg py-8">
