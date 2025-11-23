@@ -45,7 +45,7 @@ export class CompanyService implements OnModuleInit {
         @InjectModel(Company.name)
         private readonly companyModel: Model<CompanyUserDocument>
     ) {}
-
+    populateField = '_id title description duration startDate minSalary maxSalary sector keySkills adress type';
     /**
      * Retrieves all active (non-deleted) companies
      *
@@ -62,7 +62,10 @@ export class CompanyService implements OnModuleInit {
     async findAll(): Promise<Company[]> {
         return this.companyModel
             .find({ deletedAt: { $exists: false } })
-            .populate('posts')
+            .populate({
+                path: 'posts',
+                select: this.populateField,
+            })
             .exec();
     }
 
@@ -85,7 +88,10 @@ export class CompanyService implements OnModuleInit {
     async findOne(id: string): Promise<Company | null> {
         return this.companyModel
             .findOne({ _id: id, deletedAt: { $exists: false } })
-            .populate('posts')
+            .populate({
+                path: 'posts',
+                select: this.populateField,
+            })
             .exec();
     }
 

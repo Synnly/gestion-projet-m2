@@ -7,6 +7,7 @@ import { CreatePostDto } from './dto/createPost.dto';
 import { Company } from 'src/company/company.schema';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
+import { CreationFailedError } from '../errors/creationFailedError';
 
 @Injectable()
 export class PostService implements OnModuleInit { 
@@ -40,16 +41,37 @@ export class PostService implements OnModuleInit {
             ...dto,
             company: new Types.ObjectId(companyId),
         });
-        return createdPost.save();
-    }
 
+        const saved = await createdPost.save();
+
+        const populatedPost = await this.postModel
+            .findById(saved._id)
+            .populate({
+                path: 'company',
+                select:
+                    '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            })
+            .exec();
+
+        if (!populatedPost) {
+            throw new CreationFailedError('Post was not created successfully');
+        }
+
+        return populatedPost;
+    }
     /**
      * Retrieves all active posts
      *
      * @returns Promise resolving to an array of all active posts
      */
     async findAll(): Promise<Post[]> {
-        return await this.postModel.find({ deletedAt: { $exists: false } }).populate('company').exec();
+        return await this.postModel
+            .find({ deletedAt: { $exists: false } })
+            .populate({
+                path: 'company',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            })
+            .exec();
     }
 
     /**
@@ -77,7 +99,13 @@ export class PostService implements OnModuleInit {
      * @returns Promise resolving to the post if found and active, null otherwise
      */
     async findOne(id: string): Promise<Post | null> {
-        return await this.postModel.findOne({ _id: id, deletedAt: { $exists: false } }).populate('company').exec();
+        return await this.postModel
+            .findOne({ _id: id, deletedAt: { $exists: false } })
+            .populate({
+                path: 'company',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            })
+            .exec();
     }
 
     /**

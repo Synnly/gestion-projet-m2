@@ -5,7 +5,8 @@
 import { Types } from 'mongoose';
 import { Post, PostType } from '../post.schema';
 import { CompanyDto } from '../../company/dto/company.dto';
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
+import { ValidateNested } from 'class-validator';
 
 @Exclude()
 export class PostDto {
@@ -92,6 +93,8 @@ export class PostDto {
 
     /** Reference to the company offering the internship */
     @Expose()
+    @ValidateNested({ each: true })
+    @Type(() => CompanyDto)
     company: CompanyDto;
 
     constructor(partial?: Partial<Post>) {
