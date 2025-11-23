@@ -1,18 +1,20 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { getModelToken, InjectModel } from '@nestjs/mongoose';
 import { Post } from './post.schema';
 import { Model, Types } from 'mongoose';
 import { CreatePostDto } from './dto/createPost.dto';
 import { Company } from 'src/company/company.schema';
-import { Cron } from '@nestjs/schedule';
+import { SchedulerRegistry } from '@nestjs/schedule';
+import { CronJob } from 'cron';
 
 @Injectable()
-export class PostService { 
+export class PostService implements OnModuleInit { 
     private readonly logger = new Logger(PostService.name);
 
     constructor(
         private readonly configService: ConfigService,
+        private readonly schedulerRegistry: SchedulerRegistry,
 
         @InjectModel(Post.name)
         private readonly postModel: Model<Post>,
@@ -147,22 +149,32 @@ export class PostService {
     }
     
     
+    
     /**
-     * Scheduled function: automatically checks everyday for expired soft-deleted posts to delete from the database
+     * Scheduled function: automatically checks everyday for expired soft-deleted companies to delete from the database
      */
-    @Cron(process.env.CLEANUP_CRON || '0 3 * * *')   // Everyday at 3AM
-    async deleteExpired() {
-        this.logger.log('Auto-cleanup of soft-deleted posts...');
-        await this.deleteExpiredPosts();
-        this.logger.log('Posts cleanup completed.');
+    onModuleInit() {
+        const cronTime = this.configService.get<string>('CLEANUP_CRON', '0 3 * * *');
+        this.logger.log(`Planning posts cleanup with pattern : "${cronTime}"`);
+
+        // We manually create the job
+        const job = new CronJob(cronTime, () => {
+            this.deleteExpired();
+        });
+
+        // We add the job to the registry and we start it
+        this.schedulerRegistry.addCronJob('deleteExpiredPosts', job);
+        job.start();
     }
+
 
     /**
      * Removes all soft-deleted posts from the database completely
      * 
      * @returns Promise resolving to void upon successful deletion
      */
-    async deleteExpiredPosts(): Promise<void> {
+    async deleteExpired(): Promise<void> {
+        this.logger.log('Auto-cleanup of soft-deleted posts...');
         const retentionDays = this.configService.get<number>('SOFT_DELETE_RETENTION_DAYS', 30);
 
         const expirationDate = new Date();
@@ -173,11 +185,12 @@ export class PostService {
             deletedAt: { $lte: expirationDate }
         }).exec();
 
-        if (result.deletedCount > 0) {
-            const c = result.deletedCount;
-            this.logger.log(
-                `${c} soft-deleted post${c > 1 ? 's' : ''} ha${c > 1 ? 've' : 's'} been permanently deleted.`
-            );
+        if (result.deletedCount === 0) {
+            this.logger.log('Posts cleanup completed: no post to delete.');
+            return;
         }
+
+        const c = result.deletedCount;
+        this.logger.log(`Posts cleanup completed: ${c} soft-deleted post${c > 1 ? 's' : ''} ha${c > 1 ? 've' : 's'} been permanently deleted.`);
     }
 }
