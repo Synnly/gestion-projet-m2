@@ -1,4 +1,3 @@
-import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useInternShipStore } from '../store/useInternShipStore';
 import InternshipDetail from '../modules/intershipList/InternshipDetail';
