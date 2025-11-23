@@ -43,7 +43,6 @@ export function ForgotPassword() {
         } catch (err) {
             if (!(err instanceof Error)) return;
 
-            console.log('err', err.message);
             if (err.message === 'Invalid OTP' || err.message === 'OTP expired') {
                 setStep(2);
                 code.current = '';
