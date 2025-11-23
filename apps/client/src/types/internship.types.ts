@@ -17,6 +17,7 @@ export interface CompanyInInternship {
     logo?: string;
     city?: string;
     country?: string;
+    logoUrl?: string;
 }
 
 export interface InternShip {

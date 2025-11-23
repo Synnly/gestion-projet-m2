@@ -174,6 +174,36 @@ export class S3Service implements OnModuleInit {
     }
 
     /**
+     * Generate a presigned GET URL for public file download (e.g., company logos)
+     * No ownership verification - use only for public files
+     * @param fileName Full path of the file in the bucket
+     * @returns Object containing the downloadUrl
+     */
+    async generatePublicDownloadUrl(fileName: string): Promise<PresignedDownloadResult> {
+        // Validate path to prevent traversal
+        if (!PATH_REGEX.SAFE_PATH.test(fileName)) {
+            throw new BadRequestException('Invalid file path');
+        }
+
+        // Check if file exists
+        console.log('Checking if public file exists:', fileName);
+        const exists = await this.fileExists(fileName);
+        console.log('Public file exists:', exists);
+        if (!exists) {
+            throw new NotFoundException(`File not found: ${fileName}`);
+        }
+
+        try {
+            console.log('Generating public download URL for file: the second', fileName);
+            const downloadUrl = await this.minioClient.presignedGetObject(this.bucket, fileName, URL_EXPIRY.DOWNLOAD);
+
+            return { downloadUrl };
+        } catch (error) {
+            throw new InternalServerErrorException('Failed to generate download URL');
+        }
+    }
+
+    /**
      * Delete a file from storage
      * @param fileName Full path of the file in the bucket
      * @param userId ID of the user requesting deletion (for ownership verification)
@@ -212,25 +242,63 @@ export class S3Service implements OnModuleInit {
             
             // List all objects in bucket with this base name prefix
             const stream = this.minioClient.listObjectsV2(this.bucket, baseFileName, false);
-            
-            return new Promise((resolve, reject) => {
-                let found = false;
-                
-                stream.on('data', (obj) => {
-                    // Check if object name starts with base name (ignoring extension)
-                    if (obj.name && obj.name.startsWith(baseFileName + '.')) {
-                        found = true;
-                        stream.destroy();
+
+            return new Promise((resolve) => {
+                let settled = false;
+                let timeoutId: NodeJS.Timeout | null = null;
+
+                const cleanup = () => {
+                    if (timeoutId) {
+                        clearTimeout(timeoutId);
+                        timeoutId = null;
+                    }
+                    try {
+                        stream.removeAllListeners('data');
+                        stream.removeAllListeners('end');
+                        stream.removeAllListeners('close');
+                        stream.removeAllListeners('error');
+                    } catch (e) {
+                        // ignore cleanup errors
+                    }
+                };
+
+                const settle = (value: boolean) => {
+                    if (settled) return;
+                    settled = true;
+                    cleanup();
+                    resolve(value);
+                };
+
+                stream.on('data', (obj: any) => {
+                    try {
+                        if (obj && obj.name && obj.name.startsWith(baseFileName + '.')) {
+                            // Found matching object - resolve true
+                            try {
+                                // attempt to stop the stream
+                                stream.destroy();
+                            } catch (e) {
+                                // ignore
+                            }
+                            settle(true);
+                        }
+                    } catch (e) {
+                        // ignore per-object errors
                     }
                 });
-                
-                stream.on('end', () => {
-                    resolve(found);
-                });
-                
-                stream.on('error', (err) => {
-                    resolve(false);
-                });
+
+                stream.on('end', () => settle(false));
+                stream.on('close', () => settle(false));
+                stream.on('error', () => settle(false));
+
+                // Safety timeout to avoid hanging indefinitely
+                timeoutId = setTimeout(() => {
+                    try {
+                        stream.destroy();
+                    } catch (e) {
+                        // ignore
+                    }
+                    settle(false);
+                }, 5000);
             });
         } catch {
             return false;

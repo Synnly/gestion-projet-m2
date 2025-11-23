@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useInternShipStore } from '../store/useInternShipStore';
 import type { InternShip, PaginationResult } from '../types/internship.types';
+import { fetchPublicSignedUrl } from './useBlob';
 
 const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
 
@@ -21,14 +22,7 @@ export const useFetchInternShips = () => {
     const query = useQuery<PaginationResult<InternShip>, Error>({
         queryKey: ['internships', filters],
         queryFn: async () => {
-            console.debug('[useFetchInternShips] fetching page', {
-                page: filters.page,
-                limit: filters.limit,
-                sector: filters.sector,
-                type: filters.type,
-                searchQuery: filters.searchQuery,
-            });
-
+            
             // Construire les query params pour la pagination et les filtres
             const params = new URLSearchParams();
             params.append('page', String(filters.page ?? 1));
@@ -51,12 +45,38 @@ export const useFetchInternShips = () => {
             }
 
             const paginationResult: PaginationResult<InternShip> = await res.json();
-            console.debug('[useFetchInternShips] paginationResult', {
-                page: paginationResult.page,
-                total: paginationResult.total,
-                totalPages: paginationResult.totalPages,
-                returned: paginationResult.data.length,
-            });
+
+            // Enrich companies with signed logo URLs
+            // Fetch one signed URL per unique logo (not per post)
+            const uniqueFileNames = Array.from(
+                new Set(
+                    paginationResult.data
+                        .map((post) => post.company?.logo)
+                        .filter((f): f is string => typeof f === 'string' && f.length > 0),
+                ),
+            );
+
+            if (uniqueFileNames.length > 0) {
+                const results = await Promise.all(
+                    uniqueFileNames.map(async (fileName) => {
+                        const signed = await fetchPublicSignedUrl(fileName);
+                        return [fileName, signed] as const;
+                    }),
+                );
+
+                const signedMap = new Map<string, string | null>(results);
+
+                // Apply to posts
+                for (const post of paginationResult.data) {
+                    const fileName = post.company?.logo;
+                    if (fileName) {
+                        const url = signedMap.get(fileName) ?? null;
+                        if (url) post.company.logoUrl = url;
+                    }
+                }
+            }
+            
+        
 
             return paginationResult;
         },

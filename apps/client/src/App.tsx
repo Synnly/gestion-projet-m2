@@ -15,6 +15,7 @@ import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
 import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
 import { InternshipPage } from './pages/IntershipPage';
+import IntershipDetailPage from './pages/IntershipDetailPage';
 
 function App() {
     userStore.persist.rehydrate();
@@ -51,6 +52,18 @@ function App() {
                                 {
                                     element: <VerifiedRoutes redirectPath="/company/dashboard" />,
                                     children: [],
+                                },
+                            ],
+                        },
+                        {
+                            path: 'internship',
+                            element: <ProtectedRoutesByRole allowedRoles={['USER', 'ADMIN', 'COMPANY']} />,
+                            children: [
+                                {
+                                    element: <VerifiedRoutes redirectPath="/"/>,
+                                    children: [
+                                        { path: 'detail/:id', element: <IntershipDetailPage /> }
+                                    ],
                                 },
                             ],
                         },

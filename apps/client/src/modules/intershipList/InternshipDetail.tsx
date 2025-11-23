@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router';
 import { useInternShipStore } from '../../store/useInternShipStore';
 import type { InternShip } from '../../types/internship.types';
-import { Bookmark, ArrowUpRight, Share2, User } from 'lucide-react';
+import { Bookmark, ArrowUpRight, Share2 } from 'lucide-react';
 
 const InternshipDetail: React.FC<{ internship: InternShip }> = ({ internship }) => {
     const savedInternships = useInternShipStore((state) => state.savedInternships);
@@ -39,6 +40,12 @@ const InternshipDetail: React.FC<{ internship: InternShip }> = ({ internship }) 
         return () => window.removeEventListener('resize', update);
     }, [setDetailHeight]);
 
+    const navigate = useNavigate();
+
+    const handleApply = () => {
+        navigate(`/internship/detail/${internship._id}`);
+    };
+
     return (
         <div className="col-span-12 lg:col-span-7">
                 <div ref={rootRef} className="sticky top-40">
@@ -47,9 +54,9 @@ const InternshipDetail: React.FC<{ internship: InternShip }> = ({ internship }) 
                             <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4">
                         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-neutral-300">
-                            {internship.company.logo ? (
-                                // <img alt={`${internship.company.name} logo`} className="h-9 w-9" src={internship.company.logo} />
-                                <User />
+                            {internship.company.logoUrl ? (
+                                <img alt={`${internship.company.name} logo`} className="h-9 w-9" src={internship.company.logoUrl} />
+                                // <User />
                             ) : (
                                 <div className="flex h-full w-full items-center justify-center text-lg font-bold text-base-content">
                                     {internship.company.name.charAt(0).toUpperCase()}
@@ -75,7 +82,7 @@ const InternshipDetail: React.FC<{ internship: InternShip }> = ({ internship }) 
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">
-                    <button className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2">
+                    <button onClick={handleApply} className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2">
                         <ArrowUpRight size={20} />
                         <span>Apply Now</span>
                     </button>

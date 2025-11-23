@@ -12,7 +12,7 @@ const InternshipCard: React.FC<{ internship: InternShip; isSelected: boolean }> 
             title={internship.title}
             subtitle={`${internship.company.name}${internship.adress ? ` • ${internship.adress}` : ''}`}
             meta={internship.duration}
-            imageSrc={internship.company.logo}
+            imageSrc={internship.company.logoUrl}
             isSelected={isSelected}
             onClick={(id) => id && setSelectedInternshipId(id)}
             className={`bg-base-100! border-base-300! cursor-pointer`}

@@ -11,7 +11,6 @@ import {
     Request,
     BadRequestException,
     ValidationPipe,
-    Logger,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { S3Service } from './s3.service';
@@ -32,7 +31,6 @@ import { OwnerGuard } from './owner.guard';
  * - DELETE /files/:fileName - Delete a file
  */
 @Controller('/api/files')
-@UseGuards(AuthGuard)
 export class S3Controller {
     constructor(private readonly s3Service: S3Service) {}
 
@@ -116,6 +114,25 @@ export class S3Controller {
         }
 
         const url = await this.s3Service.generatePresignedDownloadUrl(fileName, userId);
+        return url;
+    }
+
+    /**
+     * Generate a presigned URL for public file download (company logos)
+     * Rate limited but no ownership verification
+     * Requires authentication
+     *
+     * @param fileName Full path of the file (from route params)
+     * @returns Object with downloadUrl
+     */
+    @Get('signed/public/:fileName')
+    @Throttle({ default: RATE_LIMIT.DOWNLOAD })
+    @HttpCode(HttpStatus.OK)
+    async generatePublicDownloadUrl(
+        @Param('fileName') fileName: string,
+    ): Promise<{ downloadUrl: string }> {
+        console.log('Generating public download URL for file:', fileName);
+        const url = await this.s3Service.generatePublicDownloadUrl(fileName);
         return url;
     }
 
