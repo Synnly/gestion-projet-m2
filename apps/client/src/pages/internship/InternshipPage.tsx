@@ -31,11 +31,11 @@ export function InternshipPage() {
                     <section className="hero bg-base-100 p-6 rounded-lg py-8">
                         <div className="hero-content text-left">
                             <div>
-                                <h1 className="text-4xl font-black tracking-tight text-base-content">
-                                    Find Your Next Opportunity
+                                <h1 className="text-2xl font-black tracking-tight text-base-content uppercase text-center">
+                                    Trouve ta prochaine opportunité
                                 </h1>
                                 <p className="mt-2 text-base text-base-content/70">
-                                    Browse thousands of internships and full-time jobs from top companies.
+                                    Parcoure des milliers de stages proposés par les meilleures entreprises.
                                 </p>
                             </div>
                         </div>
