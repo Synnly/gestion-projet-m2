@@ -1,11 +1,11 @@
 import { useParams, Link } from 'react-router-dom';
-import { useInternShipStore } from '../../store/useInternShipStore';
+import { useInternshipStore } from '../../store/useInternshipStore';
 import InternshipDetail from '../../modules/internship/InternshipDetail';
 import { Navbar } from '../../components/navbar/Navbar';
 
-export default function IntershipDetailPage() {
+export default function InternshipDetailPage() {
     const { id } = useParams() as { id?: string };
-    const internships = useInternShipStore((s) => s.internships);
+    const internships = useInternshipStore((s) => s.internships);
 
     const internship = internships.find((i) => i._id === id) ?? null;
 

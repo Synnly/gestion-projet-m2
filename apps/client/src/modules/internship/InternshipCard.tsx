@@ -1,10 +1,10 @@
 import React from 'react';
 import Card from '../../components/ui/card/Card';
-import { useInternShipStore } from '../../store/useInternShipStore';
-import type { InternShip } from '../../types/internship.types';
+import { useInternshipStore } from '../../store/useInternshipStore';
+import type { Internship } from '../../types/internship.types';
 
-const InternshipCard: React.FC<{ internship: InternShip; isSelected: boolean }> = ({ internship, isSelected }) => {
-    const { setSelectedInternshipId } = useInternShipStore();
+const InternshipCard: React.FC<{ internship: Internship; isSelected: boolean }> = ({ internship, isSelected }) => {
+    const { setSelectedInternshipId } = useInternshipStore();
 
     return (
         <Card

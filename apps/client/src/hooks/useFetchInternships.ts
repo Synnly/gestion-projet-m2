@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { useInternShipStore } from '../store/useInternShipStore';
-import type { PaginationResult, InternShip } from '../types/internship.types';
+import { useInternshipStore } from '../store/useInternshipStore';
+import type { PaginationResult, Internship } from '../types/internship.types';
 import { fetchPublicSignedUrl } from './useBlob';
 import { useQuery } from '@tanstack/react-query';
 
@@ -75,10 +75,10 @@ export function applyLogosToPosts(posts: any[], profiles: any[], signedMap: Map<
     }
 }
 
-export function useFetchInternShips() {
-    const filters = useInternShipStore((state) => state.filters);
-    const setInternships = useInternShipStore((state) => state.setInternships);
-    const query = useQuery<PaginationResult<InternShip>, Error>({
+export function useFetchInternships() {
+    const filters = useInternshipStore((state) => state.filters);
+    const setInternships = useInternshipStore((state) => state.setInternships);
+    const query = useQuery<PaginationResult<Internship>, Error>({
         queryKey: ['internships', filters],
 
         queryFn: async () => {

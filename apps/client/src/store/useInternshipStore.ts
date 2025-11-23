@@ -1,19 +1,19 @@
 import { create } from 'zustand';
-import type { InternShip, InternShipFilters, PaginationResult } from '../types/internship.types';
+import type { Internship, InternshipFilters, PaginationResult } from '../types/internship.types';
 
-interface InternShipStore {
+interface InternshipStore {
     // État
-    internships: InternShip[];
-    pagination: Omit<PaginationResult<InternShip>, 'data'> | null;
-    filters: InternShipFilters;
+    internships: Internship[];
+    pagination: Omit<PaginationResult<Internship>, 'data'> | null;
+    filters: InternshipFilters;
     selectedInternshipId: string | null;
     savedInternships: string[];
     // UI: height of the InternshipDetail content in pixels when it fits viewport, else null
     detailHeight: number | null;
 
     // Actions
-    setInternships: (data: PaginationResult<InternShip>) => void;
-    setFilters: (filters: Partial<InternShipFilters>) => void;
+    setInternships: (data: PaginationResult<Internship>) => void;
+    setFilters: (filters: Partial<InternshipFilters>) => void;
     resetFilters: () => void;
     setSelectedInternshipId: (id: string | null) => void;
     toggleSaveInternship: (id: string) => void;
@@ -21,12 +21,12 @@ interface InternShipStore {
     setDetailHeight: (h: number | null) => void;
 }
 
-const DEFAULT_FILTERS: InternShipFilters = {
+const DEFAULT_FILTERS: InternshipFilters = {
     page: 1,
     limit: 10,
 };
 
-export const useInternShipStore = create<InternShipStore>((set) => ({
+export const useInternshipStore = create<InternshipStore>((set) => ({
     // État initial
     internships: [],
     pagination: null,

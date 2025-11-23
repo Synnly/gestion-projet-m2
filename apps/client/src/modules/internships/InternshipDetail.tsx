@@ -1,15 +1,15 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { useInternshipStore } from '../../store/useInternshipStore';
-import type { Internship } from '../../types/internship.types';
+import { useInternShipStore } from '../../store/useInternshipStore';
+import type { InternShip } from '../../types/internship.types';
 import { Bookmark, ArrowUpRight, Share2 } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 
-const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) => {
-    const savedInternships = useInternshipStore((state) => state.savedInternships);
-    const toggleSaveInternship = useInternshipStore((state) => state.toggleSaveInternship);
-    const setDetailHeight = useInternshipStore((s) => s.setDetailHeight);
+const InternshipDetail: React.FC<{ internship: InternShip }> = ({ internship }) => {
+    const savedInternships = useInternShipStore((state) => state.savedInternships);
+    const toggleSaveInternship = useInternShipStore((state) => state.toggleSaveInternship);
+    const setDetailHeight = useInternShipStore((s) => s.setDetailHeight);
     const rootRef = useRef<HTMLDivElement | null>(null);
     const isSaved = savedInternships.includes(internship._id);
 
@@ -50,7 +50,7 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
 
     return (
         <div className="col-span-12 lg:col-span-7">
-                <div ref={rootRef}>
+                <div ref={rootRef} className="sticky top-40">
                     <div className="card bg-base-100 rounded-xl">
                         <div className="card-body p-6">
                             <div className="flex items-start justify-between">

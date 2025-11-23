@@ -1,11 +1,11 @@
 import React from 'react';
-import { useInternShipStore } from '../../store/useInternShipStore';
+import { useInternshipStore } from '../../store/useInternshipStore';
 import Pagination from '../../components/ui/pagination/Pagination';
 
 const InternshipPagination: React.FC = () => {
-    const pagination = useInternShipStore((s) => s.pagination);
-    const filters = useInternShipStore((s) => s.filters);
-    const setFilters = useInternShipStore((s) => s.setFilters);
+    const pagination = useInternshipStore((s) => s.pagination);
+    const filters = useInternshipStore((s) => s.filters);
+    const setFilters = useInternshipStore((s) => s.setFilters);
 
     if (!pagination) return null;
 

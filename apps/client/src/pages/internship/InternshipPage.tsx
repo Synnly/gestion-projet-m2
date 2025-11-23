@@ -1,7 +1,7 @@
 import { SearchBar } from '../../components/inputs/searchBar';
 import InternshipList from '../../modules/internship/InternshipList';
 import InternshipDetail from '../../modules/internship/InternshipDetail';
-import { useInternShipStore } from '../../store/useInternShipStore';
+import { useInternshipStore } from '../../store/useInternshipStore';
 import { Navbar } from '../../components/navbar/Navbar';
 
 export function InternshipPage() {
@@ -12,10 +12,10 @@ export function InternshipPage() {
         { label: 'Date Posted', options: ['Last 24 hours', 'Last 7 days', 'Last 30 days'] },
     ];
 
-    const internships = useInternShipStore((state) => state.internships);
-    const selectedInternshipId = useInternShipStore((state) => state.selectedInternshipId);
-    const filters = useInternShipStore((state) => state.filters);
-    const setFilters = useInternShipStore((state) => state.setFilters);
+    const internships = useInternshipStore((state) => state.internships);
+    const selectedInternshipId = useInternshipStore((state) => state.selectedInternshipId);
+    const filters = useInternshipStore((state) => state.filters);
+    const setFilters = useInternshipStore((state) => state.setFilters);
 
     const selectedInternship = internships.find((j) => j._id === selectedInternshipId) ?? null;
 
@@ -24,10 +24,10 @@ export function InternshipPage() {
     };
 
     return (
-        <div className="px-8">
+        <div className="flex flex-col h-screen">
             <Navbar />
-            <main className="flex w-full flex-1 justify-center">
-                <div className="w-full flex-1 px-4 md:px-8">
+            <main className="flex-1 w-full flex justify-center overflow-hidden">
+                <div className="w-full flex-1 px-4 md:px-8 flex flex-col">
                     <section className="hero bg-base-100 p-6 rounded-lg py-8">
                         <div className="hero-content text-left">
                             <div>
@@ -46,13 +46,17 @@ export function InternshipPage() {
                         setSearchQuery={handleSearchChange}
                         selects={selects}
                     />
+                    <div className="grid grid-cols-12 gap-8 pb-8 flex-1 overflow-hidden">
+                        <div className="col-span-12 lg:col-span-5 h-full overflow-y-auto">
+                            <InternshipList />
+                        </div>
 
-                    <div className="grid grid-cols-12 gap-8 pb-8">
-                        <InternshipList />
                         {selectedInternship ? (
-                            <InternshipDetail internship={selectedInternship} />
+                            <div className="col-span-12 lg:col-span-7 h-full overflow-y-auto">
+                                <InternshipDetail internship={selectedInternship} />
+                            </div>
                         ) : (
-                            <div className="col-span-12 lg:col-span-7 flex items-center justify-center text-base-content/60">
+                            <div className="col-span-12 lg:col-span-7 h-full flex items-center justify-center text-base-content/60">
                                 Select an internship to see details
                             </div>
                         )}

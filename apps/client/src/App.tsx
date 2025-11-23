@@ -18,8 +18,8 @@ import { ForgotPassword } from './user/ForgotPassword';
 import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
 import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
-import { InternshipPage } from './pages/internship/IntershipPage';
-import IntershipDetailPage from './pages/internship/IntershipDetailPage';
+import { InternshipPage } from './pages/internship/InternshipPage';
+import InternshipDetailPage from './pages/internship/InternshipDetailPage';
 
 function App() {
     userStore.persist.rehydrate();
@@ -69,7 +69,7 @@ function App() {
                                 {
                                     element: <VerifiedRoutes redirectPath="/"/>,
                                     children: [
-                                        { path: 'detail/:id', element: <IntershipDetailPage /> }
+                                        { path: 'detail/:id', element: <InternshipDetailPage /> }
                                     ],
                                 },
                             ],

@@ -1,5 +1,5 @@
 /**
- * Types pour les stages (InternShips/Posts)
+ * Types pour les stages (Internships/Posts)
  */
 
 export const PostType = {
@@ -20,7 +20,7 @@ export interface CompanyInInternship {
     logoUrl?: string;
 }
 
-export interface InternShip {
+export interface Internship {
     _id: string;
     title: string;
     description: string;
@@ -46,7 +46,7 @@ export interface PaginationResult<T> {
     hasPrev: boolean;
 }
 
-export interface InternShipFilters {
+export interface InternshipFilters {
     page: number;
     limit: number;
     sector?: string;

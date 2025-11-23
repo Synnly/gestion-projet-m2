@@ -1,15 +1,15 @@
 import React from 'react';
 import InternshipCard from './InternshipCard';
 import ListContainer from '../../components/ui/list/ListContainer';
-import { useInternshipStore } from '../../store/useInternshipStore';
-import { useFetchInternships } from '../../hooks/useFetchInternships';
+import { useInternShipStore } from '../../store/useInternshipStore';
+import { useFetchInternShips } from '../../hooks/useFetchInternShips';
 import InternshipPagination from './InternshipPagination';
 
 const InternshipList: React.FC = () => {
-    const { isLoading, isError, error } = useFetchInternships();
-    const internships = useInternshipStore((state) => state.internships);
-    const selectedInternshipId = useInternshipStore((state) => state.selectedInternshipId);
-    const detailHeight = useInternshipStore((state) => state.detailHeight);
+    const { isLoading, isError, error } = useFetchInternShips();
+    const internships = useInternShipStore((state) => state.internships);
+    const selectedInternshipId = useInternShipStore((state) => state.selectedInternshipId);
+    const detailHeight = useInternShipStore((state) => state.detailHeight);
 
     // État de chargement
     if (isLoading) {
