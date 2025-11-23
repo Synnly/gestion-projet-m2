@@ -1,18 +1,29 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { SchedulerRegistry } from '@nestjs/schedule'; // <--- Ajout
+import { getModelToken } from '@nestjs/mongoose'; // <--- Ajout
+
 import { PostService } from '../../../src/post/post.service';
 import { PostController } from '../../../src/post/post.controller';
+import { Post } from '../../../src/post/post.schema'; // <--- Ajout
+import { Company } from '../../../src/company/company.schema'; // <--- Ajout
 
 describe('PostModule', () => {
     let module: TestingModule;
     let postService: PostService;
     let postController: PostController;
 
+    // Mocks
     const mockPostModel = {
         find: jest.fn(),
         findById: jest.fn(),
         create: jest.fn(),
+    };
+
+    const mockCompanyModel = {
+        find: jest.fn(),
+        findOne: jest.fn(),
     };
 
     const mockJwtService = {
@@ -24,15 +35,25 @@ describe('PostModule', () => {
         get: jest.fn(),
     };
 
+    const mockSchedulerRegistry = {
+        addCronJob: jest.fn(),
+        deleteCronJob: jest.fn(),
+    };
+
     beforeEach(async () => {
         module = await Test.createTestingModule({
             controllers: [PostController],
             providers: [
                 PostService,
                 {
-                    provide: 'PostModel',
+                    provide: getModelToken(Post.name),
                     useValue: mockPostModel,
                 },
+                {
+                    provide: getModelToken(Company.name),
+                    useValue: mockCompanyModel,
+                },
+                // Services
                 {
                     provide: JwtService,
                     useValue: mockJwtService,
@@ -40,6 +61,10 @@ describe('PostModule', () => {
                 {
                     provide: ConfigService,
                     useValue: mockConfigService,
+                },
+                {
+                    provide: SchedulerRegistry,
+                    useValue: mockSchedulerRegistry,
                 },
             ],
         }).compile();
