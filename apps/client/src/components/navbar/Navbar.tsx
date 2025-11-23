@@ -6,10 +6,12 @@ import { centerNavItems, rightNavItems, ItemLink } from './items';
 
 interface NavbarProps {
     appName?: string;
+    /** If true, render only the logo/link */
+    minimal?: boolean;
 }
 
 //Navbar seulement pour Company pour le moment
-export const Navbar = ({}: NavbarProps) => {
+export const Navbar = ({ minimal = false }: NavbarProps) => {
     // Récupérer le profil de l'entreprise connectée
     const profile = profileStore((state) => state.profile);
 
@@ -29,15 +31,24 @@ export const Navbar = ({}: NavbarProps) => {
         };
     }, [logoBlob]);
 
+    if (minimal) {
+        return (
+            <nav className="sticky top-0 z-50 w-full mx-auto bg-white shadow-sm px-8 py-2">
+                <div className="max-w-7xl mx-auto flex items-center justify-start">
+                    <ItemLink
+                        item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
+                        className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                    />
+                </div>
+            </nav>
+        );
+    }
+
     return (
         <nav className="sticky top-0 z-50 w-full mx-auto bg-white shadow-sm px-8 py-2">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <ItemLink
-                    item={{
-                        key: 'home',
-                        title: <Logo className="text-primary" />, 
-                        to: '/',
-                    }}
+                    item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
                     className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                 />
 

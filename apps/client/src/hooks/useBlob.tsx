@@ -88,7 +88,7 @@ export const fetchPublicSignedUrl = async (fileName: string): Promise<string | n
  * @returns Blob data or null if loading/error
  */
 export const useBlob = (fileName: string) => {
-  const userId = userStore((state) => state.get(state.access!)?.id);
+  const userId = userStore((state) => state.get(state.access)?.id ?? null);
   
   const { data, isLoading, isError } = useQuery({
     queryKey: ['file', userId, fileName],

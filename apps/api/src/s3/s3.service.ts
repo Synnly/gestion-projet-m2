@@ -185,15 +185,12 @@ export class S3Service implements OnModuleInit {
         }
 
         // Check if file exists
-        console.log('Checking if public file exists:', fileName);
         const exists = await this.fileExists(fileName);
-        console.log('Public file exists:', exists);
         if (!exists) {
             throw new NotFoundException(`File not found: ${fileName}`);
         }
 
         try {
-            console.log('Generating public download URL for file: the second', fileName);
             const downloadUrl = await this.minioClient.presignedGetObject(this.bucket, fileName, URL_EXPIRY.DOWNLOAD);
 
             return { downloadUrl };

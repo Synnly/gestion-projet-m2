@@ -27,7 +27,6 @@ import { plainToInstance } from 'class-transformer';
 /**
  * Controller handling post-related HTTP requests
  */
-@UseGuards(AuthGuard)
 @Controller('/api/company/:companyId/posts')
 export class PostController {
     constructor(private readonly postService: PostService) {}
@@ -68,7 +67,7 @@ export class PostController {
      * @param dto The post data for creation
      */
     @Post('')
-    @UseGuards(RolesGuard, CompanyOwnerGuard)
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.CREATED)
     async create(

@@ -31,7 +31,6 @@ import { OwnerGuard } from './owner.guard';
  * - DELETE /files/:fileName - Delete a file
  */
 @Controller('/api/files')
-@UseGuards(AuthGuard)
 export class S3Controller {
     constructor(private readonly s3Service: S3Service) {}
 
@@ -44,6 +43,7 @@ export class S3Controller {
      * @returns Object with fileName and uploadUrl
      */
     @Post('signed/logo')
+    @UseGuards(AuthGuard)
     @Throttle({ default: RATE_LIMIT.UPLOAD })
     @HttpCode(HttpStatus.OK)
     async generateLogoUploadUrl(
@@ -76,6 +76,7 @@ export class S3Controller {
      * @returns Object with fileName and uploadUrl
      */
     @Post('signed/cv')
+    @UseGuards(AuthGuard)
     @Throttle({ default: RATE_LIMIT.UPLOAD })
     @HttpCode(HttpStatus.OK)
     async generateCvUploadUrl(
@@ -102,6 +103,7 @@ export class S3Controller {
      * @returns Object with downloadUrl
      */
     @Get('signed/download/:fileName')
+    @UseGuards(AuthGuard)
     @Throttle({ default: RATE_LIMIT.DOWNLOAD })
     @HttpCode(HttpStatus.OK)
     async generateDownloadUrl(
@@ -132,7 +134,6 @@ export class S3Controller {
     async generatePublicDownloadUrl(
         @Param('fileName') fileName: string,
     ): Promise<{ downloadUrl: string }> {
-        console.log('Generating public download URL for file:', fileName);
         const url = await this.s3Service.generatePublicDownloadUrl(fileName);
         return url;
     }
@@ -148,7 +149,7 @@ export class S3Controller {
      */
     @Delete(':fileName')
     @Throttle({ default: RATE_LIMIT.DELETE })
-    @UseGuards(OwnerGuard)
+    @UseGuards(AuthGuard, OwnerGuard)
     @HttpCode(HttpStatus.OK)
     async deleteFile(@Param('fileName') fileName: string, @Request() req: any): Promise<{ success: boolean }> {
         const userId = req.user?.sub || req.user?.id;

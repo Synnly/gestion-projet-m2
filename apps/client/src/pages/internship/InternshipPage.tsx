@@ -3,6 +3,7 @@ import InternshipList from '../../modules/internship/InternshipList';
 import InternshipDetail from '../../modules/internship/InternshipDetail';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import { Navbar } from '../../components/navbar/Navbar';
+import { userStore } from '../../store/userStore';
 
 export function InternshipPage() {
     const selects = [
@@ -23,9 +24,11 @@ export function InternshipPage() {
         setFilters({ searchQuery: query || undefined, page: 1 });
     };
 
+    const access = userStore((s) => s.access);
+
     return (
         <div className="flex flex-col h-screen">
-            <Navbar />
+            <Navbar minimal={!access} />
             <main className="flex-1 w-full flex justify-center overflow-hidden">
                 <div className="w-full flex-1 px-4 md:px-8 flex flex-col">
                     <section className="hero bg-base-100 p-6 rounded-lg py-8">
