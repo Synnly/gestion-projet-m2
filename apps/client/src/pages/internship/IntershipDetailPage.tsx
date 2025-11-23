@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
-import { useInternShipStore } from '../store/useInternShipStore';
-import InternshipDetail from '../modules/intershipList/InternshipDetail';
-import { Navbar } from '../components/navbar/Navbar';
+import { useInternShipStore } from '../../store/useInternShipStore';
+import InternshipDetail from '../../modules/internship/InternshipDetail';
+import { Navbar } from '../../components/navbar/Navbar';
 
 export default function IntershipDetailPage() {
     const { id } = useParams() as { id?: string };

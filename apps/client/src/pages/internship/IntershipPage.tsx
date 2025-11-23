@@ -1,8 +1,8 @@
-import { SearchBar } from '../components/inputs/searchBar';
-import InternshipList from '../modules/intershipList/InternshipList';
-import InternshipDetail from '../modules/intershipList/InternshipDetail';
-import { useInternShipStore } from '../store/useInternShipStore';
-import { Navbar } from '../components/navbar/Navbar';
+import { SearchBar } from '../../components/inputs/searchBar';
+import InternshipList from '../../modules/internship/InternshipList';
+import InternshipDetail from '../../modules/internship/InternshipDetail';
+import { useInternShipStore } from '../../store/useInternShipStore';
+import { Navbar } from '../../components/navbar/Navbar';
 
 export function InternshipPage() {
     const selects = [
