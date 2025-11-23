@@ -46,7 +46,6 @@ export class PostOwnerGuard implements CanActivate {
                 if (post.deletedAt) {
                     throw new ForbiddenException("Post not found or already deleted");
                 }
-                return true;
             }
         }
 
