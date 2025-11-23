@@ -1,5 +1,5 @@
 import z from 'zod';
-import { IMAGE_SIZE_MAX } from '../../constantes';
+import { IMAGE_SIZE_MAX } from '../../utils/constantes';
 
 // Definition of structure types for companies
 export const StructureType = {
