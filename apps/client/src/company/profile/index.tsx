@@ -88,16 +88,16 @@ export function CompanyProfile() {
                                         <div className="flex gap-4 mt-3">
                                             <span
                                                 className={`px-3 py-1 rounded-full text-sm ${profile.isVerified
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : 'bg-yellow-100 text-yellow-800'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-yellow-100 text-yellow-800'
                                                     }`}
                                             >
                                                 {profile.isVerified ? '✓ Email vérifié' : 'Email non vérifié'}
                                             </span>
                                             <span
                                                 className={`px-3 py-1 rounded-full text-sm ${profile.isValid
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : 'bg-red-100 text-red-800'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800'
                                                     }`}
                                             >
                                                 {profile.isValid ? '✓ Compte validé' : 'Compte en attente'}

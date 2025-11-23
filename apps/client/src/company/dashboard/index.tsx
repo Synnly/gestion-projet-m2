@@ -2,7 +2,7 @@ import { Navbar } from '../../components/Navbar';
 
 export function CompanyDashboard() {
     return (
-        <div className="container min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50">
             <Navbar />
             <div className="p-8">
                 <div className="max-w-7xl mx-auto">
