@@ -5,6 +5,10 @@ import { CompanySignup } from './auth/companySignup/index';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Login } from './auth/Login/index';
 import { CompleteProfil } from './company/completeProfil/index';
+import { CompanyDashboard } from './company/dashboard/index';
+import { CompanyProfile } from './company/profile/index';
+import { EditCompanyProfile } from './company/editProfile/index';
+import { ChangePassword } from './company/editProfile/changePassword/index';
 import { protectedMiddleware } from './middleware/protectAuthMiddleware';
 import { completeProfilMiddleware } from './middleware/completeProfilMiddleware';
 import { notAuthMiddleWare } from './middleware/notAuthMiddleware';
@@ -48,7 +52,10 @@ function App() {
                             path: 'company',
                             element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
                             children: [
-                                { path: 'dashboard', element: <div>Company Dashboard</div> },
+                                { path: 'dashboard', element: <CompanyDashboard/> },
+                                { path: 'profile', element: <CompanyProfile/> },
+                                { path: 'profile/edit', element: <EditCompanyProfile/> },
+                                { path: 'profile/change-password', element: <ChangePassword/> },
                                 { path: 'projects', element: <div>Company Projects</div> },
                                 {
                                     element: <VerifiedRoutes redirectPath="/company/dashboard" />,

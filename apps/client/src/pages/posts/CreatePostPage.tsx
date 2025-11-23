@@ -4,7 +4,16 @@ import { profileStore } from "../../store/profileStore";
 
 export default function CreatePostPage() {
   const profile = profileStore((state) => state.profile);
-  const companyName = profile?.name ?? "Mon entreprise";
+  const companyName = profile.name ?? "Mon entreprise";
+
+  if (profile) {
+    console.log("CreatePostPage profile:", {
+      companyId: profile._id,
+      companyName: profile.name,
+    });
+  } else {
+    console.log("CreatePostPage profile: null/undefined");
+  }
 
   return (
     <div data-theme="bumblebee" className="min-h-screen bg-base-200 py-10">

@@ -166,7 +166,6 @@ export class S3Service implements OnModuleInit {
 
         try {
             const downloadUrl = await this.minioClient.presignedGetObject(this.bucket, fileName, URL_EXPIRY.DOWNLOAD);
-
             return { downloadUrl };
         } catch (error) {
             throw new InternalServerErrorException('Failed to generate download URL');
@@ -201,61 +200,49 @@ export class S3Service implements OnModuleInit {
     }
 
     /**
-     * Check if a file exists in the bucket (ignores extension)
-     * @param fileName Full path of the file (extension is ignored)
-     * @returns True if file exists (with any extension), false otherwise
+     * Check if a file exists in the bucket
+     * @param fileName Full path of the file
+     * @returns True if file exists, false otherwise
      */
     async fileExists(fileName: string): Promise<boolean> {
         try {
-            // Remove extension from fileName to get base name
-            const baseFileName = fileName.substring(0, fileName.lastIndexOf('.'));
-            
-            // List all objects in bucket with this base name prefix
-            const stream = this.minioClient.listObjectsV2(this.bucket, baseFileName, false);
-            
-            return new Promise((resolve, reject) => {
-                let found = false;
-                
-                stream.on('data', (obj) => {
-                    // Check if object name starts with base name (ignoring extension)
-                    if (obj.name && obj.name.startsWith(baseFileName + '.')) {
-                        found = true;
-                        stream.destroy();
-                    }
-                });
-                
-                stream.on('end', () => {
-                    resolve(found);
-                });
-                
-                stream.on('error', (err) => {
-                    resolve(false);
-                });
-            });
-        } catch {
+            await this.minioClient.statObject(this.bucket, fileName);
+            return true;
+        } catch (error) {
             return false;
         }
     }
 
     /**
      * Verify that the user owns the file
-     * This is a placeholder - in production, you should store metadata separately
-     * or use MinIO's metadata to track ownership
-     * @param fileName Full path of the file
+     * Checks if the fileName starts with the userId (format: userId_type.ext)
+     * @param fileName Full path of the file (format: userId_logo.ext or userId_cv.ext)
      * @param userId ID of the user
      * @throws ForbiddenException if user doesn't own the file
      */
     private async verifyOwnership(fileName: string, userId: string): Promise<void> {
         try {
-            const stat = await this.minioClient.statObject(this.bucket, fileName);
-            const metadata = stat.metaData || {};
+            // Extract userId from fileName (format: userId_logo.ext or userId_cv.ext)
+            const fileUserId = fileName.split('_')[0];
+            
+            // If the fileName doesn't contain the userId, check metadata as fallback
+            if (fileUserId !== userId) {
+                const stat = await this.minioClient.statObject(this.bucket, fileName);
+                const metadata = stat.metaData || {};
 
-            // Check if uploaderId metadata exists and matches
-            const uploaderId = metadata['uploaderid'] || metadata['uploaderId'];
+                // Check if uploaderId metadata exists and matches
+                const uploaderId = metadata['uploaderid'] || metadata['uploaderId'];
 
-            if (uploaderId && uploaderId !== userId) {
-                throw new ForbiddenException('You do not have permission to access this file');
+                if (uploaderId && uploaderId !== userId) {
+                    throw new ForbiddenException('You do not have permission to access this file');
+                }
+                
+                // If no metadata and fileName doesn't match, deny access
+                if (!uploaderId) {
+                    throw new ForbiddenException('You do not have permission to access this file');
+                }
             }
+            // If fileUserId matches userId, ownership is verified
         } catch (error) {
             if (error instanceof ForbiddenException) {
                 throw error;

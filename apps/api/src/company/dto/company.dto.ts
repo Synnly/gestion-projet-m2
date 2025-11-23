@@ -1,4 +1,4 @@
-import { Expose, Exclude, Type } from 'class-transformer';
+import { Expose, Exclude, Type, Transform } from 'class-transformer';
 import { StructureType, LegalStatus } from '../company.schema';
 import { NafCode } from '../nafCodes.enum';
 import { Types } from 'mongoose';
@@ -12,6 +12,7 @@ import { ValidateNested } from 'class-validator';
 @Exclude()
 export class CompanyDto {
     /** Unique identifier of the company */
+    @Transform((params) => params.obj._id)
     @Expose()
     _id: Types.ObjectId;
 
@@ -62,6 +63,10 @@ export class CompanyDto {
     /** Whether the company account is validated */
     @Expose()
     isValid?: boolean;
+
+    /** Whether the company email is verified */
+    @Expose()
+    isVerified?: boolean;
 
     /** Logo URL or path for the company */
     @Expose()

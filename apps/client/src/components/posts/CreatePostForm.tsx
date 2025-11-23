@@ -5,7 +5,6 @@ import { createPost } from "../../api/create_post";
 import { useCreatePostStore } from "../../store/CreatePostStore";
 import type { WorkMode } from "../../store/CreatePostStore";
 import { profileStore } from "../../store/profileStore";
-import { useMemo } from "react";
 import { toast } from "react-toastify";
 import MDEditor from "@uiw/react-md-editor";
 import "@uiw/react-md-editor/markdown-editor.css";
@@ -42,15 +41,6 @@ export function CreatePostForm() {
   const [skillInput, setSkillInput] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  const mdEditorOptions = useMemo(
-    () => ({
-      spellChecker: false,
-      minHeight: "240px",
-      status: false,
-    }),
-    []
-  );
 
   const locationOptions = [
     "Paris, France",
@@ -123,7 +113,7 @@ export function CreatePostForm() {
     if (mutation.isPending) return;
 
     if (!profile?._id) {
-      alert("Impossible de créer l'annonce : identifiant entreprise manquant.");
+      toast.error("Impossible de créer l'annonce : identifiant entreprise manquant.");
       return;
     }
 
@@ -182,7 +172,6 @@ export function CreatePostForm() {
                 <MDEditor
                   value={description}
                   onChange={(value) => setDescription(value ?? "")}
-                  {...mdEditorOptions}
                   height={240}
                   preview="live"
                   visibleDragbar={true}
