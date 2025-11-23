@@ -16,7 +16,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
-import { PostOwnerGuard } from './post.owner.guard';
+import { PostOwnerGuard } from './postOwner.guard';
 
 /**
  * Controller handling post-related HTTP requests
