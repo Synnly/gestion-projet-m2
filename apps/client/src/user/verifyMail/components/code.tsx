@@ -86,7 +86,6 @@ export const CodeInput = ({
         for (let i = 0; i < pasteData.length && pasteStart + i <= maxIndex; i++) {
             const idx = pasteStart + i;
             const char = pasteData[i];
-            console.log('Pasting char:', char, 'into input index:', idx);
             setValue(`code${idx + 1}` as keyof VerifyEmailForm, char, { shouldValidate: true });
             if (inputs[idx]) inputs[idx]!.value = char; // mettre à jour l'UI
         }
