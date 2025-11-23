@@ -241,9 +241,11 @@ export class CompanyService implements OnModuleInit {
             return;
         }
 
-        for (const company of expired) {
-            await this.hardDelete(company._id.toString());
-        }
+        // Deletes all expired companies at once
+        await Promise.all(
+            expired.map(company => this.hardDelete(company._id.toString()))
+        );
+        
         const c = expired.length;
         this.logger.log(`Companies cleanup completed: ${c} soft-deleted compan${c > 1 ? 'ies' : 'y'} ha${c > 1 ? 've' : 's'} been permanently deleted.`);
     }
