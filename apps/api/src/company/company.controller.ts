@@ -12,7 +12,9 @@ import {
     ValidationPipe,
     UseGuards,
     ConflictException,
+    Req,
 } from '@nestjs/common';
+import express from 'express';
 import { plainToInstance } from 'class-transformer';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
@@ -29,6 +31,7 @@ import { PostDto } from '../post/dto/post.dto';
 import { PostDocument } from '../post/post.schema';
 import { Company } from './company.schema';
 import { CreatePostDto } from 'src/post/dto/createPost.dto';
+import { AuthService } from 'src/auth/auth.service';
 
 /**
  * Controller handling company-related HTTP requests
@@ -38,7 +41,8 @@ import { CreatePostDto } from 'src/post/dto/createPost.dto';
 export class CompanyController {
     constructor(
         private readonly companyService: CompanyService,
-        private readonly postService: PostService
+        private readonly postService: PostService,
+        private readonly authService: AuthService
     ) {}
 
     /**
@@ -115,8 +119,19 @@ export class CompanyController {
     @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
-    async remove(@Param('companyId', ParseObjectIdPipe) companyId: string) {
+    async remove(@Req() req: express.Request, @Param('companyId', ParseObjectIdPipe) companyId: string) {
         await this.companyService.remove(companyId);
+
+        // We check if the user connected is the removed company
+        const currentUser = req['user']; // ou (req as any).user
+
+        if (currentUser && String(currentUser.sub) === String(companyId)) {
+            // Logout the company
+            const refreshTokenString = req.cookies['refreshToken'];
+            if (refreshTokenString) {
+                await this.authService.logout(refreshTokenString);
+            }
+        }
     }
 
     /**
@@ -139,6 +154,9 @@ export class CompanyController {
     @Get('/:companyId/posts')
     @HttpCode(HttpStatus.OK)
     async findAllPosts(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<PostDto[]> {
+        const company = await this.companyService.findOne(companyId);
+        if (!company) throw new NotFoundException(`Company with id ${companyId} not found`);
+
         const posts = await this.postService.findAllByCompany(companyId);
         return plainToInstance(PostDto, posts);
     }
