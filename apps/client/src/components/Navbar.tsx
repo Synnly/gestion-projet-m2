@@ -9,7 +9,7 @@ interface NavbarProps {
     appName?: string;
 }
 
-//Navbar seuelemnt pour Company pour le moment
+//Navbar seulement pour Company pour le moment
 export const Navbar = ({ }: NavbarProps) => {
     // Récupérer le profil de l'entreprise connectée
     const profile = profileStore((state) => state.profile);
