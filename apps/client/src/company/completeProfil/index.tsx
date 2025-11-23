@@ -186,6 +186,9 @@ export const CompleteProfil = () => {
                             register={register('siretNumber')}
                             onChange={() => clearErrors('siretNumber')}
                             error={errors.siretNumber}
+                            onInput={(e) => {
+                                register('siretNumber').onChange(e);
+                            }}
                         />
                         <div className="flex w-full flex-row">
                             <div className="w-1/2">
@@ -234,6 +237,9 @@ export const CompleteProfil = () => {
                                     register={register('streetNumber')}
                                     onChange={() => clearErrors('streetNumber')}
                                     error={errors.streetNumber}
+                                    onInput={(e) => {
+                                        register('streetNumber').onChange(e);
+                                    }}
                                 />
                             </div>
                             <div className="w-1/2">
@@ -245,6 +251,9 @@ export const CompleteProfil = () => {
                                     register={register('streetName')}
                                     onChange={() => clearErrors('streetName')}
                                     error={errors.streetName}
+                                    onInput={(e) => {
+                                        register('streetName').onChange(e);
+                                    }}
                                 />
                             </div>
                         </div>
@@ -258,6 +267,9 @@ export const CompleteProfil = () => {
                                     register={register('postalCode')}
                                     onChange={() => clearErrors('postalCode')}
                                     error={errors.postalCode}
+                                    onInput={(e) => {
+                                        register('postalCode').onChange(e);
+                                    }}
                                 />
                             </div>
                             <div className="w-1/2">
@@ -269,6 +281,9 @@ export const CompleteProfil = () => {
                                     register={register('city')}
                                     onChange={() => clearErrors('city')}
                                     error={errors.city}
+                                    onInput={(e) => {
+                                        register('city').onChange(e);
+                                    }}
                                 />
                             </div>
                         </div>
@@ -281,6 +296,9 @@ export const CompleteProfil = () => {
                             register={register('country')}
                             onChange={() => clearErrors('country')}
                             error={errors.country}
+                            onInput={(e) => {
+                                register('country').onChange(e);
+                            }}
                         />
                     </FormSection>
                     <FormSubmit
