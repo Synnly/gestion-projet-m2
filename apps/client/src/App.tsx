@@ -32,6 +32,13 @@ function App() {
             middleware: [completeProfilMiddleware],
             element: <Outlet />,
             children: [
+                {   
+                            path: 'logout',
+                            loader: () => {
+                                userStore.getState().logout();
+                                return redirect('/signin');
+                            },
+                },
                 {
                     path: 'internships/list', element: <InternshipPage />,
                 },
@@ -48,13 +55,6 @@ function App() {
                     loader: protectedMiddleware,
                     element: <AuthRoutes />,
                     children: [
-                        {   
-                            path: 'logout',
-                            loader: () => {
-                                userStore.getState().logout();
-                                return redirect('/signin');
-                            },
-                        },
                         { path: 'verify', element: <VerifyEmail /> },
                         { path: 'complete-profil', element: <CompleteProfil /> },
                         {
