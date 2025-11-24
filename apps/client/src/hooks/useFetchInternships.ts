@@ -3,6 +3,7 @@ import { useInternshipStore } from '../store/useInternshipStore';
 import type { PaginationResult, Internship } from '../types/internship.types';
 import { fetchPublicSignedUrl } from './useBlob';
 import { useQuery } from '@tanstack/react-query';
+import { useToast } from '../components/ui/toast/ToastProvider';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
@@ -78,6 +79,7 @@ export function applyLogosToPosts(posts: any[], profiles: any[], signedMap: Map<
 export function useFetchInternships() {
     const filters = useInternshipStore((state) => state.filters);
     const setInternships = useInternshipStore((state) => state.setInternships);
+    const toast = useToast();
     const query = useQuery<PaginationResult<Internship>, Error>({
         queryKey: ['internships', filters],
 
@@ -87,6 +89,19 @@ export function useFetchInternships() {
 
             /** 2) Fetch base posts */
             const paginationResult = await fetchPosts(API_URL, params);
+
+            // Filter out posts with missing company to avoid rendering invalid items
+            const originalLength = paginationResult.data.length;
+            const validPosts = paginationResult.data.filter((p: any) => p.company && typeof p.company === 'object');
+            const removedCount = originalLength - validPosts.length;
+            if (removedCount > 0) {
+                try {
+                    toast.error(`Impossible d'afficher ${removedCount} stage(s)`);
+                } catch (e) {
+                    // ignore if toast not available
+                }
+                paginationResult.data = validPosts;
+            }
 
             /** 3) Extract company IDs */
             const companyIds = Array.from(
@@ -123,7 +138,6 @@ export function useFetchInternships() {
         }
     }, [query.data, setInternships]);
 
-
     return query;
 }
 
@@ -132,7 +146,7 @@ export function useFetchInternships() {
  * Can be used directly as a queryFn for react-query in detail pages:
  *   useQuery(['internship', id], () => fetchInternshipById(id))
  */
-export async function fetchInternshipById(id? : string) : Promise<Internship | null> {
+export async function fetchInternshipById(id?: string): Promise<Internship | null> {
     if (!id) return null;
 
     const res = await fetch(`${API_URL}/api/company/0/posts/${id}`, {
@@ -155,8 +169,7 @@ export async function fetchInternshipById(id? : string) : Promise<Internship | n
             const signed = await fetchPublicSignedUrl(logoFile);
             if (signed) json.company.logoUrl = signed;
         }
-    } catch (e) {
-    }
+    } catch (e) {}
 
     return json;
 }

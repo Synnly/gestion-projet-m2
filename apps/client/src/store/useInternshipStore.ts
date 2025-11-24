@@ -19,6 +19,7 @@ interface InternshipStore {
     setSelectedInternshipId: (id: string | null) => void;
     toggleSaveInternship: (id: string) => void;
     clearInternships: () => void;
+    removeInternshipsByIds: (ids: string[]) => void;
     setDetailHeight: (h: number | null) => void;
 }
 
@@ -30,51 +31,56 @@ const DEFAULT_FILTERS: InternshipFilters = {
 export const useInternshipStore = create<InternshipStore>()(
     persist(
         (set) => ({
-    // État initial
-    internships: [],
-    pagination: null,
-    filters: DEFAULT_FILTERS,
-    selectedInternshipId: null,
-    savedInternships: [],
-    detailHeight: null,
-
-    // Actions
-    setInternships: (data) =>
-        set({
-            internships: data.data,
-            pagination: {
-                total: data.total,
-                page: data.page,
-                limit: data.limit,
-                totalPages: data.totalPages,
-                hasNext: data.hasNext,
-                hasPrev: data.hasPrev,
-            },
-            selectedInternshipId: data.data.length > 0 ? data.data[0]._id : null,
-        }),
-
-    setFilters: (newFilters) =>
-        set((state) => ({
-            filters: { ...state.filters, ...newFilters },
-        })),
-
-    resetFilters: () => set({ filters: DEFAULT_FILTERS }),
-
-    setSelectedInternshipId: (id) => set({ selectedInternshipId: id }),
-
-    toggleSaveInternship: (id) =>
-        set((state) => ({
-            savedInternships: state.savedInternships.includes(id)
-                ? state.savedInternships.filter((internshipId) => internshipId !== id)
-                : [...state.savedInternships, id],
-        })),
-
-    clearInternships: () =>
-        set({
+            // État initial
             internships: [],
             pagination: null,
-        }),
-    setDetailHeight: (h: number | null) => set({ detailHeight: h }),
+            filters: DEFAULT_FILTERS,
+            selectedInternshipId: null,
+            savedInternships: [],
+            detailHeight: null,
+
+            // Actions
+            setInternships: (data) =>
+                set({
+                    internships: data.data,
+                    pagination: {
+                        total: data.total,
+                        page: data.page,
+                        limit: data.limit,
+                        totalPages: data.totalPages,
+                        hasNext: data.hasNext,
+                        hasPrev: data.hasPrev,
+                    },
+                    selectedInternshipId: data.data.length > 0 ? data.data[0]._id : null,
+                }),
+
+            setFilters: (newFilters) =>
+                set((state) => ({
+                    filters: { ...state.filters, ...newFilters },
+                })),
+
+            resetFilters: () => set({ filters: DEFAULT_FILTERS }),
+
+            setSelectedInternshipId: (id) => set({ selectedInternshipId: id }),
+
+            toggleSaveInternship: (id) =>
+                set((state) => ({
+                    savedInternships: state.savedInternships.includes(id)
+                        ? state.savedInternships.filter((internshipId) => internshipId !== id)
+                        : [...state.savedInternships, id],
+                })),
+
+            clearInternships: () =>
+                set({
+                    internships: [],
+                    pagination: null,
+                }),
+            removeInternshipsByIds: (ids: string[]) =>
+                set((state) => ({
+                    internships: state.internships.filter((i) => !ids.includes(i._id)),
+                    pagination: state.pagination,
+                })),
+            setDetailHeight: (h: number | null) => set({ detailHeight: h }),
         }),
         {
             name: 'internship-storage',

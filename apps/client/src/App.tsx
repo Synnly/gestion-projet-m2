@@ -1,6 +1,7 @@
 import './App.css';
 import { createBrowserRouter, Outlet, redirect, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider, dehydrate } from '@tanstack/react-query';
+import { ToastProvider } from './components/ui/toast/ToastProvider';
 import { fetchInternshipById } from './hooks/useFetchInternships';
 import { CompanySignup } from './auth/companySignup/index';
 import { Login } from './auth/Login/index';
@@ -32,15 +33,16 @@ function App() {
             middleware: [completeProfilMiddleware],
             element: <Outlet />,
             children: [
-                {   
-                            path: 'logout',
-                            loader: () => {
-                                userStore.getState().logout();
-                                return redirect('/signin');
-                            },
+                {
+                    path: 'logout',
+                    loader: () => {
+                        userStore.getState().logout();
+                        return redirect('/signin');
+                    },
                 },
                 {
-                    path: 'internships/list', element: <InternshipPage />,
+                    path: 'internships/list',
+                    element: <InternshipPage />,
                 },
                 {
                     loader: notAuthMiddleWare,
@@ -61,10 +63,10 @@ function App() {
                             path: 'company',
                             element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
                             children: [
-                                { path: 'dashboard', element: <CompanyDashboard/> },
-                                { path: 'profile', element: <CompanyProfile/> },
-                                { path: 'profile/edit', element: <EditCompanyProfile/> },
-                                { path: 'profile/change-password', element: <ChangePassword/> },
+                                { path: 'dashboard', element: <CompanyDashboard /> },
+                                { path: 'profile', element: <CompanyProfile /> },
+                                { path: 'profile/edit', element: <EditCompanyProfile /> },
+                                { path: 'profile/change-password', element: <ChangePassword /> },
                                 { path: 'projects', element: <div>Company Projects</div> },
                                 {
                                     element: <VerifiedRoutes redirectPath="/company/dashboard" />,
@@ -77,7 +79,7 @@ function App() {
                             element: <ProtectedRoutesByRole allowedRoles={['USER', 'ADMIN', 'COMPANY']} />,
                             children: [
                                 {
-                                    element: <VerifiedRoutes redirectPath="/"/>,
+                                    element: <VerifiedRoutes redirectPath="/" />,
                                     children: [
                                         {
                                             path: 'detail/:id',
@@ -87,7 +89,10 @@ function App() {
                                                 if (!id) throw new Response('Missing id', { status: 400 });
                                                 const qc = new QueryClient();
                                                 try {
-                                                    await qc.fetchQuery({ queryKey: ['internship', id], queryFn: () => fetchInternshipById(id) });
+                                                    await qc.fetchQuery({
+                                                        queryKey: ['internship', id],
+                                                        queryFn: () => fetchInternshipById(id),
+                                                    });
                                                 } catch (e) {
                                                     throw new Response('Not found', { status: 404 });
                                                 }
@@ -99,7 +104,6 @@ function App() {
                                 },
                             ],
                         },
-
                     ],
                 },
             ],
@@ -108,7 +112,9 @@ function App() {
     const router = createBrowserRouter(route);
     return (
         <QueryClientProvider client={queryClient}>
-            <RouterProvider router={router} />
+            <ToastProvider>
+                <RouterProvider router={router} />
+            </ToastProvider>
         </QueryClientProvider>
     );
 }
