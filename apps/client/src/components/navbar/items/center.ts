@@ -9,13 +9,13 @@ export const centerNavItems: NavItem[] = [
     },
     {
         key: 'offers',
-        title: 'Les annonces',
+        title: 'Annonces',
         to: '/internships/list',
         type: 'link',
     },
     {
         key: 'applications',
-        title: 'Les candidatures',
+        title: 'Candidatures',
         to: '/company/applications',
         type: 'link',
     },
