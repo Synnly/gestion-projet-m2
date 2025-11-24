@@ -233,71 +233,15 @@ export class S3Service implements OnModuleInit {
      */
     async fileExists(fileName: string): Promise<boolean> {
         try {
-            // Remove extension from fileName to get base name
-            const baseFileName = fileName.substring(0, fileName.lastIndexOf('.'));
-            
-            // List all objects in bucket with this base name prefix
-            const stream = this.minioClient.listObjectsV2(this.bucket, baseFileName, false);
-
-            return new Promise((resolve) => {
-                let settled = false;
-                let timeoutId: NodeJS.Timeout | null = null;
-
-                const cleanup = () => {
-                    if (timeoutId) {
-                        clearTimeout(timeoutId);
-                        timeoutId = null;
-                    }
-                    try {
-                        stream.removeAllListeners('data');
-                        stream.removeAllListeners('end');
-                        stream.removeAllListeners('close');
-                        stream.removeAllListeners('error');
-                    } catch (e) {
-                        // ignore cleanup errors
-                    }
-                };
-
-                const settle = (value: boolean) => {
-                    if (settled) return;
-                    settled = true;
-                    cleanup();
-                    resolve(value);
-                };
-
-                stream.on('data', (obj: any) => {
-                    try {
-                        if (obj && obj.name && obj.name.startsWith(baseFileName + '.')) {
-                            // Found matching object - resolve true
-                            try {
-                                // attempt to stop the stream
-                                stream.destroy();
-                            } catch (e) {
-                                // ignore
-                            }
-                            settle(true);
-                        }
-                    } catch (e) {
-                        // ignore per-object errors
-                    }
-                });
-
-                stream.on('end', () => settle(false));
-                stream.on('close', () => settle(false));
-                stream.on('error', () => settle(false));
-
-                // Safety timeout to avoid hanging indefinitely
-                timeoutId = setTimeout(() => {
-                    try {
-                        stream.destroy();
-                    } catch (e) {
-                        // ignore
-                    }
-                    settle(false);
-                }, 5000);
-            });
-        } catch {
-            return false;
+            await this.minioClient.statObject(this.bucket, fileName);
+            return true;
+        } catch (err: any) {
+            // MinIO returns code 'NotFound' or 'NoSuchKey' if object does not exist
+            if (err && (err.code === 'NotFound' || err.code === 'NoSuchKey')) {
+                return false;
+            }
+            // For other errors, rethrow
+            throw err;
         }
     }
 
