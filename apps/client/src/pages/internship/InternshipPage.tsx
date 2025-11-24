@@ -7,10 +7,10 @@ import { userStore } from '../../store/userStore';
 
 export function InternshipPage() {
     const selects = [
-        { label: 'Location', options: ['Remote', 'On-site', 'Hybrid'] },
-        { label: 'Job Type', options: ['Full-time', 'Part-time', 'Contract'] },
-        { label: 'Industry', options: ['Tech', 'Finance', 'Healthcare'] },
-        { label: 'Date Posted', options: ['Last 24 hours', 'Last 7 days', 'Last 30 days'] },
+        { label: 'Location', options: ['À distance', 'Sur site', 'Hybride'] },
+        { label: 'Type de stage', options: ['Temps plein', 'Temps partiel', 'Contrat'] },
+        { label: 'Secteur', options: ['Tech', 'Finance', 'Santé'] },
+        { label: 'Date de publication', options: ['Dernières 24 heures', 'Derniers 7 jours', 'Derniers 30 jours'] },
     ];
     const internships = useInternshipStore((state) => state.internships);
     const selectedInternshipId = useInternshipStore((state) => state.selectedInternshipId);

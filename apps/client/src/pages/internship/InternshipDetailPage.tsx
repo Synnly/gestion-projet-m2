@@ -1,25 +1,44 @@
 import { useParams, Link } from 'react-router-dom';
-import { useInternshipStore } from '../../store/useInternshipStore';
 import InternshipDetail from '../../modules/internship/InternshipDetail';
 import { Navbar } from '../../components/navbar/Navbar';
+import { useQuery } from '@tanstack/react-query';
+import { fetchInternshipById } from '../../hooks/useFetchInternships';
+import type { Internship } from '../../types/internship.types';
 
 export default function InternshipDetailPage() {
     const { id } = useParams() as { id?: string };
-    const internships = useInternshipStore((s) => s.internships);
-
-    const internship = internships.find((i) => i._id === id) ?? null;
+    const { data: internship, isLoading, isError } = useQuery<Internship | null, Error>({
+        queryKey: ['internship', id],
+        queryFn: () => fetchInternshipById(id),
+        enabled: !!id,
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+    });
 
     return (
         <div className="px-8">
             <Navbar />
             <main className="flex w-full flex-1 justify-center py-8">
                 <div className="w-full max-w-5xl px-4 md:px-8">
-                    {internship ? (
+                    {isLoading ? (
+                        <div className="card bg-base-100 rounded-xl p-6">
+                            <h2 className="text-xl font-bold">Chargement…</h2>
+                            <p className="mt-2 text-sm text-base-content/70">Récupération des informations du stage.</p>
+                        </div>
+                    ) : isError ? (
+                        <div className="card bg-base-100 rounded-xl p-6">
+                            <h2 className="text-xl font-bold">Erreur</h2>
+                            <p className="mt-2 text-sm text-base-content/70">Impossible de récupérer ce stage.</p>
+                            <div className="mt-4">
+                                <Link to="/internships/list" className="btn btn-primary">Retour à la liste</Link>
+                            </div>
+                        </div>
+                    ) : internship ? (
                         <div className="grid grid-cols-12 gap-8">
                             <div className="col-span-12 lg:col-span-8">
                                 <div className="card bg-base-100 rounded-xl p-6">
                                     <h1 className="text-3xl font-extrabold mb-4">{internship.title}</h1>
-                                    <p className="text-sm text-base-content/70 mb-6">{internship.company.name} • {internship.adress}</p>
+                                    <p className="text-sm text-base-content/70 mb-6">{internship.company.name} • {internship.address}</p>
                                     <InternshipDetail internship={internship} />
                                 </div>
                             </div>

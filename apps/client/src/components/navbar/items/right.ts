@@ -23,6 +23,7 @@ export const rightNavItems: NavItem[] = [
                 key: 'logout',
                 title: 'Se déconnecter',
                 type: 'link',
+                to: '/logout',
                 className: 'text-red-600',
             },
         ],

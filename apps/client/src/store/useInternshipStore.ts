@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { Internship, InternshipFilters, PaginationResult } from '../types/internship.types';
 
 interface InternshipStore {
@@ -26,7 +27,9 @@ const DEFAULT_FILTERS: InternshipFilters = {
     limit: 10,
 };
 
-export const useInternshipStore = create<InternshipStore>((set) => ({
+export const useInternshipStore = create<InternshipStore>()(
+    persist(
+        (set) => ({
     // État initial
     internships: [],
     pagination: null,
@@ -72,4 +75,15 @@ export const useInternshipStore = create<InternshipStore>((set) => ({
             pagination: null,
         }),
     setDetailHeight: (h: number | null) => set({ detailHeight: h }),
-}));
+        }),
+        {
+            name: 'internship-storage',
+            // Persist only the minimal state we want to keep between reloads
+            partialize: (state: InternshipStore) => ({
+                savedInternships: state.savedInternships,
+                filters: state.filters,
+                selectedInternshipId: state.selectedInternshipId,
+            }),
+        },
+    ),
+);

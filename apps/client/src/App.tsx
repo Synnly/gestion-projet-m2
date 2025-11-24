@@ -1,5 +1,5 @@
 import './App.css';
-import { createBrowserRouter, Outlet } from 'react-router';
+import { createBrowserRouter, Outlet, redirect } from 'react-router';
 import { RouterProvider } from 'react-router';
 import { CompanySignup } from './auth/companySignup/index';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -33,19 +33,28 @@ function App() {
             element: <Outlet />,
             children: [
                 {
+                    path: 'internships/list', element: <InternshipPage />,
+                },
+                {
                     loader: notAuthMiddleWare,
                     children: [
                         { index: true, element: <div>Hello World</div> },
                         { path: 'signin', element: <Login /> },
                         { path: 'forgot-password', element: <ForgotPassword /> },
                         { path: 'company/signup', element: <CompanySignup /> },
-                        { path: 'internships/list-preview', element: <InternshipPage />}
                     ],
                 },
                 {
                     loader: protectedMiddleware,
                     element: <AuthRoutes />,
                     children: [
+                        {   
+                            path: 'logout',
+                            loader: () => {
+                                userStore.getState().logout();
+                                return redirect('/signin');
+                            },
+                        },
                         { path: 'verify', element: <VerifyEmail /> },
                         { path: 'complete-profil', element: <CompleteProfil /> },
                         {
@@ -75,7 +84,6 @@ function App() {
                                 },
                             ],
                         },
-                        { path: 'internships/list', element: <InternshipPage /> },
 
                     ],
                 },

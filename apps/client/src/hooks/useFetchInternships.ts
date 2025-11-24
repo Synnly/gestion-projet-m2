@@ -126,3 +126,37 @@ export function useFetchInternships() {
 
     return query;
 }
+
+/**
+ * Fetch a single internship by id and attach signed company logo if present.
+ * Can be used directly as a queryFn for react-query in detail pages:
+ *   useQuery(['internship', id], () => fetchInternshipById(id))
+ */
+export async function fetchInternshipById(id? : string) : Promise<Internship | null> {
+    if (!id) return null;
+
+    const res = await fetch(`${API_URL}/api/company/0/posts/${id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+    });
+
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || 'Erreur lors de la récupération du post');
+    }
+
+    const json = await res.json().catch(() => null);
+    if (!json) return null;
+
+    try {
+        const logoFile = json?.company?.logo;
+        if (logoFile) {
+            const signed = await fetchPublicSignedUrl(logoFile);
+            if (signed) json.company.logoUrl = signed;
+        }
+    } catch (e) {
+    }
+
+    return json;
+}
