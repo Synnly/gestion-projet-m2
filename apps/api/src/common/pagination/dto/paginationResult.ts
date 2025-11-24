@@ -1,22 +1,29 @@
+/**
+ * Result returned by pagination helpers.
+ *
+ * Contains the items for the current page together with useful metadata
+ * such as total item count, current page and whether next/previous pages
+ * are available.
+ */
 export interface PaginationResult<T> {
-  /** Les éléments de la page actuelle */
+  /** Items for the current page */
   data: T[];
 
-  /** Numéro de la page actuelle */
+  /** Current page number (1-based) */
   page: number;
 
-  /** Nombre d’éléments par page */
+  /** Number of items per page */
   limit: number;
 
-  /** Nombre total d’éléments correspondant au filtre */
+  /** Total number of items matching the filter */
   total: number;
 
-  /** Nombre total de pages */
+  /** Total number of pages */
   totalPages: number;
 
-  /** Indique s’il y a une page suivante */
+  /** True if there is a next page */
   hasNext: boolean;
 
-  /** Indique s’il y a une page précédente */
+  /** True if there is a previous page */
   hasPrev?: boolean;
 }

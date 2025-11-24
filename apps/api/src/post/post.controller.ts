@@ -25,15 +25,18 @@ import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
 import { plainToInstance } from 'class-transformer';
 
 /**
- * Controller handling post-related HTTP requests
+ * Controller responsible for handling post-related endpoints.
  */
 @Controller('/api/company/:companyId/posts')
 export class PostController {
     constructor(private readonly postService: PostService) {}
 
     /**
-     * Retrieves all posts
-     * @returns A paginated list of posts
+     * Return a paginated list of posts. Query parameters `page` and `limit`
+     * are read via `PaginationDto` and validated automatically.
+     *
+     * @param query - Pagination parameters (page, limit)
+     * @returns A paginated result containing `PostDto` instances
      */
     @Get('')
     @HttpCode(HttpStatus.OK)
@@ -49,9 +52,13 @@ export class PostController {
     }
 
     /**
-     * Retrieve a post by its id
-     * @param id The post identifier
-     * @returns The post with the specified ID
+     *
+     * Retrieve a single post by its identifier. If the post does not exist
+     * a `NotFoundException` is thrown which maps to a 404 response.
+     *
+     * @param id - The post identifier (MongoDB ObjectId string)
+     * @throws NotFoundException if the post is not found
+     * @returns The found post converted to `PostDto`
      */
     @Get('/:id')
     @HttpCode(HttpStatus.OK)
@@ -62,9 +69,12 @@ export class PostController {
     }
 
     /**
-     * Creates a new post
-     * @param companyId The company identifier
-     * @param dto The post data for creation
+     * Create a new post for the given company. This endpoint is protected
+     * and only accessible to authenticated users with the `COMPANY` or
+     * `ADMIN` role that are owners of the company.
+     *
+     * @param companyId - Company id (MongoDB ObjectId string)
+     * @param dto - Payload validated by `CreatePostDto`
      */
     @Post('')
     @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
