@@ -6,7 +6,7 @@ export const centerNavItems: NavItem[] = [
         title: 'Tableau de bord',
         to: '/company/dashboard',
         type: 'link',
-        role: 'COMPANY',
+        role: ['COMPANY'],
     },
     /*{
         key: 'offers',

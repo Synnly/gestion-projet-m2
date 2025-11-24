@@ -7,13 +7,13 @@ export const rightNavItems: NavItem[] = [
         to: '/company/offers/add',
         type: 'button',
         className: 'btn btn-primary text-black rounded-xl',
-        role: 'COMPANY',
+        role: ['COMPANY'],
     },
     {
         key: 'profileDropdown',
         title: 'ProfileDropdown',
         type: 'dropdown',
-        role: 'COMPANY',
+        role: ['COMPANY'],
         children: [
             {
                 key: 'profile',

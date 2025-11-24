@@ -6,7 +6,7 @@ export interface NavItem {
     key: string;
     title: React.ReactNode;
     to?: string;
-    role?: 'COMPANY' | 'STUDENT' | 'GUEST';
+    role?: ('COMPANY' | 'STUDENT' | 'GUEST' | 'ADMIN')[];
     type?: NavItemType;
     className?: string;
     children?: NavItem[];
