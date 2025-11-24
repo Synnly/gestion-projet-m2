@@ -106,7 +106,7 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
                                 <div className="prose max-w-none bg-transparent text-base-content shadow-none border-0">
                                     <MDEditor.Markdown
                                         source={internship.description ?? ''}
-                                        className="bg-transparent! text-neutral!"
+                                        className="bg-transparent! text-base-content!"
                                     />
                                 </div>
 

@@ -33,7 +33,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
 
     if (minimal) {
         return (
-            <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-neutral px-8 py-2">
+            <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-base-content px-8 py-2">
                 <div className="max-w-7xl mx-auto flex items-center justify-start">
                     <ItemLink
                         item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
@@ -45,7 +45,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
     }
 
     return (
-        <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-neutral px-8 py-2">
+        <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-base-content px-8 py-2">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <ItemLink
                     item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
