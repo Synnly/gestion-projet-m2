@@ -1,0 +1,28 @@
+import React from 'react';
+import { useInternshipStore } from '../../store/useInternshipStore';
+import Pagination from '../../components/ui/pagination/Pagination';
+
+const InternshipPagination: React.FC = () => {
+    const pagination = useInternshipStore((s) => s.pagination);
+    const filters = useInternshipStore((s) => s.filters);
+    const setFilters = useInternshipStore((s) => s.setFilters);
+
+    if (!pagination) return null;
+
+    const handlePageChange = (newPage: number) => {
+        // Clamp requested page into a valid range using the latest known totalPages.
+        const maxPage = pagination.totalPages ?? newPage;
+        const target = Math.max(1, Math.min(newPage, maxPage));
+        if (filters.page === target) return;
+        setFilters({ page: target });
+        // scroll not handled here; caller may handle UX
+    };
+
+    return (
+        <div className="mt-3 w-full">
+            <Pagination page={pagination.page} totalPages={pagination.totalPages} onPageChange={handlePageChange} />
+        </div>
+    );
+};
+
+export default InternshipPagination;

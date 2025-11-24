@@ -164,7 +164,9 @@ describe('Test of FormSignupComponent', () => {
 
         fireEvent.submit(form);
         await waitFor(() => {
-            expect(screen.getByText(/le mot de passe doit contenir au moins une lettre minuscule/i)).toBeInTheDocument();
+            expect(
+                screen.getByText(/le mot de passe doit contenir au moins une lettre minuscule/i),
+            ).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });
@@ -192,7 +194,9 @@ describe('Test of FormSignupComponent', () => {
 
         fireEvent.submit(form);
         await waitFor(() => {
-            expect(screen.getByText(/le mot de passe doit contenir au moins une lettre majuscule/i)).toBeInTheDocument();
+            expect(
+                screen.getByText(/le mot de passe doit contenir au moins une lettre majuscule/i),
+            ).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });
@@ -220,7 +224,9 @@ describe('Test of FormSignupComponent', () => {
 
         fireEvent.submit(form);
         await waitFor(() => {
-            expect(screen.getByText(/le mot de passe doit contenir au moins un caractère spécial/i)).toBeInTheDocument();
+            expect(
+                screen.getByText(/le mot de passe doit contenir au moins un caractère spécial/i),
+            ).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });
@@ -248,7 +254,9 @@ describe('Test of FormSignupComponent', () => {
 
         fireEvent.submit(form);
         await waitFor(() => {
-            expect(screen.getByText(/le mot de passe doit contenir au moins un caractère spécial/i)).toBeInTheDocument();
+            expect(
+                screen.getByText(/le mot de passe doit contenir au moins un caractère spécial/i),
+            ).toBeInTheDocument();
             expect(mutateAsyncMock).not.toHaveBeenCalled();
             expect(setMock).not.toHaveBeenCalled();
         });

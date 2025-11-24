@@ -55,6 +55,7 @@ describe('S3Service (unit)', () => {
             presignedPutObject: jest.fn().mockResolvedValue('upload-url'),
             listObjectsV2: jest.fn(() => createMockStream([])), // No existing file
             removeObject: jest.fn().mockResolvedValue(undefined),
+            statObject: jest.fn().mockRejectedValue({ code: 'NotFound' }),
         };
         svc['minioClient'] = mockClient;
 
@@ -76,7 +77,7 @@ describe('S3Service (unit)', () => {
         const mockClient: any = {
             presignedGetObject: jest.fn().mockResolvedValue('down-url'),
             listObjectsV2: jest.fn(() => createMockStream([])), // No file initially
-            statObject: jest.fn().mockRejectedValue(new Error('not found')),
+            statObject: jest.fn().mockRejectedValue({ code: 'NotFound' }),
         };
         svc['minioClient'] = mockClient;
 
@@ -123,6 +124,7 @@ describe('S3Service (unit)', () => {
         svc['minioClient'] = {
             presignedPutObject: jest.fn().mockResolvedValue('u'),
             listObjectsV2: jest.fn(() => createMockStream([])),
+            statObject: jest.fn().mockRejectedValue(new Error('not found')),
         } as any;
 
         await expect(svc.generatePresignedUploadUrl('file.png', 'logo', 'uid')).rejects.toThrow(
@@ -309,6 +311,7 @@ describe('S3Service', () => {
         it('should throw NotFoundException if file does not exist', async () => {
             const fileName = 'logos/nonexistent.png';
             mockMinioClient.listObjectsV2.mockReturnValue(createMockStream([])); // No file found
+            mockMinioClient.statObject.mockRejectedValue({ code: 'NotFound' });
 
             await expect(service.generatePresignedDownloadUrl(fileName, 'user123')).rejects.toThrow(NotFoundException);
         });
@@ -369,6 +372,7 @@ describe('S3Service', () => {
         it('should throw NotFoundException if file does not exist', async () => {
             const fileName = 'logos/nonexistent.png';
             mockMinioClient.listObjectsV2.mockReturnValue(createMockStream([]));
+            mockMinioClient.statObject.mockRejectedValue({ code: 'NotFound' });
 
             await expect(service.deleteFile(fileName, 'user123')).rejects.toThrow(NotFoundException);
         });
@@ -408,6 +412,7 @@ describe('S3Service', () => {
         it('should return false if file does not exist', async () => {
             const fileName = 'logos/nonexistent.png';
             mockMinioClient.listObjectsV2.mockReturnValue(createMockStream([])); // No file found
+            mockMinioClient.statObject.mockRejectedValue({ code: 'NotFound' });
 
             const result = await service.fileExists(fileName);
 

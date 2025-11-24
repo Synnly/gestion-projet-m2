@@ -4,12 +4,12 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { userStore } from '../../store/userStore';
 import { profileStore } from '../../store/profileStore';
-import { Navbar } from '../../components/Navbar';
-import { FormSection } from '../../components/FormSection';
-import { FormInputEdit } from '../../components/FormInputEdit';
-import { CustomSelect } from '../../components/select';
-import { FormSubmit } from '../../components/FormSubmit';
-import { ProfilePicture } from '../../components/profilPicture';
+import { Navbar } from '../../components/navbar/Navbar';
+import { FormSection } from '../../components/form/FormSection';
+import { FormInputEdit } from '../../components/form/FormInputEdit';
+import { CustomSelect } from '../../components/inputs/select/select';
+import { FormSubmit } from '../../components/form/FormSubmit';
+import { ProfilePicture } from '../../components/profile/profilPicture';
 import { useGetCompanyProfile } from '../../hooks/useGetCompanyProfile';
 import { useFile } from '../../hooks/useFile';
 import { useBlob } from '../../hooks/useBlob';
@@ -167,7 +167,7 @@ export function EditCompanyProfile() {
 
                     <form className="mt-8 w-full max-w-3xl flex flex-col flex-1" onSubmit={handleSubmit(onSubmit)}>
                         <FormSection title="Logo de l'entreprise" className="mb-8">
-                            <div className='flex'>
+                            <div className="flex">
                                 <ProfilePicture
                                     src={logoUrl!}
                                     overlay
@@ -185,13 +185,12 @@ export function EditCompanyProfile() {
 
                         <FormSection title="Informations non modifiables" className="mb-8">
                             <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-
                                 {/* EMAIL */}
                                 <div>
                                     <label className="text-sm font-medium">Email</label>
                                     <input
                                         type="text"
-                                        value={profile?.email || ""}
+                                        value={profile?.email || ''}
                                         readOnly
                                         className="input input-primary w-full cursor-not-allowed"
                                     />
@@ -206,7 +205,7 @@ export function EditCompanyProfile() {
                                         <label className="text-sm font-medium">SIRET</label>
                                         <input
                                             type="text"
-                                            value={profile?.siretNumber || ""}
+                                            value={profile?.siretNumber || ''}
                                             readOnly
                                             className="input input-primary w-full cursor-not-allowed"
                                         />
@@ -215,9 +214,7 @@ export function EditCompanyProfile() {
                                         </span>
                                     </div>
                                 )}
-
                             </div>
-
                         </FormSection>
 
                         <FormSection title="Informations légales" className="mb-8 space-y-4">

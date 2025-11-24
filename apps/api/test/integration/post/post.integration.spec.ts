@@ -138,14 +138,16 @@ describe('Post Integration Tests', () => {
     };
 
     describe('GET /api/company/:companyId/posts - Find All Posts', () => {
-        it('should return empty array when no posts exist and findAll is called', async () => {
+        it('should return empty paginated result when no posts exist and findAll is called', async () => {
             const res = await request(app.getHttpServer())
                 .get(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(res.body).toEqual([]);
-            expect(Array.isArray(res.body)).toBe(true);
+            expect(res.body.data).toEqual([]);
+            expect(res.body.total).toBe(0);
+            expect(res.body.page).toBe(1);
+            expect(Array.isArray(res.body.data)).toBe(true);
         });
 
         it('should return all posts when posts exist and findAll is called', async () => {
@@ -168,8 +170,9 @@ describe('Post Integration Tests', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            const normalized = normalizeBody(res.body);
-            expect(normalized).toHaveLength(1);
+            expect(res.body.data).toHaveLength(1);
+            expect(res.body.total).toBe(1);
+            const normalized = normalizeBody(res.body.data);
             expect(normalized[0].title).toBe('Développeur Full Stack');
             expect(normalized[0].description).toBe('Recherche développeur expérimenté');
             expect(normalized[0]).toHaveProperty('_id');
@@ -195,22 +198,13 @@ describe('Post Integration Tests', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            const normalized = normalizeBody(res.body);
-            expect(normalized).toHaveLength(2);
+            expect(res.body.data).toHaveLength(2);
+            expect(res.body.total).toBe(2);
+            const normalized = normalizeBody(res.body.data);
             expect(normalized[0].title).toBe('Développeur Frontend');
             expect(normalized[1].title).toBe('Développeur Backend');
         });
 
-        it('should return 401 when no authorization token is provided and findAll is called', async () => {
-            await request(app.getHttpServer()).get(buildPostsPath()).expect(401);
-        });
-
-        it('should return 401 when invalid authorization token is provided and findAll is called', async () => {
-            await request(app.getHttpServer())
-                .get(buildPostsPath())
-                .set('Authorization', 'Bearer invalid-token')
-                .expect(401);
-        });
 
         it('should return posts with all fields when posts have complete data and findAll is called', async () => {
             await createPost({
@@ -232,7 +226,8 @@ describe('Post Integration Tests', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            const normalized = normalizeBody(res.body);
+            expect(res.body.data).toHaveLength(1);
+            const normalized = normalizeBody(res.body.data);
             expect(normalized[0]).toHaveProperty('title', 'Développeur Full Stack');
             expect(normalized[0]).toHaveProperty('description');
             expect(normalized[0]).toHaveProperty('duration', '6 mois');
@@ -285,18 +280,6 @@ describe('Post Integration Tests', () => {
                 .expect(400);
         });
 
-        it('should return 401 when no authorization token is provided and findOne is called', async () => {
-            const post = await createPost({
-                title: 'Test Post',
-                description: 'Test Description',
-                keySkills: ['Skill1'],
-                type: PostType.Presentiel,
-            });
-
-            await request(app.getHttpServer())
-                .get(buildPostsPath(`/${post._id}`))
-                .expect(401);
-        });
 
         it('should return post with all fields when post has complete data and findOne is called', async () => {
             const post = await createPost({

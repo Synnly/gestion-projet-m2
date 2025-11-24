@@ -1,23 +1,22 @@
 import type { FieldError, FieldValues, UseFormRegister } from 'react-hook-form';
-import { cn } from '../utils/cn';
+import { cn } from '../../utils/cn';
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-
-export type FormInputEditProps<T extends FieldValues> = {
+export type FormInputProps<T extends FieldValues> = {
     label?: string;
     register: ReturnType<UseFormRegister<T>>;
     error?: FieldError;
     className?: string;
 } & React.InputHTMLAttributes<HTMLInputElement>;
 
-export function FormInputEdit<T extends FieldValues>({
+export function FormInput<T extends FieldValues>({
     name,
     label,
     register,
     error,
     className,
     ...props
-}: FormInputEditProps<T>) {
+}: FormInputProps<T>) {
     const [showPassword, setShowPassword] = useState(false);
 
     // Ne change le type que si c'est password et que showPassword est true
@@ -26,7 +25,7 @@ export function FormInputEdit<T extends FieldValues>({
     return (
         <div className="flex flex-col w-full">
             {label && (
-                <label className="font-bold text-sm pb-2" htmlFor={name}>
+                <label className="font-bold text-sm pb-2 uppercase" htmlFor={name}>
                     {label}
                 </label>
             )}
@@ -36,8 +35,12 @@ export function FormInputEdit<T extends FieldValues>({
                     {...register}
                     {...props}
                     type={inputType}
+                    onInput={(e) => {
+                        register.onChange(e);
+                        props.onInput?.(e);
+                    }}
                     className={cn(
-                        'rounded-lg p-4',
+                        ' border-gray-200 border-2 rounded-lg p-4',
                         error && 'border-red-500',
                         className,
                         props.type === 'password' && 'flex items-center',
@@ -54,7 +57,11 @@ export function FormInputEdit<T extends FieldValues>({
                     </button>
                 )}
             </div>
-            {error && <span className="text-red-500 mt-1 text-sm italic">{error.message}</span>}
+            {error && error.message && (
+                <span className="text-red-500 mt-1 rounded-lg bg-red-300 p-3">
+                    {error?.message.charAt(0).toUpperCase() + error?.message.slice(1)}
+                </span>
+            )}
         </div>
     );
 }

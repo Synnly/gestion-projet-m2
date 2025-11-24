@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PostService } from '../../../src/post/post.service';
 import { PostController } from '../../../src/post/post.controller';
+import { PaginationService } from '../../../src/common/pagination/pagination.service';
 
 describe('PostModule', () => {
     let module: TestingModule;
@@ -24,6 +25,10 @@ describe('PostModule', () => {
         get: jest.fn(),
     };
 
+    const mockPaginationService = {
+        paginate: jest.fn(),
+    };
+
     beforeEach(async () => {
         module = await Test.createTestingModule({
             controllers: [PostController],
@@ -40,6 +45,10 @@ describe('PostModule', () => {
                 {
                     provide: ConfigService,
                     useValue: mockConfigService,
+                },
+                {
+                    provide: PaginationService,
+                    useValue: mockPaginationService,
                 },
             ],
         }).compile();

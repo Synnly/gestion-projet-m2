@@ -3,18 +3,25 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Post, PostDocument } from './post.schema';
 import { Model, Types } from 'mongoose';
 import { CreatePostDto } from './dto/createPost.dto';
+import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
+import { PaginationService } from 'src/common/pagination/pagination.service';
+import { QueryBuilder } from 'src/common/pagination/query.builder';
+import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
 import { CreationFailedError } from '../errors/creationFailedError';
 
 @Injectable()
 export class PostService {
-    constructor(@InjectModel(Post.name) private readonly postModel: Model<PostDocument>) {}
+    constructor(
+        @InjectModel(Post.name) private readonly postModel: Model<PostDocument>,
+        private readonly paginationService: PaginationService,
+    ) {}
 
     /**
-     * Creates a new post in the database
+     * Create a new post document attached to the given company.
      *
-     * @param dto - The complete post data required for creation
-     * @param companyId - The MongoDB ObjectId of the company as a string
-     * @returns Promise resolving to void upon successful creation
+     * @param dto - Data required to create the post (validated `CreatePostDto`)
+     * @param companyId - Company id as a string (MongoDB ObjectId)
+     * @returns The created post with the `company` relation populated
      */
     async create(dto: CreatePostDto, companyId: string): Promise<Post> {
         const createdPost = new this.postModel({
@@ -40,27 +47,41 @@ export class PostService {
         return populatedPost;
     }
     /**
-     * Retrieves all active posts
+     * Retrieve posts using pagination.
      *
-     * @returns Promise resolving to an array of all active posts
+     * The returned `PaginationResult` contains posts where the `company`
+     * relation is populated with a selected set of fields.
+     *
+     * @param query - Pagination parameters (page and limit)
+     * @returns A `PaginationResult<Post>` containing items and metadata
      */
-    async findAll(): Promise<Post[]> {
-        return this.postModel
-            .find()
-            .populate({
-                path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
-            })
-            .exec();
+    async findAll(query: PaginationDto): Promise<PaginationResult<Post>> {
+        const { page, limit } = query;
+        const filter = new QueryBuilder(query).build();
+
+        const companyPopulate = {
+            path: 'company',
+            select:
+                '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+        };
+
+        return this.paginationService.paginate(
+            this.postModel,
+            filter,
+            page,
+            limit,
+            [companyPopulate], // populate with selected fields
+        );
     }
 
     /**
-     * Retrieves a single post by its unique identifier
+     * Retrieve a single post by id.
      *
-     * Only returns the post if it exists
+     * The `company` relation is populated when present. The method returns
+     * `null` when no document matches the provided id.
      *
-     * @param id - The MongoDB ObjectId of the post as a string
-     * @returns Promise resolving to the post if found and active, null otherwise
+     * @param id - Post id (MongoDB ObjectId as string)
+     * @returns The post document with `company` populated, or `null` if not found
      */
     async findOne(id: string): Promise<Post | null> {
         return this.postModel
