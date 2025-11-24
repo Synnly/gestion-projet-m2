@@ -19,6 +19,7 @@
         "start": "NODE_ENV=production npm run start --workspace=apps/api"
     },
     "dependencies": {
+        "@isaacs/brace-expansion": "^5.0.0",
         "ts-jest": "^29.4.5"
     }
 }

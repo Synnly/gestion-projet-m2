@@ -4,10 +4,10 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { userStore } from '../../../store/userStore';
-import { Navbar } from '../../../components/Navbar';
-import { FormSection } from '../../../components/FormSection';
-import { FormInputEdit } from '../../../components/FormInputEdit';
-import { FormSubmit } from '../../../components/FormSubmit';
+import { Navbar } from '../../../components/navbar/Navbar';
+import { FormSection } from '../../../components/form/FormSection';
+import { FormInputEdit } from '../../../components/form/FormInputEdit';
+import { FormSubmit } from '../../../components/form/FormSubmit';
 
 // Schéma de validation pour le changement de mot de passe
 const changePasswordSchema = z
@@ -80,9 +80,7 @@ export function ChangePassword() {
             <div className="p-8">
                 <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center bg-white rounded-lg shadow">
                     <h1 className="text-3xl font-bold">Modifier le mot de passe</h1>
-                    <p className="text-sm mt-2 italic text-gray-600">
-                        Choisissez un nouveau mot de passe sécurisé
-                    </p>
+                    <p className="text-sm mt-2 italic text-gray-600">Choisissez un nouveau mot de passe sécurisé</p>
 
                     <form className="mt-8 w-full max-w-md flex flex-col flex-1" onSubmit={handleSubmit(onSubmit)}>
                         <FormSection title="Nouveau mot de passe" className="mb-8">

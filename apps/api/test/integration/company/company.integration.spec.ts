@@ -318,6 +318,7 @@ describe('Company Integration Tests', () => {
         it('should return empty array when no companies exist', async () => {
             const res = await request(app.getHttpServer()).get('/api/companies').expect(200);
 
+            expect(res.body).toBeDefined();
             expect(Array.isArray(res.body)).toBe(true);
             expect(res.body).toHaveLength(0);
         });
@@ -339,6 +340,7 @@ describe('Company Integration Tests', () => {
 
             const res = await request(app.getHttpServer()).get('/api/companies').expect(200);
 
+            expect(res.body).toBeDefined();
             expect(Array.isArray(res.body)).toBe(true);
             expect(res.body).toHaveLength(2);
             // Note: CompanyDto constructor copies all fields, so we check essential fields
@@ -980,6 +982,8 @@ describe('Company Integration Tests', () => {
             expect(res.body).toHaveLength(20);
         });
     });
+
+
 
     describe('PATCH /api/companies/:id - Additional Update Tests', () => {
         it('should update enum field to different value', async () => {

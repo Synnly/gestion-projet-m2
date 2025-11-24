@@ -1,10 +1,17 @@
+import { useLayoutEffect } from "react";
 import { CreatePostForm } from "../../components/posts/CreatePostForm";
 import { PostPreview } from "../../components/posts/PostPreview";
 import { profileStore } from "../../store/profileStore";
+import { useCreatePostStore } from "../../store/CreatePostStore";
 
 export default function CreatePostPage() {
   const profile = profileStore((state) => state.profile);
   const companyName = profile.name ?? "Mon entreprise";
+  const reset = useCreatePostStore((state) => state.reset);
+
+  useLayoutEffect(() => {
+    reset();
+  }, [reset]);
 
   if (profile) {
     console.log("CreatePostPage profile:", {
