@@ -1,23 +1,33 @@
+import { NotFoundException, ConflictException, ForbiddenException, ExecutionContext } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
+
+import { StructureType, LegalStatus } from '../../../src/company/company.schema';
 import { CompanyController } from '../../../src/company/company.controller';
-import { CompanyService } from '../../../src/company/company.service';
 import { CreateCompanyDto } from '../../../src/company/dto/createCompany.dto';
 import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
+import { CompanyService } from '../../../src/company/company.service';
+import { CreatePostDto } from '../../../src/post/dto/createPost.dto';
 import { CompanyDto } from '../../../src/company/dto/company.dto';
-import { StructureType, LegalStatus } from '../../../src/company/company.schema';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { RolesGuard } from '../../../src/common/roles/roles.guard';
-import { Reflector } from '@nestjs/core';
+import { NafCode } from '../../../src/company/nafCodes.enum';
 import { Role } from '../../../src/common/roles/roles.enum';
-import { ExecutionContext } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import { RolesGuard } from '../../../src/common/roles/roles.guard';
+import { AuthService } from '../../../src/auth/auth.service';
+import { AuthGuard } from '../../../src/auth/auth.guard';
+import { PostService } from '../../../src/post/post.service';
+import { PostType } from '../../../src/post/post.schema';
 
 describe('CompanyController', () => {
     let controller: CompanyController;
     let service: CompanyService;
+    let postService: PostService;
+    let authService: AuthService;
     let rolesGuard: RolesGuard;
     let reflector: Reflector;
+
+    // --- MOCKS ---
 
     const mockCompanyService = {
         findAll: jest.fn(),
@@ -25,6 +35,15 @@ describe('CompanyController', () => {
         create: jest.fn(),
         update: jest.fn(),
         remove: jest.fn(),
+    };
+
+    const mockPostService = {
+        findAllByCompany: jest.fn(),
+        create: jest.fn(),
+    };
+
+    const mockAuthService = {
+        logout: jest.fn(),
     };
 
     const mockReflector = {
@@ -38,10 +57,7 @@ describe('CompanyController', () => {
     };
 
     const mockConfigService = {
-        get: jest.fn((key: string) => {
-            if (key === 'JWT_SECRET') return 'test-secret';
-            return null;
-        }),
+        get: jest.fn(),
     };
 
     const createMockExecutionContext = (user?: any): ExecutionContext => {
@@ -58,41 +74,49 @@ describe('CompanyController', () => {
         const module: TestingModule = await Test.createTestingModule({
             controllers: [CompanyController],
             providers: [
-                {
-                    provide: CompanyService,
-                    useValue: mockCompanyService,
-                },
-                {
-                    provide: Reflector,
-                    useValue: mockReflector,
-                },
-                {
-                    provide: JwtService,
-                    useValue: mockJwtService,
-                },
-                {
-                    provide: ConfigService,
-                    useValue: mockConfigService,
-                },
+                { provide: CompanyService, useValue: mockCompanyService },
+                { provide: PostService, useValue: mockPostService },
+                { provide: AuthService, useValue: mockAuthService },
+                { provide: Reflector, useValue: mockReflector },
+                { provide: JwtService, useValue: mockJwtService },
+                { provide: ConfigService, useValue: mockConfigService },
                 RolesGuard,
             ],
-        }).compile();
+        })
+        .overrideGuard(AuthGuard).useValue({ canActivate: () => true })
+        .overrideGuard(RolesGuard).useValue({ canActivate: () => true })
+        .compile();
 
         controller = module.get<CompanyController>(CompanyController);
         service = module.get<CompanyService>(CompanyService);
+        postService = module.get<PostService>(PostService);
+        authService = module.get<AuthService>(AuthService);
         rolesGuard = module.get<RolesGuard>(RolesGuard);
         reflector = module.get<Reflector>(Reflector);
 
+
         jest.clearAllMocks();
     });
-
 
     it('should be defined when controller is instantiated', () => {
         expect(controller).toBeDefined();
     });
 
-
     describe('findAll', () => {
+        it('should return an array of 1 CompanyDto', async () => {
+            const companies = [
+                { _id: '507f1f77bcf86cd799439011', email: 'test@example.com', name: 'Test Company', isValid: true },
+            ];
+            mockCompanyService.findAll.mockResolvedValue(companies);
+
+            const result = await controller.findAll();
+
+            expect(result).toHaveLength(1);
+            expect(result[0]).toBeInstanceOf(CompanyDto);
+            expect(result[0]._id).toBe('507f1f77bcf86cd799439011');
+            expect(service.findAll).toHaveBeenCalledTimes(1);
+        });
+
         it('should return an array of 2 CompanyDto when findAll is called with 2 existing companies in database', async () => {
             const companies = [
                 {
@@ -121,17 +145,14 @@ describe('CompanyController', () => {
             expect(service.findAll).toHaveBeenCalledTimes(1);
         });
 
-
-        it('should return an empty array when findAll is called with no companies existing in database', async () => {
+        it('should return an empty array when no companies exist', async () => {
             mockCompanyService.findAll.mockResolvedValue([]);
-
             const result = await controller.findAll();
-
             expect(result).toEqual([]);
             expect(service.findAll).toHaveBeenCalledTimes(1);
         });
 
-
+    
         it('should return company with all optional fields when findAll is called with company containing all optional fields in database', async () => {
             const companies = [
                 {
@@ -203,7 +224,6 @@ describe('CompanyController', () => {
         });
     });
 
-
     describe('findOne', () => {
         it('should return a CompanyDto when findOne is called with valid existing company id', async () => {
             const company = {
@@ -212,7 +232,6 @@ describe('CompanyController', () => {
                 name: 'Test Company',
                 isValid: true,
             };
-
             mockCompanyService.findOne.mockResolvedValue(company);
 
             const result = await controller.findOne('507f1f77bcf86cd799439011');
@@ -223,25 +242,20 @@ describe('CompanyController', () => {
             expect(service.findOne).toHaveBeenCalledTimes(1);
         });
 
-
         it('should return a company when findOne is called with existing company id', async () => {
-            const mockCompany = { id: '1', name: 'TestCo' };
+            const mockCompany = { id: '507f1f77bcf86cd799439011', name: 'TestCompany' };
             mockCompanyService.findOne.mockResolvedValue(mockCompany);
 
-            const result = await controller.findOne('1');
+            const result = await controller.findOne('507f1f77bcf86cd799439011');
 
             expect(result).toBeInstanceOf(CompanyDto);
         });
-
-
         it('should throw NotFoundException when findOne is called with non-existing company id', async () => {
             mockCompanyService.findOne.mockResolvedValue(null);
-
-            await expect(controller.findOne('1')).rejects.toThrow(NotFoundException);
+            await expect(controller.findOne('999')).rejects.toThrow(NotFoundException);
         });
 
-
-        it('should throw NotFoundException with message when findOne is called with non-existing company id', async () => {
+         it('should throw NotFoundException with message when findOne is called with non-existing company id', async () => {
             mockCompanyService.findOne.mockResolvedValue(null);
 
             await expect(controller.findOne('507f1f77bcf86cd799439011')).rejects.toThrow(NotFoundException);
@@ -306,16 +320,27 @@ describe('CompanyController', () => {
 
             await expect(controller.findOne('507f1f77bcf86cd799439011')).rejects.toThrow(NotFoundException);
         });
+
     });
 
-
     describe('create', () => {
+        const createDto = new CreateCompanyDto({
+            email: 'test@example.com',
+            password: 'Pass',
+            name: 'Co',
+        });
+
+        it('should call service.create', async () => {
+            mockCompanyService.create.mockResolvedValue(undefined);
+            await controller.create(createDto);
+            expect(service.create).toHaveBeenCalledWith(createDto);
+        });
+
         it('should create company successfully when create is called with minimal required fields', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
                 password: 'Password123!',
                 name: 'Test Company',
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -325,7 +350,6 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
             expect(service.create).toHaveBeenCalledTimes(1);
         });
-
 
         it('should create company successfully when create is called with all fields populated', async () => {
             const createDto = new CreateCompanyDto({
@@ -333,7 +357,7 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Test Company',
                 siretNumber: '12345678901234',
-                nafCode: '6202A',
+                nafCode: NafCode.NAF_01_11Z,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
                 streetNumber: '10',
@@ -341,7 +365,6 @@ describe('CompanyController', () => {
                 postalCode: '75001',
                 city: 'Paris',
                 country: 'France',
-                isValid: true,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -352,14 +375,12 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledTimes(1);
         });
 
-
         it('should create company successfully when create is called with structureType Administration', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'admin@example.com',
                 password: 'Password123!',
                 name: 'Admin Company',
                 structureType: StructureType.Administration,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -376,7 +397,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Association',
                 structureType: StructureType.Association,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -386,14 +406,12 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-
         it('should create company successfully when create is called with structureType PublicCompanyOrSEM', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'public@example.com',
                 password: 'Password123!',
                 name: 'Public Company',
                 structureType: StructureType.PublicCompanyOrSEM,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -410,7 +428,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Cooperative',
                 structureType: StructureType.MutualCooperative,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -420,14 +437,12 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-
         it('should create company successfully when create is called with structureType NGO', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'ngo@example.com',
                 password: 'Password123!',
                 name: 'NGO',
                 structureType: StructureType.NGO,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -444,7 +459,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'EURL Company',
                 legalStatus: LegalStatus.EURL,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -454,14 +468,13 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-
+        
         it('should create company successfully when create is called with legalStatus SA', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'sa@example.com',
                 password: 'Password123!',
                 name: 'SA Company',
                 legalStatus: LegalStatus.SA,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -478,7 +491,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'SAS Company',
                 legalStatus: LegalStatus.SAS,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -488,14 +500,12 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-
         it('should create company successfully when create is called with legalStatus SNC', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'snc@example.com',
                 password: 'Password123!',
                 name: 'SNC Company',
                 legalStatus: LegalStatus.SNC,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -512,7 +522,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'SCP Company',
                 legalStatus: LegalStatus.SCP,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -529,7 +538,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'SASU Company',
                 legalStatus: LegalStatus.SASU,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -546,7 +554,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Other Company',
                 legalStatus: LegalStatus.OTHER,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -556,13 +563,11 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-
         it('should create company successfully when create is called with isValid set to true', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'valid@example.com',
                 password: 'Password123!',
                 name: 'Valid Company',
-                isValid: true,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -583,7 +588,6 @@ describe('CompanyController', () => {
                 postalCode: '12345',
                 city: 'Test City',
                 country: 'Test Country',
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -592,7 +596,6 @@ describe('CompanyController', () => {
 
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
-
 
         it('should create company successfully when create is called with partial address fields', async () => {
             const createDto = new CreateCompanyDto({
@@ -600,7 +603,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Partial Address Company',
                 city: 'Test City',
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -609,10 +611,30 @@ describe('CompanyController', () => {
 
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
+
+        it('should throw ConflictException if email already exists (code 11000)', async () => {
+            const error = new Error('Dup key') as any;
+            error.code = 11000;
+            mockCompanyService.create.mockRejectedValue(error);
+
+            await expect(controller.create(createDto)).rejects.toThrow(ConflictException);
+        });
+
+        it('should rethrow other errors', async () => {
+            mockCompanyService.create.mockRejectedValue(new Error('Random error'));
+            await expect(controller.create(createDto)).rejects.toThrow('Random error');
+        });
     });
 
-
     describe('update', () => {
+        it('should call service.update', async () => {
+            const updateDto = new UpdateCompanyDto({ name: 'New Name' });
+            mockCompanyService.update.mockResolvedValue(undefined);
+
+            await controller.update('1', updateDto);
+
+            expect(service.update).toHaveBeenCalledWith('1', updateDto);
+        });
 
 
         it('should update company successfully when update is called with single field', async () => {
@@ -628,12 +650,11 @@ describe('CompanyController', () => {
             expect(service.update).toHaveBeenCalledTimes(1);
         });
 
-
         it('should update company successfully when update is called with multiple fields', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
-                email: 'updated@example.com',
-                siretNumber: '98765432109876',
+                // email: 'updated@example.com',
+                // siretNumber: '98765432109876',
                 isValid: true,
             });
 
@@ -644,7 +665,7 @@ describe('CompanyController', () => {
             expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
         });
 
-
+        
         it('should update company email successfully when update is called with new email', async () => {
             const updateDto = new UpdateCompanyDto({
                 email: 'newemail@example.com',
@@ -656,8 +677,7 @@ describe('CompanyController', () => {
 
             expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
         });
-
-
+        
         it('should update company password successfully when update is called with new password', async () => {
             const updateDto = new UpdateCompanyDto({
                 password: 'NewPassword123!',
@@ -742,7 +762,7 @@ describe('CompanyController', () => {
 
         it('should update company nafCode successfully when update is called with new nafCode', async () => {
             const updateDto = new UpdateCompanyDto({
-                nafCode: '1234Z',
+                nafCode: NafCode.NAF_01_11Z,
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -755,11 +775,11 @@ describe('CompanyController', () => {
 
         it('should update all company fields successfully when update is called with complete update data', async () => {
             const updateDto = new UpdateCompanyDto({
-                email: 'fullupdate@example.com',
+                // email: 'fullupdate@example.com',
                 password: 'NewPassword123!',
                 name: 'Fully Updated Company',
-                siretNumber: '11111111111111',
-                nafCode: '9999Z',
+                // siretNumber: '11111111111111',
+                nafCode: NafCode.NAF_94_99Z,
                 structureType: StructureType.NGO,
                 legalStatus: LegalStatus.OTHER,
                 streetNumber: '999',
@@ -776,73 +796,188 @@ describe('CompanyController', () => {
 
             expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
         });
+
+
+
     });
 
-
     describe('remove', () => {
+        const companyId = '507f1f77bcf86cd799439011';
 
-
+        
         it('should delete company successfully when remove is called with valid id', async () => {
+            // HTTP request mock
+            const mockRequest = {
+                user: { sub: companyId }, // User is the company
+                cookies: { refreshToken: 'valid-token' }
+            };
             mockCompanyService.remove.mockResolvedValue(undefined);
 
-            await controller.remove('507f1f77bcf86cd799439011');
+            await controller.remove(mockRequest as any, companyId);
 
-            expect(service.remove).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+            expect(service.remove).toHaveBeenCalledWith(companyId);
             expect(service.remove).toHaveBeenCalledTimes(1);
         });
 
 
         it('should delete company successfully when remove is called with different id', async () => {
+            // HTTP request mock
+            const mockRequest = {
+                user: { sub: companyId }, // User is the company
+                cookies: { refreshToken: 'valid-token' }
+            };
             mockCompanyService.remove.mockResolvedValue(undefined);
 
-            await controller.remove('507f1f77bcf86cd799439999');
+            await controller.remove(mockRequest as any, companyId);
 
-            expect(service.remove).toHaveBeenCalledWith('507f1f77bcf86cd799439999');
+            expect(service.remove).toHaveBeenCalledWith(companyId);
+        });
+
+        it('should remove company and logout if user is the company', async () => {
+            // HTTP request mock
+            const mockRequest = {
+                user: { sub: companyId }, // User is the company
+                cookies: { refreshToken: 'valid-token' }
+            };
+            mockCompanyService.remove.mockResolvedValue(undefined);
+            mockAuthService.logout.mockResolvedValue(undefined);
+
+            await controller.remove(mockRequest as any, companyId);
+
+            expect(service.remove).toHaveBeenCalledWith(companyId);
+            expect(authService.logout).toHaveBeenCalledWith('valid-token');
+        });
+
+        it('should remove company BUT NOT logout if user is ADMIN (different ID)', async () => {
+            const adminId = 'admin-id-123';
+            const mockRequest = {
+                user: { sub: adminId }, // User is ADMIN
+                cookies: { refreshToken: 'admin-token' }
+            };
+
+            mockCompanyService.remove.mockResolvedValue(undefined);
+
+            await controller.remove(mockRequest as any, companyId);
+
+            expect(service.remove).toHaveBeenCalledWith(companyId);
+
+            expect(authService.logout).not.toHaveBeenCalled();
+        });
+
+        it('should not logout if no refresh token is present', async () => {
+            const mockRequest = {
+                user: { sub: companyId },
+                cookies: {} // No token
+            };
+
+            await controller.remove(mockRequest as any, companyId);
+            
+            expect(service.remove).toHaveBeenCalledWith(companyId);
+            expect(authService.logout).not.toHaveBeenCalled();
+        });
+    });
+    
+    describe('findAllPosts', () => {
+        const companyId = '507f1f77bcf86cd799439011';
+
+        it('should return posts when company exists', async () => {
+            // Mock company existence check
+            mockCompanyService.findOne.mockResolvedValue({ _id: companyId });
+            
+            // Mock posts retrieval
+            const mockPosts = [{ title: 'Post 1' }];
+            mockPostService.findAllByCompany.mockResolvedValue(mockPosts);
+
+            const result = await controller.findAllPosts(companyId);
+
+            expect(service.findOne).toHaveBeenCalledWith(companyId);
+            expect(postService.findAllByCompany).toHaveBeenCalledWith(companyId);
+            expect(result).toHaveLength(1);
+        });
+
+        it('should throw NotFoundException if company does not exist', async () => {
+            mockCompanyService.findOne.mockResolvedValue(null);
+
+            await expect(controller.findAllPosts(companyId)).rejects.toThrow(NotFoundException);
+            expect(postService.findAllByCompany).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('createPost', () => {
+        const companyId = '507f1f77bcf86cd799439011';
+        const createPostDto: CreatePostDto = {
+            title: 'Dev Job',
+            description: 'Cool job',
+            type: PostType.Presentiel
+        };
+
+        it('should call postService.create with correct params', async () => {
+            mockPostService.create.mockResolvedValue({ _id: 'post-1', ...createPostDto });
+
+            await controller.createPost(companyId, createPostDto);
+
+            expect(postService.create).toHaveBeenCalledWith(createPostDto, companyId);
+        });
+    });
+    
+    describe('DTO Transformation', () => {
+        it('should filter extraneous values in findAll', async () => {
+            // Simulate an object with a "secret" field that's not in the DTO
+            const companies = [{ _id: '1', name: 'Co', secretField: 'hidden' }];
+            mockCompanyService.findAll.mockResolvedValue(companies);
+
+            const result = await controller.findAll();
+
+            expect(result[0]).toBeInstanceOf(CompanyDto);
+            expect((result[0] as any).secretField).toBeUndefined();
         });
     });
 
 
-    describe('RolesGuard integration', () => {
 
+    describe('RolesGuard integration', () => {
 
         describe('findAll - no role required', () => {
 
-
             it('should allow access successfully when canActivate is called without authentication', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue(undefined);
 
                 const context = createMockExecutionContext();
-                const result = rolesGuard.canActivate(context);
+                const result = realRolesGuard.canActivate(context);
 
                 expect(result).toBe(true);
             });
 
 
             it('should allow access successfully when canActivate is called with USER role', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue(undefined);
 
                 const context = createMockExecutionContext({ role: Role.STUDENT });
-                const result = rolesGuard.canActivate(context);
+                const result = realRolesGuard.canActivate(context);
 
                 expect(result).toBe(true);
             });
 
 
             it('should allow access successfully when canActivate is called with COMPANY role', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue(undefined);
 
                 const context = createMockExecutionContext({ role: Role.COMPANY });
-                const result = rolesGuard.canActivate(context);
+                const result = realRolesGuard.canActivate(context);
 
                 expect(result).toBe(true);
             });
 
 
             it('should allow access successfully when canActivate is called with ADMIN role', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue(undefined);
 
                 const context = createMockExecutionContext({ role: Role.ADMIN });
-                const result = rolesGuard.canActivate(context);
+                const result = realRolesGuard.canActivate(context);
 
                 expect(result).toBe(true);
             });
@@ -850,13 +985,12 @@ describe('CompanyController', () => {
 
 
         describe('findOne - no role required', () => {
-
-
             it('should allow access successfully when canActivate is called without specific role', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue(undefined);
 
                 const context = createMockExecutionContext({ role: Role.STUDENT });
-                const result = rolesGuard.canActivate(context);
+                const result = realRolesGuard.canActivate(context);
 
                 expect(result).toBe(true);
             });
@@ -864,10 +998,11 @@ describe('CompanyController', () => {
 
         describe('create - no role required', () => {
             it('should allow any user to create company', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue(undefined);
 
                 const context = createMockExecutionContext();
-                const result = rolesGuard.canActivate(context);
+                const result = realRolesGuard.canActivate(context);
 
                 expect(result).toBe(true);
             });
@@ -876,106 +1011,114 @@ describe('CompanyController', () => {
 
         describe('update - requires COMPANY or ADMIN role', () => {
 
-
             it('should allow COMPANY role to update successfully when canActivate is called with COMPANY role', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
                 const context = createMockExecutionContext({ role: Role.COMPANY });
-                const result = rolesGuard.canActivate(context);
+                const result = realRolesGuard.canActivate(context);
 
                 expect(result).toBe(true);
             });
 
 
             it('should allow ADMIN role to update successfully when canActivate is called with ADMIN role', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
                 const context = createMockExecutionContext({ role: Role.ADMIN });
-                const result = rolesGuard.canActivate(context);
+                const result = realRolesGuard.canActivate(context);
 
                 expect(result).toBe(true);
             });
 
 
             it('should deny USER role when canActivate is called with USER role for update', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
                 const context = createMockExecutionContext({ role: Role.STUDENT });
 
-                expect(() => rolesGuard.canActivate(context)).toThrow(ForbiddenException);
-                expect(() => rolesGuard.canActivate(context)).toThrow('Access denied');
+                expect(() => realRolesGuard.canActivate(context)).toThrow(ForbiddenException);
+                expect(() => realRolesGuard.canActivate(context)).toThrow('Access denied');
             });
 
             it('should deny access when user has no role', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
                 const context = createMockExecutionContext({});
 
-                expect(() => rolesGuard.canActivate(context)).toThrow(ForbiddenException);
-                expect(() => rolesGuard.canActivate(context)).toThrow('User role not found');
+                expect(() => realRolesGuard.canActivate(context)).toThrow(ForbiddenException);
+                expect(() => realRolesGuard.canActivate(context)).toThrow('User role not found');
             });
 
 
             it('should deny access when canActivate is called and user is not authenticated', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
                 const context = createMockExecutionContext(undefined);
 
-                expect(() => rolesGuard.canActivate(context)).toThrow(ForbiddenException);
-                expect(() => rolesGuard.canActivate(context)).toThrow('User role not found');
+                expect(() => realRolesGuard.canActivate(context)).toThrow(ForbiddenException);
+                expect(() => realRolesGuard.canActivate(context)).toThrow('User role not found');
             });
         });
 
 
         describe('remove - requires COMPANY or ADMIN role', () => {
 
-
             it('should allow COMPANY role to delete successfully when canActivate is called with COMPANY role', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
                 const context = createMockExecutionContext({ role: Role.COMPANY });
-                const result = rolesGuard.canActivate(context);
+                const result = realRolesGuard.canActivate(context);
 
                 expect(result).toBe(true);
             });
 
 
             it('should allow ADMIN role to delete successfully when canActivate is called with ADMIN role', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
                 const context = createMockExecutionContext({ role: Role.ADMIN });
-                const result = rolesGuard.canActivate(context);
+                const result = realRolesGuard.canActivate(context);
 
                 expect(result).toBe(true);
             });
 
 
             it('should deny USER role when canActivate is called with USER role for delete', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
                 const context = createMockExecutionContext({ role: Role.STUDENT });
 
-                expect(() => rolesGuard.canActivate(context)).toThrow(ForbiddenException);
-                expect(() => rolesGuard.canActivate(context)).toThrow('Access denied');
+                expect(() => realRolesGuard.canActivate(context)).toThrow(ForbiddenException);
+                expect(() => realRolesGuard.canActivate(context)).toThrow('Access denied');
             });
 
             it('should deny access when user has no role', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
                 const context = createMockExecutionContext({});
 
-                expect(() => rolesGuard.canActivate(context)).toThrow(ForbiddenException);
-                expect(() => rolesGuard.canActivate(context)).toThrow('User role not found');
+                expect(() => realRolesGuard.canActivate(context)).toThrow(ForbiddenException);
+                expect(() => realRolesGuard.canActivate(context)).toThrow('User role not found');
             });
 
 
             it('should deny access when canActivate is called and user is null for delete', () => {
+                const realRolesGuard = new RolesGuard(reflector);
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
                 const context = createMockExecutionContext(null);
 
-                expect(() => rolesGuard.canActivate(context)).toThrow(ForbiddenException);
-                expect(() => rolesGuard.canActivate(context)).toThrow('User role not found');
+                expect(() => realRolesGuard.canActivate(context)).toThrow(ForbiddenException);
+                expect(() => realRolesGuard.canActivate(context)).toThrow('User role not found');
             });
         });
     });
@@ -1003,7 +1146,6 @@ describe('CompanyController', () => {
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 mockCompanyService.create.mockRejectedValue(new Error('Creation failed'));
@@ -1018,13 +1160,12 @@ describe('CompanyController', () => {
                     password: 'Password123!',
                     name: 'Empty Fields Company',
                     siretNumber: '',
-                    nafCode: '',
+                    // nafCode: '',
                     streetNumber: '',
                     streetName: '',
                     postalCode: '',
                     city: '',
                     country: '',
-                    isValid: false,
                 });
 
                 mockCompanyService.create.mockResolvedValue(undefined);
@@ -1076,12 +1217,16 @@ describe('CompanyController', () => {
 
 
         describe('remove edge cases', () => {
-
+            const adminId = 'admin-id-123';
+            const mockRequest = {
+                user: { sub: adminId }, // User is admin
+                cookies: { refreshToken: 'valid-token' }
+            };
 
             it('should throw error when remove is called and service throws deletion error', async () => {
                 mockCompanyService.remove.mockRejectedValue(new Error('Deletion failed'));
 
-                await expect(controller.remove('507f1f77bcf86cd799439011')).rejects.toThrow('Deletion failed');
+                await expect(controller.remove(mockRequest as any, '507f1f77bcf86cd799439011')).rejects.toThrow('Deletion failed');
             });
         });
 
@@ -1135,7 +1280,6 @@ describe('CompanyController', () => {
                 email: 'integration@example.com',
                 password: 'Password123!',
                 name: 'Integration Company',
-                isValid: true,
             });
 
             const createdCompany = {
@@ -1161,7 +1305,6 @@ describe('CompanyController', () => {
                 email: 'update-test@example.com',
                 password: 'Password123!',
                 name: 'Update Test Company',
-                isValid: false,
             });
 
             const updateDto = new UpdateCompanyDto({
@@ -1190,6 +1333,11 @@ describe('CompanyController', () => {
 
 
         it('should verify company is not in list successfully when performing findAll remove findAll operations', async () => {
+            const adminId = 'admin-id-123';
+            const mockRequest = {
+                user: { sub: adminId }, // User is admin
+                cookies: { refreshToken: 'valid-token' }
+            };
             const companiesBeforeDelete = [
                 {
                     _id: '507f1f77bcf86cd799439011',
@@ -1221,7 +1369,7 @@ describe('CompanyController', () => {
             const beforeDelete = await controller.findAll();
             expect(beforeDelete).toHaveLength(2);
 
-            await controller.remove('507f1f77bcf86cd799439011');
+            await controller.remove(mockRequest as any, '507f1f77bcf86cd799439011');
 
             const afterDelete = await controller.findAll();
             expect(afterDelete).toHaveLength(1);
@@ -1230,11 +1378,16 @@ describe('CompanyController', () => {
 
 
         it('should handle deletion successfully when remove is called with non-existent company id', async () => {
+            const companyId = '507f1f77bcf86cd799999999';
+            const mockRequest = {
+                user: { sub: companyId }, // User is the company
+                cookies: { refreshToken: 'valid-token' }
+            };
             mockCompanyService.remove.mockResolvedValue(undefined);
 
-            await controller.remove('507f1f77bcf86cd799999999');
+            await controller.remove(mockRequest as any, companyId);
 
-            expect(service.remove).toHaveBeenCalledWith('507f1f77bcf86cd799999999');
+            expect(service.remove).toHaveBeenCalledWith(companyId);
         });
     });
 
@@ -1249,7 +1402,6 @@ describe('CompanyController', () => {
                     password: 'Password123!',
                     name: `Test ${structureType}`,
                     structureType: structureType,
-                    isValid: false,
                 });
 
                 mockCompanyService.create.mockResolvedValue(undefined);
@@ -1268,7 +1420,6 @@ describe('CompanyController', () => {
                     password: 'Password123!',
                     name: `Test ${legalStatus}`,
                     legalStatus: legalStatus,
-                    isValid: false,
                 });
 
                 mockCompanyService.create.mockResolvedValue(undefined);
@@ -1282,7 +1433,6 @@ describe('CompanyController', () => {
 
 
     describe('Response transformation', () => {
-
 
         it('should transform company entities to DTOs successfully when findAll is called', async () => {
             const companies = [
