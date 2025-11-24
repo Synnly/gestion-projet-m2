@@ -8,7 +8,7 @@ export const PostType = {
     Hybride: 'Hybride',
 } as const;
 
-export type PostType = typeof PostType[keyof typeof PostType];
+export type PostType = (typeof PostType)[keyof typeof PostType];
 
 export interface CompanyInInternship {
     _id: string;

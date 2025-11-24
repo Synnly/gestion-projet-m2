@@ -54,20 +54,20 @@ const InternshipList: React.FC = () => {
 
     return (
         <ListContainer>
-                <div style={innerStyle} className={detailHeight ? 'pr-6 overflow-y-auto space-y-3 p-3' : 'space-y-3 p-3'}>
-                    {internships.map((internship) => (
-                        <InternshipCard
-                            key={internship._id}
-                            internship={internship}
-                            isSelected={internship._id === selectedInternshipId}
-                        />
-                    ))}
+            <div style={innerStyle} className={detailHeight ? 'pr-6 overflow-y-auto space-y-3 p-3' : 'space-y-3 p-3'}>
+                {internships.map((internship) => (
+                    <InternshipCard
+                        key={internship._id}
+                        internship={internship}
+                        isSelected={internship._id === selectedInternshipId}
+                    />
+                ))}
 
-                    <div className="mt-2">
-                        <InternshipPagination />
-                    </div>
+                <div className="mt-2">
+                    <InternshipPagination />
                 </div>
-            </ListContainer>
+            </div>
+        </ListContainer>
     );
 };
 

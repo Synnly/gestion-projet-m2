@@ -5,47 +5,46 @@ import { userStore } from '../store/userStore';
  * Fetch signed download URL from backend
  */
 const fetchSignedUrl = async (fileName: string): Promise<string | null> => {
-  if (!fileName) return null;
-  
-  const url = `${import.meta.env.VITE_APIURL}/api/files/signed/download/${encodeURIComponent(fileName)}`;
+    if (!fileName) return null;
 
-  try {
-    
-    // Add timeout to prevent hanging forever
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const url = `${import.meta.env.VITE_APIURL}/api/files/signed/download/${encodeURIComponent(fileName)}`;
 
-    const res = await fetch(url, {
-      method: 'GET',
-      credentials: 'include',
-      signal: controller.signal,
-    });
+    try {
+        // Add timeout to prevent hanging forever
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    clearTimeout(timeoutId);
+        const res = await fetch(url, {
+            method: 'GET',
+            credentials: 'include',
+            signal: controller.signal,
+        });
 
-    if (!res.ok) {
-      return null;
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+            return null;
+        }
+        const data = await res.json();
+        return data.downloadUrl || null;
+    } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+        } else {
+        }
+        return null;
     }
-    const data = await res.json();
-    return data.downloadUrl || null;
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-    } else {
-    }
-    return null;
-  }
 };
 
 export const fetchFileFromSignedUrl = async (signedUrl: string): Promise<Blob | null> => {
-  try {
-    const res = await fetch(signedUrl);
-    if (!res.ok) {
-      return null;
+    try {
+        const res = await fetch(signedUrl);
+        if (!res.ok) {
+            return null;
+        }
+        return res.blob();
+    } catch (error) {
+        return null;
     }
-    return res.blob();
-  } catch (error) {
-    return null;
-  }
 };
 
 /**
@@ -53,25 +52,24 @@ export const fetchFileFromSignedUrl = async (signedUrl: string): Promise<Blob | 
  * No ownership verification on backend
  */
 export const fetchPublicSignedUrl = async (fileName: string): Promise<string | null> => {
-  if (!fileName) return null;
-  const url = `${import.meta.env.VITE_APIURL}/api/files/signed/public/${fileName}`;
+    if (!fileName) return null;
+    const url = `${import.meta.env.VITE_APIURL}/api/files/signed/public/${fileName}`;
 
-  try {
-    const controller = new AbortController();
+    try {
+        const controller = new AbortController();
 
-    const res = await fetch(url, {
-      method: 'GET',
-      credentials: 'include',
-      signal: controller.signal,
-    });
+        const res = await fetch(url, {
+            method: 'GET',
+            credentials: 'include',
+            signal: controller.signal,
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    return data.downloadUrl || null;
-
-  } catch (error) {
-    return null;
-  }
+        return data.downloadUrl || null;
+    } catch (error) {
+        return null;
+    }
 };
 
 /**
@@ -80,23 +78,23 @@ export const fetchPublicSignedUrl = async (fileName: string): Promise<string | n
  * @returns Blob data or null if loading/error
  */
 export const useBlob = (fileName: string) => {
-  const userId = userStore((state) => state.get(state.access)?.id ?? null);
-  
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['file', userId, fileName],
-    queryFn: async () => {
-      const signedUrl = await fetchSignedUrl(fileName);
-      if (!signedUrl) return null;
-      const blob = await fetchFileFromSignedUrl(signedUrl);
-      return blob;
-    },
-    enabled: !!fileName && !!userId,
-    staleTime: 1000 * 60 * 60, // cache 1h
-    retry: 1, // Retry once on failure
-    gcTime: 1000 * 60 * 60, // Keep in cache for 1h
-  });
+    const userId = userStore((state) => state.get(state.access)?.id ?? null);
 
-  if (!fileName || isLoading || isError) return null;
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ['file', userId, fileName],
+        queryFn: async () => {
+            const signedUrl = await fetchSignedUrl(fileName);
+            if (!signedUrl) return null;
+            const blob = await fetchFileFromSignedUrl(signedUrl);
+            return blob;
+        },
+        enabled: !!fileName && !!userId,
+        staleTime: 1000 * 60 * 60, // cache 1h
+        retry: 1, // Retry once on failure
+        gcTime: 1000 * 60 * 60, // Keep in cache for 1h
+    });
 
-  return data || null;
+    if (!fileName || isLoading || isError) return null;
+
+    return data || null;
 };
