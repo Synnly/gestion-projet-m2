@@ -19,7 +19,7 @@ describe("CreatePostForm", () => {
   beforeEach(() => {
     (useMutation as unknown as vi.Mock).mockReturnValue({
       mutate: mutateMock,
-      isLoading: false,
+      isPending: false,
     });
     global.alert = alertMock;
     profileStore.setState({ profile: null });
@@ -68,7 +68,9 @@ describe("CreatePostForm", () => {
       ...state,
       title: "Stage Dev",
       description: "Desc",
-      location: "Paris",
+      addressLine: "10 rue de Rivoli",
+      city: "Paris",
+      postalCode: "75001",
       duration: "6 mois",
       sector: "Tech",
       startDate: "2025-01-01",
@@ -102,7 +104,7 @@ describe("CreatePostForm", () => {
           minSalary: 1000,
           maxSalary: 2000,
           keySkills: ["JS", "React"],
-          adress: "Paris",
+          adress: "10 rue de Rivoli, 75001, Paris",
           type: "Télétravail",
           isVisible: true,
         },
@@ -110,3 +112,5 @@ describe("CreatePostForm", () => {
     });
   });
 });
+
+

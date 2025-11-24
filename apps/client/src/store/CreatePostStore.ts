@@ -6,6 +6,9 @@ export interface CreatePostState {
   title: string;
   description: string;
   location: string;
+  addressLine: string;
+  city: string;
+  postalCode: string;
   duration: string;
   sector: string;
   startDate: string;
@@ -17,6 +20,9 @@ export interface CreatePostState {
   setTitle: (value: string) => void;
   setDescription: (value: string) => void;
   setLocation: (value: string) => void;
+  setAddressLine: (value: string) => void;
+  setCity: (value: string) => void;
+  setPostalCode: (value: string) => void;
   setDuration: (value: string) => void;
   setSector: (value: string) => void;
   setStartDate: (value: string) => void;
@@ -26,12 +32,16 @@ export interface CreatePostState {
   addSkill: (skill: string) => void;
   removeSkill: (skill: string) => void;
   setWorkMode: (mode: WorkMode) => void;
+  reset: () => void;
 }
 
 export const useCreatePostStore = create<CreatePostState>((set) => ({
   title: "",
   description: "",
   location: "",
+  addressLine: "",
+  city: "",
+  postalCode: "",
   duration: "",
   sector: "",
   startDate: "",
@@ -44,6 +54,9 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
   setTitle: (value: string) => set({ title: value }),
   setDescription: (value: string) => set({ description: value }),
   setLocation: (value: string) => set({ location: value }),
+  setAddressLine: (value: string) => set({ addressLine: value }),
+  setCity: (value: string) => set({ city: value }),
+  setPostalCode: (value: string) => set({ postalCode: value }),
   setDuration: (value: string) => set({ duration: value }),
   setSector: (value: string) => set({ sector: value }),
   setStartDate: (value: string) => set({ startDate: value }),
@@ -67,4 +80,21 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
       skills: state.skills.filter((s) => s !== skill),
     })),
   setWorkMode: (mode: WorkMode) => set({ workMode: mode }),
+  reset: () =>
+    set({
+      title: "",
+      description: "",
+      location: "",
+      addressLine: "",
+      city: "",
+      postalCode: "",
+      duration: "",
+      sector: "",
+      startDate: "",
+      minSalary: "",
+      maxSalary: "",
+      isVisibleToStudents: true,
+      workMode: "presentiel",
+      skills: [],
+    }),
 }));
