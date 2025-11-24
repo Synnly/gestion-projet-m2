@@ -23,9 +23,11 @@ export interface CreatePostState {
   setMinSalary: (value: string) => void;
   setMaxSalary: (value: string) => void;
   setIsVisibleToStudents: (value: boolean) => void;
+  setSkills: (skills: string[]) => void;
   addSkill: (skill: string) => void;
   removeSkill: (skill: string) => void;
   setWorkMode: (mode: WorkMode) => void;
+  reset: () => void;
 }
 
 export const useCreatePostStore = create<CreatePostState>((set) => ({
@@ -51,6 +53,7 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
   setMaxSalary: (value: string) => set({ maxSalary: value }),
   setIsVisibleToStudents: (value: boolean) =>
     set({ isVisibleToStudents: value }),
+  setSkills: (skills: string[]) => set({ skills }),
 
   // Prevent duplicates and cap the skill list to five entries.
   addSkill: (skill) =>
@@ -67,4 +70,18 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
       skills: state.skills.filter((s) => s !== skill),
     })),
   setWorkMode: (mode: WorkMode) => set({ workMode: mode }),
+  reset: () =>
+    set({
+      title: "",
+      description: "",
+      location: "",
+      duration: "",
+      sector: "",
+      startDate: "",
+      minSalary: "",
+      maxSalary: "",
+      isVisibleToStudents: true,
+      workMode: "presentiel",
+      skills: [],
+    }),
 }));

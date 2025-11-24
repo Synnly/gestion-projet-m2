@@ -75,15 +75,15 @@ export function PostPreview({ companyName }: PostPreviewProps) {
       {/* Location, start date, and salary */}
       <div className="mb-3 space-y-1 text-xs text-base-content/70">
         {location && <p>📍 {location}</p>}
-        {startDate && <p>🗓 Début : {formatDate(startDate)}</p>}
+        {startDate && <p>📅 Début : {formatDate(startDate)}</p>}
         {(minSalary || maxSalary) && (
           <p>
-            💰{" "}
+            💶{" "}
             {minSalary && maxSalary
-              ? `${minSalary} – ${maxSalary}`
+              ? `${minSalary} € - ${maxSalary} €`
               : minSalary
-                ? minSalary
-                : maxSalary}
+                ? `${minSalary} €`
+                : `${maxSalary} €`}
           </p>
         )}
       </div>

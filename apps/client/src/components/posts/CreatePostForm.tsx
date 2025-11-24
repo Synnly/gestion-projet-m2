@@ -1,16 +1,44 @@
-import { useState, KeyboardEvent, FormEvent } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { createPost } from "../../api/create_post";
-import { useCreatePostStore } from "../../store/CreatePostStore";
-import type { WorkMode } from "../../store/CreatePostStore";
-import { profileStore } from "../../store/profileStore";
 import { toast } from "react-toastify";
 import MDEditor from "@uiw/react-md-editor";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 
-export function CreatePostForm() {
+import { createPost, type CreatePostPayload } from "../../api/create_post";
+import { updatePost } from "../../api/update_post";
+import { useCreatePostStore, type WorkMode } from "../../store/CreatePostStore";
+import { profileStore } from "../../store/profileStore";
+
+type PostFormMode = "create" | "edit";
+
+type InitialPostData = Partial<{
+  title: string;
+  description: string;
+  location: string;
+  adress: string;
+  duration: string;
+  sector: string;
+  startDate: string;
+  minSalary: string;
+  maxSalary: string;
+  keySkills: string[];
+  workMode: WorkMode;
+  isVisibleToStudents: boolean;
+}>;
+
+type PostFormProps = {
+  mode?: PostFormMode;
+  initialData?: InitialPostData;
+  postId?: string;
+};
+
+export function CreatePostForm({
+  mode = "create",
+  initialData,
+  postId,
+}: PostFormProps) {
   const {
     title,
     description,
@@ -32,6 +60,7 @@ export function CreatePostForm() {
     setMinSalary,
     setMaxSalary,
     setIsVisibleToStudents,
+    setSkills,
     addSkill,
     removeSkill,
     setWorkMode,
@@ -41,6 +70,34 @@ export function CreatePostForm() {
   const [skillInput, setSkillInput] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!initialData) return;
+    setTitle(initialData.title ?? "");
+    setDescription(initialData.description ?? "");
+    setLocation(initialData.location ?? initialData.adress ?? "");
+    setDuration(initialData.duration ?? "");
+    setSector(initialData.sector ?? "");
+    setStartDate(initialData.startDate ?? "");
+    setMinSalary(initialData.minSalary ?? "");
+    setMaxSalary(initialData.maxSalary ?? "");
+    setIsVisibleToStudents(initialData.isVisibleToStudents ?? true);
+    if (initialData.keySkills) setSkills(initialData.keySkills);
+    if (initialData.workMode) setWorkMode(initialData.workMode);
+  }, [
+    initialData,
+    setDescription,
+    setDuration,
+    setIsVisibleToStudents,
+    setLocation,
+    setMaxSalary,
+    setMinSalary,
+    setSector,
+    setSkills,
+    setStartDate,
+    setTitle,
+    setWorkMode,
+  ]);
 
   const locationOptions = [
     "Paris, France",
@@ -68,13 +125,13 @@ export function CreatePostForm() {
     "Communication",
     "Ressources Humaines",
     "Juridique",
-    "Ingénierie",
+    "Ingenierie",
     "Data / IA",
     "Product Management",
     "Support / Customer Success",
-    "Opérations / Logistique",
-    "Santé / Biotech",
-    "Éducation / Formation",
+    "Operations / Logistique",
+    "Sante / Biotech",
+    "Education / Formation",
   ];
 
   const workModeMap: Record<WorkMode, string> = {
@@ -93,9 +150,19 @@ export function CreatePostForm() {
   }
 
   const mutation = useMutation({
-    mutationFn: createPost,
+    mutationFn: async (payload: { companyId: string; data: CreatePostPayload["data"] }) => {
+      if (mode === "edit") {
+        if (!postId) throw new Error("Identifiant de l'annonce manquant pour la mise a jour.");
+        return updatePost({ companyId: payload.companyId, postId, data: payload.data });
+      }
+      return createPost(payload);
+    },
     onSuccess: () => {
-      toast.success("L'offre de stage a été créée avec succès.");
+      const successText =
+        mode === "edit"
+          ? "L'offre de stage a ete mise a jour avec succes."
+          : "L'offre de stage a ete cree avec succes.";
+      toast.success(successText);
       navigate("/company/dashboard");
     },
     onError: (error) => {
@@ -103,7 +170,7 @@ export function CreatePostForm() {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Une erreur est survenue lors de la création de l'offre de stage."
+          : "Une erreur est survenue lors de l'envoi de l'offre de stage."
       );
     },
   });
@@ -113,7 +180,7 @@ export function CreatePostForm() {
     if (mutation.isPending) return;
 
     if (!profile?._id) {
-      toast.error("Impossible de créer l'annonce : identifiant entreprise manquant.");
+      toast.error("Impossible de creer l'annonce : identifiant entreprise manquant.");
       return;
     }
 
@@ -124,14 +191,17 @@ export function CreatePostForm() {
 
     setFormError(null);
 
+    const minSalaryNumber = Number(minSalary);
+    const maxSalaryNumber = Number(maxSalary);
+
     const payload = {
       title,
       description,
       duration: duration || undefined,
       sector: sector || undefined,
       startDate: startDate || undefined,
-      minSalary: minSalary ? Number(minSalary) : undefined,
-      maxSalary: maxSalary ? Number(maxSalary) : undefined,
+      minSalary: Number.isFinite(minSalaryNumber) ? minSalaryNumber : undefined,
+      maxSalary: Number.isFinite(maxSalaryNumber) ? maxSalaryNumber : undefined,
       keySkills: skills,
       adress: location || undefined,
       type: workModeMap[workMode],
@@ -146,7 +216,7 @@ export function CreatePostForm() {
       <div className="rounded-2xl border border-base-300 bg-base-100 shadow-sm">
         <div className="border-b border-slate-100 px-6 pb-4 pt-5">
           <h1 className="text-base font-semibold text-slate-900">
-            Créer une offre de stage
+            {mode === "edit" ? "Mettre a jour l'offre de stage" : "Creer une offre de stage"}
           </h1>
         </div>
 
@@ -154,11 +224,11 @@ export function CreatePostForm() {
           <section className="space-y-4">
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-700">
-                Intitulé du stage <span className="text-error">*</span>
+                Intitule du stage <span className="text-error">*</span>
               </label>
               <input
                 className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                placeholder="Ex : Stagiaire Développeur Frontend"
+                placeholder="Ex : Stagiaire Developpeur Frontend"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
@@ -177,7 +247,7 @@ export function CreatePostForm() {
                   visibleDragbar={true}
                   className="[&_.w-md-editor]:!bg-transparent"
                   previewOptions={{
-                    disableCopy: true
+                    disableCopy: true,
                   }}
                   highlightEnable={false}
                   textareaProps={{
@@ -192,7 +262,7 @@ export function CreatePostForm() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-700">
-                  Durée du stage
+                  Duree du stage
                 </label>
                 <input
                   className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -204,7 +274,7 @@ export function CreatePostForm() {
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-700">
-                  Secteur d'activité
+                  Secteur d'activite
                 </label>
                 <select
                   className="select select-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -224,12 +294,12 @@ export function CreatePostForm() {
 
           <section className="space-y-3 border-t border-slate-100 pt-5">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Compétences & exigences du stagiaire
+              Competences & exigences du stagiaire
             </h2>
 
             <div className="space-y-2">
               <label className="text-xs font-medium text-slate-700">
-                Compétences clés (techniques / soft skills)
+                Competences cles (techniques / soft skills)
               </label>
 
               <div className="mb-1 flex flex-wrap gap-2">
@@ -241,27 +311,27 @@ export function CreatePostForm() {
                     className="badge badge-sm border-base-300 bg-base-200 text-[11px] text-base-content/80 hover:border-base-200 hover:bg-base-300/80"
                   >
                     {skill}
-                    <span className="ml-1 text-[10px] text-slate-400">✕</span>
+                    <span className="ml-1 text-[10px] text-slate-400">x</span>
                   </button>
                 ))}
               </div>
 
               <input
                 className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                placeholder="Ajouter une compétence et appuyer sur Entrée"
+                placeholder="Ajouter une competence et appuyer sur Entree"
                 value={skillInput}
                 onChange={(e) => setSkillInput(e.target.value)}
                 onKeyDown={handleSkillKeyDown}
               />
               <p className="text-[11px] text-slate-500">
-                Ajoutez jusqu'à 5 compétences clés attendues.
+                Ajoutez jusqu'a 5 competences cles attendues.
               </p>
             </div>
           </section>
 
           <section className="space-y-4 border-t border-slate-100 pt-5">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Logistique & rémunération
+              Logistique & remuneration
             </h2>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -285,7 +355,7 @@ export function CreatePostForm() {
 
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-700">
-                  Date de début souhaitée
+                  Date de debut souhaitee
                 </label>
                 <input
                   type="date"
@@ -335,7 +405,7 @@ export function CreatePostForm() {
                       : "bg-transparent border-0 text-base-400 hover:bg-base-300/60"
                   }`}
                 >
-                  Présentiel
+                  Presentiel
                 </button>
                 <button
                   type="button"
@@ -346,7 +416,7 @@ export function CreatePostForm() {
                       : "bg-transparent border-0 text-base-400 hover:bg-base-300/60"
                   }`}
                 >
-                  Télétravail
+                  Teletravail
                 </button>
                 <button
                   type="button"
@@ -365,13 +435,13 @@ export function CreatePostForm() {
 
           <section className="space-y-3 border-t border-slate-100 pt-5">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Paramètres de publication
+              Parametres de publication
             </h2>
 
             <div className="form-control">
               <label className="label cursor-pointer justify-between px-0">
                 <div className="text-[11px] text-slate-500">
-                  Rendre cette offre visible aux étudiants.
+                  Rendre cette offre visible aux etudiants.
                 </div>
                 <input
                   type="checkbox"
@@ -392,9 +462,13 @@ export function CreatePostForm() {
               className="btn btn-sm rounded-full px-4 btn-primary text-white"
               disabled={mutation.isPending}
             >
-              {mutation.isPending
-                ? "Publication en cours..."
-                : "Publier l'offre de stage"}
+              {mode === "edit"
+                ? mutation.isPending
+                  ? "Mise a jour..."
+                  : "Mettre a jour l'offre de stage"
+                : mutation.isPending
+                  ? "Publication en cours..."
+                  : "Publier l'offre de stage"}
             </button>
           </div>
         </form>

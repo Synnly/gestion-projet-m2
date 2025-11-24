@@ -11,6 +11,7 @@ import {
     Min,
     IsEnum,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { PostType } from '../post.schema';
 
 export class CreatePostDto {
@@ -47,6 +48,7 @@ export class CreatePostDto {
      * Minimum wage of the internship
      */
     @IsOptional()
+    @Type(() => Number)
     @IsNumber()
     @Min(0)
     minSalary?: number;
@@ -55,6 +57,7 @@ export class CreatePostDto {
      * Maximum wage of the internship
      */
     @IsOptional()
+    @Type(() => Number)
     @IsNumber()
     @Min(0)
     maxSalary?: number;

@@ -19,6 +19,8 @@ import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
 import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
 import CreatePostPage from "./pages/posts/CreatePostPage";
+import UpdatePostPage from "./pages/posts/UpdatePostPage";
+import { updatePostLoader } from "./loaders/updatePostLoader";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -61,7 +63,12 @@ function App() {
                                     element: <VerifiedRoutes redirectPath="/company/dashboard" />,
                                     children: [],
                                 },
-                                { path: '/company/offers/add', element: <CreatePostPage /> },
+                                { path: 'offers/add', element: <CreatePostPage /> },
+                                {
+                                    path: 'offers/:postId/edit',
+                                    loader: updatePostLoader,
+                                    element: <UpdatePostPage />,
+                                },
                             ],
                         },
                     ],
