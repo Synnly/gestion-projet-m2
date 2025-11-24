@@ -5,6 +5,7 @@ import { PostController } from './post.controller';
 import { Post, PostSchema } from './post.schema';
 import { UsersModule } from '../user/user.module';
 import { SchedulerRegistry } from '@nestjs/schedule';
+import { PaginationService } from '../common/pagination/pagination.service';
 
 @Module({
     imports: [MongooseModule.forFeature([
@@ -13,7 +14,7 @@ import { SchedulerRegistry } from '@nestjs/schedule';
         UsersModule,
     ],
     controllers: [PostController],
-    providers: [PostService, SchedulerRegistry],
+    providers: [PostService, PaginationService, SchedulerRegistry],
     exports: [PostService],
 })
 export class PostModule {}

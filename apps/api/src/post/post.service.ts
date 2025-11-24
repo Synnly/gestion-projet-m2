@@ -7,6 +7,10 @@ import { CreatePostDto } from './dto/createPost.dto';
 import { Company } from '../company/company.schema';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
+import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
+import { PaginationService } from 'src/common/pagination/pagination.service';
+import { QueryBuilder } from 'src/common/pagination/query.builder';
+import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
 import { CreationFailedError } from '../errors/creationFailedError';
 
 @Injectable()
@@ -16,7 +20,8 @@ export class PostService implements OnModuleInit {
     constructor(
         private readonly configService: ConfigService,
         private readonly schedulerRegistry: SchedulerRegistry,
-
+        private readonly paginationService: PaginationService,
+        
         @InjectModel(Post.name)
         private readonly postModel: Model<Post>,
 
@@ -26,11 +31,11 @@ export class PostService implements OnModuleInit {
 
 
     /**
-     * Creates a new post in the database
+     * Create a new post document attached to the given company.
      *
-     * @param dto - The complete post data required for creation
-     * @param companyId - The MongoDB ObjectId of the company as a string
-     * @returns Promise resolving to void upon successful creation
+     * @param dto - Data required to create the post (validated `CreatePostDto`)
+     * @param companyId - Company id as a string (MongoDB ObjectId)
+     * @returns The created post with the `company` relation populated
      */
     async create(dto: CreatePostDto, companyId: string): Promise<Post> {
         const company = await this.companyModel.findOne({ _id: companyId, deletedAt: { $exists: false } });
@@ -59,18 +64,31 @@ export class PostService implements OnModuleInit {
         return populatedPost;
     }
     /**
-     * Retrieves all active posts
+     * Retrieve posts using pagination.
      *
-     * @returns Promise resolving to an array of all active posts
+     * The returned `PaginationResult` contains posts where the `company`
+     * relation is populated with a selected set of fields.
+     *
+     * @param query - Pagination parameters (page and limit)
+     * @returns A `PaginationResult<Post>` containing items and metadata
      */
-    async findAll(): Promise<Post[]> {
-        return await this.postModel
-            .find({ deletedAt: { $exists: false } })
-            .populate({
-                path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
-            })
-            .exec();
+    async findAll(query: PaginationDto): Promise<PaginationResult<Post>> {
+        const { page, limit } = query;
+        const filter = new QueryBuilder(query).build();
+
+        const companyPopulate = {
+            path: 'company',
+            select:
+                '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+        };
+
+        return this.paginationService.paginate(
+            this.postModel,
+            filter,
+            page,
+            limit,
+            [companyPopulate], // populate with selected fields
+        );
     }
 
     /**
@@ -90,12 +108,14 @@ export class PostService implements OnModuleInit {
     }
 
     /**
-     * Retrieves a single post by its unique identifier
+     * Retrieve a single post by id.
      *
-     * Only returns the post if it exists and has not been deleted
+     * Only returns the post if it exists and has not been deleted.
+     * The `company` relation is populated when present. The method returns
+     * `null` when no document matches the provided id.
      *
-     * @param id - The MongoDB ObjectId of the post as a string
-     * @returns Promise resolving to the post if found and active, null otherwise
+     * @param id - Post id (MongoDB ObjectId as string)
+     * @returns The post document with `company` populated, or `null` if not found
      */
     async findOne(id: string): Promise<Post | null> {
         return await this.postModel

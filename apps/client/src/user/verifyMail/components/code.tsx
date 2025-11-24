@@ -1,6 +1,6 @@
 import { useEffect, type ChangeEvent } from 'react';
 import type { VerifyEmailForm } from '..';
-import { FormSubmit } from '../../../components/FormSubmit';
+import { FormSubmit } from '../../../components/form/FormSubmit';
 import type { FieldErrors, SubmitHandler, UseFormRegister, UseFormSetValue } from 'react-hook-form';
 
 export type CodeInputProps = {

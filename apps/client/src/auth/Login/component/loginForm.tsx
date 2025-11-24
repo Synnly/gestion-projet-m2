@@ -1,8 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { type companyFormLogin } from '../type';
-import { FormInput } from '../../../components/FormInput';
-import { FormSubmit } from '../../../components/FormSubmit';
-import { CustomForm } from '../../../components/CustomForm';
+import { FormInput } from '../../../components/form/FormInput';
+import { FormSubmit } from '../../../components/form/FormSubmit';
+import { CustomForm } from '../../../components/form/CustomForm';
 import { useLogin } from '../../../hooks/useLogin';
 import { NavLink } from 'react-router';
 

@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 
 import { CompanyService } from '../../../src/company/company.service';
+import { PaginationService } from '../../../src/common/pagination/pagination.service';
 import { Company, CompanyDocument, StructureType, LegalStatus } from '../../../src/company/company.schema';
 import { CreateCompanyDto } from '../../../src/company/dto/createCompany.dto';
 import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
@@ -45,6 +46,10 @@ describe('CompanyService', () => {
     const mockSchedulerRegistry = {
         addCronJob: jest.fn(),
     };
+    
+    const mockPaginationService = {
+        paginate: jest.fn(),
+    };
 
     // Helper to mock find().populate().exec()
     const mockExec = jest.fn();
@@ -71,6 +76,7 @@ describe('CompanyService', () => {
                 { provide: S3Service, useValue: mockS3Service },
                 { provide: ConfigService, useValue: mockConfigService },
                 { provide: SchedulerRegistry, useValue: mockSchedulerRegistry },
+                { provide: PaginationService, useValue: mockPaginationService },
             ],
         }).compile();
 
@@ -130,16 +136,31 @@ describe('CompanyService', () => {
             expect(mockExec).toHaveBeenCalledTimes(1);
         });
 
-    it('should return an empty array when findAll is called and no companies exist', async () => {
-            const populateMock = setupFindChain([]).populate;
-            (mockCompanyModel as any).find.mockReturnValue({ populate: populateMock });
+        it('should call companyModel.find with filter and populate posts', async () => {
+            const mockCompanies = [{ _id: '1', name: 'C1', posts: [] }];
+            const mockQuery = {
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(mockCompanies),
+            };
+            (mockCompanyModel as any).find.mockReturnValue(mockQuery);
 
             const result = await service.findAll();
 
-            expect(result).toEqual([]);
             expect((mockCompanyModel as any).find).toHaveBeenCalledWith({ deletedAt: { $exists: false } });
-            expect(mockExec).toHaveBeenCalledTimes(1);
+            expect(mockQuery.populate).toHaveBeenCalledWith({ path: 'posts', select: service.populateField });
+            expect(result).toEqual(mockCompanies);
         });
+
+    it('should return an empty array when findAll is called and no companies exist', async () => {
+        const populateMock = setupFindChain([]).populate;
+        (mockCompanyModel as any).find.mockReturnValue({ populate: populateMock });
+
+        const result = await service.findAll();
+
+        expect(result).toEqual([]);
+        expect((mockCompanyModel as any).find).toHaveBeenCalledWith({ deletedAt: { $exists: false } });
+        expect(mockExec).toHaveBeenCalledTimes(1);
+    });
 
     it('should return companies with all fields when findAll is called and full documents are present', async () => {
             const companies = [
@@ -1102,34 +1123,53 @@ describe('CompanyService', () => {
 
        it('should verify company is removed from findAll after deletion when remove is called', async () => {
             const companiesBeforeDelete = [
-                { _id: 'id1', name: 'To Delete', deletedAt: undefined },
-                { _id: 'id2', name: 'Keep', deletedAt: undefined },
+                {
+                    _id: '507f1f77bcf86cd799439011',
+                    email: 'delete-test@example.com',
+                    name: 'Delete Test Company',
+                },
+                {
+                    _id: '507f1f77bcf86cd799439012',
+                    email: 'keep@example.com',
+                    name: 'Keep Company',
+                },
             ];
+
             const companiesAfterDelete = [
-                { _id: 'id2', name: 'Keep', deletedAt: undefined },
+                {
+                    _id: '507f1f77bcf86cd799439012',
+                    email: 'keep@example.com',
+                    name: 'Keep Company',
+                },
             ];
 
-            mockExec
-                .mockResolvedValueOnce(companiesBeforeDelete)
-                .mockResolvedValueOnce({ _id: 'id1' })
-                .mockResolvedValueOnce(companiesAfterDelete);
-            
-            // findAll : find() -> populate() -> exec()
-            const populateMock = jest.fn().mockReturnValue({ exec: mockExec });
-            (mockCompanyModel as any).find.mockReturnValue({ populate: populateMock });
+            const mockQueryBefore = {
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(companiesBeforeDelete),
+            };
 
-            // remove : findOneAndUpdate() -> exec() (no populate)
-            (mockCompanyModel as any).findOneAndUpdate.mockReturnValue({ exec: mockExec });
+            const mockQueryAfter = {
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(companiesAfterDelete),
+            };
 
-            // --- Action 1 : État initial ---
+            (mockCompanyModel as any).find
+                .mockReturnValueOnce(mockQueryBefore)
+                .mockReturnValueOnce(mockQueryAfter);
+
+            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
+            (mockCompanyModel as any).findOneAndDelete.mockReturnValue({
+                exec: mockExec,
+            });
+
             const beforeDelete = await service.findAll();
             expect(beforeDelete).toHaveLength(2);
 
-            await service.remove('id1');
+            await service.remove('507f1f77bcf86cd799439011');
 
             const afterDelete = await service.findAll();
             expect(afterDelete).toHaveLength(1);
-            expect(afterDelete[0]._id).toBe('id2');
+            expect(afterDelete[0]._id).toBe('507f1f77bcf86cd799439012');
         });
     });
 
