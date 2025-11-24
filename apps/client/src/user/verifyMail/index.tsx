@@ -121,7 +121,7 @@ export function VerifyEmail() {
             const refreshed = await refreshRes.text();
             const role = get(refreshed).role;
             set(refreshed);
-            navigate(`/${role.toLowerCase()}/dashboard`);
+            navigate(`/`);
         }
         reset();
     };

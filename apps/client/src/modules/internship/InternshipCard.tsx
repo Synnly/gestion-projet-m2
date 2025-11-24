@@ -10,7 +10,7 @@ const InternshipCard: React.FC<{ internship: Internship; isSelected: boolean }> 
         <Card
             id={internship._id}
             title={internship.title}
-            subtitle={`${internship.company.name}${internship.address ? ` • ${internship.address}` : ''}`}
+            subtitle={`${internship.company.name}${internship.adress ? ` • ${internship.adress}` : ''}`}
             meta={internship.duration}
             imageSrc={internship.company.logoUrl}
             isSelected={isSelected}

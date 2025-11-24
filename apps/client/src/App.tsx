@@ -66,7 +66,7 @@ function App() {
                                     element: <CompanyDashboard />,
                                     children: [
                                         {
-                                            path: 'internships',
+                                            index: true,
                                             element: <DashboardInternshipList />,
                                         },
                                     ],
@@ -87,8 +87,10 @@ function App() {
                             children: [
                                 {
                                     element: <VerifiedRoutes redirectPath="/" />,
-                                    children: [
-                                        {
+                                    children: [],
+                                },
+
+ {
                                             path: 'detail/:id',
                                             element: <InternshipDetailPage />,
                                             loader: async ({ params }: any) => {
@@ -107,8 +109,6 @@ function App() {
                                                 return { id, dehydratedState: dehydrate(qc) };
                                             },
                                         },
-                                    ],
-                                },
                             ],
                         },
                     ],

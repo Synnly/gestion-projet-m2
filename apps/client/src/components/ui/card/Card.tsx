@@ -1,5 +1,5 @@
 import React from 'react';
-
+import logoPlaceholder from '../../../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg';
 export interface CardProps {
     id?: string;
     title: string;
@@ -31,7 +31,11 @@ export const Card: React.FC<CardProps> = ({
                 <div className="flex items-center gap-4">
                     <div className="avatar">
                         <div className="w-12 rounded-lg bg-neutral-300 flex items-center justify-center">
-                            <img src={imageSrc} alt={imageAlt ?? title} className="h-7 w-7 object-cover" />
+                            <img
+                                src={imageSrc ?? logoPlaceholder}
+                                alt={imageAlt ?? title}
+                                className="h-7 w-7 object-cover"
+                            />
                         </div>
                     </div>
                     <div className="flex-1">

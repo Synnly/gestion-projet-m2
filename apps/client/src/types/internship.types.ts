@@ -30,7 +30,7 @@ export interface Internship {
     maxSalary?: number;
     sector?: string;
     keySkills?: string[];
-    address?: string;
+    adress?: string;
     type: PostType;
     isVisible?: boolean;
     company: CompanyInInternship;

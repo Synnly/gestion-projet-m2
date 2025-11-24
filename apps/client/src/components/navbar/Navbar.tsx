@@ -4,6 +4,7 @@ import { profileStore } from '../../store/profileStore';
 import { useBlob } from '../../hooks/useBlob';
 import Logo from '../icons/Logo';
 import { centerNavItems, rightNavItems, ItemLink } from './items';
+import { userStore } from '../../store/userStore';
 
 interface NavbarProps {
     appName?: string;
@@ -19,7 +20,8 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
     // Récupérer le logo depuis MinIO
     const logoBlob = useBlob(profile?.logo ?? '');
     const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
-
+    const user = userStore((state) => state.access);
+    const userInfo = userStore((state) => state.get)(user);
     useEffect(() => {
         if (!logoBlob) {
             setCompanyLogoUrl(null);
@@ -35,10 +37,14 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
     if (minimal) {
         return (
             <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-base-content px-8 py-2">
-                <div className="max-w-7xl mx-auto flex items-center justify-start">
+                <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <ItemLink
                         item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
                         className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                    />
+                    <ItemLink
+                        item={{ key: 'home', title: <p>Se connecter</p>, to: '/signin' }}
+                        className="flex items-center justify-self-end gap-3 hover:opacity-80 transition-opacity"
                     />
                 </div>
             </nav>
@@ -54,9 +60,9 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
                 />
 
                 <div className="flex items-center gap-8 font-medium">
-                    {centerNavItems.map((item) => (
-                        <ItemLink key={item.key} item={item} />
-                    ))}
+                    {centerNavItems.map(
+                        (item) => item.role === userInfo?.role && <ItemLink key={item.key} item={item} />,
+                    )}
                 </div>
 
                 <div className="flex items-center gap-4 font-medium">

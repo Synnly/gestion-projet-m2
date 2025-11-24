@@ -3,37 +3,64 @@ import ListContainer from '../../../components/ui/list/ListContainer';
 import { useFetchInternships } from '../../../hooks/useFetchInternships';
 import { useInternshipStore, type InternshipStore } from '../../../store/useInternshipStore';
 import type { Internship } from '../../../types/internship.types';
+import InternshipPagination from '../../../modules/internship/InternshipPagination';
+import { SearchBar } from '../../../components/inputs/searchBar';
+import { TableRow } from './tableRow';
 
 export function DashboardInternshipList() {
     const { isLoading, isError, error } = useFetchInternships();
     const internships: Internship[] = useInternshipStore((state: InternshipStore) => state.internships);
-    console.log(internships);
+    const selects = [
+        { label: 'Location', options: ['À distance', 'Sur site', 'Hybride'] },
+        { label: 'Type de stage', options: ['Temps plein', 'Temps partiel', 'Contrat'] },
+        { label: 'Secteur', options: ['Tech', 'Finance', 'Santé'] },
+        { label: 'Date de publication', options: ['Dernières 24 heures', 'Derniers 7 jours', 'Derniers 30 jours'] },
+    ];
+    const filters = useInternshipStore((state) => state.filters);
+    const setFilters = useInternshipStore((state) => state.setFilters);
+    const handleSearchChange = (query: string) => {
+        setFilters({ searchQuery: query || undefined, page: 1 });
+    };
     if (isLoading) {
         return (
-            <ListContainer>
-                <div className="flex min-h-[200px] items-center justify-center">
-                    <div className="text-center">
-                        <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary"></div>
-                        <p className="text-sm text-base-content/60">Chargement...</p>
+            <>
+                <SearchBar
+                    searchQuery={filters.searchQuery || ''}
+                    setSearchQuery={handleSearchChange}
+                    selects={selects}
+                />
+                <ListContainer>
+                    <div className="flex min-h-[200px] items-center justify-center">
+                        <div className="text-center">
+                            <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary"></div>
+                            <p className="text-sm text-base-content/60">Chargement...</p>
+                        </div>
                     </div>
-                </div>
-            </ListContainer>
+                </ListContainer>
+            </>
         );
     }
     if (isError) {
         return (
-            <ListContainer>
-                <div className="flex min-h-[200px] items-center justify-center">
-                    <div className="text-center">
-                        <p className="text-sm text-base-content/60">Une errur est survenu</p>
+            <>
+                <SearchBar
+                    searchQuery={filters.searchQuery || ''}
+                    setSearchQuery={handleSearchChange}
+                    selects={selects}
+                />
+                <ListContainer>
+                    <div className="flex min-h-[200px] items-center justify-center">
+                        <div className="text-center">
+                            <p className="text-sm text-base-content/60">Une errur est survenu</p>
+                        </div>
                     </div>
-                </div>
-            </ListContainer>
+                </ListContainer>
+            </>
         );
     }
     if (internships.length === 0) {
         return (
-            <ListContainer>
+            <>
                 <div className="flex min-h-[200px] items-center justify-center">
                     <div className="text-center">
                         <p className="text-sm text-base-content/60">
@@ -45,25 +72,30 @@ export function DashboardInternshipList() {
                         </p>
                     </div>
                 </div>
-            </ListContainer>
+            </>
         );
     }
     return (
-        <ListContainer>
-            <div className="flex min-h-[200px] items-center justify-center">
-                <div className="text-center">
-                    {internships.map((internship) => (
-                        <div
-                            key={internship._id}
-                            className="p-4 border-b last:border-0 hover:bg-base-200 cursor-pointer rounded-lg"
-                        >
-                            <h2 className="text-lg font-semibold">{internship.title}</h2>
-                            <p className="text-sm text-base-content/70">{internship.title}</p>
-                            <p className="text-sm text-base-content/70">{internship.createdAt}</p>
-                        </div>
+        <>
+            <SearchBar searchQuery={filters.searchQuery || ''} setSearchQuery={handleSearchChange} selects={selects} />
+            <table className="w-full text-left">
+                <thead className="bg-base-200">
+                    <tr>
+                        <th className="px-4 py-3  text-sm  text-center font-bold">Titre de l'annonce</th>
+                        <th className="px-4 py-3  text-sm  text-center font-bold">Candidats</th>
+                        <th className="px-4 py-3  text-sm  text-center font-bold">Date de l'annonce</th>
+                        <th className="px-4 py-3  text-sm  text-center font-bold">Visibilité</th>
+                        <th className="px-4 py-3  text-sm  text-center font-bold">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {internships.map((internship, i) => (
+                        <TableRow key={i} internship={internship} />
                     ))}
-                </div>
-            </div>
-        </ListContainer>
+                </tbody>
+            </table>
+            <InternshipPagination />
+        </>
     );
 }

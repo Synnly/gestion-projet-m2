@@ -14,9 +14,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuer
                     <input
                         ref={inputRef}
                         type="search"
+                        disabled={true}
                         required
                         className="w-full bg-transparent text-base text-base-content placeholder:text-base-content/60"
-                        placeholder="Search by title, company, or keyword..."
+                        placeholder="Rechercher par titre, entreprise ou mot clés..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         aria-label="Search internships"
