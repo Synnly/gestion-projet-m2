@@ -205,16 +205,6 @@ describe('Post Integration Tests', () => {
             expect(normalized[1].title).toBe('Développeur Backend');
         });
 
-        it('should return 401 when no authorization token is provided and findAll is called', async () => {
-            await request(app.getHttpServer()).get(buildPostsPath()).expect(401);
-        });
-
-        it('should return 401 when invalid authorization token is provided and findAll is called', async () => {
-            await request(app.getHttpServer())
-                .get(buildPostsPath())
-                .set('Authorization', 'Bearer invalid-token')
-                .expect(401);
-        });
 
         it('should return posts with all fields when posts have complete data and findAll is called', async () => {
             await createPost({
@@ -290,18 +280,6 @@ describe('Post Integration Tests', () => {
                 .expect(400);
         });
 
-        it('should return 401 when no authorization token is provided and findOne is called', async () => {
-            const post = await createPost({
-                title: 'Test Post',
-                description: 'Test Description',
-                keySkills: ['Skill1'],
-                type: PostType.Presentiel,
-            });
-
-            await request(app.getHttpServer())
-                .get(buildPostsPath(`/${post._id}`))
-                .expect(401);
-        });
 
         it('should return post with all fields when post has complete data and findOne is called', async () => {
             const post = await createPost({

@@ -12,7 +12,6 @@ export function InternshipPage() {
         { label: 'Industry', options: ['Tech', 'Finance', 'Healthcare'] },
         { label: 'Date Posted', options: ['Last 24 hours', 'Last 7 days', 'Last 30 days'] },
     ];
-    console.log('Rerendering InternshipPage');
     const internships = useInternshipStore((state) => state.internships);
     const selectedInternshipId = useInternshipStore((state) => state.selectedInternshipId);
     const filters = useInternshipStore((state) => state.filters);
@@ -38,7 +37,7 @@ export function InternshipPage() {
                                     Trouve ta prochaine opportunité
                                 </h1>
                                 <p className="mt-2 text-base text-base-content/70">
-                                    Parcoure des milliers de stages proposés par les meilleures entreprises.
+                                    Parcours des milliers de stages proposés par les meilleures entreprises.
                                 </p>
                             </div>
                         </div>
