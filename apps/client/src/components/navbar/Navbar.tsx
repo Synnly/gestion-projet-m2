@@ -33,7 +33,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
 
     if (minimal) {
         return (
-            <nav className="sticky top-0 z-50 w-full mx-auto bg-white shadow-sm px-8 py-2">
+            <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-neutral px-8 py-2">
                 <div className="max-w-7xl mx-auto flex items-center justify-start">
                     <ItemLink
                         item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
@@ -45,7 +45,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
     }
 
     return (
-        <nav className="sticky top-0 z-50 w-full mx-auto bg-white shadow-sm px-8 py-2">
+        <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-neutral px-8 py-2">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <ItemLink
                     item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
@@ -61,14 +61,18 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
                 <div className="flex items-center gap-4 font-medium">
                     {rightNavItems.map((item) => {
                         if (item.type === 'button') {
-                            return <ItemLink key={item.key} item={item} />;
+                            return <ItemLink key={item.key} item={item} className="btn btn-primary" />;
                         }
 
                         // Profile dropdown (keeps previous logic for logo/menu)
                         if (item.type === 'dropdown') {
                             return (
                                 <div key={item.key} className="dropdown dropdown-end">
-                                    <div tabIndex={0} role="button" className="btn btn-ghost rounded-xl p-2">
+                                    <div
+                                        tabIndex={0}
+                                        role="button"
+                                        className="btn btn-ghost rounded-xl p-2 text-neutral"
+                                    >
                                         {companyLogoUrl ? (
                                             <img
                                                 src={companyLogoUrl}
@@ -82,7 +86,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
 
                                     <ul
                                         tabIndex={-1}
-                                        className="menu dropdown-content bg-base-200 rounded-box z-10 mt-4 w-52 p-2 shadow-sm"
+                                        className="menu dropdown-content bg-base-100 rounded-box z-10 mt-4 w-52 p-2 shadow-sm"
                                     >
                                         {item.children?.map((child) => (
                                             <li key={child.key}>
