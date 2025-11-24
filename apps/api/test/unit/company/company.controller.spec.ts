@@ -121,6 +121,25 @@ describe('CompanyController', () => {
             expect(service.findAll).toHaveBeenCalledTimes(1);
         });
 
+        it('should return CompanyDto[] when called and map data', async () => {
+            const companies = [
+                {
+                    _id: '507f1f77bcf86cd799439011',
+                    email: 'test@example.com',
+                    name: 'Test Company',
+                    posts: [{ _id: 'p1', title: 'Post 1' }],
+                },
+            ];
+
+            mockCompanyService.findAll.mockResolvedValue(companies);
+
+            const result = await controller.findAll();
+
+            expect(result).toHaveLength(1);
+            expect(result[0]).toBeInstanceOf(CompanyDto);
+            expect(result[0].posts).toBeDefined();
+        });
+
 
         it('should return an empty array when findAll is called with no companies existing in database', async () => {
             mockCompanyService.findAll.mockResolvedValue([]);

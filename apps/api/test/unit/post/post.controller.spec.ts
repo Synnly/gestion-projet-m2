@@ -72,27 +72,46 @@ describe('PostController', () => {
     });
 
     describe('findAll', () => {
-        it('should return an array of posts when findAll is called', async () => {
-            const mockPosts = [mockPost];
-            mockPostService.findAll.mockResolvedValue(mockPosts);
+        it('should return a paginated result of posts when findAll is called', async () => {
+            const paginationResult = {
+                data: [mockPost],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPostService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll();
+            const result = await controller.findAll({ page: 1, limit: 10 } as any);
 
-            expect(result).toHaveLength(1);
-            expect(result[0].title).toBe('Développeur Full Stack');
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0].title).toBe('Développeur Full Stack');
+            expect(result.total).toBe(1);
             expect(service.findAll).toHaveBeenCalledTimes(1);
         });
 
-        it('should return an empty array when no posts exist and findAll is called', async () => {
-            mockPostService.findAll.mockResolvedValue([]);
+        it('should return an empty paginated result when no posts exist and findAll is called', async () => {
+            const paginationResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPostService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll();
+            const result = await controller.findAll({ page: 1, limit: 10 } as any);
 
-            expect(result).toHaveLength(0);
+            expect(result.data).toHaveLength(0);
+            expect(result.total).toBe(0);
             expect(service.findAll).toHaveBeenCalledTimes(1);
         });
 
-        it('should return multiple posts when multiple posts exist and findAll is called', async () => {
+        it('should return multiple posts in paginated result when multiple posts exist and findAll is called', async () => {
             const mockPosts = [
                 mockPost,
                 {
@@ -101,13 +120,23 @@ describe('PostController', () => {
                     title: 'Développeur Backend',
                 },
             ];
-            mockPostService.findAll.mockResolvedValue(mockPosts);
+            const paginationResult = {
+                data: mockPosts,
+                total: 2,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPostService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll();
+            const result = await controller.findAll({ page: 1, limit: 10 } as any);
 
-            expect(result).toHaveLength(2);
-            expect(result[0].title).toBe('Développeur Full Stack');
-            expect(result[1].title).toBe('Développeur Backend');
+            expect(result.data).toHaveLength(2);
+            expect(result.data[0].title).toBe('Développeur Full Stack');
+            expect(result.data[1].title).toBe('Développeur Backend');
+            expect(result.total).toBe(2);
             expect(service.findAll).toHaveBeenCalledTimes(1);
         });
     });

@@ -18,6 +18,9 @@ type InitialPostData = Partial<{
   description: string;
   location: string;
   adress: string;
+  addressLine: string;
+  city: string;
+  postalCode: string;
   duration: string;
   sector: string;
   startDate: string;
@@ -43,6 +46,9 @@ export function CreatePostForm({
     title,
     description,
     location,
+    addressLine,
+    city,
+    postalCode,
     duration,
     sector,
     startDate,
@@ -54,6 +60,9 @@ export function CreatePostForm({
     setTitle,
     setDescription,
     setLocation,
+    setAddressLine,
+    setCity,
+    setPostalCode,
     setDuration,
     setSector,
     setStartDate,
@@ -71,11 +80,16 @@ export function CreatePostForm({
   const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Pré-remplissage en mode édition
   useEffect(() => {
     if (!initialData) return;
     setTitle(initialData.title ?? "");
     setDescription(initialData.description ?? "");
-    setLocation(initialData.location ?? initialData.adress ?? "");
+    const initialAddress = initialData.addressLine ?? initialData.location ?? initialData.adress ?? "";
+    setAddressLine(initialAddress);
+    setCity(initialData.city ?? "");
+    setPostalCode(initialData.postalCode ?? "");
+    setLocation(initialAddress);
     setDuration(initialData.duration ?? "");
     setSector(initialData.sector ?? "");
     setStartDate(initialData.startDate ?? "");
@@ -86,12 +100,15 @@ export function CreatePostForm({
     if (initialData.workMode) setWorkMode(initialData.workMode);
   }, [
     initialData,
+    setAddressLine,
+    setCity,
     setDescription,
     setDuration,
     setIsVisibleToStudents,
     setLocation,
     setMaxSalary,
     setMinSalary,
+    setPostalCode,
     setSector,
     setSkills,
     setStartDate,
@@ -99,22 +116,11 @@ export function CreatePostForm({
     setWorkMode,
   ]);
 
-  const locationOptions = [
-    "Paris, France",
-    "Lyon, France",
-    "Marseille, France",
-    "Bordeaux, France",
-    "Toulouse, France",
-    "Lille, France",
-    "Nice, France",
-    "Nantes, France",
-    "Strasbourg, France",
-    "Grenoble, France",
-    "Montpellier, France",
-    "Rennes, France",
-    "Metz, France",
-    "Nancy, France",
-  ];
+  // Concatène adresse/CP/ville vers location
+  useEffect(() => {
+    const parts = [addressLine, postalCode, city].filter((p) => p && p.trim());
+    setLocation(parts.join(", "));
+  }, [addressLine, postalCode, city, setLocation]);
 
   const sectorOptions = [
     "Technologie",
@@ -337,20 +343,14 @@ export function CreatePostForm({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-slate-700">
-                  Lieu du stage
+                  Adresse (ligne)
                 </label>
-                <select
-                  className="select select-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                >
-                  <option value="">Choisir un lieu</option>
-                  {locationOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
+                <input
+                  className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="Ex : 10 rue de Rivoli"
+                  value={addressLine}
+                  onChange={(e) => setAddressLine(e.target.value)}
+                />
               </div>
 
               <div className="space-y-1">
@@ -362,6 +362,31 @@ export function CreatePostForm({
                   className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content [color-scheme:light] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-700">
+                  Code postal
+                </label>
+                <input
+                  className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="Ex : 75001"
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-slate-700">
+                  Ville
+                </label>
+                <input
+                  className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="Ex : Paris"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
                 />
               </div>
             </div>

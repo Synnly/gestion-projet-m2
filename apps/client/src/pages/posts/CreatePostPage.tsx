@@ -8,13 +8,12 @@ export default function CreatePostPage() {
   const profile = profileStore((state) => state.profile);
   const companyName = profile?.name ?? "Mon entreprise";
   const reset = useCreatePostStore((state) => state.reset);
-
   useLayoutEffect(() => {
     reset();
   }, [reset]);
 
   return (
-    <div data-theme="bumblebee" className="min-h-screen bg-base-200 py-10">
+    <div className="min-h-screen bg-base-200 py-10">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         {/* Page title */}
         <h1 className="mb-6 text-3xl font-bold text-slate-900">

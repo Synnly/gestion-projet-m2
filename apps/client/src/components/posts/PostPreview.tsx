@@ -11,6 +11,9 @@ export function PostPreview({ companyName }: PostPreviewProps) {
     title,
     description,
     location,
+    addressLine,
+    city,
+    postalCode,
     duration,
     sector,
     startDate,
@@ -38,10 +41,14 @@ export function PostPreview({ companyName }: PostPreviewProps) {
     }).format(d);
   };
 
+  const addressParts = [addressLine || location || "", postalCode, city]
+    .filter((part) => part && part.trim())
+    .join(", ");
+
   return (
     <div className="rounded-2xl bg-base-100 p-5 shadow-sm ring-1 ring-base-300">
       {/* Header */}
-      <div className="mb-4 flex items-start gap-3">
+      <div className="mb-4 flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
           ST
         </div>
@@ -74,7 +81,7 @@ export function PostPreview({ companyName }: PostPreviewProps) {
 
       {/* Location, start date, and salary */}
       <div className="mb-3 space-y-1 text-xs text-base-content/70">
-        {location && <p>📍 {location}</p>}
+        {addressParts && <p>📍 {addressParts}</p>}
         {startDate && <p>📅 Début : {formatDate(startDate)}</p>}
         {(minSalary || maxSalary) && (
           <p>
