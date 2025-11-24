@@ -33,7 +33,6 @@ export const Card: React.FC<CardProps> = ({
           <div className="avatar">
             <div className="w-12 rounded-lg bg-neutral-300 flex items-center justify-center">
                 <img src={imageSrc} alt={imageAlt ?? title} className="h-7 w-7 object-cover" />
-              {/* <User /> */}
             </div>
           </div>
           <div className="flex-1">

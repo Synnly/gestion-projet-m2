@@ -12,7 +12,7 @@ export function InternshipPage() {
         { label: 'Industry', options: ['Tech', 'Finance', 'Healthcare'] },
         { label: 'Date Posted', options: ['Last 24 hours', 'Last 7 days', 'Last 30 days'] },
     ];
-
+    console.log('Rerendering InternshipPage');
     const internships = useInternshipStore((state) => state.internships);
     const selectedInternshipId = useInternshipStore((state) => state.selectedInternshipId);
     const filters = useInternshipStore((state) => state.filters);

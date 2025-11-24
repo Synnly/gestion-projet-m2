@@ -10,7 +10,6 @@ const fetchSignedUrl = async (fileName: string): Promise<string | null> => {
   const url = `${import.meta.env.VITE_APIURL}/api/files/signed/download/${encodeURIComponent(fileName)}`;
 
   try {
-    console.debug(`[fetchSignedUrl] Requesting: ${url}`);
     
     // Add timeout to prevent hanging forever
     const controller = new AbortController();
@@ -23,20 +22,15 @@ const fetchSignedUrl = async (fileName: string): Promise<string | null> => {
     });
 
     clearTimeout(timeoutId);
-    console.debug(`[fetchSignedUrl] Response status: ${res.status}`);
 
     if (!res.ok) {
-      console.warn(`[fetchSignedUrl] HTTP ${res.status} for ${fileName}`);
       return null;
     }
     const data = await res.json();
-    console.debug(`[fetchSignedUrl] Response data:`, data);
     return data.downloadUrl || null;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      console.error(`[fetchSignedUrl] Timeout after 10s for ${fileName}`);
     } else {
-      console.error(`[fetchSignedUrl] Error for ${fileName}:`, error);
     }
     return null;
   }
@@ -46,12 +40,10 @@ export const fetchFileFromSignedUrl = async (signedUrl: string): Promise<Blob | 
   try {
     const res = await fetch(signedUrl);
     if (!res.ok) {
-      console.warn(`[fetchFileFromSignedUrl] HTTP ${res.status}`);
       return null;
     }
     return res.blob();
   } catch (error) {
-    console.error(`[fetchFileFromSignedUrl] Error:`, error);
     return null;
   }
 };

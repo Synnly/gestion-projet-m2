@@ -39,7 +39,7 @@ function App() {
                         { path: 'signin', element: <Login /> },
                         { path: 'forgot-password', element: <ForgotPassword /> },
                         { path: 'company/signup', element: <CompanySignup /> },
-                        {path: 'internships/list', element: <InternshipPage />}
+                        { path: 'internships/list-preview', element: <InternshipPage />}
                     ],
                 },
                 {

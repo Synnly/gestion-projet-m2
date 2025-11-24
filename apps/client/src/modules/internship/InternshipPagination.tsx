@@ -14,12 +14,6 @@ const InternshipPagination: React.FC = () => {
         const maxPage = pagination.totalPages ?? newPage;
         const target = Math.max(1, Math.min(newPage, maxPage));
         if (filters.page === target) return;
-        console.debug('[InternshipPagination] page change requested', {
-            requested: newPage,
-            target,
-            current: filters.page,
-            pagination,
-        });
         setFilters({ page: target });
         // scroll not handled here; caller may handle UX
     };

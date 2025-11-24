@@ -58,7 +58,6 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
                         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-neutral-300">
                             {internship.company.logoUrl ? (
                                 <img alt={`${internship.company.name} logo`} className="h-9 w-9" src={internship.company.logoUrl} />
-                                // <User />
                             ) : (
                                 <div className="flex h-full w-full items-center justify-center text-lg font-bold text-base-content">
                                     {internship.company.name.charAt(0).toUpperCase()}
