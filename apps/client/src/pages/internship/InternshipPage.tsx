@@ -4,8 +4,11 @@ import InternshipDetail from '../../modules/internship/InternshipDetail';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import { Navbar } from '../../components/navbar/Navbar';
 import { userStore } from '../../store/userStore';
+import { useNavigation } from 'react-router-dom';
+import Spinner from '../../components/Spinner/Spinner';
 
 export function InternshipPage() {
+    const navigation = useNavigation();
     const selects = [
         { label: 'Location', options: ['À distance', 'Sur site', 'Hybride'] },
         { label: 'Type de stage', options: ['Temps plein', 'Temps partiel', 'Contrat'] },
@@ -28,6 +31,7 @@ export function InternshipPage() {
     return (
         <div className="flex flex-col h-screen">
             <Navbar minimal={!access} />
+            <Spinner show={navigation.state === 'loading'} />
             <main className="flex-1 w-full flex justify-center overflow-hidden">
                 <div className="w-full flex-1 px-4 md:px-8 flex flex-col">
                     <section className="hero bg-base-100 p-6 rounded-lg py-8">

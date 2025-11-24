@@ -1,8 +1,8 @@
 import './App.css';
-import { createBrowserRouter, Outlet, redirect } from 'react-router';
-import { RouterProvider } from 'react-router';
+import { createBrowserRouter, Outlet, redirect, RouterProvider } from 'react-router';
+import { QueryClient, QueryClientProvider, dehydrate } from '@tanstack/react-query';
+import { fetchInternshipById } from './hooks/useFetchInternships';
 import { CompanySignup } from './auth/companySignup/index';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Login } from './auth/Login/index';
 import { CompleteProfil } from './company/completeProfil/index';
 import { CompanyDashboard } from './company/dashboard/index';
@@ -79,7 +79,22 @@ function App() {
                                 {
                                     element: <VerifiedRoutes redirectPath="/"/>,
                                     children: [
-                                        { path: 'detail/:id', element: <InternshipDetailPage /> }
+                                        {
+                                            path: 'detail/:id',
+                                            element: <InternshipDetailPage />,
+                                            loader: async ({ params }: any) => {
+                                                const id = params?.id;
+                                                if (!id) throw new Response('Missing id', { status: 400 });
+                                                const qc = new QueryClient();
+                                                try {
+                                                    await qc.fetchQuery({ queryKey: ['internship', id], queryFn: () => fetchInternshipById(id) });
+                                                } catch (e) {
+                                                    throw new Response('Not found', { status: 404 });
+                                                }
+
+                                                return { id, dehydratedState: dehydrate(qc) };
+                                            },
+                                        },
                                     ],
                                 },
                             ],

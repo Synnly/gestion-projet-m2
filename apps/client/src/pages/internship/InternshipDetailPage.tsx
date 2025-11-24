@@ -1,18 +1,30 @@
-import { useParams, Link } from 'react-router-dom';
+import { Link, useLoaderData } from 'react-router-dom';
 import InternshipDetail from '../../modules/internship/InternshipDetail';
 import { Navbar } from '../../components/navbar/Navbar';
 import { useQuery } from '@tanstack/react-query';
 import { fetchInternshipById } from '../../hooks/useFetchInternships';
-import type { Internship } from '../../types/internship.types';
+import { hydrate, useQueryClient } from '@tanstack/react-query';
+import Spinner from '../../components/Spinner/Spinner';
+import type { Internship, PaginationResult } from '../../types/internship.types';
+import { useInternshipStore } from '../../store/useInternshipStore';
 
 export default function InternshipDetailPage() {
-    const { id } = useParams() as { id?: string };
+    const { id, dehydratedState } = useLoaderData() as { id?: string; dehydratedState?: unknown };
+    const queryClient = useQueryClient();
+    if (dehydratedState) {
+        hydrate(queryClient, dehydratedState);
+    }
+    const filters = useInternshipStore((s) => s.filters);
+    const cachedList = queryClient.getQueryData(['internships', filters]) as PaginationResult<Internship> | undefined;
+    const cachedItem = cachedList?.data?.find((p) => p._id === id) ?? undefined;
+
     const { data: internship, isLoading, isError } = useQuery<Internship | null, Error>({
         queryKey: ['internship', id],
         queryFn: () => fetchInternshipById(id),
         enabled: !!id,
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
+        initialData: () => (cachedItem ?? undefined),
     });
 
     return (
@@ -21,10 +33,13 @@ export default function InternshipDetailPage() {
             <main className="flex w-full flex-1 justify-center py-8">
                 <div className="w-full max-w-5xl px-4 md:px-8">
                     {isLoading ? (
-                        <div className="card bg-base-100 rounded-xl p-6">
-                            <h2 className="text-xl font-bold">Chargement…</h2>
-                            <p className="mt-2 text-sm text-base-content/70">Récupération des informations du stage.</p>
-                        </div>
+                        <>
+                            <Spinner />
+                            <div className="card bg-base-100 rounded-xl p-6 opacity-70">
+                                <h2 className="text-xl font-bold">Chargement…</h2>
+                                <p className="mt-2 text-sm text-base-content/70">Récupération des informations du stage.</p>
+                            </div>
+                        </>
                     ) : isError ? (
                         <div className="card bg-base-100 rounded-xl p-6">
                             <h2 className="text-xl font-bold">Erreur</h2>
