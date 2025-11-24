@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import placeHolderLogo from '../../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg';
 import { profileStore } from '../../store/profileStore';
 import { useBlob } from '../../hooks/useBlob';
 import Logo from '../icons/Logo';
@@ -73,15 +74,11 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
                                         role="button"
                                         className="btn btn-ghost rounded-xl p-2 text-neutral"
                                     >
-                                        {companyLogoUrl ? (
-                                            <img
-                                                src={companyLogoUrl}
-                                                alt="Logo entreprise"
-                                                className="h-8 w-8 object-contain rounded"
-                                            />
-                                        ) : (
-                                            <span>Logo</span>
-                                        )}
+                                        <img
+                                            src={companyLogoUrl ?? placeHolderLogo}
+                                            alt="Logo entreprise"
+                                            className="h-8 w-8 object-contain rounded"
+                                        />
                                     </div>
 
                                     <ul

@@ -85,6 +85,9 @@ export class PostDto {
     @Expose()
     isVisible?: boolean;
 
+    @Expose()
+    createdAt?: string;
+
     /** Reference to the company offering the internship */
     @Expose()
     @ValidateNested({ each: true })

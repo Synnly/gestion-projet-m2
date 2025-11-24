@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Internship, InternshipFilters, PaginationResult } from '../types/internship.types';
 
-interface InternshipStore {
+export interface InternshipStore {
     // État
     internships: Internship[];
     pagination: Omit<PaginationResult<Internship>, 'data'> | null;

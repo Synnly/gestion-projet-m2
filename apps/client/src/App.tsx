@@ -21,6 +21,7 @@ import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
 import { InternshipPage } from './pages/internship/InternshipPage';
 import InternshipDetailPage from './pages/internship/InternshipDetailPage';
+import { DashboardInternshipList } from './company/dashboard/intershipList/DashboardInternshipList';
 
 function App() {
     userStore.persist.rehydrate();
@@ -40,14 +41,11 @@ function App() {
                         return redirect('/signin');
                     },
                 },
-                {
-                    path: 'internships/list',
-                    element: <InternshipPage />,
-                },
+
+                { index: true, element: <InternshipPage /> },
                 {
                     loader: notAuthMiddleWare,
                     children: [
-                        { index: true, element: <div>Hello World</div> },
                         { path: 'signin', element: <Login /> },
                         { path: 'forgot-password', element: <ForgotPassword /> },
                         { path: 'company/signup', element: <CompanySignup /> },
@@ -63,7 +61,16 @@ function App() {
                             path: 'company',
                             element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
                             children: [
-                                { path: 'dashboard', element: <CompanyDashboard /> },
+                                {
+                                    path: 'dashboard',
+                                    element: <CompanyDashboard />,
+                                    children: [
+                                        {
+                                            path: 'internships',
+                                            element: <DashboardInternshipList />,
+                                        },
+                                    ],
+                                },
                                 { path: 'profile', element: <CompanyProfile /> },
                                 { path: 'profile/edit', element: <EditCompanyProfile /> },
                                 { path: 'profile/change-password', element: <ChangePassword /> },

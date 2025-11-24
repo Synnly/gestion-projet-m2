@@ -34,6 +34,7 @@ export interface Internship {
     type: PostType;
     isVisible?: boolean;
     company: CompanyInInternship;
+    createdAt: string;
 }
 
 export interface PaginationResult<T> {
