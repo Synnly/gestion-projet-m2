@@ -35,6 +35,10 @@ export function FormInput<T extends FieldValues>({
                     {...register}
                     {...props}
                     type={inputType}
+                    onInput={(e) => {
+                        register.onChange(e);
+                        props.onInput?.(e);
+                    }}
                     className={cn(
                         ' border-gray-200 border-2 rounded-lg p-4',
                         error && 'border-red-500',
