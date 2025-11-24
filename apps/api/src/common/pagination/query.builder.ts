@@ -6,8 +6,8 @@ export class QueryBuilder<T> {
   build(): FilterQuery<T> {
     const filter: FilterQuery<T> = {};
 
-    //Le code ne fait rien de spécial pour l'instant mais pourra servir plus tard pour des filtres avancés
-    // comme le filtrage par date, par plage de valeurs, par lieux, etc.
+    // The code does nothing special for now but may be used later for advanced filters
+    // such as filtering by date, range of values, location, etc.
 
     return filter;
   }
