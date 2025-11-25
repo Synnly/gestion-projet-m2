@@ -25,6 +25,9 @@ export async function updatePostLoader({ params }: { params: { postId?: string }
     throw redirect("/signin");
   }
   const tokenPayload = userStore.getState().get(access);
+  if (!tokenPayload) {
+    throw redirect("/signin");
+  }
   const companyId = tokenPayload.id;
   const postId = params.postId;
   if (!postId) {
