@@ -45,3 +45,39 @@
     --depth: 1;
     --noise: 0;
 }
+
+/* Align textarea and overlay for @uiw/react-md-editor */
+.w-md-editor-text-input,
+.w-md-editor-text-pre,
+.w-md-editor-text-pre > code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 16px;
+    margin: 0;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Ensure markdown lists display bullets/numbers in previews */
+.prose ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+}
+
+.prose ol {
+    list-style: decimal;
+    padding-left: 1.25rem;
+}
+
+/* Ensure markdown lists display bullets/numbers inside MDEditor preview */
+.wmde-markdown ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+}
+
+.wmde-markdown ol {
+    list-style: decimal;
+    padding-left: 1.25rem;
+}

@@ -69,7 +69,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
 
                 <div className="flex items-center gap-4 font-medium">
                     {rightNavItems.map((item) => {
-                        if (item.role && userInfo?.role && item.role.includes(userInfo?.role)) return;
+                        if (item.role && userInfo?.role && !item.role.includes(userInfo?.role)) return;
                         if (item.type === 'button') {
                             return <ItemLink key={item.key} item={item} className="btn btn-primary" />;
                         }

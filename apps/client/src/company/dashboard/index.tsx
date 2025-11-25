@@ -1,5 +1,4 @@
 import { Navbar } from '../../components/navbar/Navbar';
-import { DashboardInternshipList } from './intershipList/DashboardInternshipList';
 import { Outlet } from 'react-router-dom';
 
 export function CompanyDashboard() {

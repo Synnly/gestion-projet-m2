@@ -1,7 +1,6 @@
 import './App.css';
 import { createBrowserRouter, Outlet, redirect, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider, dehydrate } from '@tanstack/react-query';
-import { ToastProvider } from './components/ui/toast/ToastProvider';
 import { fetchInternshipById } from './hooks/useFetchInternships';
 import { CompanySignup } from './auth/companySignup/index';
 import { Login } from './auth/Login/index';
@@ -22,6 +21,10 @@ import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
 import { InternshipPage } from './pages/internship/InternshipPage';
 import InternshipDetailPage from './pages/internship/InternshipDetailPage';
 import { DashboardInternshipList } from './company/dashboard/intershipList/DashboardInternshipList';
+import CreatePostPage from './pages/posts/CreatePostPage';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import ToastProvider from './components/ui/toast/ToastProvider';
 
 function App() {
     userStore.persist.rehydrate();
@@ -67,7 +70,11 @@ function App() {
                                     children: [
                                         {
                                             index: true,
-                                            element: <DashboardInternshipList />,
+                                            element: (
+                                                <ToastProvider>
+                                                    <DashboardInternshipList />
+                                                </ToastProvider>
+                                            ),
                                         },
                                     ],
                                 },
@@ -79,6 +86,7 @@ function App() {
                                     element: <VerifiedRoutes redirectPath="/company/dashboard" />,
                                     children: [],
                                 },
+                                { path: '/company/offers/add', element: <CreatePostPage /> },
                             ],
                         },
                         {
@@ -87,10 +95,8 @@ function App() {
                             children: [
                                 {
                                     element: <VerifiedRoutes redirectPath="/" />,
-                                    children: [],
-                                },
-
- {
+                                    children: [
+                                        {
                                             path: 'detail/:id',
                                             element: <InternshipDetailPage />,
                                             loader: async ({ params }: any) => {
@@ -109,6 +115,38 @@ function App() {
                                                 return { id, dehydratedState: dehydrate(qc) };
                                             },
                                         },
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            path: 'internship',
+                            element: <ProtectedRoutesByRole allowedRoles={['USER', 'ADMIN', 'COMPANY']} />,
+                            children: [
+                                {
+                                    element: <VerifiedRoutes redirectPath="/" />,
+                                    children: [],
+                                },
+
+                                {
+                                    path: 'detail/:id',
+                                    element: <InternshipDetailPage />,
+                                    loader: async ({ params }: any) => {
+                                        const id = params?.id;
+                                        if (!id) throw new Response('Missing id', { status: 400 });
+                                        const qc = new QueryClient();
+                                        try {
+                                            await qc.fetchQuery({
+                                                queryKey: ['internship', id],
+                                                queryFn: () => fetchInternshipById(id),
+                                            });
+                                        } catch (e) {
+                                            throw new Response('Not found', { status: 404 });
+                                        }
+
+                                        return { id, dehydratedState: dehydrate(qc) };
+                                    },
+                                },
                             ],
                         },
                     ],
@@ -119,9 +157,8 @@ function App() {
     const router = createBrowserRouter(route);
     return (
         <QueryClientProvider client={queryClient}>
-            <ToastProvider>
-                <RouterProvider router={router} />
-            </ToastProvider>
+            <RouterProvider router={router} />
+            <ToastContainer position="top-right" theme="light" />
         </QueryClientProvider>
     );
 }
