@@ -5,7 +5,6 @@ import {
     ForbiddenException,
     BadRequestException,
     InternalServerErrorException,
-    Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
@@ -61,9 +60,6 @@ export class S3Service implements OnModuleInit {
         const useSSL = this.configService.get<string>('MINIO_USE_SSL') === 'true';
         const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY');
         const secretKey = this.configService.get<string>('MINIO_SECRET_KEY');
-        Logger.log(endpoint);
-        Logger.log(accessKey);
-        Logger.log(secretKey);
         if (!endpoint || !accessKey || !secretKey) {
             throw new InvalidConfigurationException(
                 'MinIO configuration incomplete. Check MINIO_ENDPOINT, MINIO_ACCESS_KEY, and MINIO_SECRET_KEY',
@@ -256,7 +252,7 @@ export class S3Service implements OnModuleInit {
         try {
             // Extract userId from fileName (format: userId_logo.ext or userId_cv.ext)
             const fileUserId = fileName.split('_')[0];
-            
+
             // If the fileName doesn't contain the userId, check metadata as fallback
             if (fileUserId !== userId) {
                 const stat = await this.minioClient.statObject(this.bucket, fileName);

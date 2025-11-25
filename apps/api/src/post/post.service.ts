@@ -35,8 +35,7 @@ export class PostService {
             .findById(saved._id)
             .populate({
                 path: 'company',
-                select:
-                    '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
             })
             .exec();
 
@@ -56,13 +55,12 @@ export class PostService {
      * @returns A `PaginationResult<Post>` containing items and metadata
      */
     async findAll(query: PaginationDto): Promise<PaginationResult<Post>> {
-        const { page, limit } = query;
-        const filter = new QueryBuilder(query).build();
+        const { page, limit, ...rest } = query;
+        const filter = new QueryBuilder(rest).build();
 
         const companyPopulate = {
             path: 'company',
-            select:
-                '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
         };
 
         return this.paginationService.paginate(

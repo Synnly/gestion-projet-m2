@@ -77,7 +77,7 @@ export default function InternshipDetailPage() {
                                 <div className="card bg-base-100 rounded-xl p-6">
                                     <h1 className="text-3xl font-extrabold mb-4">{internship.title}</h1>
                                     <p className="text-sm text-base-content/70 mb-6">
-                                        {internship.company.name} • {internship.address}
+                                        {internship.company.name} • {internship.adress}
                                     </p>
                                     <InternshipDetail internship={internship} />
                                 </div>
@@ -102,7 +102,7 @@ export default function InternshipDetailPage() {
                                     </ul>
 
                                     <div className="mt-6">
-                                        <Link to="/internships/list" className="btn btn-ghost w-full">
+                                        <Link to="/" className="btn btn-ghost w-full">
                                             Retour à la liste
                                         </Link>
                                     </div>
@@ -116,7 +116,7 @@ export default function InternshipDetailPage() {
                                 Le stage demandé est introuvable ou n'est pas encore chargé.
                             </p>
                             <div className="mt-4">
-                                <Link to="/internships/list" className="btn btn-primary">
+                                <Link to="/" className="btn btn-primary">
                                     Retour à la liste
                                 </Link>
                             </div>

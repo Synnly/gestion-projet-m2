@@ -1,7 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type userPayload = { id: string; mail: string; role: string; isVerified: boolean; isValid: boolean };
+export type userPayload = {
+    id: string;
+    mail: string;
+    role: 'COMPANY' | 'ADMIN' | 'STUDENT';
+    isVerified: boolean;
+    isValid: boolean;
+};
 
 type authStore = {
     //set access token
@@ -16,7 +22,7 @@ type authStore = {
 
 type accessPayload = {
     sub: string;
-    role: 'COMPANY' | 'ADMIN' | 'USER';
+    role: 'COMPANY' | 'ADMIN' | 'STUDENT';
     email: string;
     rti: string;
     isVerified: boolean;

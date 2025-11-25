@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
-import signupImage from '../../../assets/image.png';
 import { SignupForm } from './component/signupForm';
 import { AnimatePresence, motion } from 'motion/react';
+import Logo from '../../components/icons/Logo';
 
 export const CompanySignup = () => {
     return (
@@ -15,7 +15,7 @@ export const CompanySignup = () => {
                 className="flex flex-col w-full min-h-screen flex-grow items-center justify-center bg-(--color-base-200)"
             >
                 <div className="p-2">
-                    <img src={signupImage} className="h-12" />
+                    <Logo className="text-primary" />
                 </div>
                 <SignupForm />
                 <NavLink to="/signin" className="mt-4 text-sm text-center text-gray-500 underline">
