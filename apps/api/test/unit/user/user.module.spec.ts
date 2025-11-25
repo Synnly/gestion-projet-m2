@@ -118,3 +118,65 @@ describe('UsersModule provider factory', () => {
         expect(result).toBe(mockCompanyModel);
     });
 });
+
+describe('UsersModule Student provider factory', () => {
+    it('should execute Student useFactory and create discriminator when missing', () => {
+        const mod = require('../../../src/user/user.module');
+        const UsersModule = mod.UsersModule;
+
+        const providers: any[] = Reflect.getMetadata('providers', UsersModule) || [];
+        const studentProvider =
+            providers.find((p: any) => p.provide && p.provide.name && p.provide.name.includes('Student')) ||
+            providers[1];
+        expect(studentProvider).toBeDefined();
+
+        const useFactory = studentProvider.useFactory;
+        expect(useFactory).toBeDefined();
+
+        const mockUserModel: any = {
+            discriminators: undefined,
+            discriminator: jest.fn().mockReturnValue('studentDiscriminatorModel'),
+        };
+
+        const mockConnection: any = {
+            model: jest.fn().mockImplementation((name: string) => {
+                if (name === 'User') return mockUserModel;
+                return null;
+            }),
+        };
+
+        const result = useFactory(mockConnection as any);
+
+        expect(result).toBe('studentDiscriminatorModel');
+        expect(mockUserModel.discriminator).toHaveBeenCalled();
+    });
+
+    it('should execute Student useFactory and return existing model when discriminator exists', () => {
+        const mod = require('../../../src/user/user.module');
+        const UsersModule = mod.UsersModule;
+
+        const providers: any[] = Reflect.getMetadata('providers', UsersModule) || [];
+        const studentProvider =
+            providers.find((p: any) => p.provide && p.provide.name && p.provide.name.includes('Student')) ||
+            providers[1];
+        const useFactory = studentProvider.useFactory;
+
+        const mockUserModel: any = {
+            discriminators: { Student: true },
+            discriminator: jest.fn(),
+        };
+
+        const mockStudentModel = 'existingStudentModel';
+
+        const mockConnection: any = {
+            model: jest.fn().mockImplementation((name: string) => {
+                if (name === 'User') return mockUserModel;
+                if (name === 'Student') return mockStudentModel;
+                return null;
+            }),
+        };
+
+        const result = useFactory(mockConnection as any);
+        expect(result).toBe(mockStudentModel);
+    });
+});

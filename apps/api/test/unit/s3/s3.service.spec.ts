@@ -10,16 +10,16 @@ jest.mock('minio');
 // Helper function to create a mock stream for listObjectsV2
 function createMockStream(objects: Array<{ name: string }> = [], shouldError = false): EventEmitter {
     const stream = new EventEmitter();
-    
+
     setImmediate(() => {
         if (shouldError) {
             stream.emit('error', new Error('Stream error'));
         } else {
-            objects.forEach(obj => stream.emit('data', obj));
+            objects.forEach((obj) => stream.emit('data', obj));
             stream.emit('end');
         }
     });
-    
+
     (stream as any).destroy = jest.fn();
     return stream;
 }
@@ -45,7 +45,6 @@ describe('S3Service (unit)', () => {
             }
         }),
     };
-
 
     it('generatePresignedUploadUrl success and error branches', async () => {
         const svc = new S3Service(fakeConfig);
@@ -234,11 +233,7 @@ describe('S3Service', () => {
 
             expect(result.uploadUrl).toBe(mockUrl);
             expect(result.fileName).toBe('user123_logo.png');
-            expect(mockMinioClient.presignedPutObject).toHaveBeenCalledWith(
-                'test-bucket',
-                'user123_logo.png',
-                600,
-            );
+            expect(mockMinioClient.presignedPutObject).toHaveBeenCalledWith('test-bucket', 'user123_logo.png', 600);
         });
 
         it('should generate presigned URL for CV upload', async () => {
@@ -394,6 +389,52 @@ describe('S3Service', () => {
         });
     });
 
+    describe('generatePublicDownloadUrl', () => {
+        beforeEach(async () => {
+            mockMinioClient.bucketExists.mockResolvedValue(true);
+            await service.onModuleInit();
+        });
+
+        it('should generate public download URL for existing file', async () => {
+            const fileName = 'logos/public-logo.png';
+            const expectedUrl = 'http://public-url';
+
+            mockMinioClient.listObjectsV2.mockReturnValue(createMockStream([{ name: 'logos/public-logo.jpg' }]));
+            mockMinioClient.statObject.mockResolvedValue({ metaData: {} } as any);
+            mockMinioClient.presignedGetObject.mockResolvedValue(expectedUrl);
+
+            const result = await service.generatePublicDownloadUrl(fileName);
+
+            expect(result.downloadUrl).toBe(expectedUrl);
+            expect(mockMinioClient.presignedGetObject).toHaveBeenCalledWith('test-bucket', fileName, 3600);
+        });
+
+        it('should throw NotFoundException when public file does not exist', async () => {
+            const fileName = 'logos/missing.png';
+            mockMinioClient.listObjectsV2.mockReturnValue(createMockStream([]));
+            mockMinioClient.statObject.mockRejectedValue({ code: 'NotFound' });
+
+            await expect(service.generatePublicDownloadUrl(fileName)).rejects.toThrow('File not found');
+        });
+
+        it('should throw InternalServerError when presignedGetObject fails for public download', async () => {
+            const fileName = 'logos/public-logo.png';
+            mockMinioClient.listObjectsV2.mockReturnValue(createMockStream([{ name: 'logos/public-logo.jpg' }]));
+            mockMinioClient.statObject.mockResolvedValue({ metaData: {} } as any);
+            mockMinioClient.presignedGetObject.mockRejectedValue(new Error('MinIO failure'));
+
+            await expect(service.generatePublicDownloadUrl(fileName)).rejects.toThrow(
+                'Failed to generate download URL',
+            );
+        });
+
+        it('should validate path to prevent traversal for public download', async () => {
+            const fileName = '../../../etc/passwd';
+
+            await expect(service.generatePublicDownloadUrl(fileName)).rejects.toThrow('Invalid file path');
+        });
+    });
+
     describe('fileExists', () => {
         beforeEach(async () => {
             mockMinioClient.bucketExists.mockResolvedValue(true);
@@ -417,6 +458,14 @@ describe('S3Service', () => {
             const result = await service.fileExists(fileName);
 
             expect(result).toBe(false);
+        });
+
+        it('should rethrow unexpected errors from statObject', async () => {
+            const fileName = 'logos/error.png';
+            mockMinioClient.listObjectsV2.mockReturnValue(createMockStream([{ name: 'logos/error.jpg' }]));
+            mockMinioClient.statObject.mockRejectedValue(new Error('boom'));
+
+            await expect(service.fileExists(fileName)).rejects.toThrow('boom');
         });
     });
 
@@ -452,6 +501,46 @@ describe('S3Service', () => {
             await expect(service.generatePresignedDownloadUrl(fileName, userId)).rejects.toThrow(
                 'Failed to generate download URL',
             );
+        });
+
+        it('should succeed if statObject throws a non-forbidden error (verifyOwnership swallows)', async () => {
+            const userId = 'userX';
+            const fileName = 'cvs/somefile.pdf';
+            const expectedUrl = 'https://minio.example.com/download/url';
+
+            mockMinioClient.listObjectsV2.mockReturnValue(createMockStream([{ name: 'cvs/somefile.docx' }]));
+            // first statObject call (fileExists) succeeds, second call (verifyOwnership) throws a generic error -> verifyOwnership should swallow it
+            mockMinioClient.statObject.mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('random'));
+            mockMinioClient.presignedGetObject.mockResolvedValue(expectedUrl);
+
+            const result = await service.generatePresignedDownloadUrl(fileName, userId);
+            expect(result.downloadUrl).toBe(expectedUrl);
+        });
+
+        it('accepts uploaderId with camelCase key when metadata matches', async () => {
+            const userId = 'camelUser';
+            const fileName = 'cvs/camelUser-file.pdf';
+            const expectedUrl = 'https://minio.example.com/download/url';
+
+            mockMinioClient.listObjectsV2.mockReturnValue(createMockStream([{ name: 'cvs/camelUser-file.docx' }]));
+            mockMinioClient.statObject.mockResolvedValue({ metaData: { uploaderId: userId } } as any);
+            mockMinioClient.presignedGetObject.mockResolvedValue(expectedUrl);
+
+            const result = await service.generatePresignedDownloadUrl(fileName, userId);
+            expect(result.downloadUrl).toBe(expectedUrl);
+        });
+
+        it('accepts userId key when metadata matches', async () => {
+            const userId = 'userIdCase';
+            const fileName = 'cvs/userIdCase-file.pdf';
+            const expectedUrl = 'https://minio.example.com/download/url2';
+
+            mockMinioClient.listObjectsV2.mockReturnValue(createMockStream([{ name: 'cvs/userIdCase-file.docx' }]));
+            mockMinioClient.statObject.mockResolvedValue({ metaData: { userId: userId } } as any);
+            mockMinioClient.presignedGetObject.mockResolvedValue(expectedUrl);
+
+            const result = await service.generatePresignedDownloadUrl(fileName, userId);
+            expect(result.downloadUrl).toBe(expectedUrl);
         });
     });
 });

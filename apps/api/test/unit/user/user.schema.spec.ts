@@ -76,6 +76,39 @@ describe('UserSchema (integration)', () => {
         genSaltSpy.mockRestore();
     });
 
+    it('should propagate bcrypt.hash errors in catch block', async () => {
+        // Force bcrypt.hash to reject inside the pre-save hook
+        const hashSpy = jest.spyOn(require('bcrypt'), 'hash').mockRejectedValue(new Error('hash-failure'));
+
+        const doc = new UserModel({
+            email: 'hashfail@test.com',
+            password: 'SomeSecret123!',
+            role: 'STUDENT',
+        } as any);
+
+        await expect(doc.save()).rejects.toThrow('hash-failure');
+
+        hashSpy.mockRestore();
+    });
+
+    it('should skip password hashing if password is not modified', async () => {
+        // Create and save a document with hashed password
+        const doc = await UserModel.create({
+            email: 'skiptest@test.com',
+            password: 'InitialPass123!',
+            role: 'STUDENT',
+        } as any);
+
+        const originalHashedPassword = doc.password;
+
+        // Modify another field but not the password
+        doc.email = 'skiptest-updated@test.com';
+        await doc.save();
+
+        // Password should remain the same (not re-hashed)
+        expect(doc.password).toBe(originalHashedPassword);
+    });
+
     it('should export UserSchema correctly - line 156 coverage', () => {
         // This test ensures the export statement is executed
         expect(UserSchema).toBeDefined();

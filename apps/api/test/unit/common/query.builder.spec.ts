@@ -13,4 +13,16 @@ describe('QueryBuilder', () => {
         const qb = new QueryBuilder({});
         expect(qb.build()).toEqual({});
     });
+
+    it('builds $or with regex when searchQuery provided', () => {
+        const qb = new QueryBuilder({ searchQuery: 'dev' });
+        const filter = qb.build();
+
+        expect(filter).toHaveProperty('$or');
+        expect(filter.$or).toEqual([
+            { title: { $regex: '\\bdev\\b', $options: 'i' } },
+            { sector: { $regex: '\\bdev\\b', $options: 'i' } },
+            { keySkills: { $regex: '\\bdev\\b', $options: 'i' } },
+        ]);
+    });
 });
