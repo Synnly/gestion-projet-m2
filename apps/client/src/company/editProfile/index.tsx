@@ -15,6 +15,7 @@ import { useFile } from '../../hooks/useFile';
 import { useBlob } from '../../hooks/useBlob';
 import { useUploadFile } from '../../hooks/useUploadFile';
 import { useEffect, useState } from 'react';
+import { Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import {
     type editProfilFormType,
     nafCode,
@@ -43,6 +44,11 @@ export function EditCompanyProfile() {
     const logoFile = useFile(logoBlob, profile?.logo);
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const upload = useUploadFile();
+
+    // States
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const companyId = userInfo?.id;
 
     useEffect(() => {
         if (!logoBlob) {
@@ -142,6 +148,41 @@ export function EditCompanyProfile() {
         }
 
         await mutateAsync(dataToSend);
+    };
+
+    // This function deletes the company then redirects the client
+    const handleDelete = async () => {
+        if (!companyId) return;
+
+        setIsDeleting(true);
+
+        try {
+            const response = await fetch(`${API_URL}/api/companies/${companyId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${access}`
+                },
+                credentials: 'include',
+            });
+
+            if (response.ok) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                // Once the company deleted, we redirect the client
+                navigate('/logout', { replace: true }); 
+            } else {
+                // The company was not deleted
+                console.error("Erreur lors de la suppression");
+                alert("Une erreur est survenue lors de la suppression.");
+                setIsDeleting(false);
+                setShowDeleteModal(false);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Impossible de contacter le serveur.");
+            setIsDeleting(false);
+            setShowDeleteModal(false);
+        }
     };
 
     if (isLoading) {
@@ -311,22 +352,84 @@ export function EditCompanyProfile() {
                             </div>
                         )}
 
-                        <div className="flex gap-4 mt-6 justify-end">
-                            <button
-                                type="button"
-                                onClick={() => navigate('/company/profile')}
-                                className="btn btn-base text-black rounded-xl"
-                            >
-                                Annuler
-                            </button>
-                            <FormSubmit
-                                isPending={isPending}
-                                title="Enregistrer les modifications"
-                                pendingTitle="Enregistrement..."
-                                isError={isError}
-                                error={error}
-                                className="btn btn-primary text-black rounded-xl"
-                            />
+                        <div className='column relative'>
+                            <div className="flex justify-between items-center mt-6 w-full">
+                                <div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowDeleteModal(true)} // Open delete pop-ip
+                                        className="btn bg-red-500 hover:bg-red-600 text-white p-3 rounded-xl flex items-center justify-center transition-colors"
+                                        title="Supprimer l'entreprise"
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
+                                </div>
+
+                                <div className="flex gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/company/profile')}
+                                        className="btn btn-base text-black rounded-xl"
+                                    >
+                                        Annuler
+                                    </button>
+                                    
+                                    <FormSubmit
+                                        isPending={isPending}
+                                        title="Enregistrer les modifications"
+                                        pendingTitle="Enregistrement..."
+                                        isError={isError}
+                                        error={error}
+                                        className="btn btn-primary text-black rounded-xl"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* --- MODAL DE CONFIRMATION --- */}
+                            {showDeleteModal && (
+                                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+                                        
+                                        <div className="bg-red-50 p-6 flex flex-col items-center text-center border-b border-red-100">
+                                            <div className="bg-red-100 p-3 rounded-full mb-4">
+                                                <AlertTriangle className="text-red-600" size={32} />
+                                            </div>
+                                            <h3 className="text-xl font-bold text-gray-900">Supprimer l'entreprise ?</h3>
+                                            <p className="text-sm text-gray-500 mt-2">
+                                                Êtes-vous sûr de vouloir supprimer définitivement votre compte entreprise ? <br/>
+                                                <span className="font-semibold text-red-600">Cette action est irréversible.</span>
+                                            </p>
+                                        </div>
+
+                                        <div className="p-6 flex gap-3 justify-center bg-gray-50">
+                                            <button
+                                                type="button"
+                                                disabled={isDeleting} // Désactive pendant le chargement
+                                                onClick={() => setShowDeleteModal(false)}
+                                                className="btn px-5 py-2.5 rounded-xl text-gray-700 font-medium hover:bg-gray-200 transition-colors border border-gray-300 bg-white disabled:opacity-50"
+                                            >
+                                                Annuler
+                                            </button>
+                                            
+                                            <button
+                                                type="button"
+                                                disabled={isDeleting} // Désactive pendant le chargement
+                                                onClick={handleDelete} // Appelle la fonction API
+                                                className="btn px-5 py-2.5 rounded-xl text-white font-medium bg-red-600 hover:bg-red-700 transition-colors shadow-lg shadow-red-200 flex items-center gap-2 disabled:bg-red-400"
+                                            >
+                                                {isDeleting ? (
+                                                    <>
+                                                        <Loader2 size={18} className="animate-spin" />
+                                                        Suppression...
+                                                    </>
+                                                ) : (
+                                                    "Confirmer la suppression"
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </form>
                 </div>
