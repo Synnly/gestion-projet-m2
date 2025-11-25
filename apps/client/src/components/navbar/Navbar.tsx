@@ -4,7 +4,6 @@ import { useBlob } from '../../hooks/useBlob';
 import Logo from '../icons/Logo';
 import {User} from "lucide-react"
 import { centerNavItems, rightNavItems, ItemLink } from './items';
-import placeHolderProfile from "../../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg" 
 interface NavbarProps {
     appName?: string;
     /** If true, render only the logo/link */
