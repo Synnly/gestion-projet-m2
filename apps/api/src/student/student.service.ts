@@ -52,7 +52,7 @@ export class StudentService {
 
         if (student) {
             Object.assign(student, dto);
-            await student.save({ validateBeforeSave: false });
+            await student.save();
             return;
         }
 
