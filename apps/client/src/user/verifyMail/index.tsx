@@ -49,7 +49,7 @@ export function VerifyEmail() {
         mode: 'onSubmit',
     });
     const navigate = useNavigate();
-    const { access, set, logout, get } = userStore.getState();
+    const { access, set, logout } = userStore.getState();
     const API_URL = import.meta.env.VITE_APIURL;
     const accessToken = useOutletContext<userContext>();
     const email = accessToken.get(accessToken.accessToken).mail;
@@ -117,14 +117,11 @@ export function VerifyEmail() {
             if (!refreshRes.ok) {
                 logout();
                 navigate('/signin');
-            }
-            else{
-
+            } else {
                 const refreshed = await refreshRes.text();
                 set(refreshed);
                 navigate(`/complete-profil`);
             }
-
         }
         reset();
     };

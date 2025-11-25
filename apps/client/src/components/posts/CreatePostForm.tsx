@@ -1,16 +1,16 @@
-import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import MDEditor from "@uiw/react-md-editor";
-import "@uiw/react-md-editor/markdown-editor.css";
-import "@uiw/react-markdown-preview/markdown.css";
+import { FormEvent, KeyboardEvent, useEffect, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import MDEditor from '@uiw/react-md-editor';
+import '@uiw/react-md-editor/markdown-editor.css';
+import '@uiw/react-markdown-preview/markdown.css';
 
-import { createPost, type CreatePostPayload } from "../../api/create_post";
-import { updatePost } from "../../api/update_post";
-import { useCreatePostStore, type WorkMode } from "../../store/CreatePostStore";
-import { profileStore } from "../../store/profileStore";
-import { useInternshipStore } from "../../store/useInternshipStore";
+import { createPost, type CreatePostPayload } from '../../api/create_post';
+import { updatePost } from '../../api/update_post';
+import { useCreatePostStore, type WorkMode } from '../../store/CreatePostStore';
+import { profileStore } from '../../store/profileStore';
+import { useInternshipStore } from '../../store/useInternshipStore';
 
 type PostFormMode = 'create' | 'edit';
 
@@ -38,193 +38,123 @@ type PostFormProps = {
     postId?: string;
 };
 
-export function CreatePostForm({
-  mode = "create",
-  initialData,
-  postId,
-}: PostFormProps) {
-  const {
-    title,
-    description,
-    location,
-    addressLine,
-    city,
-    postalCode,
-    duration,
-    sector,
-    startDate,
-    minSalary,
-    maxSalary,
-    isVisibleToStudents,
-    skills,
-    workMode,
-    setTitle,
-    setDescription,
-    setLocation,
-    setAddressLine,
-    setCity,
-    setPostalCode,
-    setDuration,
-    setSector,
-    setStartDate,
-    setMinSalary,
-    setMaxSalary,
-    setIsVisibleToStudents,
-    setSkills,
-    addSkill,
-    removeSkill,
-    setWorkMode,
-  } = useCreatePostStore();
+export function CreatePostForm({ mode = 'create', initialData, postId }: PostFormProps) {
+    const {
+        title,
+        description,
+        location,
+        addressLine,
+        city,
+        postalCode,
+        duration,
+        sector,
+        startDate,
+        minSalary,
+        maxSalary,
+        isVisibleToStudents,
+        skills,
+        workMode,
+        setTitle,
+        setDescription,
+        setLocation,
+        setAddressLine,
+        setCity,
+        setPostalCode,
+        setDuration,
+        setSector,
+        setStartDate,
+        setMinSalary,
+        setMaxSalary,
+        setIsVisibleToStudents,
+        setSkills,
+        addSkill,
+        removeSkill,
+        setWorkMode,
+    } = useCreatePostStore();
 
-  const profile = profileStore((state) => state.profile);
-  const [skillInput, setSkillInput] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const filters = useInternshipStore(state => state.filters)
-  const queryClient = useQueryClient();
-  const resetInternship = useInternshipStore(state => state.clearInternships)
+    const profile = profileStore((state) => state.profile);
+    const [skillInput, setSkillInput] = useState('');
+    const [formError, setFormError] = useState<string | null>(null);
+    const navigate = useNavigate();
+    const filters = useInternshipStore((state) => state.filters);
+    const queryClient = useQueryClient();
+    const resetInternship = useInternshipStore((state) => state.clearInternships);
 
-// Pour refetcher la query
-  // Pré-remplissage en mode édition
-  useEffect(() => {
-    if (!initialData) return;
-    setTitle(initialData.title ?? "");
-    setDescription(initialData.description ?? "");
-    const initialAddress = initialData.addressLine ?? initialData.location ?? initialData.adress ?? "";
-    setAddressLine(initialAddress);
-    setCity(initialData.city ?? "");
-    setPostalCode(initialData.postalCode ?? "");
-    setLocation(initialAddress);
-    setDuration(initialData.duration ?? "");
-    setSector(initialData.sector ?? "");
-    setStartDate(initialData.startDate ?? "");
-    setMinSalary(initialData.minSalary ?? "");
-    setMaxSalary(initialData.maxSalary ?? "");
-    setIsVisibleToStudents(initialData.isVisibleToStudents ?? true);
-    if (initialData.keySkills) setSkills(initialData.keySkills);
-    if (initialData.workMode) setWorkMode(initialData.workMode);
-  }, [
-    initialData,
-    setAddressLine,
-    setCity,
-    setDescription,
-    setDuration,
-    setIsVisibleToStudents,
-    setLocation,
-    setMaxSalary,
-    setMinSalary,
-    setPostalCode,
-    setSector,
-    setSkills,
-    setStartDate,
-    setTitle,
-    setWorkMode,
-  ]);
+    // Pour refetcher la query
+    // Pré-remplissage en mode édition
+    useEffect(() => {
+        if (!initialData) return;
+        setTitle(initialData.title ?? '');
+        setDescription(initialData.description ?? '');
+        const initialAddress = initialData.addressLine ?? initialData.location ?? initialData.adress ?? '';
+        setAddressLine(initialAddress);
+        setCity(initialData.city ?? '');
+        setPostalCode(initialData.postalCode ?? '');
+        setLocation(initialAddress);
+        setDuration(initialData.duration ?? '');
+        setSector(initialData.sector ?? '');
+        setStartDate(initialData.startDate ?? '');
+        setMinSalary(initialData.minSalary ?? '');
+        setMaxSalary(initialData.maxSalary ?? '');
+        setIsVisibleToStudents(initialData.isVisibleToStudents ?? true);
+        if (initialData.keySkills) setSkills(initialData.keySkills);
+        if (initialData.workMode) setWorkMode(initialData.workMode);
+    }, [
+        initialData,
+        setAddressLine,
+        setCity,
+        setDescription,
+        setDuration,
+        setIsVisibleToStudents,
+        setLocation,
+        setMaxSalary,
+        setMinSalary,
+        setPostalCode,
+        setSector,
+        setSkills,
+        setStartDate,
+        setTitle,
+        setWorkMode,
+    ]);
 
-  // Concatène adresse/CP/ville vers location
-  useEffect(() => {
-    const parts = [addressLine, postalCode, city].filter((p) => p && p.trim());
-    setLocation(parts.join(", "));
-  }, [addressLine, postalCode, city, setLocation]);
+    // Concatène adresse/CP/ville vers location
+    useEffect(() => {
+        const parts = [addressLine, postalCode, city].filter((p) => p && p.trim());
+        setLocation(parts.join(', '));
+    }, [addressLine, postalCode, city, setLocation]);
 
-  const sectorOptions = [
-    "Technologie",
-    "Informatique / IT",
-    "Marketing",
-    "Design",
-    "Finance",
-    "Communication",
-    "Ressources Humaines",
-    "Juridique",
-    "Ingenierie",
-    "Data / IA",
-    "Product Management",
-    "Support / Customer Success",
-    "Operations / Logistique",
-    "Sante / Biotech",
-    "Education / Formation",
-  ];
+    const sectorOptions = [
+        'Technologie',
+        'Informatique / IT',
+        'Marketing',
+        'Design',
+        'Finance',
+        'Communication',
+        'Ressources Humaines',
+        'Juridique',
+        'Ingenierie',
+        'Data / IA',
+        'Product Management',
+        'Support / Customer Success',
+        'Operations / Logistique',
+        'Sante / Biotech',
+        'Education / Formation',
+    ];
 
-  const workModeMap: Record<WorkMode, string> = {
-    presentiel: "Présentiel",
-    teletravail: "Télétravail",
-    hybride: "Hybride",
-  };
-
-  function handleSkillKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      if (!skillInput.trim()) return;
-      addSkill(skillInput);
-      setSkillInput("");
-    }
-  }
-
-  const mutation = useMutation({
-    mutationFn: async (payload: { companyId: string; data: CreatePostPayload["data"] }) => {
-      if (mode === "edit") {
-        if (!postId) throw new Error("Identifiant de l'annonce manquant pour la mise a jour.");
-        return updatePost({ companyId: payload.companyId, postId, data: payload.data });
-      }
-      return createPost(payload);
-    },
-    onSuccess: () => {
-      const successText =
-        mode === "edit"
-          ? "L'offre de stage a ete mise a jour avec succes."
-          : "L'offre de stage a ete cree avec succes.";
-
-      toast.success(successText);
-      navigate("/company/dashboard");
-    },
-    onError: (error) => {
-      console.error(error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Une erreur est survenue lors de l'envoi de l'offre de stage."
-      );
-    },
-  });
-
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    if (mutation.isPending) return;
-
-    if (!profile?._id) {
-      toast.error("Impossible de creer l'annonce : identifiant entreprise manquant.");
-      return;
-    }
-
-    if (!title.trim() || !description.trim()) {
-      setFormError("Le titre et la description sont obligatoires.");
-      return;
-    }
-
-    setFormError(null);
-
-    const minSalaryNumber = Number(minSalary);
-    const maxSalaryNumber = Number(maxSalary);
-
-    const payload = {
-      title,
-      description,
-      duration: duration || undefined,
-      sector: sector || undefined,
-      startDate: startDate || undefined,
-      minSalary: Number.isFinite(minSalaryNumber) ? minSalaryNumber : undefined,
-      maxSalary: Number.isFinite(maxSalaryNumber) ? maxSalaryNumber : undefined,
-      keySkills: skills,
-      adress: location || undefined,
-      type: workModeMap[workMode],
-      isVisible: isVisibleToStudents,
+    const workModeMap: Record<WorkMode, string> = {
+        presentiel: 'Présentiel',
+        teletravail: 'Télétravail',
+        hybride: 'Hybride',
     };
 
-   await mutation.mutateAsync({ companyId: profile._id, data: payload });
-   queryClient.invalidateQueries(['internships', filters]);
-   resetInternship()
-
-  }
+    function handleSkillKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            if (!skillInput.trim()) return;
+            addSkill(skillInput);
+            setSkillInput('');
+        }
+    }
 
     const mutation = useMutation({
         mutationFn: async (payload: { companyId: string; data: CreatePostPayload['data'] }) => {
@@ -239,6 +169,7 @@ export function CreatePostForm({
                 mode === 'edit'
                     ? "L'offre de stage a ete mise a jour avec succes."
                     : "L'offre de stage a ete cree avec succes.";
+
             toast.success(successText);
             navigate('/company/dashboard');
         },
@@ -250,7 +181,7 @@ export function CreatePostForm({
         },
     });
 
-    function handleSubmit(event: FormEvent) {
+    async function handleSubmit(event: FormEvent) {
         event.preventDefault();
         if (mutation.isPending) return;
 
@@ -283,7 +214,9 @@ export function CreatePostForm({
             isVisible: isVisibleToStudents,
         };
 
-        mutation.mutate({ companyId: profile._id, data: payload });
+        await mutation.mutateAsync({ companyId: profile._id, data: payload });
+        await queryClient.invalidateQueries(['internships', filters]);
+        resetInternship();
     }
 
     return (
@@ -478,7 +411,7 @@ export function CreatePostForm({
                                 <button
                                     type="button"
                                     onClick={() => setWorkMode('presentiel')}
-                                    className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${
+                                    className={`btn btn-xs sm:btn-sm join-item flex-1 border shadow-none ${
                                         workMode === 'presentiel'
                                             ? 'bg-base-100 text-base-content border-base-200'
                                             : 'bg-transparent border-0 text-base-400 hover:bg-base-300/60'
@@ -489,7 +422,7 @@ export function CreatePostForm({
                                 <button
                                     type="button"
                                     onClick={() => setWorkMode('teletravail')}
-                                    className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${
+                                    className={`btn btn-xs sm:btn-sm join-item flex-1 border shadow-none ${
                                         workMode === 'teletravail'
                                             ? 'bg-base-100 text-base-content border-base-200'
                                             : 'bg-transparent border-0 text-base-400 hover:bg-base-300/60'
@@ -500,7 +433,7 @@ export function CreatePostForm({
                                 <button
                                     type="button"
                                     onClick={() => setWorkMode('hybride')}
-                                    className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${
+                                    className={`btn btn-xs sm:btn-sm join-item flex-1 border shadow-none ${
                                         workMode === 'hybride'
                                             ? 'bg-base-100 text-base-content border-base-200'
                                             : 'bg-transparent border-0 text-base-400 hover:bg-base-300/60'
