@@ -11,7 +11,7 @@ import ToastProvider from '../../components/ui/toast/ToastProvider';
 export function InternshipPage() {
     const navigation = useNavigation();
     const selects = [
-        { label: 'Location', options: ['À distance', 'Sur site', 'Hybride'] },
+        { label: 'Localisation', options: ['À distance', 'Sur site', 'Hybride'] },
         { label: 'Type de stage', options: ['Temps plein', 'Temps partiel', 'Contrat'] },
         { label: 'Secteur', options: ['Tech', 'Finance', 'Santé'] },
         { label: 'Date de publication', options: ['Moins de 24 heures', 'Moins d\'une semaine', 'Moins de 30 jours'] },
