@@ -17,6 +17,7 @@ export interface CreatePostState {
   isVisibleToStudents: boolean;
   workMode: WorkMode;
   skills: string[];
+  setSkills: (skills: string[]) => void;
   setTitle: (value: string) => void;
   setDescription: (value: string) => void;
   setLocation: (value: string) => void;
@@ -50,6 +51,7 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
   isVisibleToStudents: true,
   workMode: "presentiel",
   skills: [],
+  setSkills: (skills: string[]) => set({ skills }),
 
   setTitle: (value: string) => set({ title: value }),
   setDescription: (value: string) => set({ description: value }),

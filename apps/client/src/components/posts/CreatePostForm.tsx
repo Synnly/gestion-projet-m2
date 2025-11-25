@@ -7,10 +7,41 @@ import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 
 import { createPost, type CreatePostPayload } from "../../api/create_post";
+import { updatePost } from "../../api/update_post";
 import { useCreatePostStore, type WorkMode } from "../../store/CreatePostStore";
 import { profileStore } from "../../store/profileStore";
 
-export function CreatePostForm() {
+type PostFormMode = "create" | "edit";
+
+type InitialPostData = Partial<{
+  title: string;
+  description: string;
+  location: string;
+  adress: string;
+  addressLine: string;
+  city: string;
+  postalCode: string;
+  duration: string;
+  sector: string;
+  startDate: string;
+  minSalary: string;
+  maxSalary: string;
+  keySkills: string[];
+  workMode: WorkMode;
+  isVisibleToStudents: boolean;
+}>;
+
+type PostFormProps = {
+  mode?: PostFormMode;
+  initialData?: InitialPostData;
+  postId?: string;
+};
+
+export function CreatePostForm({
+  mode = "create",
+  initialData,
+  postId,
+}: PostFormProps) {
   const {
     title,
     description,
@@ -38,6 +69,7 @@ export function CreatePostForm() {
     setMinSalary,
     setMaxSalary,
     setIsVisibleToStudents,
+    setSkills,
     addSkill,
     removeSkill,
     setWorkMode,
@@ -48,12 +80,46 @@ export function CreatePostForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Pré-remplissage en mode édition
   useEffect(() => {
-    // concat address parts into location field
+    if (!initialData) return;
+    setTitle(initialData.title ?? "");
+    setDescription(initialData.description ?? "");
+    const initialAddress = initialData.addressLine ?? initialData.location ?? initialData.adress ?? "";
+    setAddressLine(initialAddress);
+    setCity(initialData.city ?? "");
+    setPostalCode(initialData.postalCode ?? "");
+    setLocation(initialAddress);
+    setDuration(initialData.duration ?? "");
+    setSector(initialData.sector ?? "");
+    setStartDate(initialData.startDate ?? "");
+    setMinSalary(initialData.minSalary ?? "");
+    setMaxSalary(initialData.maxSalary ?? "");
+    setIsVisibleToStudents(initialData.isVisibleToStudents ?? true);
+    if (initialData.keySkills) setSkills(initialData.keySkills);
+    if (initialData.workMode) setWorkMode(initialData.workMode);
+  }, [
+    initialData,
+    setAddressLine,
+    setCity,
+    setDescription,
+    setDuration,
+    setIsVisibleToStudents,
+    setLocation,
+    setMaxSalary,
+    setMinSalary,
+    setPostalCode,
+    setSector,
+    setSkills,
+    setStartDate,
+    setTitle,
+    setWorkMode,
+  ]);
+
+  // Concatène adresse/CP/ville vers location
+  useEffect(() => {
     const parts = [addressLine, postalCode, city].filter((p) => p && p.trim());
-    if (parts.length > 0) {
-      setLocation(parts.join(", "));
-    }
+    setLocation(parts.join(", "));
   }, [addressLine, postalCode, city, setLocation]);
 
   const sectorOptions = [
@@ -91,10 +157,18 @@ export function CreatePostForm() {
 
   const mutation = useMutation({
     mutationFn: async (payload: { companyId: string; data: CreatePostPayload["data"] }) => {
+      if (mode === "edit") {
+        if (!postId) throw new Error("Identifiant de l'annonce manquant pour la mise a jour.");
+        return updatePost({ companyId: payload.companyId, postId, data: payload.data });
+      }
       return createPost(payload);
     },
     onSuccess: () => {
-      toast.success("L'offre de stage a ete cree avec succes.");
+      const successText =
+        mode === "edit"
+          ? "L'offre de stage a ete mise a jour avec succes."
+          : "L'offre de stage a ete cree avec succes.";
+      toast.success(successText);
       navigate("/company/dashboard");
     },
     onError: (error) => {
@@ -148,7 +222,7 @@ export function CreatePostForm() {
       <div className="rounded-2xl border border-base-300 bg-base-100 shadow-sm">
         <div className="border-b border-slate-100 px-6 pb-4 pt-5">
           <h1 className="text-base font-semibold text-slate-900">
-            Creer une offre de stage
+            {mode === "edit" ? "Mettre a jour l'offre de stage" : "Creer une offre de stage"}
           </h1>
         </div>
 
@@ -350,30 +424,33 @@ export function CreatePostForm() {
                 <button
                   type="button"
                   onClick={() => setWorkMode("presentiel")}
-                  className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${workMode === "presentiel"
+                  className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${
+                    workMode === "presentiel"
                       ? "bg-base-100 text-base-content border-base-200"
                       : "bg-transparent border-0 text-base-400 hover:bg-base-300/60"
-                    }`}
+                  }`}
                 >
                   Presentiel
                 </button>
                 <button
                   type="button"
                   onClick={() => setWorkMode("teletravail")}
-                  className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${workMode === "teletravail"
+                  className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${
+                    workMode === "teletravail"
                       ? "bg-base-100 text-base-content border-base-200"
                       : "bg-transparent border-0 text-base-400 hover:bg-base-300/60"
-                    }`}
+                  }`}
                 >
                   Teletravail
                 </button>
                 <button
                   type="button"
                   onClick={() => setWorkMode("hybride")}
-                  className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${workMode === "hybride"
+                  className={`btn btn-xs sm:btn-sm join-item flex-1 rounded-lg border shadow-none ${
+                    workMode === "hybride"
                       ? "bg-base-100 text-base-content border-base-200"
                       : "bg-transparent border-0 text-base-400 hover:bg-base-300/60"
-                    }`}
+                  }`}
                 >
                   Hybride
                 </button>
@@ -410,7 +487,13 @@ export function CreatePostForm() {
               className="btn btn-sm rounded-full px-4 btn-primary text-white"
               disabled={mutation.isPending}
             >
-              {mutation.isPending ? "Publication en cours..." : "Publier l'offre de stage"}
+              {mode === "edit"
+                ? mutation.isPending
+                  ? "Mise a jour..."
+                  : "Mettre a jour l'offre de stage"
+                : mutation.isPending
+                  ? "Publication en cours..."
+                  : "Publier l'offre de stage"}
             </button>
           </div>
         </form>
@@ -418,4 +501,3 @@ export function CreatePostForm() {
     </div>
   );
 }
-

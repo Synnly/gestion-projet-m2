@@ -20,8 +20,10 @@ import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
 import { InternshipPage } from './pages/internship/InternshipPage';
 import InternshipDetailPage from './pages/internship/InternshipDetailPage';
+import CreatePostPage from "./pages/posts/CreatePostPage";
+import UpdatePostPage from "./pages/posts/UpdatePostPage";
+import { updatePostLoader } from "./loaders/updatePostLoader";
 import { DashboardInternshipList } from './company/dashboard/intershipList/DashboardInternshipList';
-import CreatePostPage from './pages/posts/CreatePostPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ToastProvider from './components/ui/toast/ToastProvider';
@@ -86,7 +88,12 @@ function App() {
                                     element: <VerifiedRoutes redirectPath="/company/dashboard" />,
                                     children: [],
                                 },
-                                { path: '/company/offers/add', element: <CreatePostPage /> },
+                                { path: 'offers/add', element: <CreatePostPage /> },
+                                {
+                                    path: 'offers/:postId/edit',
+                                    loader: updatePostLoader,
+                                    element: <UpdatePostPage />,
+                                },
                             ],
                         },
                         {

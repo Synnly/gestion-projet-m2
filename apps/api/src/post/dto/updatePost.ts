@@ -1,6 +1,5 @@
 import {
     ArrayMaxSize,
-    ArrayMinSize,
     ArrayUnique,
     IsArray,
     IsBoolean,
@@ -14,17 +13,18 @@ import {
 import { Type } from 'class-transformer';
 import { PostType } from '../post.schema';
 
-export class CreatePostDto {
+export class UpdatePostDto {
+   
     /**
      * Post's title
-     * Is required for the creation
+     * Is required for the update
      */
     @IsString()
     title: string;
 
     /**
      * Post's description
-     * Is required for the creation
+     * Is required for the update
      */
     @IsString()
     description: string;
@@ -101,7 +101,7 @@ export class CreatePostDto {
     @IsBoolean()
     isVisible?: boolean;
 
-    constructor(partial?: Partial<CreatePostDto>) {
+    constructor(partial?: Partial<UpdatePostDto>) {
         if (partial) {
             Object.assign(this, partial);
             this.isVisible = !!this.title && !!this.description;

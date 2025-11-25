@@ -7,6 +7,7 @@ import {
     NotFoundException,
     Param,
     Post,
+    Put,
     UseGuards,
     ValidationPipe,
     Query,
@@ -23,6 +24,7 @@ import { CompanyOwnerGuard } from '../common/roles/companyOwner.guard';
 import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
 import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
 import { plainToInstance } from 'class-transformer';
+import { UpdatePostDto } from './dto/updatePost';
 
 /**
  * Controller responsible for handling post-related endpoints.
@@ -85,5 +87,24 @@ export class PostController {
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: CreatePostDto,
     ) {
         await this.postService.create(dto, companyId);
+    }
+
+    /**
+     * Updates an existing post
+     * @param companyId The company identifier
+     * @param id The post identifier
+     * @param dto The post data for update
+     */
+    @Put('/:id')
+    @UseGuards(RolesGuard, CompanyOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.OK)
+    async update(
+        @Param('companyId', ParseObjectIdPipe) companyId: string,
+        @Param('id', ParseObjectIdPipe) id: string,
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: UpdatePostDto,
+    ) {
+        const updated = await this.postService.update(dto, companyId, id);
+        return plainToInstance(PostDto, updated);
     }
 }
