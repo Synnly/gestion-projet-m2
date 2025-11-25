@@ -6,6 +6,7 @@ import { useNavigate, useOutletContext } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
 import { userStore } from '../../store/userStore';
 import { CodeInput } from './components/code';
+import Logo from '../../components/icons/Logo.tsx';
 
 export type VerifyEmailForm = {
     code1: string;
@@ -48,7 +49,7 @@ export function VerifyEmail() {
         mode: 'onSubmit',
     });
     const navigate = useNavigate();
-    const { access, set, logout, get } = userStore.getState();
+    const { access, set, logout } = userStore.getState();
     const API_URL = import.meta.env.VITE_APIURL;
     const accessToken = useOutletContext<userContext>();
     const email = accessToken.get(accessToken.accessToken).mail;
@@ -116,31 +117,26 @@ export function VerifyEmail() {
             if (!refreshRes.ok) {
                 logout();
                 navigate('/signin');
+            } else {
+                const refreshed = await refreshRes.text();
+                set(refreshed);
+                navigate(`/complete-profil`);
             }
-
-            const refreshed = await refreshRes.text();
-            const role = get(refreshed).role;
-            set(refreshed);
-            navigate(`/`);
         }
         reset();
     };
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-base-300 font-display text-gray-800 dark:text-gray-200">
+        <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-base-300 font-display">
             <div className="w-full max-w-md space-y-8 p-5 bg-base-100 dark:bg-base-200 rounded-lg shadow-md">
                 {/* Logo */}
-                <div className="text-center">
-                    <img
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCyGZHkXQD-SQhpDh7YcLyhsxmM4KXOXYrUfNmFccX7oASPRULTj9IZa2uZZt8ZVbOtNh5LZn3gWWO_ldBzGIkOiyJkQ3SoqLsUWSkOwLlDdDyHSmSoYC0tNdWQjxXuK7YTaLuHtvOD3R67v4y6mC7TUVl0XHPCQhT0L7hlJHqu0tMYSMpn9b0LDlAoF8JzM5rKcCAkByrB3ZEtqFwEP3-lzO7VHY7EqwY0hgpKqh2MPxxYridXTsjDb3FYiyBG1Z4PBud9UAU1l-0"
-                        alt="Logo de l'application"
-                        className="mx-auto h-10 w-auto"
-                    />
+                <div className="p-2 flex justify-center">
+                    <Logo className="text-primary" />
                 </div>
                 {/* Title & description */}
                 <div className="text-center space-y-4">
-                    <h1 className="text-2xl font-bold tracking-tight text-black">Vérifier votre compte</h1>
-                    <p className="text-sm text-gray-700 dark:text-gray-400">
+                    <h1 className="text-2xl font-bold tracking-tight">Vérifier votre compte</h1>
+                    <p className="text-sm">
                         Un code a été envoyé à votre adresse email. Veuillez le saisir ci-dessous.
                     </p>
                 </div>
@@ -162,10 +158,10 @@ export function VerifyEmail() {
                 />
                 {/* Resend */}
                 <div className="text-center">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-base-600 dark:text-base-400">
                         Vous n'avez pas reçu de code ?{' '}
                         <button
-                            className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                            className="text-gray-500 underline cursor-pointer"
                             onClick={() => {
                                 sendMailMutation.mutate();
                             }}
@@ -175,7 +171,7 @@ export function VerifyEmail() {
                     </p>
                 </div>
                 {sendMailMutation.isSuccess && (
-                    <p className="text-primary bg-gray-200 p-2 text-sm text-center">Envoie réussi</p>
+                    <p className="text-primary bg-base-200 p-2 text-sm text-center">Envoie réussi</p>
                 )}
             </div>
         </div>

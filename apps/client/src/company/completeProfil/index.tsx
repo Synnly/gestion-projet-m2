@@ -1,6 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-
-import penSvg from '../../../assets/edit-pen-svgrepo-com.svg?url';
 import { useForm, type Resolver } from 'react-hook-form';
 import {
     type completeProfilFormType,
@@ -153,14 +151,13 @@ export const CompleteProfil = () => {
                 >
                     <FormSection
                         title="Photo de profil de l'entreprise"
-                        className="bg-(--color-base-100) p-6 rounded-(--radius-box) shadow-md mb-6 flex flex-col gap-4"
+                        className="bg-base-100 p-6 shadow-md mb-6 flex flex-col gap-4"
                     >
                         <div className="flex flex-row items-center justify-around gap-4">
                             <div className="w-[110px] h-[110px]">
                                 <ProfilePicture
                                     src={logoUrl!}
                                     overlay
-                                    overlayPicture={penSvg}
                                     register={register('logo')}
                                     error={errors.logo}
                                 />
@@ -170,13 +167,13 @@ export const CompleteProfil = () => {
                                 <span className="font-stretch-105% italic mb-1">
                                     Téléchargez le logo de votre entreprise, il sera visible publiquement.
                                 </span>
-                                <span className="text-sm text-gray-600 italic">PNG, JPG jusqu'à 5MB.</span>
+                                <span className="text-sm text-base-600 italic">PNG, JPG jusqu'à 5MB.</span>
                             </div>
                         </div>
                     </FormSection>
                     <FormSection
                         title="Informations légales et administratives"
-                        className=" bg-(--color-base-100) p-6 rounded-(--radius-box) shadow-md mb-6 flex flex-col gap-4"
+                        className=" bg-base-100 p-6 shadow-md mb-6 flex flex-col gap-4"
                     >
                         <FormInput<completeProfilFormType>
                             type="text"
@@ -222,7 +219,7 @@ export const CompleteProfil = () => {
                     </FormSection>
                     <FormSection
                         title="Adresse du siège social"
-                        className=" bg-(--color-base-100) p-6 rounded-(--radius-box) shadow-md mb-6 flex flex-col gap-4"
+                        className=" bg-base-100 p-6 shadow-md mb-6 flex flex-col gap-4"
                     >
                         <div className="flex w-full flex-row gap-6">
                             <div className="w-1/2">
@@ -284,8 +281,8 @@ export const CompleteProfil = () => {
                         />
                     </FormSection>
                     <FormSubmit
-                        className="bg-primary w-min p-5 self-end font-bold"
-                        title="Compléter le profil"
+                        className="btn-primary w-min self-end font-bold"
+                        title="Compléter le profile"
                         pendingTitle="Complétion..."
                         error={error}
                         isError={isError}

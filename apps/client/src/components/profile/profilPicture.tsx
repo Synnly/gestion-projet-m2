@@ -1,11 +1,12 @@
 import { useState, forwardRef, useEffect } from 'react';
 import { cn } from '../../utils/cn';
+import { Pen } from 'lucide-react';
 import profilPlaceholder from '../../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg';
 import type { FieldError, UseFormRegisterReturn } from 'react-hook-form';
+import { IMAGE_SIZE_MAX } from '../../utils/constantes';
 type ProfilePictureProps = {
     src?: string;
     overlay?: boolean;
-    overlayPicture?: string;
     className?: string;
     handleModif?: (file: string) => void;
     imgRef?: React.Ref<HTMLImageElement>;
@@ -14,15 +15,12 @@ type ProfilePictureProps = {
 };
 
 export const ProfilePicture = forwardRef<File | null, ProfilePictureProps>(
-    (
-        { src, overlay = false, overlayPicture, className, handleModif, imgRef, register, error }: ProfilePictureProps,
-        ref,
-    ) => {
+    ({ src, overlay = false, className, handleModif, imgRef, register, error }: ProfilePictureProps, ref) => {
         const [srcPicture, setSrcPicture] = useState(src);
 
         const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
             const file = event.target.files?.[0];
-            if (file && file?.size > 3000000) {
+            if (file && file?.size > IMAGE_SIZE_MAX) {
                 //changer pour une modale
                 window.alert('fichier trop volumineux');
                 return;
@@ -73,7 +71,7 @@ export const ProfilePicture = forwardRef<File | null, ProfilePictureProps>(
                             className="absolute inset-0 h-full w-full bg-black/40 rounded-full opacity-0 
                             group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
                         >
-                            <img src={overlayPicture} alt="pen" className="h-[30%] w-[30%]" />
+                            <Pen />
                         </div>
                     )}
                 </div>
