@@ -118,11 +118,13 @@ export function VerifyEmail() {
                 logout();
                 navigate('/signin');
             }
+            else{
 
-            const refreshed = await refreshRes.text();
-            const role = get(refreshed).role;
-            set(refreshed);
-            navigate(`/`);
+                const refreshed = await refreshRes.text();
+                set(refreshed);
+                navigate(`/complete-profil`);
+            }
+
         }
         reset();
     };

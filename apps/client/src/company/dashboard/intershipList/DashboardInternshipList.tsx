@@ -75,15 +75,15 @@ export function DashboardInternshipList() {
                     <div className="text-center">
                         <p className="text-sm text-base-content/60">
                             {filters.searchQuery ? (
-                                <p>
-                                    Vous n'avez posté aucune annonce, cliquez
+                               <> 
+                                    {"Vous n'avez posté aucune annonce, cliquez"}
                                     <NavLink to="/company/offers/add" className="text-primary ml-1">
                                         ici
                                     </NavLink>{' '}
-                                    pour en ajouter une.
-                                </p>
+                                    {"pour en ajouter une"}.
+                                </>
                             ) : (
-                                <p>Aucune annonce de stage trouvée.</p>
+                                "Aucune annonce de stage trouvée."
                             )}
                         </p>
                     </div>

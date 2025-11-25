@@ -10,6 +10,7 @@ import { FormInputEdit } from '../../components/form/FormInputEdit';
 import { CustomSelect } from '../../components/inputs/select/select';
 import { FormSubmit } from '../../components/form/FormSubmit';
 import { ProfilePicture } from '../../components/profile/profilPicture';
+import overlayPicture from "../../../assets/edit-pen-svgrepo-com.svg"
 import { useGetCompanyProfile } from '../../hooks/useGetCompanyProfile';
 import { useFile } from '../../hooks/useFile';
 import { useBlob } from '../../hooks/useBlob';
@@ -171,6 +172,7 @@ export function EditCompanyProfile() {
                                 <ProfilePicture
                                     src={logoUrl!}
                                     overlay
+                                    overlayPicture={overlayPicture}
                                     register={register('logo')}
                                     error={errors.logo}
                                 />

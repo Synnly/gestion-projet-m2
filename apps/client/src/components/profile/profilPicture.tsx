@@ -3,6 +3,7 @@ import { cn } from '../../utils/cn';
 import { Pen } from 'lucide-react';
 import profilPlaceholder from '../../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg';
 import type { FieldError, UseFormRegisterReturn } from 'react-hook-form';
+import { IMAGE_SIZE_MAX } from '../../utils/constantes';
 type ProfilePictureProps = {
     src?: string;
     overlay?: boolean;
@@ -19,7 +20,7 @@ export const ProfilePicture = forwardRef<File | null, ProfilePictureProps>(
 
         const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
             const file = event.target.files?.[0];
-            if (file && file?.size > 3000000) {
+            if (file && file?.size > IMAGE_SIZE_MAX) {
                 //changer pour une modale
                 window.alert('fichier trop volumineux');
                 return;
