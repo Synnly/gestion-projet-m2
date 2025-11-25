@@ -40,8 +40,8 @@ export function FormInput<T extends FieldValues>({
                         props.onInput?.(e);
                     }}
                     className={cn(
-                        ' border-gray-200 border-2 rounded-lg p-4',
-                        error && 'border-red-500',
+                        'input w-full p-4',
+                        error && 'border-error',
                         className,
                         props.type === 'password' && 'flex items-center',
                     )}
@@ -51,14 +51,14 @@ export function FormInput<T extends FieldValues>({
                     <button
                         type="button"
                         onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2  transform  text-gray-500 text-sm"
+                        className="absolute right-3 top-1/2 -translate-y-1/2  transform  text-base-500 text-sm"
                     >
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                 )}
             </div>
             {error && error.message && (
-                <span className="text-red-500 mt-1 rounded-lg bg-red-300 p-3">
+                <span className="text-error-content mt-1 bg-error p-3">
                     {error?.message.charAt(0).toUpperCase() + error?.message.slice(1)}
                 </span>
             )}

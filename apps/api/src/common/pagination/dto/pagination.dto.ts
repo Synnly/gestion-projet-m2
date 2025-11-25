@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 /**
  * DTO for pagination query parameters.
@@ -22,4 +22,9 @@ export class PaginationDto {
     @IsInt()
     @Min(1)
     limit = 10;
+
+    @IsOptional()
+    @Type(() => String)
+    @IsString()
+    searchQuery?: string;
 }

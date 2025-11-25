@@ -34,7 +34,6 @@ export class PaginationService {
         const skip = (page - 1) * limit;
 
         const query = model.find(filter).skip(skip).limit(limit);
-
         if (sort) query.sort(sort);
         if (populate) populate.forEach((p) => query.populate(p as any));
 

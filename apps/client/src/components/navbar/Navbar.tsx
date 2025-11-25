@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { profileStore } from '../../store/profileStore';
 import { useBlob } from '../../hooks/useBlob';
 import Logo from '../icons/Logo';
+import {User} from "lucide-react"
 import { centerNavItems, rightNavItems, ItemLink } from './items';
-
 interface NavbarProps {
     appName?: string;
     /** If true, render only the logo/link */
@@ -80,7 +80,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
                                                 className="h-8 w-8 object-contain rounded"
                                             />
                                         ) : (
-                                            <span>Logo</span>
+                                            <User />
                                         )}
                                     </div>
 

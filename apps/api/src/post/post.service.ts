@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { getModelToken, InjectModel } from '@nestjs/mongoose';
 import { Post } from './post.schema';
@@ -7,6 +7,7 @@ import { CreatePostDto } from './dto/createPost.dto';
 import { Company } from '../company/company.schema';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
+import { UpdatePostDto } from './dto/updatePost';
 import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
 import { PaginationService } from 'src/common/pagination/pagination.service';
 import { QueryBuilder } from 'src/common/pagination/query.builder';
@@ -52,8 +53,7 @@ export class PostService implements OnModuleInit {
             .findById(saved._id)
             .populate({
                 path: 'company',
-                select:
-                    '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
             })
             .exec();
 
@@ -63,6 +63,7 @@ export class PostService implements OnModuleInit {
 
         return populatedPost;
     }
+
     /**
      * Retrieve posts using pagination.
      *
@@ -73,13 +74,12 @@ export class PostService implements OnModuleInit {
      * @returns A `PaginationResult<Post>` containing items and metadata
      */
     async findAll(query: PaginationDto): Promise<PaginationResult<Post>> {
-        const { page, limit } = query;
-        const filter = new QueryBuilder(query).build();
+        const { page, limit, ...rest } = query;
+        const filter = new QueryBuilder(rest).build();
 
         const companyPopulate = {
             path: 'company',
-            select:
-                '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
         };
 
         return this.paginationService.paginate(
@@ -90,6 +90,33 @@ export class PostService implements OnModuleInit {
             [companyPopulate], // populate with selected fields
         );
     }
+
+    /**
+     * Updates an existing post for a given company.
+     * Ensures the post belongs to the company before updating.
+     *
+     * @param dto - Partial post data for update
+     * @param companyId - Company id as a string (MongoDB ObjectId)
+     * @param postId - Post id as a string (MongoDB ObjectId)
+     * @returns The updated post populated with its company
+     */
+    async update(dto: UpdatePostDto, companyId: string, postId: string): Promise<Post> {
+
+        const updated = await this.postModel
+            .findOneAndUpdate({ _id: postId, company: new Types.ObjectId(companyId) }, { $set: dto }, { new: true })
+            .populate({
+                path: 'company',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            })
+            .exec();
+
+        if (!updated) {
+            throw new NotFoundException('Post not found or does not belong to this company');
+        }
+
+        return updated;
+    }
+
 
     /**
      * Retrieves all active posts made by a specific company (or admin)

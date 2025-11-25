@@ -1,6 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-
-import penSvg from '../../../assets/edit-pen-svgrepo-com.svg?url';
 import { useForm, type Resolver } from 'react-hook-form';
 import {
     type completeProfilFormType,
@@ -153,14 +151,13 @@ export const CompleteProfil = () => {
                 >
                     <FormSection
                         title="Photo de profil de l'entreprise"
-                        className="bg-(--color-base-100) p-6 rounded-(--radius-box) shadow-md mb-6 flex flex-col gap-4"
+                        className="bg-base-100 p-6 shadow-md mb-6 flex flex-col gap-4"
                     >
                         <div className="flex flex-row items-center justify-around gap-4">
                             <div className="w-[110px] h-[110px]">
                                 <ProfilePicture
                                     src={logoUrl!}
                                     overlay
-                                    overlayPicture={penSvg}
                                     register={register('logo')}
                                     error={errors.logo}
                                 />
@@ -170,13 +167,13 @@ export const CompleteProfil = () => {
                                 <span className="font-stretch-105% italic mb-1">
                                     Téléchargez le logo de votre entreprise, il sera visible publiquement.
                                 </span>
-                                <span className="text-sm text-gray-600 italic">PNG, JPG jusqu'à 5MB.</span>
+                                <span className="text-sm text-base-600 italic">PNG, JPG jusqu'à 5MB.</span>
                             </div>
                         </div>
                     </FormSection>
                     <FormSection
                         title="Informations légales et administratives"
-                        className=" bg-(--color-base-100) p-6 rounded-(--radius-box) shadow-md mb-6 flex flex-col gap-4"
+                        className=" bg-base-100 p-6 shadow-md mb-6 flex flex-col gap-4"
                     >
                         <FormInput<completeProfilFormType>
                             type="text"
@@ -192,7 +189,7 @@ export const CompleteProfil = () => {
                                 <CustomSelect
                                     data={Object.values(nafCode)}
                                     label="Code NAF"
-                                    defaultText="Selectionnez un code"
+                                    defaultText="Sélectionnez un code"
                                     error={errors.nafCode}
                                     className="bg-base-100"
                                     {...register('nafCode')}
@@ -202,7 +199,7 @@ export const CompleteProfil = () => {
                                 <CustomSelect
                                     data={Object.values(StructureType)}
                                     label="Type de structure"
-                                    defaultText="Selectionnez un type"
+                                    defaultText="Sélectionnez un type"
                                     error={errors.structureType}
                                     className="bg-base-100"
                                     {...register('structureType')}
@@ -213,7 +210,7 @@ export const CompleteProfil = () => {
                             <CustomSelect
                                 data={Object.values(LegalStatus)}
                                 label="Status légal"
-                                defaultText="Selectionnez un statut"
+                                defaultText="Sélectionnez un statut"
                                 error={errors.legalStatus}
                                 className="bg-base-100 w-full"
                                 {...register('legalStatus')}
@@ -222,14 +219,14 @@ export const CompleteProfil = () => {
                     </FormSection>
                     <FormSection
                         title="Adresse du siège social"
-                        className=" bg-(--color-base-100) p-6 rounded-(--radius-box) shadow-md mb-6 flex flex-col gap-4"
+                        className=" bg-base-100 p-6 shadow-md mb-6 flex flex-col gap-4"
                     >
                         <div className="flex w-full flex-row gap-6">
                             <div className="w-1/2">
                                 <FormInput<completeProfilFormType>
                                     type="text"
                                     label="Numéro de rue"
-                                    placeholder="ex:12 bis"
+                                    placeholder="ex: 12B"
                                     className={`${formInputStyle}`}
                                     register={register('streetNumber')}
                                     onChange={() => clearErrors('streetNumber')}
@@ -240,7 +237,7 @@ export const CompleteProfil = () => {
                                 <FormInput<completeProfilFormType>
                                     type="text"
                                     label="Nom de rue"
-                                    placeholder="ex:Avenue des champs-élysées"
+                                    placeholder="ex: Avenue des champs-élysées"
                                     className={`${formInputStyle}`}
                                     register={register('streetName')}
                                     onChange={() => clearErrors('streetName')}
@@ -284,8 +281,8 @@ export const CompleteProfil = () => {
                         />
                     </FormSection>
                     <FormSubmit
-                        className="bg-primary w-min p-5 self-end font-bold"
-                        title="Completer le profile"
+                        className="btn-primary w-min self-end font-bold"
+                        title="Compléter le profile"
                         pendingTitle="Complétion..."
                         error={error}
                         isError={isError}

@@ -6,9 +6,12 @@ import {
     HttpStatus,
     NotFoundException,
     Param,
+    Post,
+    Put,
     UseGuards,
     ValidationPipe,
     Query,
+    Body,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { PostService } from './post.service';
@@ -21,6 +24,8 @@ import { Role } from '../common/roles/roles.enum';
 import { PostOwnerGuard } from './postOwner.guard';
 import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
 import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
+import { UpdatePostDto } from './dto/updatePost';
+import { CompanyOwnerGuard } from 'src/company/companyOwner.guard';
 
 /**
  * Controller responsible for handling post-related endpoints.
@@ -77,6 +82,25 @@ export class PostController {
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
     async remove(@Param('id', ParseObjectIdPipe) id: string) {
-        await this.postService.remove(id);
+        return await this.postService.remove(id);
+    }
+
+    /**
+     * Updates an existing post
+     * @param companyId The company identifier
+     * @param id The post identifier
+     * @param dto The post data for update
+     */
+    @Put('/:id')
+    @UseGuards(RolesGuard, CompanyOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.OK)
+    async update(
+        @Param('companyId', ParseObjectIdPipe) companyId: string,
+        @Param('id', ParseObjectIdPipe) id: string,
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: UpdatePostDto,
+    ) {
+        const updated = await this.postService.update(dto, companyId, id);
+        return plainToInstance(PostDto, updated);
     }
 }

@@ -116,7 +116,7 @@ export const CodeInput = ({
                                 <input
                                     id={`code-${i}`}
                                     type="text"
-                                    className="w-12 h-12 sm:w-14 sm:h-14 text-center text-xl sm:text-2xl font-semibold rounded-lg border text-black   focus:border-yellow-500 focus:ring-yellow-500"
+                                    className="w-12 h-12 sm:w-14 sm:h-14 text-center text-xl sm:text-2xl font-semibold input"
                                     {...register(`code${i}` as keyof VerifyEmailForm)}
                                     onChange={(e) => handleChange(e, i - 1)}
                                     onKeyDown={(e) => keyDownHandler(e, i - 1)}
