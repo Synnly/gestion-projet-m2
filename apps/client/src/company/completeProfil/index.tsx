@@ -1,6 +1,4 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-
-import penSvg from '../../../assets/edit-pen-svgrepo-com.svg?url';
 import { useForm, type Resolver } from 'react-hook-form';
 import {
     type completeProfilFormType,
@@ -160,7 +158,6 @@ export const CompleteProfil = () => {
                                 <ProfilePicture
                                     src={logoUrl!}
                                     overlay
-                                    overlayPicture={penSvg}
                                     register={register('logo')}
                                     error={errors.logo}
                                 />
