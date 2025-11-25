@@ -84,16 +84,12 @@ export class PostService {
      * @returns The updated post populated with its company
      */
     async update(dto: UpdatePostDto, companyId: string, postId: string): Promise<Post> {
+
         const updated = await this.postModel
-            .findOneAndUpdate(
-                { _id: postId, company: new Types.ObjectId(companyId) },
-                { $set: dto },
-                { new: true },
-            )
+            .findOneAndUpdate({ _id: postId, company: new Types.ObjectId(companyId) }, { $set: dto }, { new: true })
             .populate({
                 path: 'company',
-                select:
-                    '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
             })
             .exec();
 

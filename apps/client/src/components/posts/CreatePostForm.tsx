@@ -1,5 +1,5 @@
 import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import MDEditor from "@uiw/react-md-editor";
@@ -10,6 +10,7 @@ import { createPost, type CreatePostPayload } from "../../api/create_post";
 import { updatePost } from "../../api/update_post";
 import { useCreatePostStore, type WorkMode } from "../../store/CreatePostStore";
 import { profileStore } from "../../store/profileStore";
+import { useInternshipStore } from "../../store/useInternshipStore";
 
 type PostFormMode = "create" | "edit";
 
@@ -79,7 +80,11 @@ export function CreatePostForm({
   const [skillInput, setSkillInput] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const filters = useInternshipStore(state => state.filters)
+  const queryClient = useQueryClient();
+  const resetInternship = useInternshipStore(state => state.clearInternships)
 
+// Pour refetcher la query
   // Pré-remplissage en mode édition
   useEffect(() => {
     if (!initialData) return;
@@ -168,6 +173,7 @@ export function CreatePostForm({
         mode === "edit"
           ? "L'offre de stage a ete mise a jour avec succes."
           : "L'offre de stage a ete cree avec succes.";
+
       toast.success(successText);
       navigate("/company/dashboard");
     },
@@ -181,7 +187,7 @@ export function CreatePostForm({
     },
   });
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (mutation.isPending) return;
 
@@ -214,7 +220,10 @@ export function CreatePostForm({
       isVisible: isVisibleToStudents,
     };
 
-    mutation.mutate({ companyId: profile._id, data: payload });
+   await mutation.mutateAsync({ companyId: profile._id, data: payload });
+   queryClient.invalidateQueries(['internships', filters]);
+   resetInternship()
+
   }
 
   return (

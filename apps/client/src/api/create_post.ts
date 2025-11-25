@@ -19,7 +19,6 @@ export type CreatePostPayload = {
 const API_URL = import.meta.env.VITE_APIURL || "http://localhost:3000";
 
 export async function createPost({ companyId, data }: CreatePostPayload) {
-  console.log("createPost: posting with companyId", companyId);
   const response = await fetch(`${API_URL}/api/company/${companyId}/posts`, {
     method: "POST",
     headers: {
@@ -36,6 +35,5 @@ export async function createPost({ companyId, data }: CreatePostPayload) {
     throw new Error(message);
   }
 
-  const raw = await response.text();
-  return raw ? JSON.parse(raw) : null;
+  return await response.json();
 }
