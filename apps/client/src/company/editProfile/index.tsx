@@ -10,7 +10,6 @@ import { FormInputEdit } from '../../components/form/FormInputEdit';
 import { CustomSelect } from '../../components/inputs/select/select';
 import { FormSubmit } from '../../components/form/FormSubmit';
 import { ProfilePicture } from '../../components/profile/profilPicture';
-import overlayPicture from "../../../assets/edit-pen-svgrepo-com.svg"
 import { useGetCompanyProfile } from '../../hooks/useGetCompanyProfile';
 import { useFile } from '../../hooks/useFile';
 import { useBlob } from '../../hooks/useBlob';
@@ -147,22 +146,22 @@ export function EditCompanyProfile() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen bg-base-100">
                 <Navbar />
                 <div className="p-8 max-w-7xl mx-auto">
-                    <p className="text-gray-500">Chargement...</p>
+                    <p className="text-base-500">Chargement...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-base-100">
             <Navbar />
             <div className="p-8">
-                <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center bg-white rounded-lg shadow">
+                <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center bg-base-200 rounded-lg shadow">
                     <h1 className="text-3xl font-bold">Modifier le profil de votre entreprise</h1>
-                    <p className="text-sm mt-2 italic text-gray-600">
+                    <p className="text-sm mt-2 italic text-base-600">
                         Mettez à jour les informations de votre entreprise
                     </p>
 
@@ -172,7 +171,6 @@ export function EditCompanyProfile() {
                                 <ProfilePicture
                                     src={logoUrl!}
                                     overlay
-                                    overlayPicture={overlayPicture}
                                     register={register('logo')}
                                     error={errors.logo}
                                 />
@@ -180,13 +178,13 @@ export function EditCompanyProfile() {
                                     <span className="font-stretch-105% italic mb-1">
                                         Téléchargez le logo de votre entreprise, il sera visible publiquement.
                                     </span>
-                                    <span className="text-sm text-gray-600 italic">PNG, JPG jusqu'à 5MB.</span>
+                                    <span className="text-sm text-base-600 italic">PNG, JPG jusqu'à 5MB.</span>
                                 </div>
                             </div>
                         </FormSection>
 
                         <FormSection title="Informations non modifiables" className="mb-8">
-                            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                            <div className="space-y-3">
                                 {/* EMAIL */}
                                 <div>
                                     <label className="text-sm font-medium">Email</label>
@@ -196,7 +194,7 @@ export function EditCompanyProfile() {
                                         readOnly
                                         className="input input-primary w-full cursor-not-allowed"
                                     />
-                                    <span className="text-xs text-gray-500 italic">
+                                    <span className="text-xs text-base-500 italic">
                                         L'email ne peut pas être modifié
                                     </span>
                                 </div>
@@ -211,7 +209,7 @@ export function EditCompanyProfile() {
                                             readOnly
                                             className="input input-primary w-full cursor-not-allowed"
                                         />
-                                        <span className="text-xs text-gray-500 italic">
+                                        <span className="text-xs text-base-500 italic">
                                             Le SIRET ne peut pas être modifié
                                         </span>
                                     </div>
@@ -308,8 +306,8 @@ export function EditCompanyProfile() {
                         </FormSection>
 
                         {isError && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                                <p className="text-red-600">Erreur: {error?.message}</p>
+                            <div className="bg-error border border-error-content rounded-lg p-4 mb-4">
+                                <p className="text-error-content">Erreur: {error?.message}</p>
                             </div>
                         )}
 
@@ -317,7 +315,7 @@ export function EditCompanyProfile() {
                             <button
                                 type="button"
                                 onClick={() => navigate('/company/profile')}
-                                className="btn btn-base text-black rounded-xl"
+                                className="btn btn-secondary"
                             >
                                 Annuler
                             </button>
@@ -327,7 +325,7 @@ export function EditCompanyProfile() {
                                 pendingTitle="Enregistrement..."
                                 isError={isError}
                                 error={error}
-                                className="btn btn-primary text-black rounded-xl"
+                                className="btn btn-primary"
                             />
                         </div>
                     </form>
