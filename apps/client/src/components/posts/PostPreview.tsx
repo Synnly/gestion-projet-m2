@@ -50,7 +50,7 @@ export function PostPreview({ companyName }: PostPreviewProps) {
             {/* Header */}
             <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
-                    ST
+                    {companyName.charAt(0).toUpperCase()}
                 </div>
                 <div>
                     {title && <h3 className="text-sm font-semibold text-base-content">{title}</h3>}
@@ -86,7 +86,27 @@ export function PostPreview({ companyName }: PostPreviewProps) {
             {/* Description */}
             {description && (
                 <article className="prose prose-sm max-w-none text-left text-base-content prose-headings:text-base-content">
-                    <MDEditor.Markdown source={description} className={'!bg-transparent !text-base-content'} />
+                    <MDEditor.Markdown
+                        source={description}
+                        className={'!bg-transparent !text-base-content'}
+                        components={
+                            {
+                                code: ({ inline, className, children, ...props }: any) => {
+                                    if (inline)
+                                        return (
+                                            <code className="code-highlight" {...props}>
+                                                {children}
+                                            </code>
+                                        );
+                                    return (
+                                        <pre className="code-hitext-whiteghlight text-white">
+                                            <code {...props}>{children}</code>
+                                        </pre>
+                                    );
+                                },
+                            } as any
+                        }
+                    />
                 </article>
             )}
 
