@@ -1,42 +1,83 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+@import 'tailwindcss';
+
+@layer base {
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        scroll-behavior: smooth;
+    }
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+@plugin "daisyui";
+
+@plugin "daisyui/theme" {
+    name: 'bumblebee';
+    default: false;
+    prefersdark: false;
+    color-scheme: 'light';
+    --color-base-100: oklch(100% 0 0);
+    --color-base-200: oklch(97% 0 0);
+    --color-base-300: oklch(92% 0 0);
+    --color-base-content: oklch(20% 0 0);
+    --color-primary: oklch(85% 0.199 91.936);
+    --color-primary-content: oklch(42% 0.095 57.708);
+    --color-secondary: oklch(75% 0.183 55.934);
+    --color-secondary-content: oklch(40% 0.123 38.172);
+    --color-accent: oklch(0% 0 0);
+    --color-accent-content: oklch(100% 0 0);
+    --color-neutral: oklch(37% 0.01 67.558);
+    --color-neutral-content: oklch(92% 0.003 48.717);
+    --color-info: oklch(74% 0.16 232.661);
+    --color-info-content: oklch(39% 0.09 240.876);
+    --color-success: oklch(76% 0.177 163.223);
+    --color-success-content: oklch(37% 0.077 168.94);
+    --color-warning: oklch(82% 0.189 84.429);
+    --color-warning-content: oklch(41% 0.112 45.904);
+    --color-error: oklch(70% 0.191 22.216);
+    --color-error-content: oklch(39% 0.141 25.723);
+    --radius-selector: 1rem;
+    --radius-field: 2rem;
+    --radius-box: 1rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 0.5px;
+    --depth: 1;
+    --noise: 0;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Align textarea and overlay for @uiw/react-md-editor */
+.w-md-editor-text-input,
+.w-md-editor-text-pre,
+.w-md-editor-text-pre > code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 16px;
+    margin: 0;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Ensure markdown lists display bullets/numbers in previews */
+.prose ul {
+    list-style: disc;
+    padding-left: 1.25rem;
 }
 
-.card {
-  padding: 2em;
+.prose ol {
+    list-style: decimal;
+    padding-left: 1.25rem;
 }
 
-.read-the-docs {
-  color: #888;
+/* Ensure markdown lists display bullets/numbers inside MDEditor preview */
+.wmde-markdown ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+}
+
+.wmde-markdown ol {
+    list-style: decimal;
+    padding-left: 1.25rem;
 }
