@@ -31,7 +31,7 @@ export function TableRow({ internship }: { internship: Internship }) {
             </td>
             <td className=" px-4 py-2 text-slate-600 text-center text-sm">
                 <a className="text-color-accent hover:underline text-center" href="">
-                    0 Candidat
+                    Aucun candidat
                 </a>
             </td>
 
@@ -43,7 +43,7 @@ export function TableRow({ internship }: { internship: Internship }) {
                 <div className="flex items-center justify-center gap-2">
                     <div className={`size-2 rounded-full ${internship.isVisible ? 'bg-green-500' : 'bg-red-500'}`} />
                     <span className="text-sm font-medium text-color-accent">
-                        {internship.isVisible ? 'visible' : 'masqué'}
+                        {internship.isVisible ? 'Visible' : 'Masquée'}
                     </span>
                 </div>
             </td>
