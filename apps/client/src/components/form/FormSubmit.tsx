@@ -13,11 +13,11 @@ export const FormSubmit = ({ isPending, isError, title, pendingTitle, error, cla
             <input
                 type="submit"
                 value={isPending != null ? (!isPending ? title : pendingTitle) : title}
-                className={className}
+                className={`btn ${className}`}
                 {...rest}
             />
             {isError && (
-                <p className="text-red-500">{error?.message.charAt(0).toUpperCase() + error?.message.slice(1)}</p>
+                <p className="text-error">{error?.message.charAt(0).toUpperCase() + error?.message.slice(1)}</p>
             )}
         </>
     );
