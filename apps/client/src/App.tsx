@@ -102,42 +102,12 @@ function App() {
                             children: [
                                 {
                                     element: <VerifiedRoutes redirectPath="/" />,
-                                    children: [
-                                        {
-                                            path: 'detail/:id',
-                                            element: <InternshipDetailPage />,
-                                            loader: async ({ params }: any) => {
-                                                const id = params?.id;
-                                                if (!id) throw new Response('Missing id', { status: 400 });
-                                                const qc = new QueryClient();
-                                                try {
-                                                    await qc.fetchQuery({
-                                                        queryKey: ['internship', id],
-                                                        queryFn: () => fetchInternshipById(id),
-                                                    });
-                                                } catch (e) {
-                                                    throw new Response('Not found', { status: 404 });
-                                                }
-
-                                                return { id, dehydratedState: dehydrate(qc) };
-                                            },
-                                        },
-                                    ],
-                                },
-                            ],
-                        },
-                        {
-                            path: 'internship',
-                            element: <ProtectedRoutesByRole allowedRoles={['USER', 'ADMIN', 'COMPANY']} />,
-                            children: [
-                                {
-                                    element: <VerifiedRoutes redirectPath="/" />,
                                     children: [],
                                 },
 
                                 {
                                     path: 'detail/:id',
-                                    element: <InternshipDetailPage />,
+                                    element: <ToastProvider><InternshipDetailPage /></ToastProvider>,
                                     loader: async ({ params }: any) => {
                                         const id = params?.id;
                                         if (!id) throw new Response('Missing id', { status: 400 });

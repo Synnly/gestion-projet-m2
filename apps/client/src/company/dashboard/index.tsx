@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 
 export function CompanyDashboard() {
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-base-100">
             <Navbar />
             <div className="p-8">
                 <div className="max-w-full mx-auto">

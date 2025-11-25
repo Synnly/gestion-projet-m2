@@ -4,10 +4,13 @@ import { PostPreview } from "../../components/posts/PostPreview";
 import type { LoaderPost } from "../../loaders/updatePostLoader";
 import type { WorkMode } from "../../store/CreatePostStore";
 import { profileStore } from "../../store/profileStore";
+import { userStore } from "../../store/userStore";
 
 export default function UpdatePostPage() {
   const { post, postId } = useLoaderData() as { post: LoaderPost; companyId: string; postId: string };
   const profile = profileStore((state) => state.profile);
+  const user = userStore(state=> state.access)
+  const get = userStore(state=>state.get)
   const companyName = profile?.name ?? "Mon entreprise";
 
   const mapWorkMode = (type?: string): WorkMode => {
@@ -44,6 +47,7 @@ export default function UpdatePostPage() {
     keySkills: post.keySkills ?? [],
     workMode: mapWorkMode(post.type as string | undefined),
     isVisibleToStudents: post.isVisible ?? true,
+    createdAt:post.createdAt
   };
 
   return (

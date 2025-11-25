@@ -11,6 +11,7 @@ import {
     UseGuards,
     ValidationPipe,
     Query,
+    Logger,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';
@@ -86,7 +87,7 @@ export class PostController {
         @Param('companyId', ParseObjectIdPipe) companyId: string,
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: CreatePostDto,
     ) {
-        await this.postService.create(dto, companyId);
+        return await this.postService.create(dto, companyId);
     }
 
     /**

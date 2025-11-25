@@ -15,6 +15,7 @@ export type LoaderPost = {
   adress?: string;
   type?: WorkMode | string;
   isVisible?: boolean;
+  createdAt:string;
 };
 
 const API_URL = import.meta.env.VITE_APIURL || "http://localhost:3000";
