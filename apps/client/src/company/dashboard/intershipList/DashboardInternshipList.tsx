@@ -6,6 +6,7 @@ import type { Internship } from '../../../types/internship.types';
 import InternshipPagination from '../../../modules/internship/InternshipPagination';
 import { SearchBar } from '../../../components/inputs/searchBar';
 import { TableRow } from './tableRow';
+import { useEffect } from 'react';
 
 export function DashboardInternshipList() {
     const { isLoading, isError, error } = useFetchInternships();
@@ -18,9 +19,13 @@ export function DashboardInternshipList() {
     ];
     const filters = useInternshipStore((state) => state.filters);
     const setFilters = useInternshipStore((state) => state.setFilters);
+    const resetFilters = useInternshipStore((state) => state.resetFilters);
     const handleSearchChange = (query: string) => {
         setFilters({ searchQuery: query || undefined, page: 1 });
     };
+    useEffect(() => {
+        resetFilters();
+    }, [resetFilters]);
     if (isLoading) {
         return (
             <>
@@ -61,14 +66,25 @@ export function DashboardInternshipList() {
     if (internships.length === 0) {
         return (
             <>
+                <SearchBar
+                    searchQuery={filters.searchQuery || ''}
+                    setSearchQuery={handleSearchChange}
+                    selects={selects}
+                />
                 <div className="flex min-h-[200px] items-center justify-center">
                     <div className="text-center">
                         <p className="text-sm text-base-content/60">
-                            Vous n'avez postez aucune annonces cliquez
-                            <NavLink to="/company/offers/add" className="text-primary ml-1">
-                                ici
-                            </NavLink>{' '}
-                            pour en ajouter une.
+                            {filters.searchQuery ? (
+                                <p>
+                                    Vous n'avez posté aucune annonce, cliquez
+                                    <NavLink to="/company/offers/add" className="text-primary ml-1">
+                                        ici
+                                    </NavLink>{' '}
+                                    pour en ajouter une.
+                                </p>
+                            ) : (
+                                <p>Aucune annonce de stage trouvée.</p>
+                            )}
                         </p>
                     </div>
                 </div>

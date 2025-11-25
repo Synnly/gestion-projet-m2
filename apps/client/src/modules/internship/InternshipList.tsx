@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import InternshipCard from './InternshipCard';
 import ListContainer from '../../components/ui/list/ListContainer';
 import { useInternshipStore } from '../../store/useInternshipStore';
@@ -10,7 +10,10 @@ const InternshipList: React.FC = () => {
     const internships = useInternshipStore((state) => state.internships);
     const selectedInternshipId = useInternshipStore((state) => state.selectedInternshipId);
     const detailHeight = useInternshipStore((state) => state.detailHeight);
-
+    const resetFilters = useInternshipStore((state) => state.resetFilters);
+    useEffect(() => {
+        resetFilters();
+    }, [resetFilters]);
     // État de chargement
     if (isLoading) {
         return (
