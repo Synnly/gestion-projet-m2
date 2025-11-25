@@ -132,13 +132,13 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         'Communication',
         'Ressources Humaines',
         'Juridique',
-        'Ingenierie',
+        'Ingénierie',
         'Data / IA',
         'Product Management',
         'Support / Customer Success',
         'Operations / Logistique',
-        'Sante / Biotech',
-        'Education / Formation',
+        'Santé / Biotech',
+        'Éducation / Formation',
     ];
 
     const workModeMap: Record<WorkMode, string> = {
@@ -167,8 +167,8 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         onSuccess: () => {
             const successText =
                 mode === 'edit'
-                    ? "L'offre de stage a ete mise a jour avec succes."
-                    : "L'offre de stage a ete cree avec succes.";
+                    ? "L'offre de stage a été mise a jour avec succès."
+                    : "L'offre de stage a été créée avec succès.";
 
             toast.success(successText);
             navigate('/company/dashboard');
@@ -186,7 +186,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         if (mutation.isPending) return;
 
         if (!profile?._id) {
-            toast.error("Impossible de creer l'annonce : identifiant entreprise manquant.");
+            toast.error("Impossible de créer l'annonce : identifiant entreprise manquant.");
             return;
         }
 
@@ -224,7 +224,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
             <div className="rounded-2xl border border-base-300 bg-base-100 shadow-sm">
                 <div className="border-b border-base-100 px-6 pb-4 pt-5">
                     <h1 className="text-base font-semibold text-base-900">
-                        {mode === 'edit' ? "Mettre a jour l'offre de stage" : 'Creer une offre de stage'}
+                        {mode === 'edit' ? "Mêttre à jour l'offre de stage" : 'Créer une offre de stage'}
                     </h1>
                 </div>
 
@@ -232,7 +232,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                     <section className="space-y-4">
                         <div className="space-y-1">
                             <label className="text-xs font-medium text-base-700">
-                                Intitule du stage <span className="text-error">*</span>
+                                Intitulé du stage <span className="text-error">*</span>
                             </label>
                             <input
                                 className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -270,7 +270,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
 
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-base-700">Duree du stage</label>
+                                <label className="text-xs font-medium text-base-700">Durée du stage</label>
                                 <input
                                     className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     placeholder="Ex : 6 mois, temps plein"
@@ -280,7 +280,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             </div>
 
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-base-700">Secteur d'activite</label>
+                                <label className="text-xs font-medium text-base-700">Secteur d'activité</label>
                                 <select
                                     className="select select-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     value={sector}
@@ -299,12 +299,12 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
 
                     <section className="space-y-3 border-t border-base-100 pt-5">
                         <h2 className="text-xs font-semibold uppercase tracking-wide text-base-500">
-                            Competences & exigences du stagiaire
+                            Compétences & exigences du stagiaire
                         </h2>
 
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-base-700">
-                                Competences cles (techniques / soft skills)
+                                Compétences clés (techniques / soft skills)
                             </label>
 
                             <div className="mb-1 flex flex-wrap gap-2">
@@ -328,13 +328,13 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                 onChange={(e) => setSkillInput(e.target.value)}
                                 onKeyDown={handleSkillKeyDown}
                             />
-                            <p className="text-[11px] text-base-500">Ajoutez jusqu'a 5 competences cles attendues.</p>
+                            <p className="text-[11px] text-base-500">Ajoutez jusqu'à 5 compétences clés attendues.</p>
                         </div>
                     </section>
 
                     <section className="space-y-4 border-t border-base-100 pt-5">
                         <h2 className="text-xs font-semibold uppercase tracking-wide text-base-500">
-                            Logistique & remuneration
+                            Logistique & rémunération
                         </h2>
 
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -349,7 +349,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             </div>
 
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-base-700">Date de debut souhaitee</label>
+                                <label className="text-xs font-medium text-base-700">Date de début souhaitée</label>
                                 <input
                                     type="date"
                                     className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content [color-scheme:light] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -417,7 +417,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                             : 'bg-transparent border-0 text-base-400 hover:bg-base-300/60'
                                     }`}
                                 >
-                                    Presentiel
+                                    Présentiel
                                 </button>
                                 <button
                                     type="button"
@@ -428,7 +428,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                             : 'bg-transparent border-0 text-base-400 hover:bg-base-300/60'
                                     }`}
                                 >
-                                    Teletravail
+                                    Télétravail
                                 </button>
                                 <button
                                     type="button"
@@ -447,13 +447,13 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
 
                     <section className="space-y-3 border-t border-base-100 pt-5">
                         <h2 className="text-xs font-semibold uppercase tracking-wide text-base-500">
-                            Parametres de publication
+                            Paramètres de publication
                         </h2>
 
                         <div className="form-control">
                             <label className="label cursor-pointer justify-between px-0">
                                 <div className="text-[11px] text-base-500">
-                                    Rendre cette offre visible aux etudiants.
+                                    Rendre cette offre visible aux étudiants.
                                 </div>
                                 <input
                                     type="checkbox"
@@ -470,8 +470,8 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                         <button type="submit" className="btn btn-sm px-4 btn-primary" disabled={mutation.isPending}>
                             {mode === 'edit'
                                 ? mutation.isPending
-                                    ? 'Mise a jour...'
-                                    : "Mettre a jour l'offre de stage"
+                                    ? 'Mise à jour...'
+                                    : "Mettre à jour l'offre de stage"
                                 : mutation.isPending
                                   ? 'Publication en cours...'
                                   : "Publier l'offre de stage"}

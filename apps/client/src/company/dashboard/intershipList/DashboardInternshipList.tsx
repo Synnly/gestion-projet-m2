@@ -15,7 +15,7 @@ export function DashboardInternshipList() {
         { label: 'Location', options: ['À distance', 'Sur site', 'Hybride'] },
         { label: 'Type de stage', options: ['Temps plein', 'Temps partiel', 'Contrat'] },
         { label: 'Secteur', options: ['Tech', 'Finance', 'Santé'] },
-        { label: 'Date de publication', options: ['Dernières 24 heures', 'Derniers 7 jours', 'Derniers 30 jours'] },
+        { label: 'Date de publication', options: ['Moins de 24 heures', 'Moins d\'une semaine', 'Moins de 30 jours'] },
     ];
     const filters = useInternshipStore((state) => state.filters);
     const setFilters = useInternshipStore((state) => state.setFilters);

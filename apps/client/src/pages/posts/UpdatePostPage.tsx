@@ -53,7 +53,7 @@ export default function UpdatePostPage() {
   return (
     <div className="min-h-screen bg-base-200 py-10">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
-        <h1 className="mb-6 text-3xl font-bold text-slate-900">Mettre a jour l'annonce</h1>
+        <h1 className="mb-6 text-3xl font-bold text-slate-900">Mettre à jour l'annonce</h1>
         <div className="flex flex-col gap-8 md:flex-row items-start">
           <div className="flex-[3]">
             <CreatePostForm mode="edit" postId={postId} initialData={initialData} />

@@ -189,7 +189,7 @@ export const CompleteProfil = () => {
                                 <CustomSelect
                                     data={Object.values(nafCode)}
                                     label="Code NAF"
-                                    defaultText="Selectionnez un code"
+                                    defaultText="Sélectionnez un code"
                                     error={errors.nafCode}
                                     className="bg-base-100"
                                     {...register('nafCode')}
@@ -199,7 +199,7 @@ export const CompleteProfil = () => {
                                 <CustomSelect
                                     data={Object.values(StructureType)}
                                     label="Type de structure"
-                                    defaultText="Selectionnez un type"
+                                    defaultText="Sélectionnez un type"
                                     error={errors.structureType}
                                     className="bg-base-100"
                                     {...register('structureType')}
@@ -210,7 +210,7 @@ export const CompleteProfil = () => {
                             <CustomSelect
                                 data={Object.values(LegalStatus)}
                                 label="Status légal"
-                                defaultText="Selectionnez un statut"
+                                defaultText="Sélectionnez un statut"
                                 error={errors.legalStatus}
                                 className="bg-base-100 w-full"
                                 {...register('legalStatus')}
@@ -226,7 +226,7 @@ export const CompleteProfil = () => {
                                 <FormInput<completeProfilFormType>
                                     type="text"
                                     label="Numéro de rue"
-                                    placeholder="ex:12 bis"
+                                    placeholder="ex: 12B"
                                     className={`${formInputStyle}`}
                                     register={register('streetNumber')}
                                     onChange={() => clearErrors('streetNumber')}
@@ -237,7 +237,7 @@ export const CompleteProfil = () => {
                                 <FormInput<completeProfilFormType>
                                     type="text"
                                     label="Nom de rue"
-                                    placeholder="ex:Avenue des champs-élysées"
+                                    placeholder="ex: Avenue des champs-élysées"
                                     className={`${formInputStyle}`}
                                     register={register('streetName')}
                                     onChange={() => clearErrors('streetName')}
@@ -282,7 +282,7 @@ export const CompleteProfil = () => {
                     </FormSection>
                     <FormSubmit
                         className="btn-primary w-min self-end font-bold"
-                        title="Completer le profile"
+                        title="Compléter le profile"
                         pendingTitle="Complétion..."
                         error={error}
                         isError={isError}
