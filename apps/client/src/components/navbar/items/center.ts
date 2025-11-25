@@ -4,19 +4,22 @@ export const centerNavItems: NavItem[] = [
     {
         key: 'home',
         title: 'Tableau de bord',
-        to: '/',
+        to: '/company/dashboard',
         type: 'link',
+        role: ['COMPANY'],
     },
-    {
+    /*{
         key: 'offers',
         title: 'Annonces',
-        to: '/internships/list',
+        to: '/company/dashboard/internships',
         type: 'link',
+        role: 'COMPANY',
     },
-    {
+      {
         key: 'applications',
         title: 'Candidatures',
         to: '/company/applications',
         type: 'link',
-    },
+        role: 'COMPANY',
+    },*/
 ];

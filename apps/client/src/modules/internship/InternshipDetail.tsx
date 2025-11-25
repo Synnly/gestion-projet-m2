@@ -71,7 +71,7 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
                                 <div>
                                     <h3 className="text-xl font-bold text-base-content">{internship.title}</h3>
                                     <p className="mt-1 text-base-content">
-                                        {internship.company.name} • {internship.address}
+                                        {internship.company.name} • {internship.adress}
                                     </p>
                                     <div className="mt-3 flex flex-wrap items-center gap-2">
                                         <span className="badge badge-success text-base-content">{internship.type}</span>
@@ -92,11 +92,11 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
                                 className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2"
                             >
                                 <ArrowUpRight size={20} />
-                                <span>Apply Now</span>
+                                <span>Candidater</span>
                             </button>
                             <button className="btn btn-ghost flex h-11 items-center justify-center gap-2">
                                 <Share2 size={20} />
-                                <span>Share</span>
+                                <span>Partager</span>
                             </button>
                         </div>
 

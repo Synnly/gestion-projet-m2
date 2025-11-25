@@ -15,7 +15,6 @@ import { Type } from 'class-transformer';
 import { PostType } from '../post.schema';
 
 export class CreatePostDto {
-   
     /**
      * Post's title
      * Is required for the creation

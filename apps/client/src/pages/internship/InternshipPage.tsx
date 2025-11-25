@@ -6,6 +6,7 @@ import { Navbar } from '../../components/navbar/Navbar';
 import { userStore } from '../../store/userStore';
 import { useNavigation } from 'react-router-dom';
 import Spinner from '../../components/Spinner/Spinner';
+import ToastProvider from '../../components/ui/toast/ToastProvider';
 
 export function InternshipPage() {
     const navigation = useNavigation();
@@ -54,7 +55,10 @@ export function InternshipPage() {
                     />
                     <div className="grid grid-cols-12 gap-8 pb-8 flex-1 overflow-hidden">
                         <div className="col-span-12 lg:col-span-5 h-full overflow-y-auto">
-                            <InternshipList />
+                        <ToastProvider>
+                                <InternshipList />
+                        </ToastProvider>
+
                         </div>
 
                         {selectedInternship ? (

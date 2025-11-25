@@ -44,7 +44,7 @@ export const useLogin = () => {
             const user = getAccess(accessToken);
             if (user && user.role === 'COMPANY') {
                 //redirect to company dashboard
-                navigate('/company/dashboard');
+                navigate('/');
             }
         }
     };
