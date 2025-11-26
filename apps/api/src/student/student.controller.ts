@@ -38,6 +38,7 @@ export class StudentController {
      * @returns An array of `StudentDto` objects.
      */
     @Get('')
+    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     async findAll(): Promise<StudentDto[]> {
         const students = await this.studentService.findAll();
@@ -51,6 +52,7 @@ export class StudentController {
      * @throws {NotFoundException} When no student matches the provided id.
      */
     @Get('/:studentId')
+    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     async findOne(@Param('studentId', ParseObjectIdPipe) studentId: string): Promise<StudentDto> {
         const student = await this.studentService.findOne(studentId);
