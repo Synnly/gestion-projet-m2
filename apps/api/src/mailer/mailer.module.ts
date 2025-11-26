@@ -6,6 +6,8 @@ import { MailerService } from './mailer.service';
 import { MailerController } from './mailer.controller';
 import { GmailMailerProvider } from './providers/GmailMailerProvider';
 import { MAILER_PROVIDER, MailerProviderType } from './constants';
+import { MongooseModule } from '@nestjs/mongoose';
+import { User, UserSchema } from '../user/user.schema';
 
 @Module({})
 export class MailerModule {
@@ -19,6 +21,7 @@ export class MailerModule {
             module: MailerModule,
             imports: [
                 ConfigModule,
+                MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
                 NestMailerModule.forRootAsync({
                     imports: [ConfigModule],
                     useClass: MailerConfigService,

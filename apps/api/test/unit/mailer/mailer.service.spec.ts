@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException, HttpException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
+import { MAILER_PROVIDER } from '../../../src/mailer/constants';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { MailerService } from '../../../src/mailer/mailer.service';
@@ -40,7 +41,7 @@ describe('MailerService', () => {
             providers: [
                 MailerService,
                 {
-                    provide: NestMailerService,
+                    provide: MAILER_PROVIDER,
                     useValue: mockNestMailerService,
                 },
                 {
@@ -55,7 +56,7 @@ describe('MailerService', () => {
         }).compile();
 
         service = module.get<MailerService>(MailerService);
-        nestMailerService = module.get<NestMailerService>(NestMailerService);
+        nestMailerService = module.get<any>(MAILER_PROVIDER) as NestMailerService;
         userModel = module.get<Model<UserDocument>>(getModelToken(User.name));
         configService = module.get<ConfigService>(ConfigService);
 
