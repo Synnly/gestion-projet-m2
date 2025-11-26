@@ -15,3 +15,11 @@ export enum MailerProviderType {
     /** Gmail SMTP-based provider */
     gmail = 'gmail',
 }
+
+/**
+ * Map each mailer provider type to its SMTP host.
+ * Add other providers here when implementing new transports.
+ */
+export const MAIL_PROVIDER_HOST: Record<MailerProviderType, string> = {
+    [MailerProviderType.gmail]: 'smtp.gmail.com',
+};

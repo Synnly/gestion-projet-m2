@@ -3,6 +3,7 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as path from 'path';
+import { MailerProviderType, MAIL_PROVIDER_HOST } from './constants';
 import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
 
 @Injectable()
@@ -34,7 +35,7 @@ export class MailerConfigService implements MailerOptionsFactory {
         }
         return {
             transport: {
-                host: 'smtp.gmail.com',
+                host: MAIL_PROVIDER_HOST[MailerProviderType.gmail],
                 port: 587,
                 secure: false,
                 auth: {
