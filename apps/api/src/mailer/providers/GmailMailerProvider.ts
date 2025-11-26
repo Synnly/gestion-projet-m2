@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
+import { ISendMailOptions, MailerService as NestMailerService } from '@nestjs-modules/mailer';
 import { IMailerProvider, SendMailOptions } from '../interfaces/IMailerProvider';
 import { ConfigService } from '@nestjs/config';
 
@@ -50,9 +50,9 @@ export class GmailMailerProvider implements IMailerProvider {
                 ...(options.template
                     ? { template: options.template, context: options.context ?? {} }
                     : { html: options.html ?? options.context?.html ?? '' }),
-            };
+            } as ISendMailOptions;
 
-            await this.mailer.sendMail(payload as any);
+            await this.mailer.sendMail(payload);
         } catch (err) {
             this.logger.error('Failed to send mail', (err as Error).stack ?? err);
             throw err;
