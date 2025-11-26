@@ -8,9 +8,13 @@ import { InvalidConfigurationException } from '../common/exceptions/invalidConfi
 @Injectable()
 export class MailerConfigService implements MailerOptionsFactory {
     constructor(private configService: ConfigService) {}
-
     /**
-     * Create mailer options for NestJS MailerModule configuration
+     * Create mailer options for NestJS MailerModule configuration.
+     *
+     * Reads SMTP credentials and template settings from environment
+     * variables via `ConfigService` and returns a `MailerOptions` object
+     * consumed by `@nestjs-modules/mailer`.
+     *
      * @returns Mailer configuration object with SMTP transport and Handlebars templates
      */
     createMailerOptions(): MailerOptions {

@@ -16,6 +16,12 @@ import { UserDocument, User } from '../user/user.schema';
 import type { IMailerProvider } from './interfaces/IMailerProvider';
 import { MAILER_PROVIDER } from './constants';
 
+/**
+ * Application-level mailer service implementing OTP workflows and other
+ * mail-related business logic. This service depends on an `IMailerProvider`
+ * adapter to perform the actual email delivery, so the transport can be
+ * swapped without affecting business code.
+ */
 @Injectable()
 export class MailerService {
     private readonly logger = new Logger(MailerService.name);
