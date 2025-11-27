@@ -7,6 +7,7 @@ import { TokensMiddleware } from './common/middleware/tokens.middleware';
 import { S3Module } from './s3/s3.module';
 import { MailerModule } from './mailer/mailer.module';
 import { PostModule } from './post/post.module';
+import { StorageProviderType } from './s3/s3.constants';
 
 @Module({
     imports: [
@@ -20,9 +21,9 @@ import { PostModule } from './post/post.module';
             }),
             inject: [ConfigService],
         }),
+        S3Module.register({ provider: StorageProviderType.MINIO }),
         AuthModule,
         CompanyModule,
-        S3Module,
         PostModule,
         MailerModule,
     ],
