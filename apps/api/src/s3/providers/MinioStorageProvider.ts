@@ -168,6 +168,10 @@ export class MinioStorageProvider implements IStorageProvider {
      * Useful for public files or when access control is handled elsewhere.
      */
     async generatePublicDownloadUrl(fileName: string) {
+        // Validate path to prevent traversal
+        if (!PATH_REGEX.SAFE_PATH.test(fileName)) {
+            throw new BadRequestException('Invalid file path');
+        }
         const downloadUrl = await this.minioClient.presignedGetObject(this.bucket, fileName, URL_EXPIRY.DOWNLOAD);
         return { downloadUrl };
     }
