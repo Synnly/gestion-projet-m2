@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { IStorageProvider } from '../interfaces/IStorageProvider';
 import * as Minio from 'minio';
 import { URL_EXPIRY, PATH_REGEX } from '../s3.constants';
+import { InvalidConfigurationException } from 'src/common/exceptions/invalidConfiguration.exception';
 
 /**
  * MinIO-based implementation of the `IStorageProvider` interface.
@@ -53,7 +54,7 @@ export class MinioStorageProvider implements IStorageProvider {
         this.bucket = this.configService.get<string>('MINIO_BUCKET') || 'uploads';
 
         if (!endpoint || !accessKey || !secretKey || isNaN(port)) {
-            throw new InternalServerErrorException('Missing MinIO configuration in environment variables');
+            throw new InvalidConfigurationException('Missing MinIO configuration in environment variables');
         }
 
         this.minioClient = new Minio.Client({
