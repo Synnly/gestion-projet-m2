@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+    Injectable,
+    NotFoundException,
+    ForbiddenException,
+    InternalServerErrorException,
+    BadRequestException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { IStorageProvider } from '../interfaces/IStorageProvider';
 import * as Minio from 'minio';
@@ -12,6 +18,15 @@ import { URL_EXPIRY, PATH_REGEX } from '../s3.constants';
  * performs basic safety checks (path validation) and ownership verification
  * using object metadata when available.
  */
+
+export interface PresignedDownloadResult {
+    downloadUrl: string;
+}
+
+export interface PresignedUploadResult {
+    fileName: string;
+    uploadUrl: string;
+}
 
 @Injectable()
 export class MinioStorageProvider implements IStorageProvider {
@@ -38,7 +53,7 @@ export class MinioStorageProvider implements IStorageProvider {
         this.bucket = this.configService.get<string>('MINIO_BUCKET') || 'uploads';
 
         if (!endpoint || !accessKey || !secretKey || isNaN(port)) {
-            throw new Error('Missing MinIO configuration in environment variables');
+            throw new InternalServerErrorException('Missing MinIO configuration in environment variables');
         }
 
         this.minioClient = new Minio.Client({
@@ -51,23 +66,49 @@ export class MinioStorageProvider implements IStorageProvider {
     }
 
     /**
-     * Generate a presigned URL allowing a client to upload a file.
-     *
-     * The stored filename is derived as `<userId>_<fileType>.<extension>`.
-     * If MinIO fails to produce a presigned URL an Error is thrown.
-     *
-     * @returns An object containing the resolved `fileName` and the
-     *   `uploadUrl` clients can PUT to.
+     * Generate a presigned PUT URL for file upload
+     * @param originalFilename Original filename from client
+     * @param fileType 'logo' or 'cv'
+     * @param userId ID of the user uploading (for ownership tracking)
+     * @returns Object containing the generated fileName and uploadUrl
      */
-    async generatePresignedUploadUrl(originalFilename: string, fileType: 'logo' | 'cv', userId: string) {
+
+    async generatePresignedUploadUrl(
+        originalFilename: string,
+        fileType: 'logo' | 'cv',
+        userId: string,
+    ): Promise<PresignedUploadResult> {
+        // Extract extension from original filename
         const extension = originalFilename.split('.').pop()?.toLowerCase() || '';
+
+        // Generate filename: userId_logo.ext or userId_cv.ext (no folder prefix)
         const fileName = `${userId}_${fileType}.${extension}`;
 
+        // Validate path
+        if (!PATH_REGEX.SAFE_PATH.test(fileName)) {
+            throw new BadRequestException('Invalid file path generated');
+        }
+
+        // Check if file already exists and delete it (overwrite old version)
+        const exists = await this.fileExists(fileName);
+        if (exists) {
+            try {
+                await this.minioClient.removeObject(this.bucket, fileName);
+            } catch (error) {
+                // Continue even if deletion fails
+            }
+        }
+
         try {
+            // Generate presigned PUT URL with metadata
             const uploadUrl = await this.minioClient.presignedPutObject(this.bucket, fileName, URL_EXPIRY.UPLOAD);
-            return { fileName, uploadUrl };
-        } catch (err) {
-            throw new Error('Failed to generate upload URL');
+
+            return {
+                fileName,
+                uploadUrl,
+            };
+        } catch (error) {
+            throw new InternalServerErrorException('Failed to generate upload URL');
         }
     }
 
@@ -88,7 +129,7 @@ export class MinioStorageProvider implements IStorageProvider {
     async generatePresignedDownloadUrl(fileName: string, userId: string) {
         // Validate path to prevent traversal
         if (!PATH_REGEX.SAFE_PATH.test(fileName)) {
-            throw new Error('Invalid file path');
+            throw new BadRequestException('Invalid file path');
         }
 
         // Check if file exists
@@ -118,7 +159,7 @@ export class MinioStorageProvider implements IStorageProvider {
             const downloadUrl = await this.minioClient.presignedGetObject(this.bucket, fileName, URL_EXPIRY.DOWNLOAD);
             return { downloadUrl };
         } catch (err) {
-            throw new Error('Failed to generate download URL');
+            throw new InternalServerErrorException('Failed to generate download URL');
         }
     }
 
@@ -143,7 +184,7 @@ export class MinioStorageProvider implements IStorageProvider {
     async deleteFile(fileName: string, userId: string): Promise<void> {
         // Validate path to prevent traversal
         if (!PATH_REGEX.SAFE_PATH.test(fileName)) {
-            throw new Error('Invalid file path');
+            throw new BadRequestException('Invalid file path');
         }
 
         // Check if file exists
