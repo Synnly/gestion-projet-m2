@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import * as Minio from 'minio';
 import { MinioStorageProvider } from '../../../../src/s3/providers/MinioStorageProvider';
-import { PATH_REGEX, URL_EXPIRY } from '../../../../src/s3/s3.constants';
+import { URL_EXPIRY } from '../../../../src/s3/s3.constants';
 
 describe('MinioStorageProvider', () => {
     let mockClient: any;
