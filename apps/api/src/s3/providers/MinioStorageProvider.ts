@@ -37,7 +37,7 @@ export class MinioStorageProvider implements IStorageProvider {
 
         this.bucket = this.configService.get<string>('MINIO_BUCKET') || 'uploads';
 
-        if (!endpoint || !accessKey || !secretKey || !this.bucket || isNaN(port)) {
+        if (!endpoint || !accessKey || !secretKey || isNaN(port)) {
             throw new Error('Missing MinIO configuration in environment variables');
         }
 
