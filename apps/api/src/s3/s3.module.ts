@@ -7,6 +7,7 @@ import { MinioStorageProvider } from './providers/MinioStorageProvider';
 import { IStorageProvider } from './interfaces/IStorageProvider';
 import { OwnerGuard } from './owner.guard';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { InvalidConfigurationException } from 'src/common/exceptions/invalidConfiguration.exception';
 
 @Module({})
 export class S3Module {
@@ -18,11 +19,13 @@ export class S3Module {
 
         switch (options.provider) {
             case StorageProviderType.MINIO:
-            default:
                 provider = {
                     provide: STORAGE_PROVIDER,
                     useClass: MinioStorageProvider,
                 };
+                break;
+            default:
+                throw new InvalidConfigurationException(`Unsupported storage provider: ${options.provider}`);
         }
 
         return {
