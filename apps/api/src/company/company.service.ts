@@ -1,12 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { Company } from './company.schema';
 import { CompanyUserDocument } from '../user/user.schema';
+import { S3Service } from '../s3/s3.service';
+import { ConfigService } from '@nestjs/config';
 import { PostService } from '../post/post.service';
 import { Post } from '../post/post.schema';
+import { SchedulerRegistry } from '@nestjs/schedule';
+import { CronJob } from 'cron';
 
 /**
  * Service handling business logic for company operations
@@ -24,15 +28,22 @@ import { Post } from '../post/post.schema';
  * @see {@link UpdateCompanyDto} for update restrictions
  */
 @Injectable()
-export class CompanyService {
+export class CompanyService implements OnModuleInit {
+    private readonly logger = new Logger(PostService.name);
+
     /**
      * Creates a new CompanyService instance
      * @param companyModel - Injected Mongoose model for Company operations
      * @param postService - Injected PostService for managing related posts
      */
     constructor(
-        @InjectModel(Company.name) private readonly companyModel: Model<CompanyUserDocument>,
+        private readonly configService: ConfigService,
         private readonly postService: PostService,
+        private readonly s3Service: S3Service,
+        private readonly schedulerRegistry: SchedulerRegistry,
+
+        @InjectModel(Company.name)
+        private readonly companyModel: Model<CompanyUserDocument>
     ) {}
     populateField = '_id title description duration startDate minSalary maxSalary sector keySkills adress type';
     /**
@@ -168,8 +179,8 @@ export class CompanyService {
     }
 
     /**
-     * Permanently removes a company from the database
-     *
+     * Permanently removes a company from the database (after 30 days)
+     * 
      * This performs a hard delete operation, removing the company document entirely.
      * Only affects companies that have not been previously soft-deleted.
      *
@@ -180,12 +191,9 @@ export class CompanyService {
      * ```typescript
      * await companyService.remove('507f1f77bcf86cd799439011');
      * ```
-     *
-     * @remarks
-     * Consider implementing soft-delete logic if you need to maintain audit trails
-     * or allow data recovery. This operation is irreversible.
      */
     async remove(id: string): Promise<void> {
+        // Set the company as "deleted" for 30 days, before being deleted from the database
         const updated = await this.companyModel
             .findOneAndUpdate({ _id: id, deletedAt: { $exists: false } }, { $set: { deletedAt: new Date() } })
             .exec();
@@ -193,6 +201,115 @@ export class CompanyService {
         if (!updated) {
             throw new NotFoundException('Company not found or already deleted');
         }
+
+        // Set all the posts made by the company as "deleted" for 30 days, before being deleted from the database
+        await this.postService.removeAllByCompany(id);
         return;
     }
+
+    
+    /**
+     * Scheduled function: automatically checks everyday for expired soft-deleted companies to delete from the database
+     */
+    onModuleInit() {
+        const cronTime = this.configService.get<string>('CLEANUP_CRON', '0 3 * * *');
+        this.logger.log(`Planning companies cleanup with pattern : "${cronTime}"`);
+
+        // We manually create the job
+        const job = new CronJob(cronTime, () => {
+            this.deleteExpired();
+        });
+
+        // We add the job to the registry and we start it
+        this.schedulerRegistry.addCronJob('deleteExpiredCompanies', job);
+        job.start();
+    }
+
+    /**
+     * Removes all soft-deleted companies from the database completely
+     * 
+     * @returns Promise resolving to void upon successful deletion
+     */
+    async deleteExpired(): Promise<void> {
+        this.logger.log('Auto-cleanup of soft-deleted companies...');
+        const retentionDays = this.configService.get<number>('SOFT_DELETE_RETENTION_DAYS', 30);
+
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() - retentionDays);
+
+        // We collect all soft-deleted companies
+        const expired = await this.companyModel.find({
+            deletedAt: { $lte: expirationDate },
+        });
+
+        if (expired.length === 0) {
+            this.logger.log('Companies cleanup completed: no company to delete.');
+            return;
+        }
+
+        // Deletes all expired companies at once
+        await Promise.all(
+            expired.map(company => this.hardDelete(company._id.toString()))
+        );
+        
+        const c = expired.length;
+        this.logger.log(`Companies cleanup completed: ${c} soft-deleted compan${c > 1 ? 'ies' : 'y'} ha${c > 1 ? 've' : 's'} been permanently deleted.`);
+    }
+
+
+    /**
+     * Permanently delete a company
+     * 
+     * This function is called 30 days after the company is set to be deleted.
+     * 
+     * @param id - The MongoDB ObjectId of the company to delete
+     * @returns Promise resolving to void upon successful deletion
+     */
+    async hardDelete(id: string): Promise<void> {
+        this.logger.log("Deleting posts of company '" + id + "'...");
+        await this.postService.hardDeleteAllByCompany(id);
+        this.logger.log("Deleted !");
+
+        this.logger.log("Deleting logo of company '" + id + "'...");
+        await this.removeCompanyLogo(id);
+        this.logger.log("Deleted !");
+
+        this.logger.log("Deleting company '" + id + "'...");
+        await this.companyModel.deleteOne({ _id: id }); //new Types.ObjectId(id)
+        this.logger.log("Deleted !");
+
+        return;
+    }
+
+
+    /**
+     * Permanently delete the company logo
+     * 
+     * This function is called 30 days after the company is set to be deleted.
+     * 
+     * @param companyId - The MongoDB ObjectId of the company to delete
+     * @returns Promise resolving to void upon successful deletion
+     */
+    async removeCompanyLogo(companyId: string): Promise<void> {
+        const company = await this.companyModel.findById(companyId);
+
+        if (!company) {
+            throw new NotFoundException('Company not found');
+        }
+
+        if (!company.logo) return; // nothing to delete
+
+        const fileName = company.logo;
+        const ownerId = company.id?.toString();
+
+        if (!ownerId) {
+            throw new Error('Company has no associated id');
+        }
+
+        await this.s3Service.deleteFile(fileName, ownerId);
+
+        company.logo = undefined;
+        await company.save();
+    }
+
 }

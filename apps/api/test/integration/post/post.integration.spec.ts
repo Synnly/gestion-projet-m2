@@ -128,7 +128,7 @@ describe('Post Integration Tests', () => {
     const buildPostsPath = (suffix = '', targetCompanyId?: Types.ObjectId | string) => {
         const resolvedId = targetCompanyId ?? companyId;
         if (!resolvedId) throw new Error('Company id not initialized');
-        return `/api/company/${resolvedId.toString()}/posts${suffix}`;
+        return `/api/companies/${resolvedId.toString()}/posts${suffix}`;
     };
 
     const normalizeBody = (obj: any) => {
@@ -137,7 +137,7 @@ describe('Post Integration Tests', () => {
         return obj._doc ? obj._doc : obj;
     };
 
-    describe('GET /api/company/:companyId/posts - Find All Posts', () => {
+    describe('GET /api/companies/:companyId/posts - Find All Posts', () => {
         it('should return empty paginated result when no posts exist and findAll is called', async () => {
             const res = await request(app.getHttpServer())
                 .get(buildPostsPath())
@@ -243,7 +243,7 @@ describe('Post Integration Tests', () => {
         });
     });
 
-    describe('GET /api/company/:companyId/posts/:id - Find One Post', () => {
+    describe('GET /api/companies/:companyId/posts/:id - Find One Post', () => {
         it('should return a post when valid id is provided and findOne is called', async () => {
             const post = await createPost({
                 title: 'Développeur Full Stack',
@@ -316,7 +316,7 @@ describe('Post Integration Tests', () => {
         });
     });
 
-    describe('POST /api/company/:companyId/posts - Create Post', () => {
+    describe('POST /api/companies/:companyId/posts - Create Post', () => {
         it('should create a post when valid data is provided and create is called', async () => {
             const postData = {
                 title: 'Nouveau Poste',

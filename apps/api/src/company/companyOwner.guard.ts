@@ -1,5 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { Role } from './roles.enum';
+import { Role } from '../common/roles/roles.enum';
 
 /**
  * Guard that ensures a COMPANY user can only update/delete their own company resource.
@@ -7,7 +7,7 @@ import { Role } from './roles.enum';
  */
 @Injectable()
 export class CompanyOwnerGuard implements CanActivate {
-    canActivate(context: ExecutionContext): boolean {
+    async canActivate(context: ExecutionContext): Promise<boolean> {
         const req = context.switchToHttp().getRequest();
         const { user, params } = req || {};
 
@@ -25,7 +25,7 @@ export class CompanyOwnerGuard implements CanActivate {
         if (user.role !== Role.COMPANY) {
             throw new ForbiddenException("You can't access this resource");
         }
-        const companyId = params?.companyId;
+        const companyId = params?.companyId || params?.id;
         const userSub = user.sub;
 
         // If token does not carry a subject or route id is missing, deny

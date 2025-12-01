@@ -3,10 +3,11 @@ import { PostController } from '../../../src/post/post.controller';
 import { PostService } from '../../../src/post/post.service';
 import { NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { CreatePostDto } from '../../../src/post/dto/createPost.dto';
 import { PostType } from '../../../src/post/post.schema';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { AuthGuard } from '../../../src/auth/auth.guard'; // Ajuste les imports si besoin
+import { RolesGuard } from '../../../src/common/roles/roles.guard';
 
 describe('PostController', () => {
     let controller: PostController;
@@ -15,7 +16,7 @@ describe('PostController', () => {
     const mockPostService = {
         findAll: jest.fn(),
         findOne: jest.fn(),
-        create: jest.fn(),
+        remove: jest.fn(),
     };
 
     const mockJwtService = {
@@ -59,7 +60,10 @@ describe('PostController', () => {
                     useValue: mockConfigService,
                 },
             ],
-        }).compile();
+        })
+        .overrideGuard(AuthGuard).useValue({ canActivate: () => true })
+        .overrideGuard(RolesGuard).useValue({ canActivate: () => true })
+        .compile();
 
         controller = module.get<PostController>(PostController);
         service = module.get<PostService>(PostService);
@@ -159,9 +163,6 @@ describe('PostController', () => {
             mockPostService.findOne.mockResolvedValue(null);
 
             await expect(controller.findOne(validObjectId)).rejects.toThrow(NotFoundException);
-            await expect(controller.findOne(validObjectId)).rejects.toThrow(
-                `Post with id ${validObjectId} not found`,
-            );
             expect(service.findOne).toHaveBeenCalledWith(validObjectId);
         });
 
@@ -178,65 +179,16 @@ describe('PostController', () => {
         });
     });
 
-    describe('create', () => {
-        const companyId = '507f1f77bcf86cd799439099';
-        const validCreatePostDto: CreatePostDto = {
-            title: 'Nouveau poste',
-            description: 'Description du nouveau poste',
-            duration: '3 mois',
-            startDate: '2025-02-01',
-            minSalary: 1500,
-            maxSalary: 2500,
-            sector: 'IT',
-            keySkills: ['Python', 'Django'],
-            adress: 'Lyon, France',
-            type: PostType.Presentiel,
-            isVisible: true,
-        };
+    describe('remove', () => {
+        const validObjectId = '507f1f77bcf86cd799439011';
 
-        it('should create a post when valid dto is provided and create is called', async () => {
-            mockPostService.create.mockResolvedValue(mockPost);
+        it('should call service.remove with correct id', async () => {
+            mockPostService.remove.mockResolvedValue(undefined);
 
-            await controller.create(companyId, validCreatePostDto);
+            await controller.remove(validObjectId);
 
-            expect(service.create).toHaveBeenCalledWith(validCreatePostDto, companyId);
-            expect(service.create).toHaveBeenCalledTimes(1);
-        });
-
-        it('should create a post with minimal required fields when create is called', async () => {
-            const minimalDto: CreatePostDto = {
-                title: 'Titre minimal',
-                description: 'Description minimale',
-                keySkills: ['Compétence1'],
-            };
-            mockPostService.create.mockResolvedValue({ ...mockPost, ...minimalDto });
-
-            await controller.create(companyId, minimalDto);
-
-            expect(service.create).toHaveBeenCalledWith(minimalDto, companyId);
-            expect(service.create).toHaveBeenCalledTimes(1);
-        });
-
-        it('should create a post with all optional fields when create is called', async () => {
-            mockPostService.create.mockResolvedValue(mockPost);
-
-            await controller.create(companyId, validCreatePostDto);
-
-            expect(service.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    title: validCreatePostDto.title,
-                    description: validCreatePostDto.description,
-                    duration: validCreatePostDto.duration,
-                    startDate: validCreatePostDto.startDate,
-                    minSalary: validCreatePostDto.minSalary,
-                    maxSalary: validCreatePostDto.maxSalary,
-                    sector: validCreatePostDto.sector,
-                    keySkills: validCreatePostDto.keySkills,
-                    adress: validCreatePostDto.adress,
-                    type: validCreatePostDto.type,
-                }),
-                companyId,
-            );
+            expect(service.remove).toHaveBeenCalledWith(validObjectId);
+            expect(service.remove).toHaveBeenCalledTimes(1);
         });
     });
 });

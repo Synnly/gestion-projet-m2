@@ -52,7 +52,7 @@ export class AuthService {
      * @throws {InvalidCredentialsException} If the provided credentials are invalid.
      */
     async login(email: string, password: string): Promise<{ access: string; refresh: string }> {
-        const user = await this.userModel.findOne({ email: email });
+        const user = await this.userModel.findOne({ email: email, deletedAt: { $exists: false } });
         if (!user) throw new NotFoundException(`User with email ${email} not found`);
 
         if (!(await bcrypt.compare(password, user.password))) {

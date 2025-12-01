@@ -12,6 +12,10 @@ export enum PostType {
 export class Post {
     /** Unique MongoDB identifier */
     _id: Types.ObjectId;
+    
+    /** Reference to the company offering the internship */
+    @Prop({ required: true, type: Types.ObjectId, ref: 'Company' })
+    company: Company;
 
     /** Post's title */
     @Prop({ required: true })
@@ -57,9 +61,9 @@ export class Post {
     @Prop({ default: true })
     isVisible: boolean;
 
-    /** Reference to the company offering the internship */
-    @Prop({ required: true, type: Types.ObjectId, ref: 'Company' })
-    company: Company;
+    /** Date when the post was soft-deleted (for soft-delete functionality) */
+    @Prop({ required: false })
+    deletedAt?: Date;
 }
 
 export type PostDocument = Post & Document;

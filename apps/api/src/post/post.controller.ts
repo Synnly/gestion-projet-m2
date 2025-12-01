@@ -1,6 +1,6 @@
 import {
-    Body,
     Controller,
+    Delete,
     Get,
     HttpCode,
     HttpStatus,
@@ -11,7 +11,9 @@ import {
     UseGuards,
     ValidationPipe,
     Query,
+    Body,
 } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
@@ -19,17 +21,17 @@ import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
-import { CreatePostDto } from './dto/createPost.dto';
-import { CompanyOwnerGuard } from '../common/roles/companyOwner.guard';
+import { PostOwnerGuard } from './postOwner.guard';
 import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
 import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
-import { plainToInstance } from 'class-transformer';
 import { UpdatePostDto } from './dto/updatePost';
+import { CompanyOwnerGuard } from 'src/company/companyOwner.guard';
 
 /**
  * Controller responsible for handling post-related endpoints.
  */
-@Controller('/api/company/:companyId/posts')
+@UseGuards(AuthGuard)
+@Controller('/api/posts')
 export class PostController {
     constructor(private readonly postService: PostService) {}
 
@@ -71,22 +73,16 @@ export class PostController {
     }
 
     /**
-     * Create a new post for the given company. This endpoint is protected
-     * and only accessible to authenticated users with the `COMPANY` or
-     * `ADMIN` role that are owners of the company.
-     *
-     * @param companyId - Company id (MongoDB ObjectId string)
-     * @param dto - Payload validated by `CreatePostDto`
+     * Deletes a post
+     * Requires authentication and COMPANY or ADMIN role
+     * @param id The post identifier to delete
      */
-    @Post('')
-    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
+    @Delete('/:id')
+    @UseGuards(RolesGuard, PostOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
-    @HttpCode(HttpStatus.CREATED)
-    async create(
-        @Param('companyId', ParseObjectIdPipe) companyId: string,
-        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true })) dto: CreatePostDto,
-    ) {
-        return await this.postService.create(dto, companyId);
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async remove(@Param('id', ParseObjectIdPipe) id: string) {
+        return await this.postService.remove(id);
     }
 
     /**
