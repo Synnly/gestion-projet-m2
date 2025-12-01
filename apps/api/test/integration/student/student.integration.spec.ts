@@ -17,7 +17,15 @@ describe('Student Integration', () => {
         mongod = await MongoMemoryServer.create();
         const uri = mongod.getUri();
 
-        const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
+        const mockAuthGuard = {
+            canActivate: (context: any) => {
+                const req = context.switchToHttp().getRequest();
+                // Attach an admin user for integration tests so guards that
+                // verify ownership or roles can pass.
+                req.user = { sub: 'integration-admin', role: Role.ADMIN };
+                return true;
+            },
+        };
         const mockRolesGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
         const moduleRef = await Test.createTestingModule({

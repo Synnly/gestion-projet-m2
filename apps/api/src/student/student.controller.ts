@@ -23,6 +23,8 @@ import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { UpdateStudentDto } from './dto/updateStudent.dto';
+import { OwnerGuard } from 'src/s3/owner.guard';
+import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
 
 @Controller('/api/students')
 /**
@@ -40,7 +42,7 @@ export class StudentController {
     @Get('')
     @UseGuards(AuthGuard, RolesGuard)
     @HttpCode(HttpStatus.OK)
-    @Roles(Role.COMPANY,Role.ADMIN)
+    @Roles(Role.COMPANY, Role.ADMIN)
     async findAll(): Promise<StudentDto[]> {
         const students = await this.studentService.findAll();
         return students.map((s) => plainToInstance(StudentDto, s, { excludeExtraneousValues: true }));
@@ -53,8 +55,8 @@ export class StudentController {
      * @throws {NotFoundException} When no student matches the provided id.
      */
     @Get('/:studentId')
-    @UseGuards(AuthGuard, RolesGuard)
-    @Roles(Role.COMPANY,Role.ADMIN)
+    @UseGuards(AuthGuard, RolesGuard, StudentOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN, Role.STUDENT)
     @HttpCode(HttpStatus.OK)
     async findOne(@Param('studentId', ParseObjectIdPipe) studentId: string): Promise<StudentDto> {
         const student = await this.studentService.findOne(studentId);
