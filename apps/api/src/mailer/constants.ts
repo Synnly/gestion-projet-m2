@@ -23,3 +23,12 @@ export enum MailerProviderType {
 export const MAIL_PROVIDER_HOST: Record<MailerProviderType, string> = {
     [MailerProviderType.gmail]: 'smtp.gmail.com',
 };
+
+/**
+ * Map each mailer provider type to its default SMTP port.
+ * Keep ports in a dedicated map to make provider configuration explicit
+ * and centralised for tests and future providers.
+ */
+export const MAIL_PROVIDER_PORT: Record<MailerProviderType, number> = {
+    [MailerProviderType.gmail]: 587,
+};
