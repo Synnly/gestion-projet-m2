@@ -58,3 +58,10 @@ export const RATE_LIMIT = {
     DOWNLOAD: { limit: 400, ttl: 60000 }, // 200 downloads per minute
     DELETE: { limit: 10, ttl: 60000 }, // 10 deletes per minute
 } as const;
+
+export const STORAGE_PROVIDER = Symbol('STORAGE_PROVIDER');
+
+export enum StorageProviderType {
+    MINIO = 'minio',
+    AWS = 'aws',
+}
