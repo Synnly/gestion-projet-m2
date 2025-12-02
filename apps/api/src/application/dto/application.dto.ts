@@ -21,7 +21,7 @@ export class ApplicationDto {
     /** Reference to the student who sent the application */
     @Expose()
     @ValidateNested({ each: true })
-    @Type(() => PostDto)
+    @Type(() => StudentDto)
     student: StudentDto;
 
     /** Status of the application */

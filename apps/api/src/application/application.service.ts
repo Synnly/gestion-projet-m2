@@ -75,11 +75,12 @@ export class ApplicationService {
         postId: Types.ObjectId,
         dto: CreateApplicationDto,
     ): Promise<{ cvUrl: string; lmUrl: string | undefined }> {
+        // Validate existence of student
         const student = await this.studentService.findOne(studentId.toString());
-        const post = await this.postService.findOne(postId.toString());
-
-        // Validate existence of student and post
         if (!student) throw new NotFoundException(`Student with id ${studentId} not found`);
+
+        // Validate existence of post
+        const post = await this.postService.findOne(postId.toString());
         if (!post) throw new NotFoundException(`Post with id ${postId} not found`);
 
         // Check for existing application to prevent duplicates

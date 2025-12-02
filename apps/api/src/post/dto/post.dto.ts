@@ -5,12 +5,13 @@
 import { Types } from 'mongoose';
 import { Post, PostType } from '../post.schema';
 import { CompanyDto } from '../../company/dto/company.dto';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { ValidateNested } from 'class-validator';
 
 @Exclude()
 export class PostDto {
     /** Unique identifier of the company */
+    @Transform((params) => params.obj._id)
     @Expose()
     _id: Types.ObjectId;
 

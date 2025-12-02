@@ -1,4 +1,17 @@
-import { Controller, Get, HttpCode, HttpStatus, NotFoundException, Param, Post, Put, UseGuards } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    NotFoundException,
+    Param,
+    ParseEnumPipe,
+    Post,
+    Put,
+    UseGuards,
+    ValidationPipe,
+} from '@nestjs/common';
 import { ApplicationService } from './application.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../common/roles/roles.guard';
@@ -11,6 +24,7 @@ import { ApplicationOwnerGuard } from '../common/roles/applicationOwner.guard';
 import { CreateApplicationDto } from './dto/createApplication.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { ApplicationStatus } from './application.schema';
+import app from 'client/src/App';
 
 @Controller('/api/application')
 export class ApplicationController {
@@ -43,8 +57,8 @@ export class ApplicationController {
     @UseGuards(AuthGuard, RolesGuard, ApplicationOwnerGuard)
     @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
     @HttpCode(HttpStatus.OK)
-    async findOne(applicationId: Types.ObjectId): Promise<ApplicationDto> {
-        const application = this.applicationService.findOne(applicationId);
+    async findOne(@Param('applicationId', ParseObjectIdPipe) applicationId: Types.ObjectId): Promise<ApplicationDto> {
+        const application = await this.applicationService.findOne(applicationId);
         if (!application) throw new NotFoundException(`Application with id ${applicationId} not found`);
         return plainToInstance(ApplicationDto, application, { excludeExtraneousValues: true });
     }
@@ -61,10 +75,10 @@ export class ApplicationController {
     @Roles(Role.ADMIN, Role.STUDENT)
     @HttpCode(HttpStatus.CREATED)
     async create(
-        @Param('studentId', ParseObjectIdPipe) studentId: Types.ObjectId,
-        @Param('postId', ParseObjectIdPipe) postId: Types.ObjectId,
-        application: CreateApplicationDto,
-    ): Promise<{ cvUrl: string; coverLetterUrl?: string }> {
+        @Body('studentId', ParseObjectIdPipe) studentId: Types.ObjectId,
+        @Body('postId', ParseObjectIdPipe) postId: Types.ObjectId,
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) application: CreateApplicationDto,
+    ): Promise<{ cvUrl: string; lmUrl?: string }> {
         return this.applicationService.create(studentId, postId, application);
     }
 
@@ -80,7 +94,7 @@ export class ApplicationController {
     @HttpCode(HttpStatus.OK)
     async updateStatus(
         @Param('applicationId', ParseObjectIdPipe) applicationId: Types.ObjectId,
-        status: ApplicationStatus,
+        @Body('status', new ParseEnumPipe(ApplicationStatus)) status: ApplicationStatus,
     ): Promise<void> {
         await this.applicationService.updateStatus(applicationId, status);
     }
