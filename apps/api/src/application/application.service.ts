@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Application, ApplicationDocument, ApplicationStatus } from './application.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -50,7 +50,7 @@ export class ApplicationService {
      * @param id - The unique identifier of the application
      * @returns A promise that resolves to the Application document or null if not found
      */
-    async findOne(id: string): Promise<Application | null> {
+    async findOne(id: Types.ObjectId): Promise<Application | null> {
         return this.applicationModel
             .findOne({ _id: id, deletedAt: { $exists: false } })
             .populate([
