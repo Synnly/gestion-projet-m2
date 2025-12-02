@@ -33,7 +33,7 @@ export const useDarkModeStore = create<DarkModeState>((set, get) => ({
     },
 
     initialize: () => {
-        if (get().isInitialized) return; // Empêche l'exécution multiple
+        if (get().isInitialized) return; // Prevents multiple executions
 
         const stored = localStorage.getItem('darkMode');
         const prefersDark = getInitialPrefersDark();
