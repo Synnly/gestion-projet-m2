@@ -13,7 +13,7 @@ interface DarkModeState {
     initialize: () => void;
 }
 
-// Création du store
+// Store creation
 export const useDarkModeStore = create<DarkModeState>((set, get) => ({
     darkMode: (() => {
         if (typeof window === 'undefined') return false;
