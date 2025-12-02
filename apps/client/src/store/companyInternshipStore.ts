@@ -15,7 +15,7 @@ const DEFAULT_FILTERS: InternshipFilters = {
     limit: 10,
 };
 
-export const companyPostStore = create<companyInternshipStore>()((set) => ({
+export const companyInternshipStore = create<companyInternshipStore>()((set) => ({
     // État initial
     internships: [],
     pagination: null,

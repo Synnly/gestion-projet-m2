@@ -11,8 +11,6 @@ import {
     UseGuards,
     ValidationPipe,
     Query,
-    Req,
-    Logger,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';

@@ -1,12 +1,12 @@
 import React from 'react';
 
-import { companyPostStore } from '../../../../store/companyInternshipStore';
+import { companyInternshipStore } from '../../../../store/companyInternshipStore';
 import Pagination from '../../../../components/ui/pagination/Pagination';
 
 export const CompanyInternshipsPagination: React.FC = () => {
-    const pagination = companyPostStore((s) => s.pagination);
-    const filters = companyPostStore((s) => s.filters);
-    const setFilters = companyPostStore((s) => s.setFilters);
+    const pagination = companyInternshipStore((s) => s.pagination);
+    const filters = companyInternshipStore((s) => s.filters);
+    const setFilters = companyInternshipStore((s) => s.setFilters);
 
     if (!pagination) return null;
 

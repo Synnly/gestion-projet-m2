@@ -27,6 +27,7 @@ import { DashboardInternshipList } from './company/dashboard/intershipList/Dashb
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ToastProvider from './components/ui/toast/ToastProvider';
+import { DarkModeProvider } from './components/darkMode/DarkModeProvider';
 
 function App() {
     userStore.persist.rehydrate();
@@ -138,8 +139,10 @@ function App() {
     const router = createBrowserRouter(route);
     return (
         <QueryClientProvider client={queryClient}>
-            <RouterProvider router={router} />
-            <ToastContainer position="top-right" theme="light" />
+            <DarkModeProvider>
+                <RouterProvider router={router} />
+                <ToastContainer position="top-right" theme="light" />
+            </DarkModeProvider>
         </QueryClientProvider>
     );
 }

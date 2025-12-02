@@ -1,4 +1,4 @@
-import { FormEvent, KeyboardEvent, useEffect, useState } from 'react';
+import { type FormEvent, type KeyboardEvent, useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -11,7 +11,7 @@ import { updatePost } from '../../api/update_post';
 import { useCreatePostStore, type WorkMode } from '../../store/CreatePostStore';
 import { profileStore } from '../../store/profileStore';
 import { useInternshipStore } from '../../store/useInternshipStore';
-import { companyPostStore } from '../../store/companyInternshipStore';
+import { companyInternshipStore } from '../../store/companyInternshipStore';
 
 type PostFormMode = 'create' | 'edit';
 
@@ -80,7 +80,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
     const filters = useInternshipStore((state) => state.filters);
     const queryClient = useQueryClient();
     const resetInternship = useInternshipStore((state) => state.clearInternships);
-    const resetDashboardInternship = companyPostStore((state) => state.clearInternships);
+    const resetDashboardInternship = companyInternshipStore((state) => state.clearInternships);
     // Pour refetcher la query
     // Pré-remplissage en mode édition
     useEffect(() => {

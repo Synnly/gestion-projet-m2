@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { companyPostStore } from '../store/companyInternshipStore';
+import { companyInternshipStore } from '../store/companyInternshipStore';
 import type { Internship, InternshipFilters, PaginationResult } from '../types/internship.types';
 import { userStore } from '../store/userStore';
 import { useToast } from '../components/ui/toast/ToastProvider';
@@ -37,8 +37,8 @@ export function useFetchCompanyInternships() {
     const access = userStore((state) => state.access);
     const getPayload = userStore((state) => state.get);
     const companyId = getPayload(access)?.id;
-    const filters = companyPostStore((state) => state.filters);
-    const setInternships = companyPostStore((state) => state.setInternships);
+    const filters = companyInternshipStore((state) => state.filters);
+    const setInternships = companyInternshipStore((state) => state.setInternships);
     const toast = useToast();
     const query = useQuery<PaginationResult<Internship>, Error>({
         queryKey: ['companyInternships', filters],

@@ -1,28 +1,25 @@
 import { NavLink } from 'react-router';
 import ListContainer from '../../../components/ui/list/ListContainer';
-import { useFetchInternships } from '../../../hooks/useFetchInternships';
-import { useInternshipStore, type InternshipStore } from '../../../store/useInternshipStore';
 import type { Internship } from '../../../types/internship.types';
-import InternshipPagination from '../../../modules/internship/InternshipPagination';
 import { SearchBar } from '../../../components/inputs/searchBar';
 import { TableRow } from './component/tableRow';
 import { useEffect } from 'react';
 import { useFetchCompanyInternships } from '../../../hooks/useFetchCompanyInternship';
-import { companyPostStore } from '../../../store/companyInternshipStore';
+import { companyInternshipStore } from '../../../store/companyInternshipStore';
 import { CompanyInternshipsPagination } from './component/paginationCompanyInternship';
 
 export function DashboardInternshipList() {
     const { isLoading, isError, error } = useFetchCompanyInternships();
-    const internships: Internship[] = companyPostStore((state) => state.internships);
+    const internships: Internship[] = companyInternshipStore((state) => state.internships);
     const selects = [
         { label: 'Localisation', options: ['À distance', 'Sur site', 'Hybride'] },
         { label: 'Type de stage', options: ['Temps plein', 'Temps partiel', 'Contrat'] },
         { label: 'Secteur', options: ['Tech', 'Finance', 'Santé'] },
         { label: 'Date de publication', options: ['Moins de 24 heures', "Moins d'une semaine", 'Moins de 30 jours'] },
     ];
-    const filters = companyPostStore((state) => state.filters);
-    const setFilters = companyPostStore((state) => state.setFilters);
-    const resetFilters = companyPostStore((state) => state.resetFilters);
+    const filters = companyInternshipStore((state) => state.filters);
+    const setFilters = companyInternshipStore((state) => state.setFilters);
+    const resetFilters = companyInternshipStore((state) => state.resetFilters);
     const handleSearchChange = (query: string) => {
         setFilters({ searchQuery: query || undefined, page: 1 });
     };

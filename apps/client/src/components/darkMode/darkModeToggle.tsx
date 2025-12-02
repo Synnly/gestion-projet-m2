@@ -1,29 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useDarkModeStore } from '../../store/darkModeStore';
-import { useEffect } from 'react';
 export function ToggleDarkMode() {
     const changeDarkMode = useDarkModeStore((state) => state.toggleDarkMode);
-
-    const { darkMode, initialize } = useDarkModeStore((state) => state);
-
-    useEffect(() => {
-        const htmlElement = document.documentElement;
-
-        // Détermine la valeur de data-theme basée sur l'état darkMode
-        const themeValue = darkMode ? 'luxury' : 'bumblebee';
-
-        // Applique l'attribut data-theme
-        htmlElement.setAttribute('data-theme', themeValue);
-
-        return () => {
-            htmlElement.removeAttribute('data-theme');
-        };
-    }, [darkMode]);
-
-    useEffect(() => {
-        initialize();
-    }, [initialize]);
-
+    const darkMode = useDarkModeStore((state) => state.darkMode);
     return (
         <button
             className="rounded-2xl overflow-hidden w-12 h-12 flex items-center justify-center"
