@@ -27,7 +27,6 @@ import { DashboardInternshipList } from './company/dashboard/intershipList/Dashb
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ToastProvider from './components/ui/toast/ToastProvider';
-import { DarkModeConfig } from './components/darkMode/darkModeProvider';
 
 function App() {
     userStore.persist.rehydrate();
