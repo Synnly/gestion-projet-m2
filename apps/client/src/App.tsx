@@ -139,10 +139,8 @@ function App() {
     const router = createBrowserRouter(route);
     return (
         <QueryClientProvider client={queryClient}>
-            <DarkModeConfig>
-                <RouterProvider router={router} />
-                <ToastContainer position="top-right" theme="light" />
-            </DarkModeConfig>
+            <RouterProvider router={router} />
+            <ToastContainer position="top-right" theme="light" />
         </QueryClientProvider>
     );
 }

@@ -11,6 +11,7 @@ import { updatePost } from '../../api/update_post';
 import { useCreatePostStore, type WorkMode } from '../../store/CreatePostStore';
 import { profileStore } from '../../store/profileStore';
 import { useInternshipStore } from '../../store/useInternshipStore';
+import { companyPostStore } from '../../store/companyInternshipStore';
 
 type PostFormMode = 'create' | 'edit';
 
@@ -79,7 +80,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
     const filters = useInternshipStore((state) => state.filters);
     const queryClient = useQueryClient();
     const resetInternship = useInternshipStore((state) => state.clearInternships);
-
+    const resetDashboardInternship = companyPostStore((state) => state.clearInternships);
     // Pour refetcher la query
     // Pré-remplissage en mode édition
     useEffect(() => {
@@ -215,8 +216,14 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         };
 
         await mutation.mutateAsync({ companyId: profile._id, data: payload });
-        await queryClient.invalidateQueries(['internships', filters]);
+        await queryClient.invalidateQueries({
+            queryKey: ['internships', filters],
+        });
+        await queryClient.invalidateQueries({
+            queryKey: ['companyInternships', filters],
+        });
         resetInternship();
+        resetDashboardInternship();
     }
 
     return (

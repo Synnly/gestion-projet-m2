@@ -30,7 +30,6 @@ export const useDarkModeStore = create<DarkModeState>((set, get) => ({
     toggleDarkMode: () => {
         const newDarkMode = !get().darkMode;
         get().setDarkMode(newDarkMode);
-        console.log(newDarkMode);
     },
 
     initialize: () => {

@@ -11,6 +11,8 @@ import {
     UseGuards,
     ValidationPipe,
     Query,
+    Req,
+    Logger,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';
@@ -40,7 +42,7 @@ export class PostController {
      * @param query - Pagination parameters (page, limit)
      * @returns A paginated result containing `PostDto` instances
      */
-    @Get('')
+    @Get()
     @HttpCode(HttpStatus.OK)
     async findAll(
         @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))

@@ -1,4 +1,4 @@
-import { FilterQuery } from 'mongoose';
+import { FilterQuery, Types } from 'mongoose';
 
 /**
  * Small helper that can be used to translate request parameters into
@@ -31,6 +31,10 @@ export class QueryBuilder<T> {
         if (this.params.searchQuery) {
             const regex = { $regex: `\\b${this.params.searchQuery}\\b`, $options: 'i' };
             filter.$or = [{ title: regex }, { sector: regex }, { keySkills: regex }];
+        }
+
+        if (this.params.company) {
+            (filter as any).company = new Types.ObjectId(this.params.company);
         }
         return filter;
     }
