@@ -16,7 +16,7 @@ export const CompanyInternshipsPagination: React.FC = () => {
         const target = Math.max(1, Math.min(newPage, maxPage));
         if (filters.page === target) return;
         setFilters({ page: target });
-        // scroll not handled here; caller may handle UX
+        // If scrolling to a specific position is desired after page change, handle it in the parent component.
     };
 
     return (
