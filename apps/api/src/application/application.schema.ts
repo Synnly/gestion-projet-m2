@@ -40,7 +40,7 @@ export class Application {
 
     /** The url or path to the resume submitted with the application */
     @Prop({ required: true })
-    resume: string;
+    cv: string;
 
     /** The url or path to the cover letter submitted with the application */
     @Prop({ required: false, trim: true })
