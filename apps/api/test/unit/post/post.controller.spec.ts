@@ -16,6 +16,7 @@ describe('PostController', () => {
         findAll: jest.fn(),
         findOne: jest.fn(),
         create: jest.fn(),
+        update: jest.fn(),
     };
 
     const mockJwtService = {
@@ -159,9 +160,7 @@ describe('PostController', () => {
             mockPostService.findOne.mockResolvedValue(null);
 
             await expect(controller.findOne(validObjectId)).rejects.toThrow(NotFoundException);
-            await expect(controller.findOne(validObjectId)).rejects.toThrow(
-                `Post with id ${validObjectId} not found`,
-            );
+            await expect(controller.findOne(validObjectId)).rejects.toThrow(`Post with id ${validObjectId} not found`);
             expect(service.findOne).toHaveBeenCalledWith(validObjectId);
         });
 
@@ -236,6 +235,29 @@ describe('PostController', () => {
                     type: validCreatePostDto.type,
                 }),
                 companyId,
+            );
+        });
+    });
+
+    describe('update', () => {
+        const companyId = '507f1f77bcf86cd799439099';
+        const postId = '507f1f77bcf86cd799439011';
+
+        it('should return updated PostDto when update succeeds', async () => {
+            const updated = { ...mockPost, title: 'Updated' };
+            mockPostService.update.mockResolvedValue(updated);
+
+            const result = await controller.update(companyId, postId, { title: 'Updated' } as any);
+
+            expect(mockPostService.update).toHaveBeenCalledWith({ title: 'Updated' }, companyId, postId);
+            expect(result.title).toBe('Updated');
+        });
+
+        it('should propagate NotFoundException from service', async () => {
+            mockPostService.update.mockRejectedValue(new NotFoundException('not found'));
+
+            await expect(controller.update(companyId, postId, { title: 'x' } as any)).rejects.toThrow(
+                NotFoundException,
             );
         });
     });

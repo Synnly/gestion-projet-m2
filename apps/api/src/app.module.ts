@@ -8,6 +8,8 @@ import { S3Module } from './s3/s3.module';
 import { MailerModule } from './mailer/mailer.module';
 import { PostModule } from './post/post.module';
 import { MailerProviderType } from './mailer/constants';
+import { StorageProviderType } from './s3/s3.constants';
+import { StudentModule } from './student/student.module';
 
 @Module({
     imports: [
@@ -22,11 +24,12 @@ import { MailerProviderType } from './mailer/constants';
             }),
             inject: [ConfigService],
         }),
+        S3Module.register({ provider: StorageProviderType.MINIO }),
         AuthModule,
         CompanyModule,
-        S3Module,
         PostModule,
         MailerModule,
+        StudentModule,
     ],
     controllers: [],
     providers: [],

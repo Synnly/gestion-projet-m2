@@ -5,6 +5,7 @@ import type { LoaderPost } from "../../loaders/updatePostLoader";
 import type { WorkMode } from "../../store/CreatePostStore";
 import { profileStore } from "../../store/profileStore";
 import { userStore } from "../../store/userStore";
+import { Navbar } from "../../components/navbar/Navbar";
 
 export default function UpdatePostPage() {
   const { post, postId } = useLoaderData() as { post: LoaderPost; companyId: string; postId: string };
@@ -51,7 +52,8 @@ export default function UpdatePostPage() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 py-10">
+    <div className="min-h-screen bg-base-100">
+        <Navbar />
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <h1 className="mb-6 text-3xl font-bold text-slate-900">Mettre à jour l'annonce</h1>
         <div className="flex flex-col gap-8 md:flex-row items-start">
