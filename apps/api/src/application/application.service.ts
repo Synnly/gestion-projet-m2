@@ -25,7 +25,7 @@ export class ApplicationService {
 
     /** Fields to populate when retrieving related Post documents */
     readonly postFieldsToPopulate: string =
-        '_id title description duration startDate minSalary maxSalary sector keySkills adress type';
+        '_id title description duration startDate minSalary maxSalary sector keySkills adress type company';
 
     /** Fields to populate when retrieving related Student documents */
     readonly studentFieldsToPopulate: string = '_id firstName lastName email';
@@ -107,12 +107,12 @@ export class ApplicationService {
             );
         }
 
-        new this.applicationModel({
+        await new this.applicationModel({
             student: student,
             post: post,
             cv: cv.fileName,
             coverLetter: lm?.fileName,
-        });
+        }).save();
 
         return { cvUrl: cv.uploadUrl, lmUrl: lm?.uploadUrl };
     }

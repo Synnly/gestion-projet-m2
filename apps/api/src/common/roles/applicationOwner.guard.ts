@@ -4,6 +4,18 @@ import { ApplicationService } from '../../application/application.service';
 import { Types } from 'mongoose';
 
 @Injectable()
+
+/**
+ * Guard to check if the authenticated user is the owner of the application resource.
+ * Behaviour:
+ * - ADMIN users have access to all resources.
+ * - COMPANY users can access applications related to their posts.
+ * - STUDENT users can access their own applications.
+ * - Other roles are denied access.
+ *
+ * If ownership cannot be verified, a ForbiddenException is thrown.
+ * Requires `applicationId` parameter in the route.
+ */
 export class ApplicationOwnerGuard implements CanActivate {
     constructor(private readonly applicationService: ApplicationService) {}
 
@@ -29,6 +41,7 @@ export class ApplicationOwnerGuard implements CanActivate {
         if (!applicationId || !userId) throw new ForbiddenException('Ownership cannot be verified');
 
         const application = await this.applicationService.findOne(new Types.ObjectId(applicationId));
+        if (!application) throw new ForbiddenException("You can't access this resource");
 
         // Verify ownership based on role
         if (user.role === Role.COMPANY && application?.post?.company?._id.toString() !== userId.toString()) {

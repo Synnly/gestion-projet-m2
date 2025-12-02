@@ -24,7 +24,6 @@ import { ApplicationOwnerGuard } from '../common/roles/applicationOwner.guard';
 import { CreateApplicationDto } from './dto/createApplication.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { ApplicationStatus } from './application.schema';
-import app from 'client/src/App';
 
 @Controller('/api/application')
 export class ApplicationController {

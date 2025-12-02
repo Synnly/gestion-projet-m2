@@ -56,6 +56,10 @@ describe('ApplicationService', () => {
 
         jest.clearAllMocks();
         mockApplicationModel.mockClear();
+        // Default constructor mock to avoid undefined save errors
+        mockApplicationModel.mockImplementation(() => ({
+            save: jest.fn().mockResolvedValue(undefined),
+        }));
     });
 
     it('should be defined when the service is instantiated', () => {
@@ -173,6 +177,8 @@ describe('ApplicationService', () => {
             mockS3Service.generatePresignedUploadUrl
                 .mockResolvedValueOnce({ fileName: 'cv-file.pdf', uploadUrl: 'https://cv-url' })
                 .mockResolvedValueOnce({ fileName: 'lm-file.docx', uploadUrl: 'https://lm-url' });
+            const save = jest.fn().mockResolvedValue(undefined);
+            mockApplicationModel.mockImplementation(() => ({ save }));
 
             const result = await service.create(studentId, postId, dto);
 
@@ -194,6 +200,7 @@ describe('ApplicationService', () => {
                 cv: 'cv-file.pdf',
                 coverLetter: 'lm-file.docx',
             });
+            expect(save).toHaveBeenCalledTimes(1);
             expect(result).toEqual({ cvUrl: 'https://cv-url', lmUrl: 'https://lm-url' });
         });
 
@@ -206,6 +213,8 @@ describe('ApplicationService', () => {
                 fileName: 'cv-only.pdf',
                 uploadUrl: 'https://cv-only-url',
             });
+            const save = jest.fn().mockResolvedValue(undefined);
+            mockApplicationModel.mockImplementation(() => ({ save }));
 
             const result = await service.create(studentId, postId, { cvExtension: 'pdf' });
 
@@ -216,6 +225,7 @@ describe('ApplicationService', () => {
                 cv: 'cv-only.pdf',
                 coverLetter: undefined,
             });
+            expect(save).toHaveBeenCalledTimes(1);
             expect(result).toEqual({ cvUrl: 'https://cv-only-url', lmUrl: undefined });
         });
     });

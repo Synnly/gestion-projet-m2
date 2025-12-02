@@ -185,7 +185,7 @@ describe('Application Integration Tests', () => {
                 cv: 'resume.pdf',
                 coverLetter: 'letter.docx',
             });
-            const application = await createApplicationDoc(student._id, post._id, {
+            await createApplicationDoc(student._id, post._id, {
                 cv: 'ignored.pdf',
                 deletedAt: new Date(),
             });
