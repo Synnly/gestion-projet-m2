@@ -7,6 +7,7 @@ import * as Minio from 'minio';
 import { EventEmitter } from 'events';
 import cookieParser from 'cookie-parser';
 import { S3Module } from '../../../src/s3/s3.module';
+import { StorageProviderType } from '../../../src/s3/s3.constants';
 import { S3Service } from '../../../src/s3/s3.service';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { OwnerGuard } from '../../../src/s3/owner.guard';
@@ -185,7 +186,7 @@ startxref
                     secret,
                     signOptions: { expiresIn: '1h' },
                 }),
-                S3Module,
+                S3Module.register({ provider: StorageProviderType.MINIO }),
             ],
         })
             .overrideGuard(AuthGuard)
