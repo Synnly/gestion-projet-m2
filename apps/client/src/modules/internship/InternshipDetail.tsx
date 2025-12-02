@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { NavLink, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import type { Internship } from '../../types/internship.types';
 import { Bookmark, ArrowUpRight, Share2 } from 'lucide-react';
@@ -44,6 +44,10 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
 
     const navigate = useNavigate();
 
+    const handleApply = () => {
+        navigate(`/internship/detail/${internship._id}`);
+    };
+
     return (
         <div className="col-span-12 lg:col-span-7">
             <div ref={rootRef}>
@@ -83,13 +87,13 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
                         </div>
 
                         <div className="mt-6 flex flex-wrap gap-3">
-                            <button className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2">
-                                <NavLink to={`/internship/detail/${internship._id}`} className="flex gap-2">
-                                    <ArrowUpRight size={20} />
-                                    <span>Candidater</span>
-                                </NavLink>
+                            <button
+                                onClick={handleApply}
+                                className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2"
+                            >
+                                <ArrowUpRight size={20} />
+                                <span>Candidater</span>
                             </button>
-
                             <button className="btn btn-ghost flex h-11 items-center justify-center gap-2">
                                 <Share2 size={20} />
                                 <span>Partager</span>
