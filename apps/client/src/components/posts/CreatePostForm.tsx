@@ -136,7 +136,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         'Data / IA',
         'Product Management',
         'Support / Customer Success',
-        'Operations / Logistique',
+        'Opérations / Logistique',
         'Santé / Biotech',
         'Éducation / Formation',
     ];
@@ -224,7 +224,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
             <div className="rounded-2xl border border-base-300 bg-base-100 shadow-sm">
                 <div className="border-b border-base-100 px-6 pb-4 pt-5">
                     <h1 className="text-base font-semibold text-base-900">
-                        {mode === 'edit' ? "Mêttre à jour l'offre de stage" : 'Créer une offre de stage'}
+                        {mode === 'edit' ? "Mettre à jour l'offre de stage" : 'Créer une offre de stage'}
                     </h1>
                 </div>
 

@@ -1,6 +1,6 @@
 import { S3Service } from '../../../src/s3/s3.service';
 
-describe('S3Service', () => {
+describe('S3Service (unit) - provider delegation', () => {
     let mockProvider: any;
     let service: S3Service;
 
@@ -17,47 +17,50 @@ describe('S3Service', () => {
     });
 
     it('should delegate generatePresignedUploadUrl to provider and return its value', async () => {
-        mockProvider.generatePresignedUploadUrl.mockResolvedValue('upload-url');
+        const expected = { fileName: 'user-1_logo.png', uploadUrl: 'http://upload-url' };
+        mockProvider.generatePresignedUploadUrl.mockResolvedValue(expected);
 
         const result = await service.generatePresignedUploadUrl('photo.png', 'logo', 'user-1');
 
         expect(mockProvider.generatePresignedUploadUrl).toHaveBeenCalledWith('photo.png', 'logo', 'user-1');
-        expect(result).toBe('upload-url');
+        expect(result).toBe(expected);
     });
 
     it('should delegate generatePresignedDownloadUrl to provider and return its value', async () => {
-        mockProvider.generatePresignedDownloadUrl.mockResolvedValue('download-url');
+        const expected = { downloadUrl: 'http://download-url' };
+        mockProvider.generatePresignedDownloadUrl.mockResolvedValue(expected);
 
         const result = await service.generatePresignedDownloadUrl('file.png', 'user-1');
 
         expect(mockProvider.generatePresignedDownloadUrl).toHaveBeenCalledWith('file.png', 'user-1');
-        expect(result).toBe('download-url');
+        expect(result).toBe(expected);
     });
 
     it('should delegate generatePublicDownloadUrl to provider and return its value', async () => {
-        mockProvider.generatePublicDownloadUrl.mockResolvedValue('public-url');
+        const expected = { downloadUrl: 'http://public-url' };
+        mockProvider.generatePublicDownloadUrl.mockResolvedValue(expected);
 
         const result = await service.generatePublicDownloadUrl('file.png');
 
         expect(mockProvider.generatePublicDownloadUrl).toHaveBeenCalledWith('file.png');
-        expect(result).toBe('public-url');
+        expect(result).toBe(expected);
     });
 
     it('should delegate deleteFile to provider and return its value', async () => {
-        mockProvider.deleteFile.mockResolvedValue(true);
+        mockProvider.deleteFile.mockResolvedValue(undefined);
 
         const result = await service.deleteFile('file.png', 'user-1');
 
         expect(mockProvider.deleteFile).toHaveBeenCalledWith('file.png', 'user-1');
-        expect(result).toBe(true);
+        expect(result).toBeUndefined();
     });
 
     it('should delegate fileExists to provider and return its value', async () => {
-        mockProvider.fileExists.mockResolvedValue(false);
+        mockProvider.fileExists.mockResolvedValue(true);
 
         const result = await service.fileExists('file.png');
 
         expect(mockProvider.fileExists).toHaveBeenCalledWith('file.png');
-        expect(result).toBe(false);
+        expect(result).toBe(true);
     });
 });
