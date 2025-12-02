@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Application, ApplicationDocument } from './application.schema';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Application, ApplicationDocument, ApplicationStatus } from './application.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateApplicationDto } from './dto/createApplication.dto';
@@ -67,6 +67,8 @@ export class ApplicationService {
      * @param postId The ID of the post being applied to
      * @param dto Data transfer object containing CV and cover letter extensions
      * @returns An object containing presigned upload URLs for CV and cover letter
+     * @throws NotFoundException if the student or post does not exist
+     * @throws ConflictException if an application already exists for the student and post
      */
     async create(
         studentId: Types.ObjectId,
@@ -79,6 +81,14 @@ export class ApplicationService {
         // Validate existence of student and post
         if (!student) throw new NotFoundException(`Student with id ${studentId} not found`);
         if (!post) throw new NotFoundException(`Post with id ${postId} not found`);
+
+        // Check for existing application to prevent duplicates
+        const application = await this.applicationModel
+            .findOne({ student: studentId, post: postId, deletedAt: { $exists: false } })
+            .exec();
+        if (application) {
+            throw new ConflictException('Application already exists for this student and post');
+        }
 
         // Generate presigned URLs for CV and cover letter uploads
         const objectname: string = `${studentId.toString()}_${postId.toString()}`;
@@ -96,15 +106,28 @@ export class ApplicationService {
             );
         }
 
-        const data = {
+        new this.applicationModel({
             student: student,
             post: post,
             cv: cv.fileName,
             coverLetter: lm?.fileName,
-        };
-
-        const application = new this.applicationModel(data);
+        });
 
         return { cvUrl: cv.uploadUrl, lmUrl: lm?.uploadUrl };
+    }
+
+    /**
+     * Update the status of an existing application.
+     * @param id The unique identifier of the application
+     * @param status The new status to set for the application
+     * @returns A promise that resolves when the update is complete
+     * @throws NotFoundException if the application does not exist
+     */
+    async updateStatus(id: Types.ObjectId, status: ApplicationStatus): Promise<void> {
+        const application = await this.applicationModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
+        if (!application) throw new NotFoundException(`Application with id ${id} not found`);
+
+        application.status = status;
+        await application.save();
     }
 }
