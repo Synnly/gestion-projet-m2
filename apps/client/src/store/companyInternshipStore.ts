@@ -16,7 +16,7 @@ const DEFAULT_FILTERS: InternshipFilters = {
 };
 
 export const companyInternshipStore = create<companyInternshipStore>()((set) => ({
-    // État initial
+    // Initial state
     internships: [],
     pagination: null,
     filters: DEFAULT_FILTERS,
