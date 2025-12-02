@@ -71,7 +71,7 @@ export function useFetchCompanyInternships() {
         retry: 2,
     });
 
-    // Synchroniser le store avec les données retournées par React Query (y compris cache)
+    // Synchronize the store with the data returned by React Query (including cache)
     useEffect(() => {
         if (query.data && typeof setInternships === 'function') {
             setInternships(query.data);
