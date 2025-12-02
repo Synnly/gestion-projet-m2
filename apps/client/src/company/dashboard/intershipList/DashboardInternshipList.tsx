@@ -20,9 +20,9 @@ export function DashboardInternshipList() {
         { label: 'Secteur', options: ['Tech', 'Finance', 'Santé'] },
         { label: 'Date de publication', options: ['Moins de 24 heures', "Moins d'une semaine", 'Moins de 30 jours'] },
     ];
-    const filters = useInternshipStore((state) => state.filters);
-    const setFilters = useInternshipStore((state) => state.setFilters);
-    const resetFilters = useInternshipStore((state) => state.resetFilters);
+    const filters = companyPostStore((state) => state.filters);
+    const setFilters = companyPostStore((state) => state.setFilters);
+    const resetFilters = companyPostStore((state) => state.resetFilters);
     const handleSearchChange = (query: string) => {
         setFilters({ searchQuery: query || undefined, page: 1 });
     };
