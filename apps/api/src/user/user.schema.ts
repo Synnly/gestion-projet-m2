@@ -3,6 +3,7 @@ import { Document, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { Role } from '../common/roles/roles.enum';
 import { Company } from '../company/company.schema';
+import { Student } from '../student/student.schema';
 
 /**
  * Mongoose document type for User entities
@@ -20,6 +21,13 @@ export type UserDocument = User & Document;
  * @see {@link Company} for company-specific fields
  */
 export type CompanyUserDocument = UserDocument & Company & Document;
+
+/**
+ * Combined document type for Student users
+ *
+ * Merges User base fields with Student-specific fields due to discriminator pattern.
+ */
+export type StudentUserDocument = UserDocument & Student & Document;
 
 /**
  * Base User schema for the authentication system

@@ -70,4 +70,15 @@ describe('PaginationService', () => {
         expect(result.data).toEqual(items);
         expect(typeof result.totalPages === 'number').toBe(true);
     });
+
+    it('applies sort when provided', async () => {
+        const items = [{ _id: '1' }];
+        const total = 1;
+        const { model, query } = makeMockModel(items, total);
+
+        const result = await service.paginate(model, {}, 1, 10, undefined, '-createdAt');
+
+        expect(query.sort).toHaveBeenCalledWith('-createdAt');
+        expect(result.data).toEqual(items);
+    });
 });

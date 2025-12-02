@@ -38,7 +38,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const emailError = errors.find(e => e.property === 'email');
+            const emailError = errors.find((e) => e.property === 'email');
             expect(emailError).toBeDefined();
             expect(emailError?.constraints?.isEmail).toBeDefined();
         });
@@ -50,7 +50,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const emailError = errors.find(e => e.property === 'email');
+            const emailError = errors.find((e) => e.property === 'email');
             expect(emailError).toBeDefined();
             expect(emailError?.constraints?.isEmail).toBeDefined();
         });
@@ -62,7 +62,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const emailError = errors.find(e => e.property === 'email');
+            const emailError = errors.find((e) => e.property === 'email');
             expect(emailError).toBeDefined();
         });
 
@@ -73,7 +73,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const emailError = errors.find(e => e.property === 'email');
+            const emailError = errors.find((e) => e.property === 'email');
             expect(emailError).toBeDefined();
         });
 
@@ -84,7 +84,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const emailError = errors.find(e => e.property === 'email');
+            const emailError = errors.find((e) => e.property === 'email');
             expect(emailError).toBeDefined();
         });
 
@@ -132,7 +132,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 
@@ -143,7 +143,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
             expect(passwordError?.constraints?.isStrongPassword).toBeDefined();
         });
@@ -155,7 +155,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 
@@ -166,7 +166,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 
@@ -177,7 +177,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 
@@ -188,7 +188,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 
@@ -199,7 +199,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 
@@ -246,8 +246,8 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            
-            const errorProperties = errors.map(e => e.property);
+
+            const errorProperties = errors.map((e) => e.property);
             expect(errorProperties).toContain('email');
             expect(errorProperties).toContain('password');
         });
@@ -259,8 +259,8 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            
-            const errorProperties = errors.map(e => e.property);
+
+            const errorProperties = errors.map((e) => e.property);
             expect(errorProperties).toContain('email');
             expect(errorProperties).toContain('password');
         });
@@ -272,8 +272,8 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            
-            const errorProperties = errors.map(e => e.property);
+
+            const errorProperties = errors.map((e) => e.property);
             expect(errorProperties).toContain('email');
             expect(errorProperties).toContain('password');
         });
@@ -361,7 +361,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 
@@ -372,7 +372,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
+            const passwordError = errors.find((e) => e.property === 'password');
             expect(passwordError).toBeDefined();
         });
 

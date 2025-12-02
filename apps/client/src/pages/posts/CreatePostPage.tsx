@@ -3,6 +3,7 @@ import { CreatePostForm } from '../../components/posts/CreatePostForm';
 import { PostPreview } from '../../components/posts/PostPreview';
 import { profileStore } from '../../store/profileStore';
 import { useCreatePostStore } from '../../store/CreatePostStore';
+import { Navbar } from '../../components/navbar/Navbar';
 
 export default function CreatePostPage() {
     const profile = profileStore((state) => state.profile);
@@ -13,10 +14,11 @@ export default function CreatePostPage() {
     }, [reset]);
 
     return (
-        <div className="min-h-screen bg-base py-10">
+        <div className="min-h-screen bg-base-100">
+            <Navbar />
             <div className="mx-auto max-w-7xl px-4 lg:px-8">
                 {/* Page title */}
-                <h1 className="mb-6 text-3xl font-bold text-base-900">Creer une nouvelle annonce de stage</h1>
+                <h1 className="mb-6 text-3xl font-bold text-base-900">Créer une nouvelle annonce de stage</h1>
 
                 {/* Layout: form on the left, preview on the right */}
                 <div className="flex flex-col gap-8 md:flex-row items-start">
