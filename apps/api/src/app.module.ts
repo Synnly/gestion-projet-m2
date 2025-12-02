@@ -7,8 +7,9 @@ import { TokensMiddleware } from './common/middleware/tokens.middleware';
 import { S3Module } from './s3/s3.module';
 import { MailerModule } from './mailer/mailer.module';
 import { PostModule } from './post/post.module';
-import { StorageProviderType } from './s3/s3.constants';
 import { StudentModule } from './student/student.module';
+import { StorageProviderType } from './s3/s3.constants';
+import { ApplicationModule } from './application/application.module';
 
 @Module({
     imports: [
@@ -28,6 +29,7 @@ import { StudentModule } from './student/student.module';
         PostModule,
         MailerModule,
         StudentModule,
+        ApplicationModule,
     ],
     controllers: [],
     providers: [],

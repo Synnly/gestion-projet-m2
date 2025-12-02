@@ -76,7 +76,7 @@ export class MinioStorageProvider implements IStorageProvider {
 
     async generatePresignedUploadUrl(
         originalFilename: string,
-        fileType: 'logo' | 'cv',
+        fileType: 'logo' | 'cv' | 'lm',
         userId: string,
     ): Promise<PresignedUploadResult> {
         // Extract extension from original filename
