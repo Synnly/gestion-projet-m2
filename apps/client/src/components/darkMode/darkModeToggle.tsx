@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useDarkModeStore } from '../../store/darkModeStore';
+import { Moon, Sun } from 'lucide-react';
 export function ToggleDarkMode() {
     const changeDarkMode = useDarkModeStore((state) => state.toggleDarkMode);
     const darkMode = useDarkModeStore((state) => state.darkMode);
@@ -8,7 +9,7 @@ export function ToggleDarkMode() {
             className="rounded-2xl overflow-hidden w-12 h-12 flex items-center justify-center"
             onClick={() => changeDarkMode()}
         >
-            <AnimatePresence mode="sync">
+            <AnimatePresence initial={false} mode="sync">
                 {darkMode ? (
                     <motion.div
                         key="moon"
@@ -18,7 +19,7 @@ export function ToggleDarkMode() {
                         transition={{ duration: 0.4 }}
                         className="absolute"
                     >
-                        <span className="text-3xl">🌙</span>
+                        <Moon className="size-7 text-primary" />
                     </motion.div>
                 ) : (
                     <motion.div
@@ -29,7 +30,7 @@ export function ToggleDarkMode() {
                         transition={{ duration: 0.4 }}
                         className="absolute"
                     >
-                        <span className="text-3xl">☀️</span>
+                        <Sun className="size-7 text-primary" />
                     </motion.div>
                 )}
             </AnimatePresence>
