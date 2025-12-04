@@ -8,10 +8,7 @@ import { GeoService } from 'src/common/geography/geo.service';
 import { CompanyModule } from 'src/company/company.module';
 
 @Module({
-    imports: [
-        MongooseModule.forFeature([{ name: Post.name, schema: PostSchema }]),
-        forwardRef(() => CompanyModule),
-    ],
+    imports: [MongooseModule.forFeature([{ name: Post.name, schema: PostSchema }]), forwardRef(() => CompanyModule)],
     controllers: [PostController],
     providers: [PostService, PaginationService, GeoService],
     exports: [PostService],

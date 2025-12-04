@@ -143,7 +143,7 @@ startxref
                 const extension = originalFilename.split('.').pop()?.toLowerCase() || '';
                 const fileName = `${userId}_${fileType}.${extension}`;
                 const uploadUrl = `http://mock/${fileName}`;
-                
+
                 // Check if file exists and delete it (simulate overwrite)
                 const exists = await mockMinio
                     .statObject(process.env.MINIO_BUCKET || 'test-uploads', fileName)
@@ -152,7 +152,7 @@ startxref
                 if (exists) {
                     await mockMinio.removeObject(process.env.MINIO_BUCKET || 'test-uploads', fileName);
                 }
-                
+
                 return { fileName, uploadUrl };
             },
             async generatePresignedDownloadUrl(fileName: string) {
@@ -244,8 +244,7 @@ startxref
             if (objectsList.length > 0) {
                 await minioClient.removeObjects(testBucket, objectsList);
             }
-        } catch (error) {
-        }
+        } catch (error) {}
         await app.close();
     });
 

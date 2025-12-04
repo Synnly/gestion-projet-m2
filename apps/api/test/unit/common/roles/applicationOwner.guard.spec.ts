@@ -18,7 +18,7 @@ describe('ApplicationOwnerGuard', () => {
                     params,
                 }),
             }),
-        } as ExecutionContext);
+        }) as ExecutionContext;
 
     beforeEach(async () => {
         mockApplicationService = {

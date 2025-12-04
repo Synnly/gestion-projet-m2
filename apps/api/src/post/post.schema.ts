@@ -8,7 +8,7 @@ import { Company } from '../company/company.schema';
  * Enumeration of supported work modes for posts. Kept as a string enum
  * so values are stored/read as human-readable labels in the database.
  */
- export enum PostType {
+export enum PostType {
     Presentiel = 'Présentiel',
     Teletravail = 'Télétravail',
     Hybride = 'Hybride',
@@ -26,8 +26,8 @@ import { Company } from '../company/company.schema';
  * - `location` is an optional GeoJSON Point with `coordinates: [lon, lat]`.
  * - A `2dsphere` index is created on `location` to support radius queries.
  */
- @Schema({ timestamps: true })
- export class Post {
+@Schema({ timestamps: true })
+export class Post {
     /** Unique MongoDB identifier */
     _id: Types.ObjectId;
 

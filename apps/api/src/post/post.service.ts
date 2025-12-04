@@ -124,7 +124,6 @@ export class PostService {
         );
     }
 
-
     /**
      * Updates an existing post for a given company.
      * Ensures the post belongs to the company before updating.

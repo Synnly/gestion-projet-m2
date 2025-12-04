@@ -127,7 +127,12 @@ describe('PostService', () => {
             const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
                 findById: jest.fn().mockReturnValue({ populate: populateMock }),
             });
-            const serviceWithMock = new PostService(mockModel as any, mockPaginationService as any, mockGeoService as any, mockCompanyService as any);
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             const result = await serviceWithMock.create(validCreatePostDto, companyId);
 
@@ -155,7 +160,12 @@ describe('PostService', () => {
             const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
                 findById: jest.fn().mockReturnValue({ populate: populateMock }),
             });
-            const serviceWithMock = new PostService(mockModel as any, mockPaginationService as any, mockGeoService as any, mockCompanyService as any);
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             const result = await serviceWithMock.create(minimalDto, companyId);
 
@@ -176,7 +186,12 @@ describe('PostService', () => {
             const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
                 findById: jest.fn().mockReturnValue({ populate: populateMock }),
             });
-            const serviceWithMock = new PostService(mockModel as any, mockPaginationService as any, mockGeoService as any, mockCompanyService as any);
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             const result = await serviceWithMock.create(validCreatePostDto, companyId);
 
@@ -200,7 +215,12 @@ describe('PostService', () => {
                 findById: jest.fn().mockReturnValue({ populate: populateMock }),
             });
 
-            const serviceWithMock = new PostService(mockModel as any, mockPaginationService as any, mockGeoService as any, mockCompanyService as any);
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             await expect(serviceWithMock.create(validCreatePostDto, companyId)).rejects.toThrow(CreationFailedError);
         });

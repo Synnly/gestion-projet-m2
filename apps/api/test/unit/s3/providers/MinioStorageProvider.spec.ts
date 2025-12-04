@@ -365,18 +365,14 @@ describe('MinioStorageProvider', () => {
         const mockClient: any = {
             // First call (fileExists) resolves -> file appears to exist
             // Second call (ownership check) rejects -> should be translated to NotFound
-            statObject: jest.fn()
-                .mockResolvedValueOnce({})
-                .mockRejectedValueOnce(new Error('boom')),
+            statObject: jest.fn().mockResolvedValueOnce({}).mockRejectedValueOnce(new Error('boom')),
             presignedGetObject: jest.fn(),
         };
 
         (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
         const provider = new MinioStorageProvider(cfg);
 
-        await expect(provider.generatePresignedDownloadUrl('somefile', 'me')).rejects.toBeInstanceOf(
-            Error as any,
-        );
+        await expect(provider.generatePresignedDownloadUrl('somefile', 'me')).rejects.toBeInstanceOf(Error as any);
         // The provider wraps stat failures into NotFoundException specifically
         await expect(provider.generatePresignedDownloadUrl('somefile', 'me')).rejects.toThrow('File not found');
     });

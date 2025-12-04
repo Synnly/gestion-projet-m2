@@ -131,9 +131,7 @@ export class S3Controller {
     @Get('signed/public/:fileName')
     @Throttle({ default: RATE_LIMIT.DOWNLOAD })
     @HttpCode(HttpStatus.OK)
-    async generatePublicDownloadUrl(
-        @Param('fileName') fileName: string,
-    ): Promise<{ downloadUrl: string }> {
+    async generatePublicDownloadUrl(@Param('fileName') fileName: string): Promise<{ downloadUrl: string }> {
         const url = await this.s3Service.generatePublicDownloadUrl(fileName);
         return url;
     }

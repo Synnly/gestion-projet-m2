@@ -983,8 +983,6 @@ describe('Company Integration Tests', () => {
         });
     });
 
-
-
     describe('PATCH /api/companies/:id - Additional Update Tests', () => {
         it('should update enum field to different value', async () => {
             const hashed = await bcrypt.hash('StrongP@ss1', 10);
