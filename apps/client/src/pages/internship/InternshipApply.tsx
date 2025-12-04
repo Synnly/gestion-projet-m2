@@ -3,6 +3,7 @@ import { Navbar } from '../../components/navbar/Navbar';
 import { useParams } from 'react-router';
 import Spinner from '../../components/Spinner/Spinner';
 import FileInput from '../../components/inputs/fileInput/FileInput';
+import InternshipDetail from '../../modules/internship/InternshipDetail';
 export const InternshipApply = () => {
     const internshipId = useParams().postId as string;
     const { data, isLoading, error, isError } = useQuery({
@@ -40,7 +41,7 @@ export const InternshipApply = () => {
                             <div className="bg-base-200 font-bold py-5">
                                 <div className="text-3xl">Annonce</div>
                                 <div className="font-bold">
-                                    TITRE : <span>{data.title}</span>
+                                    <InternshipDetail internship={data} applyable={false} />
                                 </div>
                             </div>
                         </div>

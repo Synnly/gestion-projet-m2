@@ -6,7 +6,10 @@ import { Bookmark, ArrowUpRight, Share2 } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import { userStore } from '../../store/userStore';
-const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) => {
+const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }> = ({
+    internship,
+    applyable = true,
+}) => {
     const savedInternships = useInternshipStore((state) => state.savedInternships);
     const toggleSaveInternship = useInternshipStore((state) => state.toggleSaveInternship);
     const setDetailHeight = useInternshipStore((s) => s.setDetailHeight);
@@ -89,8 +92,7 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
                                 <Bookmark size={20} fill={isSaved ? 'currentColor' : 'none'} />
                             </button>
                         </div>
-
-                        {role && role === 'STUDENT' && (
+                        {applyable && role && role === 'STUDENT' && (
                             <div className="mt-6 flex flex-wrap gap-3">
                                 <button
                                     onClick={handleApply}
@@ -105,7 +107,6 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
                                 </button>
                             </div>
                         )}
-
                         <div className="mt-8 border-t border-base-300! pt-6">
                             <h4 className="text-lg font-bold">Description du stage</h4>
                             <div className="mt-4 space-y-4 text-sm text-base-content">
