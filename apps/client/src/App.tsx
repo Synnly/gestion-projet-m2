@@ -20,13 +20,14 @@ import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
 import { InternshipPage } from './pages/internship/InternshipPage';
 import InternshipDetailPage from './pages/internship/InternshipDetailPage';
-import CreatePostPage from "./pages/posts/CreatePostPage";
-import UpdatePostPage from "./pages/posts/UpdatePostPage";
-import { updatePostLoader } from "./loaders/updatePostLoader";
+import CreatePostPage from './pages/posts/CreatePostPage';
+import UpdatePostPage from './pages/posts/UpdatePostPage';
+import { updatePostLoader } from './loaders/updatePostLoader';
 import { DashboardInternshipList } from './company/dashboard/intershipList/DashboardInternshipList';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ToastProvider from './components/ui/toast/ToastProvider';
+import { DarkModeProvider } from './components/darkMode/DarkModeProvider';
 
 function App() {
     userStore.persist.rehydrate();
@@ -107,7 +108,11 @@ function App() {
 
                                 {
                                     path: 'detail/:id',
-                                    element: <ToastProvider><InternshipDetailPage /></ToastProvider>,
+                                    element: (
+                                        <ToastProvider>
+                                            <InternshipDetailPage />
+                                        </ToastProvider>
+                                    ),
                                     loader: async ({ params }: any) => {
                                         const id = params?.id;
                                         if (!id) throw new Response('Missing id', { status: 400 });
@@ -134,8 +139,10 @@ function App() {
     const router = createBrowserRouter(route);
     return (
         <QueryClientProvider client={queryClient}>
-            <RouterProvider router={router} />
-            <ToastContainer position="top-right" theme="light" />
+            <DarkModeProvider>
+                <RouterProvider router={router} />
+                <ToastContainer position="top-right" theme="light" />
+            </DarkModeProvider>
         </QueryClientProvider>
     );
 }

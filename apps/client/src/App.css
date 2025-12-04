@@ -9,7 +9,9 @@
     }
 }
 
-@plugin "daisyui";
+@plugin "daisyui" {
+    themes: all;
+}
 
 @plugin "daisyui/theme" {
     name: 'bumblebee';
@@ -49,8 +51,8 @@
 /* Align textarea and overlay for @uiw/react-md-editor */
 .w-md-editor-text-input,
 .w-md-editor-text-pre,
-.w-md-editor-text-pre > code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+.w-md-editor-text-pre>code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
     font-size: 14px;
     line-height: 1.5;
     padding: 16px;

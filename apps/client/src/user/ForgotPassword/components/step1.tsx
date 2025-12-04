@@ -5,8 +5,8 @@ import z from 'zod';
 import { CustomForm } from '../../../components/form/CustomForm';
 import { FormInput } from '../../../components/form/FormInput';
 import { FormSubmit } from '../../../components/form/FormSubmit';
-import logo from '../../../../assets/image.png';
 import type { Dispatch, SetStateAction } from 'react';
+import Logo from '../../../components/icons/Logo';
 import { NavLink } from 'react-router';
 const passwordSchema = z.object({
     email: z.string().min(1, { message: "l'email est requis" }).email('Adresse e-mail invalide'),
@@ -66,8 +66,8 @@ export const ForgotPasswordStep1 = ({
     };
     return (
         <>
-            <div className="text-center">
-                <img src={logo} alt="Logo de l'application" className="mx-auto h-12 w-auto" />
+            <div className="text-center mx-auto">
+                <Logo className="text-primary" />
             </div>
             <h1 className="text-2xl py-10 font-bold text-center uppercase">Réinitialisation du mot de passe</h1>
             <p className="mt-4 text-sm text-center text-gray-500">

@@ -40,7 +40,7 @@ export class PostController {
      * @param query - Pagination parameters (page, limit)
      * @returns A paginated result containing `PostDto` instances
      */
-    @Get('')
+    @Get()
     @HttpCode(HttpStatus.OK)
     async findAll(
         @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
