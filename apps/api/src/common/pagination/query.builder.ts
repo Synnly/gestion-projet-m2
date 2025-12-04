@@ -1,4 +1,4 @@
-import { FilterQuery, Types } from 'mongoose';
+import { FilterQuery } from 'mongoose';
 
 /**
  * Small helper that can be used to translate request parameters into
@@ -92,11 +92,11 @@ export class QueryBuilder<T> {
     buildSort() {
         switch (this.params.sort) {
             case 'dateAsc':
-                return { createdAt: 1 };
+                return "asc";
             case 'dateDesc':
-                return { createdAt: -1 };
+                return "desc";
             default:
-                return {};
+                return "asc";
         }
     }
 }

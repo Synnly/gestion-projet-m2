@@ -23,8 +23,8 @@ export class PaginationService {
      * @param sort - Optional sort string (e.g. '-createdAt' or 'name')
      * @returns A `PaginationResult<T>` containing page items and metadata
      */
-    async paginate<T>(
-        model: Model<T>,
+    async paginate<T, TQueryHelpers = {}, TMethods = {}, TVirtuals = {}>(
+        model: Model<T, TQueryHelpers, TMethods, TVirtuals>,
         filter: FilterQuery<T>,
         page: number,
         limit: number,
