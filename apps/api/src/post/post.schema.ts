@@ -2,14 +2,32 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import { Company } from '../company/company.schema';
 
-export enum PostType {
+/**
+ * PostType
+ *
+ * Enumeration of supported work modes for posts. Kept as a string enum
+ * so values are stored/read as human-readable labels in the database.
+ */
+ export enum PostType {
     Presentiel = 'Présentiel',
     Teletravail = 'Télétravail',
     Hybride = 'Hybride',
 }
 
 @Schema({ timestamps: true })
-export class Post {
+/**
+ * Post
+ *
+ * Mongoose schema class representing an internship/job post. Fields
+ * documented here mirror the persisted document and include the
+ * `location` GeoJSON Point used by the geospatial filters.
+ *
+ * Notes about `location`:
+ * - `location` is an optional GeoJSON Point with `coordinates: [lon, lat]`.
+ * - A `2dsphere` index is created on `location` to support radius queries.
+ */
+ @Schema({ timestamps: true })
+ export class Post {
     /** Unique MongoDB identifier */
     _id: Types.ObjectId;
 
@@ -57,6 +75,26 @@ export class Post {
     @Prop({ default: true })
     isVisible: boolean;
 
+    @Prop({
+        type: {
+            type: String,
+            enum: ['Point'],
+            required: false,
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            required: false,
+        },
+    })
+    /**
+     * Optional GeoJSON point describing the post's coordinates.
+     * Stored as `{ type: 'Point', coordinates: [lon, lat] }`.
+     */
+    location?: {
+        type: 'Point';
+        coordinates: [number, number]; // [lon, lat]
+    };
+
     /** Reference to the company offering the internship */
     @Prop({ required: true, type: Types.ObjectId, ref: 'Company' })
     company: Company;
@@ -65,3 +103,6 @@ export class Post {
 export type PostDocument = Post & Document;
 
 export const PostSchema = SchemaFactory.createForClass(Post);
+
+// Create a 2dsphere index on the location field for geospatial queries
+PostSchema.index({ location: '2dsphere' });
