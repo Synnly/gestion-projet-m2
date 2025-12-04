@@ -1,20 +1,20 @@
 import React, { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { NavLink, useNavigate } from 'react-router';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import type { Internship } from '../../types/internship.types';
 import { Bookmark, ArrowUpRight, Share2 } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
-import {userStore} from "../../store/userStore"
+import { userStore } from '../../store/userStore';
 const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) => {
     const savedInternships = useInternshipStore((state) => state.savedInternships);
     const toggleSaveInternship = useInternshipStore((state) => state.toggleSaveInternship);
     const setDetailHeight = useInternshipStore((s) => s.setDetailHeight);
     const rootRef = useRef<HTMLDivElement | null>(null);
     const isSaved = savedInternships.includes(internship._id);
-    const access  = userStore(state => state.access)
-    const get = userStore(state => state.get)
-    const role = get(access)?.role
+    const access = userStore((state) => state.access);
+    const get = userStore((state) => state.get);
+    const role = get(access)?.role;
     const formatSalary = (min?: number, max?: number) => {
         if (!min && !max) return null;
         if (min && max) return `${min}€ - ${max}€`;
@@ -47,7 +47,7 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
     const navigate = useNavigate();
 
     const handleApply = () => {
-        navigate(`/internship/detail/${internship._id}`);
+        navigate(`/internship/apply/${internship._id}`);
     };
 
     return (
@@ -71,7 +71,9 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
                                     )}
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-base-content">{internship.title}</h3>
+                                    <NavLink to={`/internship/detail/${internship._id}`}>
+                                        <h3 className="text-xl font-bold text-base-content">{internship.title}</h3>
+                                    </NavLink>
                                     <p className="mt-1 text-base-content">
                                         {internship.company.name} • {internship.adress}
                                     </p>
@@ -88,19 +90,21 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
                             </button>
                         </div>
 
-                        {role && role === "STUDENT" && (<div className="mt-6 flex flex-wrap gap-3">
-                            <button
-                                onClick={handleApply}
-                                className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2"
-                            >
-                                <ArrowUpRight size={20} />
-                                <span>Candidater</span>
-                            </button>
-                            <button className="btn btn-ghost flex h-11 items-center justify-center gap-2">
-                                <Share2 size={20} />
-                                <span>Partager</span>
-                            </button>
-                        </div>)}
+                        {role && role === 'STUDENT' && (
+                            <div className="mt-6 flex flex-wrap gap-3">
+                                <button
+                                    onClick={handleApply}
+                                    className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2"
+                                >
+                                    <ArrowUpRight size={20} />
+                                    <span>Candidater</span>
+                                </button>
+                                <button className="btn btn-ghost flex h-11 items-center justify-center gap-2">
+                                    <Share2 size={20} />
+                                    <span>Partager</span>
+                                </button>
+                            </div>
+                        )}
 
                         <div className="mt-8 border-t border-base-300! pt-6">
                             <h4 className="text-lg font-bold">Description du stage</h4>

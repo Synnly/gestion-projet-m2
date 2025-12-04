@@ -20,14 +20,14 @@ import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
 import { InternshipPage } from './pages/internship/InternshipPage';
 import InternshipDetailPage from './pages/internship/InternshipDetailPage';
-import CreatePostPage from "./pages/posts/CreatePostPage";
-import UpdatePostPage from "./pages/posts/UpdatePostPage";
-import { updatePostLoader } from "./loaders/updatePostLoader";
+import CreatePostPage from './pages/posts/CreatePostPage';
+import UpdatePostPage from './pages/posts/UpdatePostPage';
+import { updatePostLoader } from './loaders/updatePostLoader';
 import { DashboardInternshipList } from './company/dashboard/intershipList/DashboardInternshipList';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ToastProvider from './components/ui/toast/ToastProvider';
-
+import { InternshipApply } from './pages/internship/InternshipApply';
 function App() {
     userStore.persist.rehydrate();
     const queryClient = new QueryClient();
@@ -98,7 +98,7 @@ function App() {
                         },
                         {
                             path: 'internship',
-                            element: <ProtectedRoutesByRole allowedRoles={['USER', 'ADMIN', 'COMPANY']} />,
+                            element: <ProtectedRoutesByRole allowedRoles={['ADMIN', 'STUDENT']} />,
                             children: [
                                 {
                                     element: <VerifiedRoutes redirectPath="/" />,
@@ -107,7 +107,11 @@ function App() {
 
                                 {
                                     path: 'detail/:id',
-                                    element: <ToastProvider><InternshipDetailPage /></ToastProvider>,
+                                    element: (
+                                        <ToastProvider>
+                                            <InternshipDetailPage />
+                                        </ToastProvider>
+                                    ),
                                     loader: async ({ params }: any) => {
                                         const id = params?.id;
                                         if (!id) throw new Response('Missing id', { status: 400 });
@@ -123,6 +127,15 @@ function App() {
 
                                         return { id, dehydratedState: dehydrate(qc) };
                                     },
+                                },
+                                {
+                                    element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} />,
+                                    children: [
+                                        {
+                                            path: 'apply/:postId',
+                                            element: <InternshipApply />,
+                                        },
+                                    ],
                                 },
                             ],
                         },
