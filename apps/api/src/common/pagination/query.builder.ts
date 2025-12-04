@@ -51,7 +51,8 @@ export class QueryBuilder<T> {
         // Global search across common text fields
         const globalSearch = this.params.searchQuery;
         if (globalSearch?.trim()) {
-            const regex = { $regex: globalSearch.trim(), $options: 'i' };
+            const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = { $regex: escapeRegex(globalSearch.trim()), $options: 'i' };
             mutableFilter.$or = [
                 { title: regex },
                 { description: regex },

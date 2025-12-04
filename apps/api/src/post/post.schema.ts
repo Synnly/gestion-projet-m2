@@ -14,7 +14,6 @@ export enum PostType {
     Hybride = 'Hybride',
 }
 
-@Schema({ timestamps: true })
 /**
  * Post
  *
