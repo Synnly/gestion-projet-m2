@@ -5,14 +5,16 @@ import type { Internship } from '../../types/internship.types';
 import { Bookmark, ArrowUpRight, Share2 } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
-
+import {userStore} from "../../store/userStore"
 const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) => {
     const savedInternships = useInternshipStore((state) => state.savedInternships);
     const toggleSaveInternship = useInternshipStore((state) => state.toggleSaveInternship);
     const setDetailHeight = useInternshipStore((s) => s.setDetailHeight);
     const rootRef = useRef<HTMLDivElement | null>(null);
     const isSaved = savedInternships.includes(internship._id);
-
+    const access  = userStore(state => state.access)
+    const get = userStore(state => state.get)
+    const role = get(access)?.role
     const formatSalary = (min?: number, max?: number) => {
         if (!min && !max) return null;
         if (min && max) return `${min}€ - ${max}€`;
@@ -86,7 +88,7 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
                             </button>
                         </div>
 
-                        <div className="mt-6 flex flex-wrap gap-3">
+                        {role && role === "STUDENT" && (<div className="mt-6 flex flex-wrap gap-3">
                             <button
                                 onClick={handleApply}
                                 className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2"
@@ -98,7 +100,7 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
                                 <Share2 size={20} />
                                 <span>Partager</span>
                             </button>
-                        </div>
+                        </div>)}
 
                         <div className="mt-8 border-t border-base-300! pt-6">
                             <h4 className="text-lg font-bold">Description du stage</h4>

@@ -1,5 +1,6 @@
 import React from 'react';
 import logoPlaceholder from '../../../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg';
+import { userStore } from '../../../store/userStore';
 export interface CardProps {
     id?: string;
     title: string;
@@ -25,6 +26,7 @@ export const Card: React.FC<CardProps> = ({
 }) => {
     const rootClass = `card ${isSelected ? 'shadow-xl ring-4 ring-accent/20' : 'hover:shadow-md'} ${className}`;
 
+    
     return (
         <article className={rootClass} onClick={() => onClick?.(id)} role="button">
             <div className="card-body p-3">

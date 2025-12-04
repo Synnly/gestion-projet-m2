@@ -19,11 +19,11 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
     await userStore.persist.rehydrate();
     const API_URL = import.meta.env.VITE_APIURL;
     const { access, get } = userStore.getState();
-    const { setProfil, profile } = profileStore.getState();
-
-    const pathname = new URL(request.url).pathname;
     if (!access) return;
     const payload = get(access);
+    if(!payload) return
+    const pathname = new URL(request.url).pathname; 
+    const { setProfil, profile } = profileStore.getState();
     if (!payload.isVerified && pathname === '/verify') {
         return;
     }
@@ -36,32 +36,33 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
     if (!payload.isVerified && pathname !== '/verify') {
         throw redirect('/verify');
     }
+    if(payload.role === "COMPANY"){ 
+        if (!profile) {
+            const profileRes = await fetch(`${API_URL}/api/companies/${payload.id}`, {
+                credentials: 'include',
+                headers: {
+                    Authorization: `Bearer ${access}`,
+                },
+            });
 
-    if (!profile) {
-        const profileRes = await fetch(`${API_URL}/api/companies/${payload.id}`, {
-            credentials: 'include',
-            headers: {
-                Authorization: `Bearer ${access}`,
-            },
-        });
+            if (!profileRes.ok) {
+                return redirect('/signin');
+            }
 
-        if (!profileRes.ok) {
-            return redirect('/signin');
+            const newProfile: companyProfile = await profileRes.json();
+            setProfil(newProfile);
         }
+        const newProfile: companyProfileStoreType = profileStore.getState();
 
-        const newProfile: companyProfile = await profileRes.json();
-        setProfil(newProfile);
-    }
-    const newProfile: companyProfileStoreType = profileStore.getState();
-
-    const isComplete = isProfilComplete(newProfile.profile);
-    if (!isComplete && pathname === '/complete-profil') {
-        return;
-    }
-    if (!isComplete && pathname !== '/complete-profil') {
-        throw redirect('/complete-profil');
-    }
-    if (isComplete && pathname === '/complete-profil') {
-        throw redirect(`/${payload.role.toLowerCase()}/dashboard`);
+        const isComplete = isProfilComplete(newProfile.profile);
+        if (!isComplete && pathname === '/complete-profil') {
+            return;
+        }
+        if (!isComplete && pathname !== '/complete-profil') {
+            throw redirect('/complete-profil');
+        }
+        if (isComplete && pathname === '/complete-profil') {
+            throw redirect(`/${payload.role.toLowerCase()}/dashboard`);
+        }
     }
 };

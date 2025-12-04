@@ -5,7 +5,7 @@ import { FormSubmit } from '../../../components/form/FormSubmit';
 import { CustomForm } from '../../../components/form/CustomForm';
 import { useLogin } from '../../../hooks/useLogin';
 import { NavLink } from 'react-router';
-
+import { StudentSignup } from '../../studentSignup/StudentSignup';
 export const LoginForm = () => {
     const {
         register,
@@ -63,6 +63,7 @@ export const LoginForm = () => {
                 <NavLink to="" className="mt-4 text-sm text-center text-gray-500 underline">
                     Créer un compte étudiant
                 </NavLink>
+                <StudentSignup/>
             </div>
         </div>
     );
