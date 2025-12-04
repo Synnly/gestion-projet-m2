@@ -1,4 +1,5 @@
 import { FilterQuery, Types } from 'mongoose';
+import { GeoService } from '../geography/geo.service';
 
 /**
  * QueryBuilder<T>
@@ -34,14 +35,17 @@ export class QueryBuilder<T> {
      *
      * @param params - Partial map of keys and values (typically from request query)
      */
-    constructor(private readonly params: Partial<Record<keyof T | string, any>>) {}
+    constructor(
+        private readonly params: Partial<Record<keyof T | string, any>>,
+        private readonly geoService: GeoService,
+    ) {}
 
     /**
      * Build a Mongoose filter object based on the provided params.
      *
      * @returns A `FilterQuery<T>` suitable for passing to `Model.find()`
      */
-    build(): FilterQuery<T> {
+    async build(): Promise<FilterQuery<T>> {
         const mutableFilter: Record<string, unknown> = {};
 
         // Global search across common text fields
@@ -118,17 +122,24 @@ export class QueryBuilder<T> {
         }
 
         // Geolocation filter: find posts within a radius
-        const lat = this.params.cityLatitude as number | undefined;
-        const lon = this.params.cityLongitude as number | undefined;
+        // on demande plutot la ville et la distance en km autour de la ville
+        // puis on utilise ces infos pour faire un $geoWithin
+        // avec geoService pour recuperer les coordonnees de la ville
+        // passé en parametre
+
         const radiusKm = this.params.radiusKm as number | undefined;
 
-        if (lat !== undefined && lon !== undefined && radiusKm !== undefined && radiusKm > 0) {
-            // Post.location should be a GeoJSON Point: { type: 'Point', coordinates: [lon, lat] }
-            mutableFilter.location = {
-                $geoWithin: {
-                    $centerSphere: [[lon, lat], radiusKm / 6371], // Earth radius in km
-                },
-            };
+        if (this.params.city !== undefined && radiusKm !== undefined && radiusKm > 0) {
+            // geocodeAddress returns Promise<[lon, lat] | null>
+            const coo = await this.geoService.geocodeAddress(this.params.city);
+
+            if (coo) {
+                mutableFilter.location = {
+                    $geoWithin: {
+                        $centerSphere: [coo, radiusKm / 6371], // MongoDB expects [lon, lat]
+                    },
+                };
+            }
         }
 
         // Only show visible posts

@@ -103,8 +103,8 @@ export class PostService {
         const { page, limit, sort, ...filters } = query;
 
         // Build dynamic Mongo filters
-        const qb = new QueryBuilder<Post>(filters);
-        const filter = qb.build();
+        const qb = new QueryBuilder<Post>(filters as any, this.geoService);
+        const filter = await qb.build();
         const sortQuery = qb.buildSort();
 
         const companyPopulate = {

@@ -74,12 +74,9 @@ export class PaginationDto {
     companyName?: string;
 
     @IsOptional()
-    @Type(() => Number)
-    cityLatitude?: number;
-
-    @IsOptional()
-    @Type(() => Number)
-    cityLongitude?: number;
+    @Type(() => String)
+    @IsString()
+    city?: string;
 
     @IsOptional()
     @Type(() => Number)
