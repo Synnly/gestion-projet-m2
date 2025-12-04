@@ -31,5 +31,68 @@ export class PaginationDto {
     @IsOptional()
     @Type(() => String)
     @IsString()
+    title?: string;
+
+    @IsOptional()
+    @Type(() => String)
+    @IsString()
+    description?: string;
+
+    @IsOptional()
+    @Type(() => String)
+    @IsString()
+    duration?: string;
+
+    @IsOptional()
+    @Type(() => String)
+    @IsString()
+    sector?: string;
+
+    @IsOptional()
+    @Type(() => String)
+    @IsString()
+    type?: string;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    minSalary?: number;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    maxSalary?: number;
+
+    @IsOptional()
+    @Type(() => String)
+    @IsString({ each: true })
+    keySkills?: string[] | string;
+
+    @IsOptional()
+    @Type(() => String)
+    @IsString()
+    companyName?: string;
+
+    @IsOptional()
+    @Type(() => Number)
+    cityLatitude?: number;
+
+    @IsOptional()
+    @Type(() => Number)
+    cityLongitude?: number;
+
+    @IsOptional()
+    @Type(() => Number)
+    @Min(0)
+    radiusKm?: number;
+
+    @IsOptional()
+    @Type(() => String)
+    @IsString()
     sort?: string;
+
+    @IsOptional()
+    @Type(() => String)
+    @IsString()
+    company?: string;
 }
