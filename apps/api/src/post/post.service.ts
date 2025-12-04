@@ -41,16 +41,14 @@ export class PostService {
         let location: { type: 'Point'; coordinates: [number, number] } | null = null;
         const company = await this.companyService.findOne(companyId);
         if (!dto.adress) {
-            dto.adress =
-                company?.streetNumber +
-                ' ' +
-                company?.streetName +
-                ', ' +
-                company?.postalCode +
-                ' ' +
-                company?.city +
-                ', ' +
-                company?.country;
+            const addressParts = [
+                company?.streetNumber,
+                company?.streetName,
+                company?.postalCode,
+                company?.city,
+                company?.country
+            ].filter(Boolean);
+            dto.adress = addressParts.join(' ');
         }
 
         const coordinates = await this.geoService.geocodeAddress(dto.adress);
