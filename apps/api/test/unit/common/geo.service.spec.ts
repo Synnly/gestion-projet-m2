@@ -32,12 +32,12 @@ describe('GeoService', () => {
         err.code = 'ECONNABORTED';
         mockGet.mockRejectedValue(err);
 
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
         const svc = new GeoService();
+        const loggerSpy = jest.spyOn((svc as any).logger, 'error').mockImplementation(() => {});
         const res = await svc.geocodeAddress('Nowhere');
         expect(res).toBeNull();
-        expect(consoleSpy).toHaveBeenCalled();
-        consoleSpy.mockRestore();
+        expect(loggerSpy).toHaveBeenCalled();
+        loggerSpy.mockRestore();
     });
 
     it('handles non-axios error and logs unknown error', async () => {
@@ -46,11 +46,11 @@ describe('GeoService', () => {
         (axios.isAxiosError as unknown as jest.Mock).mockReturnValue(false);
         mockGet.mockRejectedValue(err);
 
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
         const svc = new GeoService();
+        const loggerSpy = jest.spyOn((svc as any).logger, 'error').mockImplementation(() => {});
         const res = await svc.geocodeAddress('Nowhere');
         expect(res).toBeNull();
-        expect(consoleSpy).toHaveBeenCalledWith('Geocoding unknown error:', err);
-        consoleSpy.mockRestore();
+        expect(loggerSpy).toHaveBeenCalledWith('Geocoding unknown error:', err);
+        loggerSpy.mockRestore();
     });
 });

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 
 /**
@@ -16,6 +16,8 @@ import axios from 'axios';
  */
 @Injectable()
 export class GeoService {
+    private readonly logger = new Logger(GeoService.name);
+
     private client = axios.create({
         baseURL: 'https://nominatim.openstreetmap.org',
         timeout: 3000, // 3s timeout
@@ -53,14 +55,14 @@ export class GeoService {
             return [lon, lat];
         } catch (e) {
             if (axios.isAxiosError(e)) {
-                console.error('Geocoding Axios error:', {
+                this.logger.error('Geocoding Axios error:', {
                     message: e.message,
                     code: e.code,
                     status: e.response?.status,
                     data: e.response?.data,
                 });
             } else {
-                console.error('Geocoding unknown error:', e);
+                this.logger.error('Geocoding unknown error:', e);
             }
             return null;
         }
