@@ -57,22 +57,29 @@ export class PostService {
      * @returns A `PaginationResult<Post>` containing items and metadata
      */
     async findAll(query: PaginationDto): Promise<PaginationResult<Post>> {
-        const { page, limit, ...rest } = query;
-        const filter = new QueryBuilder(rest).build();
+    const { page, limit, sort, ...filters } = query;
 
-        const companyPopulate = {
-            path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
-        };
+    // Build dynamic Mongo filters
+    const qb = new QueryBuilder<Post>(filters);
+    const filter = qb.build();
+    const sortQuery = qb.buildSort();
 
-        return this.paginationService.paginate(
-            this.postModel,
-            filter,
-            page,
-            limit,
-            [companyPopulate], // populate with selected fields
-        );
-    }
+    const companyPopulate = {
+        path: 'company',
+        select:
+            '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+    };
+
+    return this.paginationService.paginate(
+        this.postModel,
+        filter,
+        page,
+        limit,
+        [companyPopulate], // populate with selected fields
+        sortQuery,
+    );
+}
+
 
     /**
      * Updates an existing post for a given company.

@@ -27,4 +27,9 @@ export class PaginationDto {
     @Type(() => String)
     @IsString()
     searchQuery?: string;
+
+    @IsOptional()
+    @Type(() => String)
+    @IsString()
+    sort?: string;
 }

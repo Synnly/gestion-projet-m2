@@ -23,15 +23,80 @@ export class QueryBuilder<T> {
      * @returns A `FilterQuery<T>` suitable for passing to `Model.find()`
      */
     build(): FilterQuery<T> {
-        const filter: FilterQuery<T> = {};
+        const mutableFilter: Record<string, unknown> = {};
 
-        // The code does nothing special for now but may be used later for advanced filters
-        // such as filtering by date, range of values, location, etc.
+        if (this.params.search) {
+            const regex = {
+                $regex: this.params.search as string,
+                $options: 'i',
+            };
 
-        if (this.params.searchQuery) {
-            const regex = { $regex: `\\b${this.params.searchQuery}\\b`, $options: 'i' };
-            filter.$or = [{ title: regex }, { sector: regex }, { keySkills: regex }];
+            mutableFilter.$or = [
+                { title: regex },
+                { description: regex },
+                { sector: regex },
+                { duration: regex },
+                { keySkills: regex },
+            ];
         }
-        return filter;
+
+        if (this.params.sector) {
+            mutableFilter.sector = {
+                $regex: this.params.sector as string,
+                $options: 'i',
+            };
+        }
+
+        if (this.params.type) {
+            mutableFilter.type = this.params.type;
+        }
+
+        if (this.params.duration) {
+            mutableFilter.duration = {
+                $regex: this.params.duration as string,
+                $options: 'i',
+            };
+        }
+
+        if (this.params.keyword) {
+            mutableFilter.keySkills = {
+                $regex: this.params.keyword as string,
+                $options: 'i',
+            };
+        }
+
+        if (this.params.companyName) {
+            mutableFilter['company.name'] = {
+                $regex: this.params.companyName as string,
+                $options: 'i',
+            };
+        }
+
+        mutableFilter.isVisible = true;
+
+        const lat = this.params.cityLatitude as number | undefined;
+        const lon = this.params.cityLongitude as number | undefined;
+        const radiusKm = this.params.radiusKm as number | undefined;
+
+        if (lat && lon && radiusKm) {
+            mutableFilter['company.location'] = {
+                $geoWithin: {
+                    $centerSphere: [[lon, lat], radiusKm / 6371],
+                },
+            };
+        }
+
+        return mutableFilter as FilterQuery<T>;
+    }
+
+    buildSort() {
+        switch (this.params.sort) {
+            case 'dateAsc':
+                return { createdAt: 1 };
+            case 'dateDesc':
+                return { createdAt: -1 };
+            default:
+                return {};
+        }
     }
 }
