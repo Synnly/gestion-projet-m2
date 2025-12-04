@@ -22,7 +22,7 @@ export interface IStorageProvider {
      */
     generatePresignedUploadUrl(
         originalFilename: string,
-        fileType: 'logo' | 'cv',
+        fileType: 'logo' | 'cv' | 'lm',
         userId: string,
     ): Promise<{ fileName: string; uploadUrl: string }>;
 

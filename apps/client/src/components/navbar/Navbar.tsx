@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { profileStore } from '../../store/profileStore';
 import { useBlob } from '../../hooks/useBlob';
 import Logo from '../icons/Logo';
-import {User} from "lucide-react"
+import { User } from 'lucide-react';
 import { centerNavItems, rightNavItems, ItemLink } from './items';
+import { ToggleDarkMode } from '../darkMode/darkModeToggle';
 interface NavbarProps {
     appName?: string;
     /** If true, render only the logo/link */
@@ -34,11 +35,18 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
     if (minimal) {
         return (
             <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-base-content px-8 py-2">
-                <div className="max-w-7xl mx-auto flex items-center justify-start">
+                <div className="max-w-7xl mx-auto flex justify-between items-center">
                     <ItemLink
                         item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
                         className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                     />
+                    <div className="flex flex-row gap-2">
+                        <ItemLink
+                            item={{ key: 'signin', title: 'Se connecter', to: '/signin' }}
+                            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                        />
+                        <ToggleDarkMode />
+                    </div>
                 </div>
             </nav>
         );
@@ -105,6 +113,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
                         // Fallback for any plain link-type item
                         return <ItemLink key={item.key} item={item} />;
                     })}
+                    <ToggleDarkMode />
                 </div>
             </div>
         </nav>
