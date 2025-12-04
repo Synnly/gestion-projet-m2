@@ -1,14 +1,33 @@
-import { FilterQuery } from 'mongoose';
+import { FilterQuery, Types } from 'mongoose';
 
 /**
- * Small helper that can be used to translate request parameters into
- * a Mongoose `FilterQuery<T>`.
+ * QueryBuilder<T>
  *
- * The implementation is intentionally minimal at the moment but provides
- * a single `build()` method that returns a `FilterQuery<T>`. It can be
- * extended later to support advanced parsing (date ranges, text search,
- * numeric ranges, etc.).
+ * Utility class used to convert HTTP query parameters into a valid
+ * Mongoose `FilterQuery<T>` object. It is designed for the `Post`
+ * search system and supports:
+ *
+ * Text search
+ * - Global search across: `title`, `description`, `sector`, `duration`, `keySkills`
+ * - Field-specific regex filters: `title`, `description`, `duration`
+ * - Exact (case-insensitive) match for `sector`
+ * - Flexible `keySkills` matching using an array of case-insensitive regexes
+ *
+ * Company filtering
+ * - By company ObjectId (`company`)
+ * - By company name (`companyName`, regex-based — requires populated data)
+ *
+ * Salary filtering
+ * - Interval-overlap logic using `minSalary` and `maxSalary`
+ * - Returns any post whose salary range intersects the requested interval
+ *
+ * Geolocation filtering
+ * - Uses `$geoWithin` with `$centerSphere`
+ * - Requires `location` field as GeoJSON Point `[longitude, latitude]`
+ * - Parameters: `cityLatitude`, `cityLongitude`, `radiusKm`
+ *
  */
+
 export class QueryBuilder<T> {
     /**
      * Create a new QueryBuilder.
@@ -25,12 +44,10 @@ export class QueryBuilder<T> {
     build(): FilterQuery<T> {
         const mutableFilter: Record<string, unknown> = {};
 
-        if (this.params.search) {
-            const regex = {
-                $regex: this.params.search as string,
-                $options: 'i',
-            };
-
+        // Global search across common text fields
+        const globalSearch = this.params.searchQuery;
+        if (globalSearch?.trim()) {
+            const regex = { $regex: globalSearch.trim(), $options: 'i' };
             mutableFilter.$or = [
                 { title: regex },
                 { description: regex },
@@ -40,11 +57,17 @@ export class QueryBuilder<T> {
             ];
         }
 
+        // Specific field filters
+        if (this.params.title) {
+            mutableFilter.title = { $regex: this.params.title as string, $options: 'i' };
+        }
+
+        if (this.params.description) {
+            mutableFilter.description = { $regex: this.params.description as string, $options: 'i' };
+        }
+
         if (this.params.sector) {
-            mutableFilter.sector = {
-                $regex: this.params.sector as string,
-                $options: 'i',
-            };
+            mutableFilter.sector = { $regex: `^${this.params.sector}$`, $options: 'i' };
         }
 
         if (this.params.type) {
@@ -52,19 +75,41 @@ export class QueryBuilder<T> {
         }
 
         if (this.params.duration) {
-            mutableFilter.duration = {
-                $regex: this.params.duration as string,
-                $options: 'i',
-            };
+            mutableFilter.duration = { $regex: this.params.duration as string, $options: 'i' };
         }
 
-        if (this.params.keyword) {
-            mutableFilter.keySkills = {
-                $regex: this.params.keyword as string,
-                $options: 'i',
-            };
+        // Company filter (by ObjectId)
+        if (this.params.company) {
+            mutableFilter.company = this.params.company;
         }
 
+        // Salary interval: match posts whose salary range overlaps the requested interval
+        const minSalary = this.params.minSalary as number | undefined;
+        const maxSalary = this.params.maxSalary as number | undefined;
+
+        if (minSalary !== undefined || maxSalary !== undefined) {
+            const andConditions = (mutableFilter.$and ??= []) as Array<Record<string, unknown>>;
+
+            if (minSalary !== undefined && maxSalary !== undefined) {
+                // Overlap: post's range [minSalary, maxSalary] overlaps with filter range
+                andConditions.push({ maxSalary: { $gte: minSalary } }, { minSalary: { $lte: maxSalary } });
+            } else if (minSalary !== undefined) {
+                // Only minimum: post.maxSalary >= minSalary
+                andConditions.push({ maxSalary: { $gte: minSalary } });
+            } else if (maxSalary !== undefined) {
+                // Only maximum: post.minSalary <= maxSalary
+                andConditions.push({ minSalary: { $lte: maxSalary } });
+            }
+        }
+
+        // KeySkills filter: support single string or array
+        if (this.params.keySkills) {
+            const ks = Array.isArray(this.params.keySkills) ? this.params.keySkills : [this.params.keySkills];
+            const regexes = ks.map((s: string) => new RegExp(s, 'i'));
+            mutableFilter.keySkills = { $in: regexes };
+        }
+
+        // Filter by company name (via populated field - requires lookup/aggregation for better performance)
         if (this.params.companyName) {
             mutableFilter['company.name'] = {
                 $regex: this.params.companyName as string,
@@ -72,31 +117,35 @@ export class QueryBuilder<T> {
             };
         }
 
-        mutableFilter.isVisible = true;
-
+        // Geolocation filter: find posts within a radius
         const lat = this.params.cityLatitude as number | undefined;
         const lon = this.params.cityLongitude as number | undefined;
         const radiusKm = this.params.radiusKm as number | undefined;
 
-        if (lat && lon && radiusKm) {
-            mutableFilter['company.location'] = {
+        if (lat !== undefined && lon !== undefined && radiusKm !== undefined && radiusKm > 0) {
+            // Post.location should be a GeoJSON Point: { type: 'Point', coordinates: [lon, lat] }
+            mutableFilter.location = {
                 $geoWithin: {
-                    $centerSphere: [[lon, lat], radiusKm / 6371],
+                    $centerSphere: [[lon, lat], radiusKm / 6371], // Earth radius in km
                 },
             };
         }
+
+        // Only show visible posts
+        mutableFilter.isVisible = true;
 
         return mutableFilter as FilterQuery<T>;
     }
 
     buildSort() {
+        // return string acceptable by Mongoose `sort()`
         switch (this.params.sort) {
             case 'dateAsc':
-                return "asc";
+                return 'createdAt';
             case 'dateDesc':
-                return "desc";
+                return '-createdAt';
             default:
-                return "asc";
+                return '-createdAt';
         }
     }
 }
