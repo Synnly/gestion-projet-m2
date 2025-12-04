@@ -5,6 +5,7 @@ import Logo from '../icons/Logo';
 import { User } from 'lucide-react';
 import { centerNavItems, rightNavItems, ItemLink } from './items';
 import { userStore } from '../../store/userStore';
+import { ToggleDarkMode } from '../darkMode/darkModeToggle';
 interface NavbarProps {
     appName?: string;
     /** If true, render only the logo/link */
@@ -41,6 +42,13 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
                         item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
                         className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                     />
+                    <div className="flex flex-row gap-2">
+                        <ItemLink
+                            item={{ key: 'signin', title: 'Se connecter', to: '/signin' }}
+                            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                        />
+                        <ToggleDarkMode />
+                    </div>
                 </div>
             </nav>
         );
@@ -115,6 +123,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
                         // Fallback for any plain link-type item
                         return <ItemLink key={item.key} item={item} />;
                     })}
+                    <ToggleDarkMode />
                 </div>
             </div>
         </nav>

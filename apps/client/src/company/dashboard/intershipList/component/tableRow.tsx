@@ -1,5 +1,5 @@
-import EditPencilIcon from '../../../components/icons/EditPencilIcon';
-import type { Internship } from '../../../types/internship.types';
+import EditPencilIcon from '../../../../components/icons/EditPencilIcon';
+import type { Internship } from '../../../../types/internship.types';
 import { NavLink } from 'react-router-dom';
 
 const formatDate = (timeStamp: string) => {
@@ -14,16 +14,15 @@ const formatDate = (timeStamp: string) => {
 export function TableRow({ internship }: { internship: Internship }) {
     return (
         <tr className="border-t border-t-slate-200 dark:border-t-slate-800">
-          <td className="px-4 py-2 text-color-accent text-center text-sm font-medium">
+            <td className="px-4 py-2 text-color-accent text-center text-sm font-medium">
                 <div className="flex flex-col items-center gap-1">
-                    <NavLink to={`/internship/detail/${internship._id}`}><div>{internship.title}</div></NavLink>
+                    <NavLink to={`/internship/detail/${internship._id}`}>
+                        <div>{internship.title}</div>
+                    </NavLink>
 
                     <div className="text-xs flex flex-row items-center gap-2">
-
                         <span>{internship.sector}</span>
-                        <div
-                            className={`size-1 rounded-full bg-green-500`}
-                        />
+                        <div className={`size-1 rounded-full bg-green-500`} />
 
                         <span>{internship.adress}</span>
                     </div>
