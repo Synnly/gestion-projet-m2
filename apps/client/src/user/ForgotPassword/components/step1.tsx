@@ -99,7 +99,7 @@ export const ForgotPasswordStep1 = ({
                     isPending={isPending}
                     title="Envoyer le lien de réinitialisation"
                     pendingTitle="Envoi en cours..."
-                    className="bg-primary p-3 rounded-lg cursor-pointer w-full text-black"
+                    className="bg-primary rounded-lg cursor-pointer w-full text-black"
                 />
 
                 {errorAttempts && (
