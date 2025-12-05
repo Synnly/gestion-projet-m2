@@ -79,7 +79,7 @@ main  feature2  dev  feature1
 ```
 
 ## Pull request
-Les fusions vers `dev` et `main` sont protégées. Pour mettre à jour les branches, il faut ouvrir un pull request en expliquant les modifications de la branche. La branche ne peut être fusionnée avec `dev` uniquement que si deux personnes non autrices des modifications les ont validées et que les conflits ont étés résolus. Idem pour la branche `main`.
+Les fusions vers `dev` et `main` sont protégées. Pour mettre à jour les branches, il faut ouvrir une pull request en expliquant les modifications de la branche. La branche ne peut être fusionnée avec `dev` uniquement que si deux personnes non autrices des modifications les ont validées et que les conflits ont étés résolus. Idem pour la branche `main`.
 
 ## Format des pull request
 ```
