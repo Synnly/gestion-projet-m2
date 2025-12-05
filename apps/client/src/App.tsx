@@ -33,13 +33,12 @@ import { DarkModeProvider } from './components/darkMode/DarkModeProvider';
 function App() {
     userStore.persist.rehydrate();
     const queryClient = new QueryClient();
-    // Replace the code below with your own components
     const route = [
         {
             path: '/',
             id: 'root',
             middleware: [completeProfilMiddleware],
-            element: <Outlet />,
+            element: <MainLayout />,
             children: [
                 {
                     path: 'logout',
