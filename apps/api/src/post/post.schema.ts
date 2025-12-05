@@ -15,15 +15,10 @@ export enum PostType {
 }
 
 /**
- * Post
- *
- * Mongoose schema class representing an internship/job post. Fields
- * documented here mirror the persisted document and include the
- * `location` GeoJSON Point used by the geospatial filters.
- *
- * Notes about `location`:
- * - `location` is an optional GeoJSON Point with `coordinates: [lon, lat]`.
- * - A `2dsphere` index is created on `location` to support radius queries.
+ * Mongoose `Post` schema for internship/job offers.
+ * Includes title, description, salary range, `keySkills` and optional GeoJSON `location`.
+ * `location` is indexed with `2dsphere`; compound and text indexes exist for production queries.
+ * Schema is tuned for efficient filtering (company, sector, type) and full-text search.
  */
 @Schema({ timestamps: true })
 export class Post {
@@ -103,5 +98,45 @@ export type PostDocument = Post & Document;
 
 export const PostSchema = SchemaFactory.createForClass(Post);
 
-// Create a 2dsphere index on the location field for geospatial queries
+// DATABASE INDEXES 
+
+// Geospatial index for location-based queries (radius search)
 PostSchema.index({ location: '2dsphere' });
+
+// Compound index for most common query pattern (filter by company + visibility + sort by date)
+// This covers queries like: GET /company/:id/posts?isVisible=true&sort=dateDesc
+PostSchema.index({ company: 1, isVisible: 1, createdAt: -1 }, { name: 'company_visible_date' });
+
+// Index for filtering visible posts by sector
+PostSchema.index({ isVisible: 1, sector: 1 }, { name: 'visible_sector' });
+
+// Index for filtering visible posts by type (Présentiel/Télétravail/Hybride)
+PostSchema.index({ isVisible: 1, type: 1 }, { name: 'visible_type' });
+
+// Index for date-based sorting within a company
+PostSchema.index({ company: 1, createdAt: -1 }, { name: 'company_date' });
+
+// Index for salary range queries (overlap logic)
+PostSchema.index({ minSalary: 1, maxSalary: 1 }, { name: 'salary_range' });
+
+// Full-text search index with weighted fields for global search
+// Weights: title (highest priority) > description > sector > duration
+// Usage: db.posts.find({ $text: { $search: "developer" } })
+PostSchema.index(
+    {
+        title: 'text',
+        description: 'text',
+        sector: 'text',
+        duration: 'text',
+    },
+    {
+        weights: {
+            title: 10,
+            description: 5,
+            sector: 3,
+            duration: 1,
+        },
+        name: 'post_text_search',
+        default_language: 'french',
+    },
+);
