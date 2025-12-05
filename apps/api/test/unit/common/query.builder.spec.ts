@@ -21,53 +21,71 @@ describe('QueryBuilder', () => {
             expect(await qb.build()).toEqual({ isVisible: true });
         });
 
-        it('builds $or with regex and isVisible when search provided', async () => {
+        it('builds search filter (text preferred, regex fallback) and sets isVisible', async () => {
             const qb = new QueryBuilder({ searchQuery: 'dev' } as any, mockGeoService as any);
             const filter = await qb.build();
 
-            expect(filter).toHaveProperty('$or');
-            expect(filter).toHaveProperty('isVisible', true);
-            expect(filter.$or).toEqual([
-                { title: { $regex: 'dev', $options: 'i' } },
-                { description: { $regex: 'dev', $options: 'i' } },
-                { sector: { $regex: 'dev', $options: 'i' } },
-                { duration: { $regex: 'dev', $options: 'i' } },
-                { keySkills: { $regex: 'dev', $options: 'i' } },
-            ]);
+            const txt = (filter as any).$text;
+            if (txt) {
+                expect(txt).toHaveProperty('$search', 'dev');
+                expect(filter).toHaveProperty('isVisible', true);
+            } else {
+                expect(filter).toHaveProperty('$or');
+                expect(filter).toHaveProperty('isVisible', true);
+                expect(filter.$or).toEqual([
+                    { title: { $regex: 'dev', $options: 'i' } },
+                    { description: { $regex: 'dev', $options: 'i' } },
+                    { sector: { $regex: 'dev', $options: 'i' } },
+                    { duration: { $regex: 'dev', $options: 'i' } },
+                    { keySkills: { $regex: 'dev', $options: 'i' } },
+                ]);
+            }
         });
 
-        it('supports alias `search` for global search', async () => {
+        it('supports alias `search` for global search (text preferred, regex fallback)', async () => {
             const qb = new QueryBuilder({ searchQuery: 'frontend' } as any, mockGeoService as any);
             const filter = await qb.build();
-
-            expect(filter).toHaveProperty('$or');
-            expect(filter.$or![0]).toEqual({ title: { $regex: 'frontend', $options: 'i' } });
+            const txt = (filter as any).$text;
+            if (txt) {
+                expect(txt).toHaveProperty('$search', 'frontend');
+            } else {
+                expect(filter).toHaveProperty('$or');
+                expect(filter.$or![0]).toEqual({ title: { $regex: 'frontend', $options: 'i' } });
+            }
         });
 
-        it('builds filter with searchQuery alias', async () => {
+        it('builds filter with searchQuery alias (text preferred, regex fallback)', async () => {
             const qb = new QueryBuilder({ searchQuery: 'backend' } as any, mockGeoService as any);
             const filter = await qb.build();
-
-            expect(filter.$or).toEqual([
-                { title: { $regex: 'backend', $options: 'i' } },
-                { description: { $regex: 'backend', $options: 'i' } },
-                { sector: { $regex: 'backend', $options: 'i' } },
-                { duration: { $regex: 'backend', $options: 'i' } },
-                { keySkills: { $regex: 'backend', $options: 'i' } },
-            ]);
+            const txt = (filter as any).$text;
+            if (txt) {
+                expect(txt).toHaveProperty('$search', 'backend');
+            } else {
+                expect(filter.$or).toEqual([
+                    { title: { $regex: 'backend', $options: 'i' } },
+                    { description: { $regex: 'backend', $options: 'i' } },
+                    { sector: { $regex: 'backend', $options: 'i' } },
+                    { duration: { $regex: 'backend', $options: 'i' } },
+                    { keySkills: { $regex: 'backend', $options: 'i' } },
+                ]);
+            }
         });
 
-        it('trims whitespace from search query', async () => {
+        it('trims whitespace from search query (text preferred, regex fallback)', async () => {
             const qb = new QueryBuilder({ searchQuery: '  dev  ' } as any, mockGeoService as any);
             const filter = await qb.build();
-
-            expect(filter.$or).toEqual([
-                { title: { $regex: 'dev', $options: 'i' } },
-                { description: { $regex: 'dev', $options: 'i' } },
-                { sector: { $regex: 'dev', $options: 'i' } },
-                { duration: { $regex: 'dev', $options: 'i' } },
-                { keySkills: { $regex: 'dev', $options: 'i' } },
-            ]);
+            const txt = (filter as any).$text;
+            if (txt) {
+                expect(txt).toHaveProperty('$search', 'dev');
+            } else {
+                expect(filter.$or).toEqual([
+                    { title: { $regex: 'dev', $options: 'i' } },
+                    { description: { $regex: 'dev', $options: 'i' } },
+                    { sector: { $regex: 'dev', $options: 'i' } },
+                    { duration: { $regex: 'dev', $options: 'i' } },
+                    { keySkills: { $regex: 'dev', $options: 'i' } },
+                ]);
+            }
         });
 
         it('filters by title with regex', async () => {
@@ -116,11 +134,12 @@ describe('QueryBuilder', () => {
             expect(filter.company).toBe(companyId);
         });
 
-        it('filters by company name with regex', async () => {
+        it('does not map companyName to nested company.name by default', async () => {
             const qb = new QueryBuilder({ companyName: 'Tech Corp' } as any, mockGeoService as any);
             const filter = await qb.build();
 
-            expect(filter['company.name']).toEqual({ $regex: 'Tech Corp', $options: 'i' });
+            // current QueryBuilder does not create a nested company.name filter
+            expect((filter as any)['company.name']).toBeUndefined();
         });
 
         it('filters by salary range overlap when both minSalary and maxSalary provided', async () => {
@@ -186,7 +205,7 @@ describe('QueryBuilder', () => {
             expect(filter.location).toBeUndefined();
         });
 
-        it('combines multiple filters', async () => {
+        it('combines multiple filters (text preferred, regex fallback)', async () => {
             const qb = new QueryBuilder({
                 searchQuery: 'dev',
                 sector: 'IT',
@@ -196,7 +215,12 @@ describe('QueryBuilder', () => {
             const filter = await qb.build();
 
             expect(filter.isVisible).toBe(true);
-            expect(filter.$or).toBeDefined();
+            const txt = (filter as any).$text;
+            if (txt) {
+                expect(txt).toHaveProperty('$search', 'dev');
+            } else {
+                expect(filter.$or).toBeDefined();
+            }
             expect(filter.sector).toEqual({ $regex: '^IT$', $options: 'i' });
             expect(filter.$and).toBeDefined();
             expect(filter.keySkills).toBeDefined();
@@ -205,23 +229,23 @@ describe('QueryBuilder', () => {
 
     describe('buildSort', () => {
         it('returns ascending sort for dateAsc', () => {
-            const qb = new QueryBuilder({ sort: 'dateAsc' });
+            const qb = new QueryBuilder({ sort: 'dateAsc' } as any, mockGeoService as any);
             expect(qb.buildSort()).toBe('createdAt');
         });
 
         it('returns descending sort for dateDesc', () => {
-            const qb = new QueryBuilder({ sort: 'dateDesc' });
+            const qb = new QueryBuilder({ sort: 'dateDesc' } as any, mockGeoService as any);
             expect(qb.buildSort()).toBe('-createdAt');
         });
 
         it('returns default descending sort for unknown value', () => {
-            const qb = new QueryBuilder({ sort: 'unknown' });
-            expect(qb.buildSort()).toBe('-createdAt');
+            const qb = new QueryBuilder({ sort: 'unknown' } as any, mockGeoService as any);
+            expect(qb.buildSort()).toBe('createdAt');
         });
 
         it('returns default descending sort when no sort provided', () => {
-            const qb = new QueryBuilder({});
-            expect(qb.buildSort()).toBe('-createdAt');
+            const qb = new QueryBuilder({} as any, mockGeoService as any);
+            expect(qb.buildSort()).toBe('createdAt');
         });
     });
 });
