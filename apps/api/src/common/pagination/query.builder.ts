@@ -89,16 +89,16 @@ export class QueryBuilder<T> {
         const minSalary = this.params.minSalary as number | undefined;
         const maxSalary = this.params.maxSalary as number | undefined;
 
-        if (minSalary !== undefined || maxSalary !== undefined) {
+        if (minSalary || maxSalary) {
             const andConditions = (mutableFilter.$and ??= []) as Array<Record<string, unknown>>;
 
-            if (minSalary !== undefined && maxSalary !== undefined) {
+            if (minSalary && maxSalary) {
                 // Overlap: post's range [minSalary, maxSalary] overlaps with filter range
                 andConditions.push({ maxSalary: { $gte: minSalary } }, { minSalary: { $lte: maxSalary } });
-            } else if (minSalary !== undefined) {
+            } else if (minSalary) {
                 // Only minimum: post.maxSalary >= minSalary
                 andConditions.push({ maxSalary: { $gte: minSalary } });
-            } else if (maxSalary !== undefined) {
+            } else if (maxSalary) {
                 // Only maximum: post.minSalary <= maxSalary
                 andConditions.push({ minSalary: { $lte: maxSalary } });
             }
