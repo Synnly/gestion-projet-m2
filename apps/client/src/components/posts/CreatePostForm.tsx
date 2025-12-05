@@ -330,7 +330,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
 
                             <input
                                 className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                placeholder="Ajouter une competence et appuyer sur Entree"
+                                placeholder="Ajouter une compétence et appuyer sur Entrée"
                                 value={skillInput}
                                 onChange={(e) => setSkillInput(e.target.value)}
                                 onKeyDown={handleSkillKeyDown}
