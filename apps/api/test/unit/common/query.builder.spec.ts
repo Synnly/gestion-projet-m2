@@ -88,6 +88,35 @@ describe('QueryBuilder', () => {
             }
         });
 
+        it('escapes regex special characters when falling back to regex search', async () => {
+            const special = 'dev.*+?^${}()|[]\\';
+
+            const originalDesc = Object.getOwnPropertyDescriptor(Object.prototype, '$text');
+            Object.defineProperty(Object.prototype, '$text', {
+                set() {
+                    throw new Error('force fallback');
+                },
+                configurable: true,
+            });
+
+            try {
+                const qb = new QueryBuilder({ searchQuery: special } as any, mockGeoService as any);
+                const filter = await qb.build();
+
+                expect(filter.$or).toBeDefined();
+                const regexObj = filter.$or[0].title as any;
+                const expectedEscaped = special.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                expect(regexObj).toHaveProperty('$regex', expectedEscaped);
+                expect(regexObj).toHaveProperty('$options', 'i');
+            } finally {
+                if (originalDesc) {
+                    Object.defineProperty(Object.prototype, '$text', originalDesc);
+                } else {
+                    delete (Object.prototype as any).$text;
+                }
+            }
+        });
+
         it('filters by title with regex', async () => {
             const qb = new QueryBuilder({ title: 'Développeur' } as any, mockGeoService as any);
             const filter = await qb.build();
