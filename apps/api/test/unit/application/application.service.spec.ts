@@ -258,4 +258,55 @@ describe('ApplicationService', () => {
             expect(exec).toHaveBeenCalledTimes(1);
         });
     });
+
+    describe('getApplicationByStudentAndPost', () => {
+        it('should return an application when valid studentId and postId are provided, with populated fields', async () => {
+            const application = {
+                _id: new Types.ObjectId(),
+                student: studentId,
+                post: postId,
+                status: ApplicationStatus.Pending,
+                cv: 'cv.pdf',
+                coverLetter: 'lm.docx',
+            };
+
+            const exec = jest.fn().mockResolvedValue(application);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+
+            const result = await service.getApplicationByStudentAndPost(studentId, postId);
+
+            expect(mockApplicationModel.findOne).toHaveBeenCalledWith({
+                student: studentId,
+                post: postId,
+                deletedAt: { $exists: false },
+            });
+            expect(populate).toHaveBeenCalledWith([
+                { path: 'post', select: service.postFieldsToPopulate },
+                { path: 'student', select: service.studentFieldsToPopulate },
+            ]);
+            expect(exec).toHaveBeenCalledTimes(1);
+            expect(result).toEqual(application);
+        });
+
+        it('should return null when no application exists for the provided studentId and postId, with populated fields', async () => {
+            const exec = jest.fn().mockResolvedValue(null);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+
+            const result = await service.getApplicationByStudentAndPost(studentId, postId);
+
+            expect(mockApplicationModel.findOne).toHaveBeenCalledWith({
+                student: studentId,
+                post: postId,
+                deletedAt: { $exists: false },
+            });
+            expect(populate).toHaveBeenCalledWith([
+                { path: 'post', select: service.postFieldsToPopulate },
+                { path: 'student', select: service.studentFieldsToPopulate },
+            ]);
+            expect(exec).toHaveBeenCalledTimes(1);
+            expect(result).toBeNull();
+        });
+    });
 });

@@ -148,6 +148,10 @@ export class ApplicationService {
                 post: postId,
                 deletedAt: { $exists: false },
             })
+            .populate([
+                { path: 'post', select: this.postFieldsToPopulate },
+                { path: 'student', select: this.studentFieldsToPopulate },
+            ])
             .exec();
     }
 }

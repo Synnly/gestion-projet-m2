@@ -516,4 +516,37 @@ describe('Application Integration Tests', () => {
                 .expect(400);
         });
     });
+
+    describe('GET /check', () => {
+        it('should return 403 if request come from companies', async () => {
+            const company = await createCompany();
+
+            await request(app.getHttpServer())
+                .get('/api/application/check?studentId=507f1f77bcf86cd799439098&postId=507f1f77bcf86cd799439099')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id)}`)
+                .expect(403);
+        });
+
+        it('should return 401 if user is not authentified', async () => {
+            await request(app.getHttpServer())
+                .get('/api/application/check?studentId=507f1f77bcf86cd799439098&postId=507f1f77bcf86cd799439099')
+                .expect(401);
+        });
+
+        it('should validate request parameters', async () => {
+            const student = await createStudent();
+            await request(app.getHttpServer())
+                .get('/api/application/check?studentId=invalid&postId=alsoinvalid')
+                .set('Authorization', `Bearer ${tokenFor(Role.STUDENT, student._id)}`)
+                .expect(400);
+        });
+
+        it('should return 404 for non-existent postings', async () => {
+            const student = await createStudent();
+            await request(app.getHttpServer())
+                .get('/api/application/check?studentId=507f1f77bcf86cd799439098&postId=507f1f77bcf86cd799439099')
+                .set('Authorization', `Bearer ${tokenFor(Role.STUDENT, student._id)}`)
+                .expect(404);
+        });
+    });
 });

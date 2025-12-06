@@ -162,7 +162,7 @@ describe('ApplicationController', () => {
             expect(service.updateStatus).toHaveBeenCalledTimes(1);
         });
     });
-,    describe('getApplicationByStudentAndPost', () => {
+    describe('getApplicationByStudentAndPost', () => {
         it('should return an application when valid studentId and postId are provided', async () => {
             const application = {
                 _id: applicationId,
@@ -185,7 +185,9 @@ describe('ApplicationController', () => {
         it('should throw NotFoundException when no application is found for the provided studentId and postId', async () => {
             mockApplicationService.getApplicationByStudentAndPost.mockResolvedValue(null);
 
-            await expect(controller.getApplicationByStudentAndPost(studentId, postId)).rejects.toThrow(NotFoundException);
+            await expect(controller.getApplicationByStudentAndPost(studentId, postId)).rejects.toThrow(
+                NotFoundException,
+            );
             expect(service.getApplicationByStudentAndPost).toHaveBeenCalledWith(studentId, postId);
         });
     });
