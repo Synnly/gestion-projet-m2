@@ -32,7 +32,7 @@ export class ResetPasswordDto {
     @IsEmail({}, { message: 'Invalid email format' })
     @IsNotEmpty({ message: 'Email is required' })
     email: string;
-    
+
     @IsString()
     @IsNotEmpty({ message: 'New password is required' })
     @IsStrongPassword(
