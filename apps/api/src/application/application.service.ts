@@ -132,6 +132,12 @@ export class ApplicationService {
         await application.save();
     }
 
+    /**
+     * Return apply with studentId and postId.
+     * @param studentId The id of student
+     * @param postId The id of post
+     * @returns A promise with the application or null if not found
+     */
     async getApplicationByStudentAndPost(
         studentId: Types.ObjectId,
         postId: Types.ObjectId,

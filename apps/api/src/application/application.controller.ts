@@ -50,6 +50,7 @@ export class ApplicationController {
     @Param studentId The id of the student applying.
     * @param postId The id of the post to which the student is applying.
     * @returns boolean if an application exists for the given student and post.
+    * @throws NotFoundException if no application exists for the given student and post.
     **/
     @Get('check')
     @UseGuards(AuthGuard, RolesGuard)
@@ -58,12 +59,12 @@ export class ApplicationController {
     async getApplicationByStudentAndPost(
         @Query('studentId', ParseObjectIdPipe) studentId: Types.ObjectId,
         @Query('postId', ParseObjectIdPipe) postId: Types.ObjectId,
-    ): Promise<Application> {
+    ): Promise<ApplicationDto> {
         const application = await this.applicationService.getApplicationByStudentAndPost(studentId, postId);
         if (!application) {
             throw new NotFoundException(`No application found for student ${studentId} and post ${postId}`);
         }
-        return application;
+        return plainToInstance(ApplicationDto, application, { excludeExtraneousValues: true });
     }
     /**
      * Return a single application by id.

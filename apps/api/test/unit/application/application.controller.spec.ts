@@ -19,6 +19,7 @@ describe('ApplicationController', () => {
         findOne: jest.fn(),
         create: jest.fn(),
         updateStatus: jest.fn(),
+        getApplicationByStudentAndPost: jest.fn(),
     };
 
     const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
@@ -159,6 +160,33 @@ describe('ApplicationController', () => {
 
             expect(service.updateStatus).toHaveBeenCalledWith(applicationId, ApplicationStatus.Read);
             expect(service.updateStatus).toHaveBeenCalledTimes(1);
+        });
+    });
+,    describe('getApplicationByStudentAndPost', () => {
+        it('should return an application when valid studentId and postId are provided', async () => {
+            const application = {
+                _id: applicationId,
+                post: { _id: postId, title: 'Test Post' },
+                student: { _id: studentId, firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+                status: ApplicationStatus.Pending,
+                cv: 'cv.pdf',
+                coverLetter: 'lm.docx',
+            };
+            mockApplicationService.getApplicationByStudentAndPost.mockResolvedValue(application);
+
+            const result = await controller.getApplicationByStudentAndPost(studentId, postId);
+
+            expect(result).toBeInstanceOf(ApplicationDto);
+            expect(result._id.toString()).toBe(applicationId.toString());
+            expect(result.status).toBe(ApplicationStatus.Pending);
+            expect(service.getApplicationByStudentAndPost).toHaveBeenCalledWith(studentId, postId);
+        });
+
+        it('should throw NotFoundException when no application is found for the provided studentId and postId', async () => {
+            mockApplicationService.getApplicationByStudentAndPost.mockResolvedValue(null);
+
+            await expect(controller.getApplicationByStudentAndPost(studentId, postId)).rejects.toThrow(NotFoundException);
+            expect(service.getApplicationByStudentAndPost).toHaveBeenCalledWith(studentId, postId);
         });
     });
 });
