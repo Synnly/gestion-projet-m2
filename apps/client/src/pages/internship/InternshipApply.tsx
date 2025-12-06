@@ -7,7 +7,7 @@ import InternshipDetail from '../../modules/internship/InternshipDetail';
 import { useRef, useState, type FormEvent } from 'react';
 import { userStore } from '../../store/userStore';
 import { useUploadFile } from '../../hooks/useUploadFile';
-import { Modal, type ModalHandle } from '../../components/ui/modal/Modal';
+import { type ModalHandle } from '../../components/ui/modal/Modal';
 import { toast } from 'react-toastify';
 
 const getfileExtension = (file: File): string => {
@@ -22,7 +22,6 @@ export const InternshipApply = () => {
     const payload = user ? get(user) : null;
     const navigate = useNavigate();
     const upload = useUploadFile();
-    const modalRef = useRef<ModalHandle>(null);
     const queryClient = useQueryClient();
     //even if we hide button if application alredy exists, we still need to check to avoid unsigned user to signIn and access apply page as company
     const { data: application, isLoading: isCheckLoading } = useQuery({
@@ -104,14 +103,10 @@ export const InternshipApply = () => {
         if (!cv || !coverLetter) return;
         const result = await mutation.mutateAsync();
         if (result) {
-            if (modalRef.current) {
-                modalRef.current.showModal('Candidature envoyée', 'Votre candidature a été envoyée avec succès.', 'OK');
-                setCoverLetter(null);
-                setCv(null);
-                setTimeout(() => {
-                    navigate('/');
-                }, 2000);
-            }
+            setCoverLetter(null);
+            setCv(null);
+            toast.success('Candidature envoyée avec succès.', { toastId: 'application-success' });
+            navigate('/');
         }
     }
     if (application) {
@@ -120,7 +115,6 @@ export const InternshipApply = () => {
     }
     return (
         <>
-            <Modal ref={modalRef} />
             <div className="flex flex-col min-h-screen">
                 <Navbar />
                 <div className="flex-1 flex flex-col">
