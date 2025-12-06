@@ -131,4 +131,17 @@ export class ApplicationService {
         application.status = status;
         await application.save();
     }
+
+    async getApplicationByStudentAndPost(
+        studentId: Types.ObjectId,
+        postId: Types.ObjectId,
+    ): Promise<Application | null> {
+        return await this.applicationModel
+            .findOne({
+                student: studentId,
+                post: postId,
+                deletedAt: { $exists: false },
+            })
+            .exec();
+    }
 }

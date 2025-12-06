@@ -1,7 +1,7 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
@@ -12,6 +12,7 @@ import { useCreatePostStore, type WorkMode } from '../../store/CreatePostStore';
 import { profileStore } from '../../store/profileStore';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import { companyInternshipStore } from '../../store/companyInternshipStore';
+import { toast } from 'react-toastify';
 
 type PostFormMode = 'create' | 'edit';
 
@@ -171,13 +172,14 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                     ? "L'offre de stage a été mise a jour avec succès."
                     : "L'offre de stage a été créée avec succès.";
 
-            toast.success(successText);
+            toast.success(successText, { toastId: 'post-success' });
             navigate('/company/dashboard');
         },
         onError: (error) => {
             console.error(error);
             toast.error(
                 error instanceof Error ? error.message : "Une erreur est survenue lors de l'envoi de l'offre de stage.",
+                { toastId: 'post-error' },
             );
         },
     });
@@ -187,7 +189,9 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         if (mutation.isPending) return;
 
         if (!profile?._id) {
-            toast.error("Impossible de créer l'annonce : identifiant entreprise manquant.");
+            toast.error("Impossible de créer l'annonce : identifiant entreprise manquant.", {
+                toastId: 'missing-company-id',
+            });
             return;
         }
 

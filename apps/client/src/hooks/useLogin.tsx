@@ -31,7 +31,6 @@ export const useLogin = () => {
                 credentials: 'include',
             });
             if (!res.ok) {
-                // Récupérer un message d’erreur serveur propre
                 const message = await res.json();
                 throw new Error(translateMessage(message.message));
             }

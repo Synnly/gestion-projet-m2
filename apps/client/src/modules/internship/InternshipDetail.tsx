@@ -6,6 +6,7 @@ import { Bookmark, ArrowUpRight, Share2 } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import { userStore } from '../../store/userStore';
+import { ApplicationStatusChecker } from '../../pages/internship/component/InternshipApplyChecker';
 const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }> = ({
     internship,
     applyable = true,
@@ -17,7 +18,7 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
     const isSaved = savedInternships.includes(internship._id);
     const access = userStore((state) => state.access);
     const get = userStore((state) => state.get);
-    const role = get(access)?.role;
+    const payload = get(access);
     const formatSalary = (min?: number, max?: number) => {
         if (!min && !max) return null;
         if (min && max) return `${min}€ - ${max}€`;
@@ -47,12 +48,6 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
         return () => window.removeEventListener('resize', update);
     }, [setDetailHeight]);
 
-    const navigate = useNavigate();
-
-    const handleApply = () => {
-        navigate(`/internship/apply/${internship._id}`);
-    };
-
     return (
         <div className="col-span-12 lg:col-span-7">
             <div ref={rootRef}>
@@ -73,6 +68,7 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                                         </div>
                                     )}
                                 </div>
+
                                 <div>
                                     <NavLink to={`/internship/detail/${internship._id}`}>
                                         <h3 className="text-xl font-bold text-base-content">{internship.title}</h3>
@@ -81,31 +77,24 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                                         {internship.company.name} • {internship.adress}
                                     </p>
                                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                                        <span className="badge badge-success text-base-content">{internship.type}</span>
+                                        <span className="badge badge-success text-content-primary">
+                                            {internship.type}
+                                        </span>
                                         {internship.sector && <span className="badge">{internship.sector}</span>}
                                         {internship.duration && <span className="badge">{internship.duration}</span>}
                                         {salary && <span className="badge badge-accent">{salary}</span>}
                                     </div>
                                 </div>
                             </div>
-                            <button className="text-primary" onClick={() => toggleSaveInternship(internship._id)}>
-                                <Bookmark size={20} fill={isSaved ? 'currentColor' : 'none'} />
-                            </button>
+                            {applyable && (
+                                <button className="text-primary" onClick={() => toggleSaveInternship(internship._id)}>
+                                    <Bookmark size={20} fill={isSaved ? 'currentColor' : 'none'} />
+                                </button>
+                            )}
                         </div>
-                        {applyable && role && role === 'STUDENT' && (
-                            <div className="mt-6 flex flex-wrap gap-3">
-                                <button
-                                    onClick={handleApply}
-                                    className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2"
-                                >
-                                    <ArrowUpRight size={20} />
-                                    <span>Candidater</span>
-                                </button>
-                                <button className="btn btn-ghost flex h-11 items-center justify-center gap-2">
-                                    <Share2 size={20} />
-                                    <span>Partager</span>
-                                </button>
-                            </div>
+
+                        {applyable && ((payload && payload.role === 'STUDENT') || !payload) && (
+                            <ApplicationStatusChecker studentId={payload?.id} adId={internship._id} />
                         )}
                         <div className="mt-8 border-t border-base-300! pt-6">
                             <h4 className="text-lg font-bold">Description du stage</h4>

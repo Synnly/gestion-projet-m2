@@ -23,7 +23,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const item: ToastItem = { id, type, message, title };
         setItems((s) => [item, ...s]);
         // Auto dismiss
-        setTimeout(() => setItems((s) => s.filter((i) => i.id !== id)), 4500);
+        setTimeout(() => setItems((s) => s.filter((i) => i.id !== id)), 3500);
     }, []);
 
     const api = useMemo(

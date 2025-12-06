@@ -29,7 +29,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import ToastProvider from './components/ui/toast/ToastProvider';
 import { InternshipApply } from './pages/internship/InternshipApply';
 import { DarkModeProvider } from './components/darkMode/DarkModeProvider';
-
+import { MainLayout } from './pages/layout/MainLayout';
 function App() {
     userStore.persist.rehydrate();
     const queryClient = new QueryClient();
@@ -48,36 +48,41 @@ function App() {
                     },
                 },
 
-                { index: true, element: <InternshipPage /> },
+                { index: true, element: <InternshipPage />, handle: { title: 'Accueil' } },
                 {
                     loader: notAuthMiddleWare,
                     children: [
-                        { path: 'signin', element: <Login /> },
-                        { path: 'forgot-password', element: <ForgotPassword /> },
-                        { path: 'company/signup', element: <CompanySignup /> },
+                        { path: 'signin', element: <Login />, handle: { title: 'Connection' } },
+                        {
+                            path: 'forgot-password',
+                            element: <ForgotPassword />,
+                            handle: { title: 'Mot de passe oublié' },
+                        },
+                        {
+                            path: 'company/signup',
+                            element: <CompanySignup />,
+                            handle: { title: "Inscription d'entreprise" },
+                        },
                     ],
                 },
                 {
                     loader: protectedMiddleware,
                     element: <AuthRoutes />,
                     children: [
-                        { path: 'verify', element: <VerifyEmail /> },
-                        { path: 'complete-profil', element: <CompleteProfil /> },
+                        { path: 'verify', element: <VerifyEmail />, handle: { title: 'Vérification email' } },
+                        { path: 'complete-profil', element: <CompleteProfil />, handle: { title: 'Compléter profil' } },
                         {
                             path: 'company',
                             element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
                             children: [
                                 {
                                     path: 'dashboard',
+                                    handle: { title: 'Tableau de bord entreprise' },
                                     element: <CompanyDashboard />,
                                     children: [
                                         {
                                             index: true,
-                                            element: (
-                                                <ToastProvider>
-                                                    <DashboardInternshipList />
-                                                </ToastProvider>
-                                            ),
+                                            element: <DashboardInternshipList />,
                                         },
                                     ],
                                 },
@@ -108,11 +113,7 @@ function App() {
 
                                 {
                                     path: 'detail/:id',
-                                    element: (
-                                        <ToastProvider>
-                                            <InternshipDetailPage />
-                                        </ToastProvider>
-                                    ),
+                                    element: <InternshipDetailPage />,
                                     loader: async ({ params }: any) => {
                                         const id = params?.id;
                                         if (!id) throw new Response('Missing id', { status: 400 });

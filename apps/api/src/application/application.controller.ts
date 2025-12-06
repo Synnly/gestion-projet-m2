@@ -9,6 +9,7 @@ import {
     ParseEnumPipe,
     Post,
     Put,
+    Query,
     UseGuards,
     ValidationPipe,
 } from '@nestjs/common';
@@ -23,7 +24,7 @@ import { ApplicationDto } from './dto/application.dto';
 import { ApplicationOwnerGuard } from '../common/roles/applicationOwner.guard';
 import { CreateApplicationDto } from './dto/createApplication.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
-import { ApplicationStatus } from './application.schema';
+import { Application, ApplicationStatus } from './application.schema';
 
 @Controller('/api/application')
 export class ApplicationController {
@@ -45,6 +46,25 @@ export class ApplicationController {
         );
     }
 
+    /**
+    @Param studentId The id of the student applying.
+    * @param postId The id of the post to which the student is applying.
+    * @returns boolean if an application exists for the given student and post.
+    **/
+    @Get('check')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN, Role.STUDENT)
+    @HttpCode(HttpStatus.OK)
+    async getApplicationByStudentAndPost(
+        @Query('studentId', ParseObjectIdPipe) studentId: Types.ObjectId,
+        @Query('postId', ParseObjectIdPipe) postId: Types.ObjectId,
+    ): Promise<Application> {
+        const application = await this.applicationService.getApplicationByStudentAndPost(studentId, postId);
+        if (!application) {
+            throw new NotFoundException(`No application found for student ${studentId} and post ${postId}`);
+        }
+        return application;
+    }
     /**
      * Return a single application by id.
      * Accessible by ADMIN, or by the STUDENT or COMPANY who owns the application.

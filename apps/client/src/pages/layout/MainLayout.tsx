@@ -1,23 +1,20 @@
 import { useEffect } from 'react';
 import { Outlet, useMatches, type UIMatch } from 'react-router-dom';
 
-export function Layout() {
-    const matches = useMatches();
+interface RouteMeta {
+    title?: string;
+}
+
+export function MainLayout() {
+    const matches = useMatches() as Array<UIMatch<RouteMeta>>;
 
     useEffect(() => {
-        const current = matches.find((m: UIMatch) => {
-            const meta = m.handle as { title?: string } | undefined;
-            return meta;
-        });
+        const match = matches.find((m) => m.handle?.title);
 
-        if (current) {
-            document.title = `${current.handle.title} – Mon App`;
+        if (match?.handle?.title) {
+            document.title = match.handle.title;
         }
     }, [matches]);
 
-    return (
-        <div>
-            <Outlet />
-        </div>
-    );
+    return <Outlet />;
 }

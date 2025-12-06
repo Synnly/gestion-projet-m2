@@ -1,0 +1,82 @@
+import { useQuery } from '@tanstack/react-query';
+import { ArrowUpRight, Share2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ApplicationStatus } from './ApplicationStatus';
+import Spinner from '../../../components/Spinner/Spinner';
+export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: string; adId: string }) => {
+    const {
+        data: application,
+        isLoading,
+        isError,
+    } = useQuery({
+        // La clé de requête est unique pour le cache
+        queryKey: ['application', studentId, adId],
+
+        queryFn: async () => {
+            const url = `${import.meta.env.VITE_APIURL}/api/application/check?studentId=${studentId}&postId=${adId}`;
+
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+            });
+
+            if (res.status === 404) {
+                return null;
+            }
+
+            if (res.ok) {
+                const responseData = await res.json();
+                return responseData;
+            }
+
+            throw new Error(`Erreur serveur: Statut ${res.status}`);
+        },
+
+        enabled: !!studentId && !!adId,
+        staleTime: 1 * 60 * 1000, // 5 minutes
+    });
+
+    const navigate = useNavigate();
+
+    const handleApply = () => {
+        navigate(`/internship/apply/${adId}`);
+    };
+
+    if (isLoading) {
+        return (
+            <div className="mt-6 flex flex-wrap gap-3 justify-center">
+                <Spinner />
+            </div>
+        );
+    }
+    return (
+        <div className="mt-6 flex flex-wrap gap-3 justify-center">
+            {!application ? (
+                <>
+                    <button
+                        onClick={handleApply}
+                        className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2"
+                    >
+                        <ArrowUpRight size={20} />
+                        <span>Candidater</span>
+                    </button>
+                    <button className="btn btn-ghost flex h-11 items-center justify-center gap-2">
+                        <Share2 size={20} />
+                        <span>Partager</span>
+                    </button>
+                </>
+            ) : (
+                <div className="flex flex-col">
+                    <ApplicationStatus status={application.status} />
+                    <Link
+                        to={`/candidatures/${application._id}`}
+                        className="btn btn-primary flex py-2 h-11 flex-1 items-center justify-center gap-2"
+                    >
+                        Voir le statut
+                    </Link>
+                </div>
+            )}
+        </div>
+    );
+};
