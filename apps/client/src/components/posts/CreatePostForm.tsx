@@ -161,7 +161,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
     const mutation = useMutation({
         mutationFn: async (payload: { companyId: string; data: CreatePostPayload['data'] }) => {
             if (mode === 'edit') {
-                if (!postId) throw new Error("Identifiant de l'annonce manquant pour la mise a jour.");
+                if (!postId) throw new Error("Identifiant de l'annonce manquant pour la mise à jour.");
                 return updatePost({ companyId: payload.companyId, postId, data: payload.data });
             }
             return createPost(payload);
@@ -169,7 +169,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         onSuccess: () => {
             const successText =
                 mode === 'edit'
-                    ? "L'offre de stage a été mise a jour avec succès."
+                    ? "L'offre de stage a été mise à jour avec succès."
                     : "L'offre de stage a été créée avec succès.";
 
             toast.success(successText, { toastId: 'post-success' });
@@ -247,7 +247,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             </label>
                             <input
                                 className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                placeholder="Ex : Stagiaire Developpeur Frontend"
+                                placeholder="Ex : Stagiaire Développeur Frontend"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                             />
@@ -334,7 +334,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
 
                             <input
                                 className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                placeholder="Ajouter une competence et appuyer sur Entree"
+                                placeholder="Ajouter une compétence et appuyer sur Entrée"
                                 value={skillInput}
                                 onChange={(e) => setSkillInput(e.target.value)}
                                 onKeyDown={handleSkillKeyDown}

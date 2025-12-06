@@ -6,6 +6,8 @@ import { Post } from '../../../src/post/post.schema';
 import { CreatePostDto } from '../../../src/post/dto/createPost.dto';
 import { PostType } from '../../../src/post/post.schema';
 import { PaginationService } from '../../../src/common/pagination/pagination.service';
+import { GeoService } from '../../../src/common/geography/geo.service';
+import { CompanyService } from '../../../src/company/company.service';
 import { CreationFailedError } from '../../../src/errors/creationFailedError';
 
 const basePost = {
@@ -50,6 +52,20 @@ describe('PostService', () => {
         paginate: jest.fn(),
     };
 
+    const mockGeoService = {
+        geocodeAddress: jest.fn().mockResolvedValue([2.3522, 48.8566]),
+    };
+
+    const mockCompanyService = {
+        findOne: jest.fn().mockResolvedValue({
+            streetNumber: '10',
+            streetName: 'Rue de Test',
+            postalCode: '75001',
+            city: 'Paris',
+            country: 'France',
+        }),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -61,6 +77,14 @@ describe('PostService', () => {
                 {
                     provide: PaginationService,
                     useValue: mockPaginationService,
+                },
+                {
+                    provide: GeoService,
+                    useValue: mockGeoService,
+                },
+                {
+                    provide: CompanyService,
+                    useValue: mockCompanyService,
                 },
             ],
         }).compile();
@@ -103,7 +127,12 @@ describe('PostService', () => {
             const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
                 findById: jest.fn().mockReturnValue({ populate: populateMock }),
             });
-            const serviceWithMock = new PostService(mockModel as any);
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             const result = await serviceWithMock.create(validCreatePostDto, companyId);
 
@@ -131,7 +160,12 @@ describe('PostService', () => {
             const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
                 findById: jest.fn().mockReturnValue({ populate: populateMock }),
             });
-            const serviceWithMock = new PostService(mockModel as any);
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             const result = await serviceWithMock.create(minimalDto, companyId);
 
@@ -152,7 +186,12 @@ describe('PostService', () => {
             const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
                 findById: jest.fn().mockReturnValue({ populate: populateMock }),
             });
-            const serviceWithMock = new PostService(mockModel as any);
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             const result = await serviceWithMock.create(validCreatePostDto, companyId);
 
@@ -176,7 +215,12 @@ describe('PostService', () => {
                 findById: jest.fn().mockReturnValue({ populate: populateMock }),
             });
 
-            const serviceWithMock = new PostService(mockModel as any);
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             await expect(serviceWithMock.create(validCreatePostDto, companyId)).rejects.toThrow(CreationFailedError);
         });

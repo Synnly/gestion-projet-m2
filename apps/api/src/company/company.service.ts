@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateCompanyDto } from './dto/createCompany.dto';
@@ -32,7 +32,7 @@ export class CompanyService {
      */
     constructor(
         @InjectModel(Company.name) private readonly companyModel: Model<CompanyUserDocument>,
-        private readonly postService: PostService,
+        @Inject(forwardRef(() => PostService)) private readonly postService: PostService,
     ) {}
     populateField = '_id title description duration startDate minSalary maxSalary sector keySkills adress type';
     /**
