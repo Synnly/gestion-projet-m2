@@ -139,7 +139,6 @@ export const InternshipApply = () => {
                                             <InternshipDetail internship={data} applyable={false} />
                                         </div>
                                     </div>
-
                                     <div className="flex flex-row gap-3">
                                         <FileInput title="CV" file={cv} setFile={setCv} />
                                         <FileInput

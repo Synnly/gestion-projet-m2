@@ -26,7 +26,6 @@ import { updatePostLoader } from './loaders/updatePostLoader';
 import { DashboardInternshipList } from './company/dashboard/intershipList/DashboardInternshipList';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import ToastProvider from './components/ui/toast/ToastProvider';
 import { InternshipApply } from './pages/internship/InternshipApply';
 import { DarkModeProvider } from './components/darkMode/DarkModeProvider';
 import { MainLayout } from './pages/layout/MainLayout';

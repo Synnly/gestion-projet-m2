@@ -63,7 +63,6 @@ export const LoginForm = () => {
                 <NavLink to="" className="mt-4 text-sm text-center text-gray-500 underline">
                     Créer un compte étudiant
                 </NavLink>
-                <StudentSignup/>
             </div>
         </div>
     );

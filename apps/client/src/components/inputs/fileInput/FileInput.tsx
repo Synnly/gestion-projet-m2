@@ -3,7 +3,7 @@ import { FileUploader } from 'react-drag-drop-files';
 
 interface FileInputProps {
     title: string;
-    setFile: React.Dispatch<React.SetStateAction<File | null>>;
+    setFile: (file: File | null) => void;
     file: File | null;
 }
 
