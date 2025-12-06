@@ -52,7 +52,7 @@ export const InternshipApply = () => {
         enabled: !!payload?.id && !!internshipId,
         staleTime: 1 * 60 * 1000, // 5 minutes
     });
-    const { data, isLoading, error, isError } = useQuery({
+    const { data, isLoading } = useQuery({
         queryKey: ['internship', internshipId],
         queryFn: async () => {
             const res = await fetch(`${import.meta.env.VITE_APIURL}/api/company/0/posts/${internshipId}`, {

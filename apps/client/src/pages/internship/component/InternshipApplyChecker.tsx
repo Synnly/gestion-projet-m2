@@ -4,12 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ApplicationStatus } from './ApplicationStatus';
 import Spinner from '../../../components/Spinner/Spinner';
 export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: string; adId: string }) => {
-    const {
-        data: application,
-        isLoading,
-        isError,
-    } = useQuery({
-        // La clé de requête est unique pour le cache
+    const { data: application, isLoading } = useQuery({
         queryKey: ['application', studentId, adId],
 
         queryFn: async () => {
@@ -34,7 +29,7 @@ export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: stri
         },
 
         enabled: !!studentId && !!adId,
-        staleTime: 1 * 60 * 1000, // 5 minutes
+        staleTime: 1 * 60 * 1000, // 1 minute
     });
 
     const navigate = useNavigate();

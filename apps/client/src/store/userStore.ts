@@ -43,8 +43,7 @@ export const userStore = create<authStore>()(
                         id: accessPayload.sub,
                         mail: accessPayload.email,
                         role: accessPayload.role,
-                        // isVerified: accessPayload.isVerified,
-                        isVerified:true,
+                        isVerified: accessPayload.role === 'STUDENT' ? true : accessPayload.isVerified,
                         isValid: accessPayload.isValid,
                     };
                 } catch (e) {

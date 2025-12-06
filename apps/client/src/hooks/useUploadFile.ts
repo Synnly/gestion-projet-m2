@@ -3,9 +3,7 @@ export function useUploadFile() {
         fetch(signedUrl, {
             method: 'PUT',
             body: file,
-        }).catch((error) => {
-            throw error;
-        });
+        }).catch((error) => {});
     };
     return upload;
 }

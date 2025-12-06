@@ -8,7 +8,6 @@ type ProtectedRouteByRoleProps = {
 
 export const ProtectedRoutesByRole = ({ allowedRoles, redirectPath = '/' }: ProtectedRouteByRoleProps) => {
     const user = useOutletContext<userContext>();
-    const location = useLocation();
     if (!user.accessToken) {
         return <Navigate to={redirectPath} replace />;
     }
