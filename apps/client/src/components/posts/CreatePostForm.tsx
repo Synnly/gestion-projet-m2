@@ -160,7 +160,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
     const mutation = useMutation({
         mutationFn: async (payload: { companyId: string; data: CreatePostPayload['data'] }) => {
             if (mode === 'edit') {
-                if (!postId) throw new Error("Identifiant de l'annonce manquant pour la mise â jour.");
+                if (!postId) throw new Error("Identifiant de l'annonce manquant pour la mise à jour.");
                 return updatePost({ companyId: payload.companyId, postId, data: payload.data });
             }
             return createPost(payload);
@@ -168,7 +168,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         onSuccess: () => {
             const successText =
                 mode === 'edit'
-                    ? "L'offre de stage a été mise â jour avec succès."
+                    ? "L'offre de stage a été mise à jour avec succès."
                     : "L'offre de stage a été créée avec succès.";
 
             toast.success(successText);
