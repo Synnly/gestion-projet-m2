@@ -14,7 +14,6 @@ import { Type } from 'class-transformer';
 import { PostType } from '../post.schema';
 
 export class UpdatePostDto {
-   
     /**
      * Post's title
      * Is required for the update

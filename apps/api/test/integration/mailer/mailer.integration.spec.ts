@@ -306,7 +306,7 @@ describe('MailerController (Integration)', () => {
 
         it('should reject password reset without OTP verification', async () => {
             const hashedPassword = await bcrypt.hash('Password123!', 10);
-            
+
             await userModel.create({
                 email: 'test@example.com',
                 password: hashedPassword,
@@ -330,7 +330,7 @@ describe('MailerController (Integration)', () => {
 
         it('should reject password reset if validation window expired', async () => {
             const hashedPassword = await bcrypt.hash('Password123!', 10);
-            
+
             await userModel.create({
                 email: 'test@example.com',
                 password: hashedPassword,

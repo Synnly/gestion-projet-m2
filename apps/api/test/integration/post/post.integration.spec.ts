@@ -205,7 +205,6 @@ describe('Post Integration Tests', () => {
             expect(normalized[1].title).toBe('Développeur Backend');
         });
 
-
         it('should return posts with all fields when posts have complete data and findAll is called', async () => {
             await createPost({
                 title: 'Développeur Full Stack',
@@ -279,7 +278,6 @@ describe('Post Integration Tests', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(400);
         });
-
 
         it('should return post with all fields when post has complete data and findOne is called', async () => {
             const post = await createPost({

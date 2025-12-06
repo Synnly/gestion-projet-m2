@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { PostService } from '../../../src/post/post.service';
 import { PostController } from '../../../src/post/post.controller';
 import { PaginationService } from '../../../src/common/pagination/pagination.service';
+import { GeoService } from '../../../src/common/geography/geo.service';
+import { CompanyService } from '../../../src/company/company.service';
 
 describe('PostModule', () => {
     let module: TestingModule;
@@ -29,6 +31,20 @@ describe('PostModule', () => {
         paginate: jest.fn(),
     };
 
+    const mockGeoService = {
+        geocodeAddress: jest.fn().mockResolvedValue([2.3522, 48.8566]),
+    };
+
+    const mockCompanyService = {
+        findOne: jest.fn().mockResolvedValue({
+            streetNumber: '10',
+            streetName: 'Rue de Test',
+            postalCode: '75001',
+            city: 'Paris',
+            country: 'France',
+        }),
+    };
+
     beforeEach(async () => {
         module = await Test.createTestingModule({
             controllers: [PostController],
@@ -49,6 +65,14 @@ describe('PostModule', () => {
                 {
                     provide: PaginationService,
                     useValue: mockPaginationService,
+                },
+                {
+                    provide: GeoService,
+                    useValue: mockGeoService,
+                },
+                {
+                    provide: CompanyService,
+                    useValue: mockCompanyService,
                 },
             ],
         }).compile();
