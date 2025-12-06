@@ -13,13 +13,13 @@ export const centerNavItems: NavItem[] = [
         title: 'Annonces',
         to: '/company/dashboard/internships',
         type: 'link',
-        role: 'COMPANY',
+        role: ['COMPANY'],
     },
       {
         key: 'applications',
         title: 'Candidatures',
         to: '/company/applications',
         type: 'link',
-        role: 'COMPANY',
+        role: ['COMPANY'],
     },*/
 ];
