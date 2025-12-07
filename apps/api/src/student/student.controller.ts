@@ -97,6 +97,7 @@ export class StudentController {
     /**
      * Import a list of students via a JSON array.
      * @param dtos An array of CreateStudentDto objects.
+     * @throws {BadRequestException} When the file is not uploaded or in the wrong format.
      */
     @Post('/import')
     @UseInterceptors(FileInterceptor('file'))
@@ -105,8 +106,8 @@ export class StudentController {
     @HttpCode(HttpStatus.CREATED)
     async import(
         @UploadedFile() file: Express.Multer.File,
-        @Query('addOnlyNew', new ParseBoolPipe({ optional: true })) 
-        addOnlyNew: boolean = false,
+        @Query('addOnlyNewEmails', new ParseBoolPipe({ optional: true })) 
+        addOnlyNewEmails: boolean = false,
     ) {        
         if (!file) throw new BadRequestException('File is required');
         if (file.mimetype !== 'application/json') throw new BadRequestException('File must be a JSON');
@@ -126,13 +127,12 @@ export class StudentController {
                     throw new BadRequestException(`Validation failed at student with email (${dto.email}) : ${msg}`);
                 }
             }
-
         } catch (e) {
             if (e instanceof BadRequestException) throw e;
             throw new BadRequestException('Invalid JSON file format');
         }
 
-        return await this.studentService.createMany(studentDtos, addOnlyNew);
+        return await this.studentService.createMany(studentDtos, addOnlyNewEmails);
     }
 
 

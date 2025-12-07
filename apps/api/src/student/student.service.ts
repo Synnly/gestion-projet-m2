@@ -45,9 +45,9 @@ export class StudentService {
     /**
      * Create a list of new students record.
      * @param createStudentDtos The creation payload.
-     * @returns A response containing the 
+     * @returns A response with the error or validation message, containing the number of students created.
      */
-    async createMany(dtos: CreateStudentDto[], addOnlyNew: boolean) {
+    async createMany(dtos: CreateStudentDto[], addOnlyNewEmails: boolean) {
         const incomingEmails = dtos.map((dto) => dto.email);
 
         const existingStudents = await this.studentModel.find({
@@ -56,9 +56,8 @@ export class StudentService {
 
         const existingEmails = existingStudents.map((s) => s.email);
 
-        // We found duplicates and addOnlyNew is false (we add every student or none if there's any error)
-        // if (existingEmails.length > 0 && !addOnlyNew) throw new ConflictException(`Import failed. The following emails already exist: ${existingEmails.join(', ')}`);
-        if (existingEmails.length > 0 && !addOnlyNew) {
+        // We found duplicates and addOnlyNewEmails is false (we add every student or none if there's any error)
+        if (existingEmails.length > 0 && !addOnlyNewEmails) {
             throw new ConflictException({
                 message: 'Import failed. Some emails already exist.',
                 duplicates: existingEmails,
@@ -67,12 +66,12 @@ export class StudentService {
             });
         }
 
-        // If addOnlyNew is true, we won't try to insert already existing emails
+        // If addOnlyNewEmails is true, we won't try to insert already existing emails
         const newStudentsToCreate = dtos.filter((dto) => !existingEmails.includes(dto.email));
 
         if (newStudentsToCreate.length === 0) {
             return { 
-                message: 'No new students to add', 
+                message: 'No new students to add.', 
                 added: 0, 
                 skipped: existingEmails.length 
             };
@@ -87,18 +86,6 @@ export class StudentService {
             skipped: existingEmails.length,
         };
     }
-    // async createMany(createStudentDtos: CreateStudentDto[]): Promise<void> {
-    //     try {
-    //         // insertMany is way faster than a loop on await create()
-    //         await this.studentModel.insertMany(createStudentDtos); 
-    //     } catch (error) {
-    //         if (error.code === 11000) {
-    //             throw new ConflictException('One or more students already exist (duplicate email).');
-    //         }
-    //         throw error;
-    //     }
-    // }
-
 
 
     /**
