@@ -45,53 +45,47 @@ export class StudentService {
     /**
      * Create a list of new students record.
      * @param createStudentDtos The creation payload.
+     * @returns A response containing the 
      */
     async createMany(dtos: CreateStudentDto[], addOnlyNew: boolean) {
-        // If we need to ignore duplicates
-        if (addOnlyNew) {
-            const incomingEmails = dtos.map((dto) => dto.email);
+        const incomingEmails = dtos.map((dto) => dto.email);
 
-            const existingStudents = await this.studentModel.find({
-                email: { $in: incomingEmails },
-            }).select('email');
+        const existingStudents = await this.studentModel.find({
+            email: { $in: incomingEmails },
+        });
 
-            const existingEmails = new Set(existingStudents.map((s) => s.email));
+        const existingEmails = existingStudents.map((s) => s.email);
 
-            const newStudentsToCreate = dtos.filter(
-                (dto) => !existingEmails.has(dto.email)
-            );
+        // We found duplicates and addOnlyNew is false (we add every student or none if there's any error)
+        // if (existingEmails.length > 0 && !addOnlyNew) throw new ConflictException(`Import failed. The following emails already exist: ${existingEmails.join(', ')}`);
+        if (existingEmails.length > 0 && !addOnlyNew) {
+            throw new ConflictException({
+                message: 'Import failed. Some emails already exist.',
+                duplicates: existingEmails,
+                error: "Conflict",
+                statusCode: 409
+            });
+        }
 
-            if (newStudentsToCreate.length === 0) {
-                return { message: 'No new students to add', added: 0 };
-            }
+        // If addOnlyNew is true, we won't try to insert already existing emails
+        const newStudentsToCreate = dtos.filter((dto) => !existingEmails.includes(dto.email));
 
-            // We inserts only new student (student with a new email)
-            await this.studentModel.insertMany(newStudentsToCreate);
-            
-            return {
-                message: 'Import successful (duplicates skipped)',
-                added: newStudentsToCreate.length,
-                skipped: existingEmails.size
+        if (newStudentsToCreate.length === 0) {
+            return { 
+                message: 'No new students to add', 
+                added: 0, 
+                skipped: existingEmails.length 
             };
         }
 
-        // We try to import all the students (an error is throw on a duplicate email)
-        else {
-            try {
-                await this.studentModel.insertMany(dtos);
-                return { message: 'All students imported successfully', added: dtos.length };
-            } catch (error) {
-                if (error.code === 11000) { // Duplicate(s) email(s)
-                    // We try to find the duplicated email(s) from the error sent by MongoDB
-                    const duplicatedValue = error.keyValue ? JSON.stringify(error.keyValue) : 'unknown';
-                    
-                    throw new ConflictException(
-                        `Import failed. Duplicate entry found: ${duplicatedValue}`
-                    );
-                }
-                throw error;
-            }
-        }
+        // Finally, we add only new students
+        await this.studentModel.insertMany(newStudentsToCreate);
+
+        return {
+            message: 'Import successful',
+            added: newStudentsToCreate.length,
+            skipped: existingEmails.length,
+        };
     }
     // async createMany(createStudentDtos: CreateStudentDto[]): Promise<void> {
     //     try {

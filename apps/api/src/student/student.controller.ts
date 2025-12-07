@@ -19,6 +19,7 @@ import {
     ParseBoolPipe,
     ParseArrayPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateStudentDto } from './dto/createStudent.dto';
 import { StudentService } from './student.service';
 import { StudentDto } from './dto/student.dto';
@@ -31,6 +32,7 @@ import { Role } from '../common/roles/roles.enum';
 import { UpdateStudentDto } from './dto/updateStudent.dto';
 import { OwnerGuard } from 'src/s3/owner.guard';
 import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
+import { validate } from 'class-validator';
 
 @Controller('/api/students')
 /**
@@ -97,18 +99,40 @@ export class StudentController {
      * @param dtos An array of CreateStudentDto objects.
      */
     @Post('/import')
+    @UseInterceptors(FileInterceptor('file'))
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     @HttpCode(HttpStatus.CREATED)
     async import(
-        @Body(new ParseArrayPipe({ items: CreateStudentDto, whitelist: true }))
-        dtos: CreateStudentDto[],
+        @UploadedFile() file: Express.Multer.File,
         @Query('addOnlyNew', new ParseBoolPipe({ optional: true })) 
         addOnlyNew: boolean = false,
-    ) {
-        // await this.studentService.createMany(dtos);
-        // return { message: `${dtos.length} students imported successfully` };
-        return await this.studentService.createMany(dtos, addOnlyNew);
+    ) {        
+        if (!file) throw new BadRequestException('File is required');
+        if (file.mimetype !== 'application/json') throw new BadRequestException('File must be a JSON');
+
+        let studentDtos: CreateStudentDto[];
+
+        try {
+            const jsonContent = JSON.parse(file.buffer.toString());
+            if (!Array.isArray(jsonContent)) throw new BadRequestException('JSON content must be an array');
+
+            // Dtos validation
+            studentDtos = plainToInstance(CreateStudentDto, jsonContent);
+            for (const [index, dto] of studentDtos.entries()) {
+                const errors = await validate(dto);
+                if (errors.length > 0) {
+                    const msg = errors.map(e => Object.values(e.constraints || {})).join(', ');
+                    throw new BadRequestException(`Validation failed at student with email (${dto.email}) : ${msg}`);
+                }
+            }
+
+        } catch (e) {
+            if (e instanceof BadRequestException) throw e;
+            throw new BadRequestException('Invalid JSON file format');
+        }
+
+        return await this.studentService.createMany(studentDtos, addOnlyNew);
     }
 
 
