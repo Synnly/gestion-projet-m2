@@ -9,8 +9,11 @@ import {
     ParseEnumPipe,
     Post,
     Put,
+    Query,
     UseGuards,
     ValidationPipe,
+    DefaultValuePipe,
+    ParseIntPipe,
 } from '@nestjs/common';
 import { ApplicationService } from './application.service';
 import { AuthGuard } from '../auth/auth.guard';
@@ -24,6 +27,7 @@ import { ApplicationOwnerGuard } from '../common/roles/applicationOwner.guard';
 import { CreateApplicationDto } from './dto/createApplication.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { ApplicationStatus } from './application.schema';
+import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
 
 @Controller('/api/application')
 export class ApplicationController {
@@ -79,6 +83,38 @@ export class ApplicationController {
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) application: CreateApplicationDto,
     ): Promise<{ cvUrl: string; lmUrl?: string }> {
         return this.applicationService.create(studentId, postId, application);
+    }
+
+    /**
+     * Return paginated applications for a given student id.     *
+     * @param studentId The student identifier whose applications are requested.
+     * @param page The page number (1-based).
+     * @param limit The number of items per page (capped server-side).
+     * @returns Paginated applications with pagination metadata.
+     */
+    @Get('student/:studentId')
+    @UseGuards(AuthGuard, RolesGuard, StudentOwnerGuard)
+    @Roles(Role.ADMIN, Role.STUDENT)
+    @HttpCode(HttpStatus.OK)
+    async findMine(
+        @Param('studentId', ParseObjectIdPipe) studentId: Types.ObjectId,
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    ): Promise<{ data: ApplicationDto[]; page: number; limit: number; total: number }> {
+        const { data, total, limit: appliedLimit, page: appliedPage } = await this.applicationService.findByStudent(
+            studentId,
+            page,
+            limit,
+        );
+
+        return {
+            data: data.map((application) =>
+                plainToInstance(ApplicationDto, application, { excludeExtraneousValues: true }),
+            ),
+            page: appliedPage,
+            limit: appliedLimit,
+            total,
+        };
     }
 
     /**

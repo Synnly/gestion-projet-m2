@@ -131,4 +131,42 @@ export class ApplicationService {
         application.status = status;
         await application.save();
     }
+
+    /**
+     * Return paginated applications for a given student.     *
+     * @param studentId Student identifier.
+     * @param page Page number (1-based).
+     * @param limit Items per page (capped server-side).
+     * @returns Paginated applications and pagination metadata.
+     */
+    async findByStudent(
+        studentId: Types.ObjectId,
+        page = 1,
+        limit = 10,
+    ): Promise<{ data: Application[]; total: number; limit: number; page: number }> {
+        // > 0 && <= 50
+        const safeLimit = Math.min(Math.max(limit, 1), 50);
+        // > 0
+        const safePage = Math.max(page, 1);
+
+        const skip = (safePage - 1) * safeLimit;
+
+        const baseFilter = { student: studentId, deletedAt: { $exists: false } };
+
+        const [data, total] = await Promise.all([
+            this.applicationModel
+                .find(baseFilter)
+                .populate([
+                    { path: 'post', select: this.postFieldsToPopulate },
+                    { path: 'student', select: this.studentFieldsToPopulate },
+                ])
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(safeLimit)
+                .exec(),
+            this.applicationModel.countDocuments(baseFilter),
+        ]);
+
+        return { data, total, limit: safeLimit, page: safePage };
+    }
 }
