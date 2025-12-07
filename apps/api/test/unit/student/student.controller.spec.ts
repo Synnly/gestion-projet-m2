@@ -4,6 +4,7 @@ import { StudentService } from '../../../src/student/student.service';
 import { BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
+import { Role } from '../../../src/common/roles/roles.enum';
 
 describe('StudentController', () => {
     let controller: StudentController;
@@ -154,6 +155,12 @@ describe('StudentController', () => {
                 expect.arrayContaining([expect.objectContaining({ email: 'toto@univ.fr' })]), 
                 true
             );
+        });
+        it('should be protected with ADMIN role', () => {
+            const roles = Reflect.getMetadata('roles', controller.import);
+
+            expect(roles).toBeDefined(); 
+            expect(roles).toContain(Role.ADMIN);
         });
     });
 });
