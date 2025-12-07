@@ -1,6 +1,8 @@
 import { SearchBar } from '../../components/inputs/searchBar';
 import InternshipList from '../../modules/internship/InternshipList';
 import InternshipDetail from '../../modules/internship/InternshipDetail';
+import FilterList from '../../modules/filter/FilterList';
+import SortSelect from '../../modules/filter/SortSelect';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import { Navbar } from '../../components/navbar/Navbar';
 import { userStore } from '../../store/userStore';
@@ -10,12 +12,6 @@ import ToastProvider from '../../components/ui/toast/ToastProvider';
 
 export function InternshipPage() {
     const navigation = useNavigation();
-    const selects = [
-        { label: 'Localisation', options: ['À distance', 'Sur site', 'Hybride'] },
-        { label: 'Type de stage', options: ['Temps plein', 'Temps partiel', 'Contrat'] },
-        { label: 'Secteur', options: ['Tech', 'Finance', 'Santé'] },
-        { label: 'Date de publication', options: ['Moins de 24 heures', 'Moins d\'une semaine', 'Moins de 30 jours'] },
-    ];
     const internships = useInternshipStore((state) => state.internships);
     const selectedInternshipId = useInternshipStore((state) => state.selectedInternshipId);
     const filters = useInternshipStore((state) => state.filters);
@@ -48,11 +44,17 @@ export function InternshipPage() {
                         </div>
                     </section>
 
-                    <SearchBar
-                        searchQuery={filters.searchQuery || ''}
-                        setSearchQuery={handleSearchChange}
-                        selects={selects}
-                    />
+                    <div className="flex flex-col gap-4">
+                        <SearchBar
+                            searchQuery={filters.searchQuery || ''}
+                            setSearchQuery={handleSearchChange}
+                            selects={[]}
+                        />
+                        <div className="flex items-center justify-between mt-2">
+                            <FilterList />
+                            <SortSelect />
+                        </div>
+                    </div>
                     <div className="grid grid-cols-12 gap-8 pb-8 flex-1 overflow-hidden">
                         <div className="col-span-12 lg:col-span-5 h-full overflow-y-auto">
                         <ToastProvider>

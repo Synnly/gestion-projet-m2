@@ -8,15 +8,35 @@ import { useToast } from '../components/ui/toast/ToastProvider';
 const API_URL = import.meta.env.VITE_APIURL;
 
 export function buildQueryParams(filters: any) {
-    return new URLSearchParams(
-        Object.entries({
-            page: filters.page ?? 1,
-            limit: filters.limit ?? 10,
-            searchQuery: filters.searchQuery,
-        })
-            .filter(([, v]) => v !== undefined && v !== null && v !== '')
-            .map(([k, v]) => [k, String(v)]),
-    );
+    const params = new URLSearchParams();
+
+    const setParam = (key: string, value: any) => {
+        if (value === undefined || value === null || value === '') return;
+        if (Array.isArray(value)) {
+            value.forEach((v) => params.append(key, String(v)));
+        } else {
+            params.set(key, String(value));
+        }
+    };
+
+    params.set('page', String(filters.page ?? 1));
+    params.set('limit', String(filters.limit ?? 10));
+
+    setParam('searchQuery', filters.searchQuery);
+    setParam('title', filters.title);
+    setParam('description', filters.description);
+    setParam('duration', filters.duration);
+    setParam('sector', filters.sector);
+    setParam('type', filters.type);
+    setParam('minSalary', filters.minSalary);
+    setParam('maxSalary', filters.maxSalary);
+    setParam('keySkills', filters.keySkills);
+    setParam('city', filters.city);
+    setParam('radiusKm', filters.radiusKm);
+    setParam('sort', filters.sort);
+    setParam('company', filters.company);
+
+    return params;
 }
 
 export async function fetchPosts(API_URL: string, params: URLSearchParams) {
