@@ -12,6 +12,12 @@ import {
     ValidationPipe,
     UseGuards,
     ConflictException,
+    UseInterceptors,
+    UploadedFile,
+    BadRequestException,
+    Query,
+    ParseBoolPipe,
+    ParseArrayPipe,
 } from '@nestjs/common';
 import { CreateStudentDto } from './dto/createStudent.dto';
 import { StudentService } from './student.service';
@@ -85,6 +91,26 @@ export class StudentController {
             throw error;
         }
     }
+
+    /**
+     * Import a list of students via a JSON array.
+     * @param dtos An array of CreateStudentDto objects.
+     */
+    @Post('/import')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    @HttpCode(HttpStatus.CREATED)
+    async import(
+        @Body(new ParseArrayPipe({ items: CreateStudentDto, whitelist: true }))
+        dtos: CreateStudentDto[],
+        @Query('addOnlyNew', new ParseBoolPipe({ optional: true })) 
+        addOnlyNew: boolean = false,
+    ) {
+        // await this.studentService.createMany(dtos);
+        // return { message: `${dtos.length} students imported successfully` };
+        return await this.studentService.createMany(dtos, addOnlyNew);
+    }
+
 
     /**
      * Update an existing student or create it if it does not exist.

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateStudentDto } from './dto/createStudent.dto';
@@ -41,6 +41,71 @@ export class StudentService {
         await this.studentModel.create({ ...dto, role: Role.STUDENT });
         return;
     }
+
+    /**
+     * Create a list of new students record.
+     * @param createStudentDtos The creation payload.
+     */
+    async createMany(dtos: CreateStudentDto[], addOnlyNew: boolean) {
+        // If we need to ignore duplicates
+        if (addOnlyNew) {
+            const incomingEmails = dtos.map((dto) => dto.email);
+
+            const existingStudents = await this.studentModel.find({
+                email: { $in: incomingEmails },
+            }).select('email');
+
+            const existingEmails = new Set(existingStudents.map((s) => s.email));
+
+            const newStudentsToCreate = dtos.filter(
+                (dto) => !existingEmails.has(dto.email)
+            );
+
+            if (newStudentsToCreate.length === 0) {
+                return { message: 'No new students to add', added: 0 };
+            }
+
+            // We inserts only new student (student with a new email)
+            await this.studentModel.insertMany(newStudentsToCreate);
+            
+            return {
+                message: 'Import successful (duplicates skipped)',
+                added: newStudentsToCreate.length,
+                skipped: existingEmails.size
+            };
+        }
+
+        // We try to import all the students (an error is throw on a duplicate email)
+        else {
+            try {
+                await this.studentModel.insertMany(dtos);
+                return { message: 'All students imported successfully', added: dtos.length };
+            } catch (error) {
+                if (error.code === 11000) { // Duplicate(s) email(s)
+                    // We try to find the duplicated email(s) from the error sent by MongoDB
+                    const duplicatedValue = error.keyValue ? JSON.stringify(error.keyValue) : 'unknown';
+                    
+                    throw new ConflictException(
+                        `Import failed. Duplicate entry found: ${duplicatedValue}`
+                    );
+                }
+                throw error;
+            }
+        }
+    }
+    // async createMany(createStudentDtos: CreateStudentDto[]): Promise<void> {
+    //     try {
+    //         // insertMany is way faster than a loop on await create()
+    //         await this.studentModel.insertMany(createStudentDtos); 
+    //     } catch (error) {
+    //         if (error.code === 11000) {
+    //             throw new ConflictException('One or more students already exist (duplicate email).');
+    //         }
+    //         throw error;
+    //     }
+    // }
+
+
 
     /**
      * Update an existing student. If the student does not exist, create it.
