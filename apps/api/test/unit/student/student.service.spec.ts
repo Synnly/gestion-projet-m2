@@ -3,6 +3,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { StudentService } from '../../../src/student/student.service';
 import { Student } from '../../../src/student/student.schema';
 import { Role } from '../../../src/common/roles/roles.enum';
+import { ConflictException } from '@nestjs/common';
 
 describe('StudentService', () => {
     let service: StudentService;
@@ -11,6 +12,7 @@ describe('StudentService', () => {
         findOne: jest.fn(),
         create: jest.fn(),
         findOneAndUpdate: jest.fn(),
+        insertMany: jest.fn(),
     } as any;
 
     beforeEach(async () => {
@@ -95,5 +97,59 @@ describe('StudentService', () => {
 
         await expect(service.remove('1')).rejects.toThrow();
         expect(mockModel.findOneAndUpdate).toHaveBeenCalled();
+    });
+
+
+    describe('createMany', () => {
+        const dtos = [
+            { email: 'new1@test.com', firstName: 'A', lastName: 'B', password: 'Pwd', role: Role.STUDENT },
+            { email: 'exist@test.com', firstName: 'C', lastName: 'D', password: 'Pwd', role: Role.STUDENT },
+        ];
+
+        it('should insert all students if no duplicates found (Strict Mode)', async () => {
+            mockModel.find.mockResolvedValue([]); 
+            mockModel.insertMany.mockResolvedValue(dtos);
+
+            const result = await service.createMany(dtos, false);
+
+            expect(mockModel.find).toHaveBeenCalledWith({ email: { $in: ['new1@test.com', 'exist@test.com'] } });
+            expect(mockModel.insertMany).toHaveBeenCalledWith(dtos);
+            expect(result.added).toBe(2);
+        });
+
+        it('should throw ConflictException if duplicates found (Strict Mode)', async () => {
+            mockModel.find.mockResolvedValue([{ email: 'exist@test.com' }]);
+
+            await expect(service.createMany(dtos, false)).rejects.toThrow(ConflictException);
+            
+            expect(mockModel.insertMany).not.toHaveBeenCalled();
+        });
+
+        it('should skip duplicates and insert only new ones (Filter Mode)', async () => {
+            mockModel.find.mockResolvedValue([{ email: 'exist@test.com' }]);
+            
+            const result = await service.createMany(dtos, true);
+
+            expect(mockModel.insertMany).toHaveBeenCalledWith([dtos[0]]);
+            expect(result).toEqual({
+                message: 'Import successful',
+                added: 1,
+                skipped: 1
+            });
+        });
+
+        it('should return "No new students" if all exist (Filter Mode)', async () => {
+            mockModel.find.mockResolvedValue([
+                { email: 'new1@test.com' },
+                { email: 'exist@test.com' }
+            ]);
+
+            const result = await service.createMany(dtos, true);
+
+            expect(mockModel.insertMany).not.toHaveBeenCalled();
+            expect(result.added).toBe(0);
+            expect(result.skipped).toBe(2);
+            expect(result.message).toContain('No new students');
+        });
     });
 });
