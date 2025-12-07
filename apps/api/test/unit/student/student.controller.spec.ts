@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StudentController } from '../../../src/student/student.controller';
 import { StudentService } from '../../../src/student/student.service';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
 
@@ -13,6 +13,7 @@ describe('StudentController', () => {
         create: jest.fn(),
         update: jest.fn(),
         remove: jest.fn(),
+        createMany: jest.fn(),
     } as any;
 
     beforeEach(async () => {
@@ -87,5 +88,72 @@ describe('StudentController', () => {
         mockService.remove.mockResolvedValue(undefined);
         await controller.remove('1');
         expect(mockService.remove).toHaveBeenCalledWith('1');
+    });
+
+    describe('import', () => {
+        const createMockFile = (content: any, mimetype = 'application/json') => ({
+            fieldname: 'file',
+            originalname: 'students.json',
+            encoding: '7bit',
+            mimetype,
+            buffer: Buffer.from(JSON.stringify(content)),
+            size: 100,
+        } as Express.Multer.File);
+
+        it('should throw BadRequestException if file is undefined', async () => {
+            await expect(controller.import(undefined as any)).rejects.toThrow(BadRequestException);
+        });
+
+        it('should throw BadRequestException if mimetype is not JSON', async () => {
+            const file = createMockFile([], 'image/png');
+            await expect(controller.import(file)).rejects.toThrow('File must be a JSON');
+        });
+
+        it('should throw BadRequestException if content is not an array', async () => {
+            const file = createMockFile({ email: 'test@test.com' });
+            await expect(controller.import(file)).rejects.toThrow('JSON content must be an array');
+        });
+
+        it('should throw BadRequestException if JSON is invalid', async () => {
+            const file = {
+                mimetype: 'application/json',
+                buffer: Buffer.from('{ bad json '),
+            } as any;
+            await expect(controller.import(file)).rejects.toThrow('Invalid JSON file format');
+        });
+
+        it('should throw BadRequestException if DTO validation fails (invalid email)', async () => {
+            const invalidData = [{
+                firstName: 'Toto',
+                lastName: 'Test',
+                email: 'invalid-email',
+                password: 'Pwd1!',
+                role: 'STUDENT'
+            }];
+            const file = createMockFile(invalidData);
+
+            await expect(controller.import(file)).rejects.toThrow(BadRequestException);
+            await expect(controller.import(file)).rejects.toThrow('Validation failed');
+        });
+
+        it('should call service.createMany with correct params on success', async () => {
+            const validData = [{
+                firstName: 'Toto',
+                lastName: 'Test',
+                email: 'toto@univ.fr',
+                password: 'StrongPwd1!',
+                role: 'STUDENT'
+            }];
+            const file = createMockFile(validData);
+            
+            mockService.createMany.mockResolvedValue({ added: 1 });
+
+            await controller.import(file, true);
+
+            expect(mockService.createMany).toHaveBeenCalledWith(
+                expect.arrayContaining([expect.objectContaining({ email: 'toto@univ.fr' })]), 
+                true
+            );
+        });
     });
 });
