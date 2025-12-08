@@ -79,7 +79,7 @@ describe('Student Integration', () => {
         const dto = {
             email: 'student3@example.com',
             password: 'weak',
-            student_number: 'SN-003',
+            studentNumber: 'SN-003',
             role: Role.STUDENT,
             firstName: 'John',
             lastName: 'Doe',
@@ -92,7 +92,7 @@ describe('Student Integration', () => {
         const dto = {
             email: 'duplicate@example.com',
             password: 'StrongP@ss1',
-            student_number: 'SN-DUP',
+            studentNumber: 'SN-DUP',
             role: Role.STUDENT,
             firstName: 'John',
             lastName: 'Doe',
@@ -106,7 +106,7 @@ describe('Student Integration', () => {
         const dto = {
             email: 'studentget@example.com',
             password: 'StrongP@ss1',
-            student_number: 'SN-GET',
+            studentNumber: 'SN-GET',
             role: Role.STUDENT,
             firstName: 'Jane',
             lastName: 'Smith',
@@ -130,7 +130,7 @@ describe('Student Integration', () => {
         const dto = {
             email: 'studentupdate@example.com',
             password: 'StrongP@ss1',
-            student_number: 'SN-UPD',
+            studentNumber: 'SN-UPD',
             role: Role.STUDENT,
             firstName: 'Old',
             lastName: 'Name',
@@ -157,7 +157,7 @@ describe('Student Integration', () => {
         const createDto = {
             email: 'newthroughput@example.com',
             password: 'StrongP@ss1',
-            student_number: 'SN-PUT',
+            studentNumber: 'SN-PUT',
             role: Role.STUDENT,
             firstName: 'Created',
             lastName: 'Via-Put',
@@ -175,7 +175,7 @@ describe('Student Integration', () => {
         const dto = {
             email: 'studentdelete@example.com',
             password: 'StrongP@ss1',
-            student_number: 'SN-DEL',
+            studentNumber: 'SN-DEL',
             role: Role.STUDENT,
             firstName: 'To',
             lastName: 'Delete',
