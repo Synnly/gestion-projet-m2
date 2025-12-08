@@ -51,7 +51,7 @@ describe('Student Integration', () => {
         const dto = {
             email: 'student1@example.com',
             password: 'StrongP@ss1',
-            student_number: 'SN-001',
+            studentNumber: 'SN-001',
             role: Role.STUDENT,
             firstName: 'John',
             lastName: 'Doe',
