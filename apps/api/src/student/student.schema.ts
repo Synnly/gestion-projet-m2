@@ -28,8 +28,8 @@ export class Student {
     @Prop({ required: true, unique: true, trim: true })
     studentNumber: string;
 
-    /** Flag indicating whether this is the student's first time on the platform. Defaults to false. */
-    @Prop({ default: false })
+    /** Flag indicating whether this is the student's first time on the platform. Defaults to true. */
+    @Prop({ default: true })
     isFirstTime: boolean;
 
     /**
