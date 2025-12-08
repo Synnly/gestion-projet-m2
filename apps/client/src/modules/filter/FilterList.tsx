@@ -59,7 +59,6 @@ export default function FilterList() {
         const chips: Array<{ key: string; label: string; value: any }> = [];
 
         internshipFilters.forEach((f) => {
-            // skip standalone city display; we'll only show combined location when radius exists
             if (f.key === 'city') return;
 
             const value = (filters as any)[f.key];
@@ -175,15 +174,6 @@ export default function FilterList() {
                                     />
                                 </div>
                             ))}
-
-                        <div className="min-w-[120px]">
-                            <label className="label py-0.5">
-                                <span className="label-text text-sm">&nbsp;</span>
-                            </label>
-                            <div className="mt-1">
-                                <SortSelect />
-                            </div>
-                        </div>
                     </div>
                 </div>
 

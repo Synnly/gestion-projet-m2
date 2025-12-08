@@ -33,17 +33,17 @@ export function InternshipPage() {
                     <section className="hero bg-base-100 p-6 rounded-lg py-8">
                         <div className="hero-content text-left">
                             <div>
-                                <h1 className="text-2xl font-black tracking-tight text-base-content uppercase text-center">
+                                <h1 className="text-lg font-black tracking-tight text-base-content uppercase text-center">
                                     Trouve ta prochaine opportunité
                                 </h1>
-                                <p className="mt-2 text-base text-base-content/70">
+                                <p className="mt-1 text-sm text-base-content/70">
                                     Parcours des milliers de stages proposés par les meilleures entreprises.
                                 </p>
                             </div>
                         </div>
                     </section>
 
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1">
                         <SearchBar
                             searchQuery={filters.searchQuery || ''}
                             setSearchQuery={handleSearchChange}
@@ -53,7 +53,7 @@ export function InternshipPage() {
                             <FilterList />
                         </div>
                     </div>
-                    <div className="grid grid-cols-12 gap-8 pb-8 flex-1 overflow-hidden">
+                    <div className="grid grid-cols-12 gap-4 pb-2 flex-1 overflow-hidden">
                         <div className="col-span-12 lg:col-span-5 h-full overflow-y-auto">
                         <ToastProvider>
                                 <InternshipList />
