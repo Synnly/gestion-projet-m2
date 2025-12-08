@@ -8,7 +8,7 @@ on:
 
 jobs:
     build:
-        runs-on: self-hosted
+        runs-on: ubuntu-latest
 
         strategy:
             matrix:
@@ -16,12 +16,23 @@ jobs:
 
         steps:
             - uses: actions/checkout@v4
+
             - name: Use Node.js ${{ matrix.node-version }}
               uses: actions/setup-node@v4
               with:
                   node-version: ${{ matrix.node-version }}
                   cache: 'npm'
-            - run: npm install
-            - run: npm ci
-            - run: npm run build --if-present
-            - run: npm run test:seq
+
+            - name: Create .env files from Secrets
+              run: |
+                  echo "${{ secrets.ENV_CLIENT }}" > apps/client/.env
+                  echo "${{ secrets.ENV_API }}" > apps/api/.env
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build project
+              run: npm run build --if-present
+
+            - name: Run tests sequentially
+              run: npm run test
