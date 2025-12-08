@@ -2,7 +2,6 @@ import { SearchBar } from '../../components/inputs/searchBar';
 import InternshipList from '../../modules/internship/InternshipList';
 import InternshipDetail from '../../modules/internship/InternshipDetail';
 import FilterList from '../../modules/filter/FilterList';
-import SortSelect from '../../modules/filter/SortSelect';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import { Navbar } from '../../components/navbar/Navbar';
 import { userStore } from '../../store/userStore';
@@ -50,9 +49,8 @@ export function InternshipPage() {
                             setSearchQuery={handleSearchChange}
                             selects={[]}
                         />
-                        <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center justify-between">
                             <FilterList />
-                            <SortSelect />
                         </div>
                     </div>
                     <div className="grid grid-cols-12 gap-8 pb-8 flex-1 overflow-hidden">
