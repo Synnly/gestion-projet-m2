@@ -54,7 +54,7 @@ export function InternshipPage() {
                         </div>
                     </div>
                     <div className="grid grid-cols-12 gap-4 pb-2 flex-1 overflow-hidden">
-                        <div className="col-span-12 lg:col-span-5 h-full overflow-y-auto">
+                        <div className="col-span-12 lg:col-span-5 h-full">
                         <ToastProvider>
                                 <InternshipList />
                         </ToastProvider>
