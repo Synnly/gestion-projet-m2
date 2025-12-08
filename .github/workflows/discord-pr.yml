@@ -22,7 +22,7 @@ jobs:
                   HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
               shell: bash
               run: |
-                  echo "Webhook URL (premiers chars): ${WEBHOOK_URL:0:40}"
+                  echo "Webhook URL (premiers chars): ${WEBHOOK_URL}"
                   python3 - <<'PY'
                   import json, os, sys, time, urllib.request
 
