@@ -22,7 +22,6 @@ jobs:
                   HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
               shell: bash
               run: |
-                  echo "Webhook URL (premiers chars): ${WEBHOOK_URL}"
                   python3 - <<'PY'
                   import json, os, sys, time, urllib.request
 
@@ -36,7 +35,7 @@ jobs:
                   base = os.environ.get("BASE_BRANCH","")
                   body = os.environ.get("PR_BODY") or ""
 
-                  # --- Troncatures sécurisées (Discord limits) ---
+                  # Secure truncations (Discord limits)
                   if len(pr_title) > 250:
                       pr_title = pr_title[:250] + "…"
                   body = body.strip()
@@ -46,7 +45,7 @@ jobs:
                   if len(content) > 1900:
                       content = content[:1900] + "…"
 
-                  # --- Création de l'embed Discord ---
+                  # Create Discord embed
                   embed = {
                       "title": f"PR #{pr_number}: {pr_title}",
                       "url": pr_url,
@@ -60,7 +59,7 @@ jobs:
 
                   payload = {
                       "content": content,
-                      "allowed_mentions": {"parse": []},  # bloque @everyone/@here
+                      "allowed_mentions": {"parse": []},
                       "embeds": [embed],
                   }
 
@@ -68,22 +67,25 @@ jobs:
                   req = urllib.request.Request(
                       webhook,
                       data=data,
-                      headers={"Content-Type": "application/json"},
+                      headers={
+                        "Content-Type": "application/json",
+                        "User-Agent": "Mozilla/5.0 (compatible; GitHubActions/1.0; +https://github.com)"
+                      },
                       method="POST",
                   )
 
-                  # --- Envoi avec retry exponentiel ---
+                  # Send with exponential retry
                   for attempt in range(5):
                       try:
                           with urllib.request.urlopen(req, timeout=10) as resp:
                               status = resp.getcode()
                               if 200 <= status < 300:
-                                  print(f"Notification Discord envoyée ({status})")
+                                  print(f"Discord notification sent ({status})")
                                   sys.exit(0)
                               else:
                                   print(f"Discord HTTP {status}")
                       except Exception as e:
-                          print(f"Tentative {attempt+1}/5 échouée: {e}")
-                      time.sleep(min(2 ** attempt, 10))  # 1,2,4,8,10s
+                          print(f"Attempt {attempt+1}/5 failed: {e}")
+                      time.sleep(min(2 ** attempt, 10))
                   sys.exit(1)
                   PY
