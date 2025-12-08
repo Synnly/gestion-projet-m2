@@ -1,13 +1,13 @@
 import { SearchBar } from '../../components/inputs/searchBar';
 import InternshipList from '../../modules/internship/InternshipList';
 import InternshipDetail from '../../modules/internship/InternshipDetail';
-import FilterList from '../../modules/filter/FilterList';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import { Navbar } from '../../components/navbar/Navbar';
 import { userStore } from '../../store/userStore';
 import { useNavigation } from 'react-router-dom';
 import Spinner from '../../components/Spinner/Spinner';
 import ToastProvider from '../../components/ui/toast/ToastProvider';
+import { FilterList } from '../../modules/filter/FilterList';
 
 export function InternshipPage() {
     const navigation = useNavigation();

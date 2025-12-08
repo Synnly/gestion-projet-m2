@@ -1,6 +1,5 @@
-// FilterList.tsx
 import React, { useState, useMemo } from 'react';
-import { RotateCcw, MapPin, ChevronUp, Map, Settings } from 'lucide-react';
+import { RotateCcw, MapPin, Map, X, SlidersHorizontal } from 'lucide-react';
 import { FilterInput } from '../../components/inputs/selectInput';
 import { internshipFilters, mapOptionToPayload } from './filters';
 import { useInternshipStore } from '../../store/useInternshipStore';
@@ -26,14 +25,14 @@ function FilterChip({
                     onClick={onRemove}
                     aria-label={`Retirer ${label}`}
                 >
-                    <ChevronUp className="h-3 w-3 transform rotate-45" />
+                    <X className="h-4 w-4" />
                 </button>
             )}
         </div>
     );
 }
 
-export default function FilterList() {
+export function FilterList() {
     const filters = useInternshipStore((s) => s.filters);
     const setFilters = useInternshipStore((s) => s.setFilters);
     const [minimal, setMinimal] = useState<boolean>(true);
@@ -111,19 +110,17 @@ export default function FilterList() {
                                 type="button"
                                 className="btn btn-xs btn-ghost"
                                 onClick={() => setMinimal((s) => !s)}
-                                title={minimal ? 'Afficher les options' : 'Masquer les options'}
+                                title={minimal ? 'Afficher les filtres' : 'Masquer les filtres'}
                                 aria-pressed={!minimal}
                             >
-                                <Settings className="h-4 w-4" />
+                                <SlidersHorizontal className="h-4 w-4" />
                             </button>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wrap mt-2">
-                        {activeChips.length === 0 ? (
-                            <span className="text-sm text-base-content/60">Aucun filtre actif</span>
-                        ) : (
-                            activeChips.map((c) => (
+                    {activeChips.length > 0 && (
+                        <div className="flex items-center gap-2 flex-wrap mt-2">
+                            {activeChips.map((c) => (
                                 <FilterChip
                                     key={c.key}
                                     label={c.label}
@@ -140,9 +137,9 @@ export default function FilterList() {
                                 >
                                     {c.label}
                                 </FilterChip>
-                            ))
-                        )}
-                    </div>
+                            ))}
+                        </div>
+                    )}
 
                     <div
                         className={`mt-3 flex flex-row gap-x-4 items-start transition-all duration-200 ${

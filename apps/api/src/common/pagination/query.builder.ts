@@ -139,7 +139,7 @@ export class QueryBuilder<T> {
             case 'dateDesc':
                 return '-createdAt';
             default:
-                return 'createdAt';
+                return '-createdAt';
         }
     }
 }
