@@ -8,7 +8,8 @@ describe('CreateStudentDto', () => {
             const dto = new CreateStudentDto();
             dto.email = 'student@example.com';
             dto.password = 'StrongP@ss1';
-            dto.role = Role.STUDENT as any;
+            dto.student_number = 'S12345678';
+            dto.role = Role.STUDENT;
             dto.firstName = 'John';
             dto.lastName = 'Doe';
 
@@ -20,7 +21,8 @@ describe('CreateStudentDto', () => {
             const dto = new CreateStudentDto();
             dto.email = 'student@example.com';
             dto.password = 'StrongP@ss1';
-            dto.role = Role.STUDENT as any;
+            dto.student_number = 'S12345679';
+            dto.role = Role.STUDENT;
             dto.lastName = 'Doe';
 
             const errors = await validate(dto);
@@ -33,7 +35,8 @@ describe('CreateStudentDto', () => {
             const dto = new CreateStudentDto();
             dto.email = 'student@example.com';
             dto.password = 'weak';
-            dto.role = Role.STUDENT as any;
+            dto.student_number = 'S12345670';
+            dto.role = Role.STUDENT;
             dto.firstName = 'John';
             dto.lastName = 'Doe';
 

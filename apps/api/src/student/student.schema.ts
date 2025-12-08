@@ -22,6 +22,17 @@ export class Student {
     lastName: string;
 
     /**
+     * Unique student number assigned by the institution.
+     * Stored as `student_number` in the document and must be unique.
+     */
+    @Prop({ required: true, unique: true, trim: true })
+    student_number: string;
+
+    /** Flag indicating whether this is the student's first time on the platform. Defaults to false. */
+    @Prop({ default: false })
+    isFirstTime: boolean;
+
+    /**
      * Timestamp indicating when the student was soft-deleted.
      * When present, the record should be considered deleted.
      */

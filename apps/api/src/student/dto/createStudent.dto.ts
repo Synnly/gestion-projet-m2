@@ -14,4 +14,9 @@ export class CreateStudentDto extends CreateUserDto {
     @IsNotEmpty()
     @Length(1, 50)
     lastName: string;
+
+    @IsString()
+    @IsNotEmpty()
+    @Length(1, 50)
+    student_number: string;
 }
