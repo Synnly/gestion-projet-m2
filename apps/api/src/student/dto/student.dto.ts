@@ -26,8 +26,8 @@ export class StudentDto {
     lastName: string;
 
     /** Student's unique institutional number */
-    @Expose()
-    student_number: string;
+    @Expose({ name: 'student_number' })
+    studentNumber: string;
 
     /** Whether this account is the user's first time on the platform */
     @Expose()
