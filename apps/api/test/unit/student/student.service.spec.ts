@@ -58,12 +58,32 @@ describe('StudentService', () => {
         expect(res).toEqual(expected);
     });
 
-    it('create calls model.create with role STUDENT', async () => {
+    it('create calls model.create with role STUDENT and sends email', async () => {
         const dto = { email: 'x@y.z' } as any;
-        mockModel.create.mockResolvedValue(undefined);
+
+        const mockCreatedStudent = { 
+            email: 'x@y.z', 
+            firstName: 'Test', 
+            role: Role.STUDENT 
+        } as any;
+        
+        mockModel.create.mockResolvedValue(mockCreatedStudent);
 
         await service.create(dto);
-        expect(mockModel.create).toHaveBeenCalledWith({ ...dto, role: Role.STUDENT });
+        expect(mockModel.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                email: 'x@y.z', 
+                role: Role.STUDENT,
+                password: expect.any(String)
+            })
+        );
+        
+        expect(mockMailerService.sendAccountCreationEmail).toHaveBeenCalledWith(
+            'x@y.z',
+            expect.any(String),
+            'Test',
+            expect.any(String)
+        );
     });
 
     it('update updates existing student when found', async () => {
