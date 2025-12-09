@@ -131,15 +131,15 @@ export class QueryBuilder<T> {
         return mutableFilter as FilterQuery<T>;
     }
 
-    buildSort() {
+    buildSort(sortParam: string | undefined): string {
         // return string acceptable by Mongoose `sort()`
-        switch (this.params.sort) {
-            case 'dateAsc':
-                return 'createdAt';
-            case 'dateDesc':
-                return '-createdAt';
+        switch (sortParam) {
+            case "dateAsc":
+                return '1';
+            case "dateDesc":
+                return '-1';
             default:
-                return '-createdAt';
+                return '-1';
         }
     }
 }

@@ -35,7 +35,6 @@ export function buildQueryParams(filters: any) {
     setParam('radiusKm', filters.radiusKm);
     setParam('sort', filters.sort);
     setParam('company', filters.company);
-
     return params;
 }
 
@@ -157,6 +156,13 @@ export function useFetchInternships() {
             setInternships(query.data);
         }
     }, [query.data, setInternships]);
+
+    // Enregistrer la fonction refetch dans le store pour permettre le refetch lors du changement de filtres
+    const setRefetchCallback = useInternshipStore((state) => state.setRefetchCallback);
+    useEffect(() => {
+        setRefetchCallback(query.refetch);
+        return () => setRefetchCallback(null);
+    }, [query.refetch, setRefetchCallback]);
 
     return query;
 }
