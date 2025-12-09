@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Home } from 'lucide-react';
 
 export default function FAQ() {
     const SUPPORT_EMAIL = (import.meta.env.VITE_SUPPORT_EMAIL as string);
@@ -6,11 +7,18 @@ export default function FAQ() {
 
     return (
         <main className="max-w-4xl mx-auto py-12 px-6">
-            <header className="mb-6">
-                <h1 className="text-3xl font-semibold">FAQ</h1>
-                <p className="text-sm text-base-content/70 mt-2">
-                    Questions fréquentes — réponses claires et concises.
-                </p>
+            <header className="mb-8">
+                <div className="flex items-center gap-6">
+                    <Link to="/" className="btn btn-primary btn-sm rounded-md flex items-center gap-2">
+                        <Home className="h-4 w-4" />
+                        Accueil
+                    </Link>
+
+                    <div>
+                        <h1 className="text-3xl font-semibold">FAQ</h1>
+                        <p className="text-sm text-base-content/70 mt-1">Questions fréquentes — réponses claires et concises.</p>
+                    </div>
+                </div>
             </header>
 
             <div className="card bg-base-200 shadow-sm mb-6">

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Home } from 'lucide-react';
 
 export default function Help() {
     const year = new Date().getFullYear();
@@ -6,8 +7,17 @@ export default function Help() {
     return (
         <main className="max-w-4xl mx-auto py-12 px-6">
             <header className="mb-8">
-                <h1 className="text-3xl font-semibold">Centre d'aide</h1>
-                <p className="text-sm text-base-content/70 mt-2">Guide rapide et ressources d'assistance.</p>
+                <div className="flex items-center gap-6">
+                    <Link to="/" className="btn btn-primary btn-sm rounded-md flex items-center gap-2">
+                        <Home className="h-4 w-4" />
+                        Accueil
+                    </Link>
+
+                    <div>
+                        <h1 className="text-3xl font-semibold">Centre d'aide</h1>
+                        <p className="text-sm text-base-content/70 mt-1">Guide rapide et ressources d'assistance.</p>
+                    </div>
+                </div>
             </header>
 
             <section className="prose prose-invert mb-6 space-y-6">
