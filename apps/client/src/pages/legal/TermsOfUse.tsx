@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 
 export default function TermsOfUse() {
-    const year = new Date().getFullYear();
     const today = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
 
     return (

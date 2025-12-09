@@ -33,6 +33,10 @@ import TermsOfUse from './pages/legal/TermsOfUse';
 import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 import CookiePolicy from './pages/legal/CookiePolicy';
 import SafetyCompliance from './pages/legal/SafetyCompliance';
+import About from './pages/legal/About';
+import Contact from './pages/legal/Contact';
+import FAQ from './pages/legal/FAQ';
+import Help from './pages/legal/Help';
 
 function App() {
     userStore.persist.rehydrate();
@@ -54,6 +58,10 @@ function App() {
                 },
 
                 { index: true, element: <InternshipPage /> },
+                { path: 'about', element: <About /> },
+                { path: 'contact', element: <Contact /> },
+                { path: 'faq', element: <FAQ /> },
+                { path: 'help', element: <Help /> },
                 { path: 'terms', element: <TermsOfUse /> },
                 { path: 'privacy', element: <PrivacyPolicy /> },
                 { path: 'cookies', element: <CookiePolicy /> },
