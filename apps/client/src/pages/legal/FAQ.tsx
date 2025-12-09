@@ -1,10 +1,8 @@
 import { Link } from 'react-router-dom';
 
 export default function FAQ() {
-    const year = new Date().getFullYear();
-    const SUPPORT_EMAIL = (import.meta.env.VITE_SUPPORT_EMAIL as string) || 'support@stagera.example';
-    const LEGAL_EMAIL = (import.meta.env.VITE_LEGAL_EMAIL as string) || 'legal@stagera.example';
-    const CONTACT_EMAIL = (import.meta.env.VITE_CONTACT_EMAIL as string) || 'contact@stagera.example';
+    const SUPPORT_EMAIL = (import.meta.env.VITE_SUPPORT_EMAIL as string);
+    const LEGAL_EMAIL = (import.meta.env.VITE_LEGAL_EMAIL as string);
 
     return (
         <main className="max-w-4xl mx-auto py-12 px-6">
@@ -48,7 +46,7 @@ export default function FAQ() {
                             <Link to="/complete-profil" className="link link-hover">
                                 Mon profil
                             </Link>
-                            pour mettre à jour vos informations, votre CV et photo.
+                             pour mettre à jour vos informations, votre CV et photo.
                         </p>
                     </div>
                 </div>
@@ -80,16 +78,6 @@ export default function FAQ() {
                     <Link to="/about" className="link link-hover">
                         À propos
                     </Link>
-                </div>
-
-                <div className="text-right">
-                    <div>
-                        Contact général :{' '}
-                        <a className="link link-hover" href={`mailto:${CONTACT_EMAIL}`}>
-                            {CONTACT_EMAIL}
-                        </a>
-                    </div>
-                    <div className="mt-2">© {year} Stagora — Tous droits réservés.</div>
                 </div>
             </footer>
         </main>
