@@ -4,9 +4,12 @@ import { StudentService } from '../../../src/student/student.service';
 import { Student } from '../../../src/student/student.schema';
 import { Role } from '../../../src/common/roles/roles.enum';
 import { ConflictException } from '@nestjs/common';
+import { MailerService } from '../../../src/mailer/mailer.service'; // 1. Import du service
 
 describe('StudentService', () => {
     let service: StudentService;
+    let mailerService: MailerService;
+
     const mockModel = {
         find: jest.fn(),
         findOne: jest.fn(),
@@ -15,12 +18,21 @@ describe('StudentService', () => {
         insertMany: jest.fn(),
     } as any;
 
+    const mockMailerService = {
+        sendAccountCreationEmail: jest.fn().mockResolvedValue(true),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
-            providers: [StudentService, { provide: getModelToken(Student.name), useValue: mockModel }],
+            providers: [
+                StudentService,
+                { provide: getModelToken(Student.name), useValue: mockModel },
+                { provide: MailerService, useValue: mockMailerService },
+            ],
         }).compile();
 
         service = module.get<StudentService>(StudentService);
+        mailerService = module.get<MailerService>(MailerService);
         jest.clearAllMocks();
     });
 
@@ -102,8 +114,8 @@ describe('StudentService', () => {
 
     describe('createMany', () => {
         const dtos = [
-            { email: 'new1@test.com', firstName: 'A', lastName: 'B', password: 'Pwd', role: Role.STUDENT },
-            { email: 'exist@test.com', firstName: 'C', lastName: 'D', password: 'Pwd', role: Role.STUDENT },
+            { email: 'new1@test.com', studentNumber: '1', firstName: 'A', lastName: 'B' },
+            { email: 'exist@test.com', studentNumber: '2', firstName: 'C', lastName: 'D' },
         ];
 
         it('should insert all students if no duplicates found (Strict Mode)', async () => {
@@ -113,7 +125,8 @@ describe('StudentService', () => {
             const result = await service.createMany(dtos, false);
 
             expect(mockModel.find).toHaveBeenCalledWith({ email: { $in: ['new1@test.com', 'exist@test.com'] } });
-            expect(mockModel.insertMany).toHaveBeenCalledWith(dtos);
+            expect(mockModel.insertMany).toHaveBeenCalled();
+            expect(mockMailerService.sendAccountCreationEmail).toHaveBeenCalledTimes(2);
             expect(result.added).toBe(2);
         });
 
@@ -123,6 +136,7 @@ describe('StudentService', () => {
             await expect(service.createMany(dtos, false)).rejects.toThrow(ConflictException);
             
             expect(mockModel.insertMany).not.toHaveBeenCalled();
+            expect(mockMailerService.sendAccountCreationEmail).not.toHaveBeenCalled();
         });
 
         it('should skip duplicates and insert only new ones (Filter Mode)', async () => {
@@ -130,14 +144,15 @@ describe('StudentService', () => {
             
             const result = await service.createMany(dtos, true);
 
-            expect(mockModel.insertMany).toHaveBeenCalledWith([dtos[0]]);
+            expect(mockModel.insertMany).toHaveBeenCalled();
+            expect(mockMailerService.sendAccountCreationEmail).toHaveBeenCalledTimes(1);
             expect(result).toEqual({
                 added: 1,
                 skipped: 1
             });
         });
 
-        it('should return "No new students" if all exist (Filter Mode)', async () => {
+        it('should return "added: 0" if all exist (Filter Mode)', async () => {
             mockModel.find.mockResolvedValue([
                 { email: 'new1@test.com' },
                 { email: 'exist@test.com' }
@@ -146,6 +161,7 @@ describe('StudentService', () => {
             const result = await service.createMany(dtos, true);
 
             expect(mockModel.insertMany).not.toHaveBeenCalled();
+            expect(mockMailerService.sendAccountCreationEmail).not.toHaveBeenCalled();
             expect(result.added).toBe(0);
             expect(result.skipped).toBe(2);
         });

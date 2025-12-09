@@ -221,6 +221,35 @@ export class MailerService {
     }
 
     /**
+     * Send account creation email with credentials
+     * @param email Recipient email
+     * @param rawPassword The plain text password generated
+     * @param firstName Optional first name for personalization
+     * @param customMessage Optional custom welcome message
+     */
+    async sendAccountCreationEmail(email: string, rawPassword: string, firstName: string = 'Étudiant', lastName: string = "", customMessage: string = '') {
+        const normalized = email.toLowerCase();
+        const { from, name } = this.getFromAddress();
+
+        await this.mailerProvider.sendMail({
+            to: normalized,
+            subject: 'Vos identifiants de connexion',
+            template: 'accountCreation',
+            from,
+            context: {
+                email: normalized,
+                password: rawPassword,
+                firstName: firstName,
+                lastName: lastName,
+                customMessage: customMessage,
+                fromName: name,
+            },
+        });
+
+        return true;
+    }
+
+    /**
      * Update user password after successful OTP verification
      * @param email Email address of the user
      * @param newPassword New password to set for the user

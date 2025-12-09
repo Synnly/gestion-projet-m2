@@ -6,7 +6,10 @@ import { Student } from './student.schema';
 import { StudentUserDocument } from '../user/user.schema';
 import { Role } from '../common/roles/roles.enum';
 import { UpdateStudentDto } from './dto/updateStudent.dto';
-
+import * as bcrypt from 'bcrypt';
+import { generateRandomPassword } from '../common/utils/password.utils'; 
+import { StudentLoginInfo } from './student.types';
+import { MailerService } from '../mailer/mailer.service';
 @Injectable()
 /**
  * Service that handles student data operations.
@@ -14,7 +17,10 @@ import { UpdateStudentDto } from './dto/updateStudent.dto';
  * Provides methods to find, create, update and soft-delete student records in the database.
  */
 export class StudentService {
-    constructor(@InjectModel(Student.name) private readonly studentModel: Model<StudentUserDocument>) {}
+    constructor(
+        @InjectModel(Student.name) private readonly studentModel: Model<StudentUserDocument>,
+        private readonly mailerService: MailerService
+    ) {}
 
     /**
      * Find all students that are not soft-deleted.
@@ -43,7 +49,7 @@ export class StudentService {
     }
 
     /**
-     * Create a list of new students record.
+     * Create a list of new students record, then send a mail to every student created.
      * @param createStudentDtos The creation payload.
      * @param addOnlyNewEmails Boolean option to ignore already existing emails (if true), and create only new students accounts.
      * @returns A response with the error or validation message, containing the number of students created (and skipped if addOnlyNewEmails is true).
@@ -63,13 +69,56 @@ export class StudentService {
         }
 
         // If addOnlyNewEmails is true, we won't try to insert already existing emails
-        const newStudentsToCreate = dtos.filter((dto) => !existingEmails.includes(dto.email));
+        const newStudentsToCreateDtos = dtos.filter((dto) => !existingEmails.includes(dto.email));
+        const studentsLogin: StudentLoginInfo[] = [];
 
-        // Finally, we add only new students
-        if (newStudentsToCreate.length > 0) await this.studentModel.insertMany(newStudentsToCreate);
+        // Preparing records for mass insert
+        if (newStudentsToCreateDtos.length > 0) {
+            const studentsToInsert = await Promise.all(
+                newStudentsToCreateDtos.map(async (dto) => {
+                    const rawPassword = generateRandomPassword();
+                    studentsLogin.push({
+                        email: dto.email,
+                        rawPassword: rawPassword,
+                        firstName: dto.firstName,
+                        lastName: dto.lastName
+                    });
+                    const salt = await bcrypt.genSalt(10);
+                    const hashedPassword = await bcrypt.hash(rawPassword, salt);
 
+                    return {
+                        ...dto,
+                        role: Role.STUDENT,
+                        password: hashedPassword,
+                        isFirstTime: true // optionnal, default is true anyway
+                    };
+                })
+            );
+            await this.studentModel.insertMany(studentsToInsert);
+            
+            // Sending mails for each student created
+            const emailResults = await Promise.allSettled(
+                studentsLogin.map(async (loginMailInfo) => {
+                    return this.mailerService.sendAccountCreationEmail(
+                        loginMailInfo.email,
+                        loginMailInfo.rawPassword,
+                        loginMailInfo.firstName,
+                        loginMailInfo.lastName,
+                        "Vous pouvez désormais accéder à la plateforme de gestion des stages."
+                    );
+                })
+            );
+
+            // Logging eventual sending errors (silent in prod)
+            emailResults.forEach((result, index) => {
+                if (result.status === 'rejected') {
+                    console.error(`Failed to send email to ${studentsLogin[index].email}:`, result.reason);
+                }
+            });
+        }
+        
         return {
-            added: newStudentsToCreate.length,
+            added: newStudentsToCreateDtos.length,
             skipped: existingEmails.length,
         };
     }

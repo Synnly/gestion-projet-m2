@@ -64,8 +64,6 @@ describe('StudentController', () => {
         mockService.create.mockResolvedValue(undefined);
         const dto = {
             email: 'ok@example.com',
-            password: 'StrongP@ss1',
-            role: 'STUDENT',
             firstName: 'A',
             lastName: 'B',
         } as any;
@@ -127,9 +125,7 @@ describe('StudentController', () => {
             const invalidData = [{
                 firstName: 'Toto',
                 lastName: 'Test',
-                email: 'invalid-email',
-                password: 'Pwd1!',
-                role: 'STUDENT'
+                email: 'invalid-email'
             }];
             const file = createMockFile(invalidData);
 
@@ -141,8 +137,7 @@ describe('StudentController', () => {
                 firstName: 'Toto',
                 lastName: 'Test',
                 email: 'toto@univ.fr',
-                password: 'StrongPwd1!',
-                role: 'STUDENT'
+                studentNumber: '1'
             }];
             const file = createMockFile(validData);
             
