@@ -9,6 +9,8 @@ describe('StudentDto', () => {
                 email: 's@example.com',
                 firstName: 'FN',
                 lastName: 'LN',
+                studentNumber: 'SN-001',
+                isFirstTime: true,
             };
 
             const dto = new StudentDto(data);
@@ -17,6 +19,8 @@ describe('StudentDto', () => {
             expect(dto.email).toBe('s@example.com');
             expect(dto.firstName).toBe('FN');
             expect(dto.lastName).toBe('LN');
+            expect(dto.studentNumber).toBe('SN-001');
+            expect(dto.isFirstTime).toBe(true);
         });
     });
 });

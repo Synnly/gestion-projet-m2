@@ -71,6 +71,7 @@ describe('Application Integration Tests', () => {
         return studentModel.create({
             email: (attrs.email as any) || `student-${unique}@test.com`,
             password: attrs.password || 'TestP@ss123',
+            studentNumber: (attrs as any).studentNumber || `SN-${unique}`,
             role: Role.STUDENT,
             firstName: (attrs as any).firstName || 'John',
             lastName: (attrs as any).lastName || 'Doe',
