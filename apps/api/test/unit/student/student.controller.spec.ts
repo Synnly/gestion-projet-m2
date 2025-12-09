@@ -90,7 +90,7 @@ describe('StudentController', () => {
     });
 
     describe('import', () => {
-        const createMockFile = (content: any, mimetype = 'application/json') => ({
+        const createJSONMockFile = (content: any, mimetype = 'application/json') => ({
             fieldname: 'file',
             originalname: 'students.json',
             encoding: '7bit',
@@ -98,18 +98,39 @@ describe('StudentController', () => {
             buffer: Buffer.from(JSON.stringify(content)),
             size: 100,
         } as Express.Multer.File);
+        
+        const createCSVMockFile = (content: string, mimetype = 'text/csv'): Express.Multer.File => ({
+            fieldname: 'file',
+            originalname: 'students.csv',
+            encoding: '7bit',
+            mimetype,
+            buffer: Buffer.from(content),
+            size: content.length,
+            stream: null as any,
+            destination: '',
+            filename: '',
+            path: '',
+        } as Express.Multer.File);
+
+
+        it('should be protected with ADMIN role', () => {
+            const roles = Reflect.getMetadata('roles', controller.import);
+
+            expect(roles).toBeDefined(); 
+            expect(roles).toContain(Role.ADMIN);
+        });
 
         it('should throw BadRequestException if file is undefined', async () => {
             await expect(controller.import(undefined as any)).rejects.toThrow(BadRequestException);
         });
 
         it('should throw BadRequestException if mimetype is not JSON nor CSV', async () => {
-            const file = createMockFile([], 'image/png');
+            const file = createJSONMockFile([], 'image/png');
             await expect(controller.import(file)).rejects.toThrow('File must be a JSON or CSV');
         });
 
         it('should throw BadRequestException if content is not an array', async () => {
-            const file = createMockFile({ email: 'test@test.com' });
+            const file = createJSONMockFile({ email: 'test@test.com' });
             await expect(controller.import(file)).rejects.toThrow('JSON content must be an array');
         });
 
@@ -118,7 +139,7 @@ describe('StudentController', () => {
                 mimetype: 'application/json',
                 buffer: Buffer.from('{ bad json '),
             } as any;
-            await expect(controller.import(file)).rejects.toThrow('Invalid JSON file format');
+            await expect(controller.import(file)).rejects.toThrow('Invalid file format');
         });
 
         it('should throw BadRequestException if DTO validation fails (invalid email)', async () => {
@@ -127,7 +148,7 @@ describe('StudentController', () => {
                 lastName: 'Test',
                 email: 'invalid-email'
             }];
-            const file = createMockFile(invalidData);
+            const file = createJSONMockFile(invalidData);
 
             await expect(controller.import(file)).rejects.toThrow(BadRequestException);
         });
@@ -139,7 +160,7 @@ describe('StudentController', () => {
                 email: 'toto@univ.fr',
                 studentNumber: '1'
             }];
-            const file = createMockFile(validData);
+            const file = createJSONMockFile(validData);
             
             mockService.createMany.mockResolvedValue({ added: 1 });
 
@@ -151,11 +172,58 @@ describe('StudentController', () => {
             );
         });
 
-        it('should be protected with ADMIN role', () => {
-            const roles = Reflect.getMetadata('roles', controller.import);
+        it('should successfully import a valid CSV file (comma separated)', async () => {
+            const csvContent = `firstName,lastName,studentNumber,email
+                                John,Doe,123,john.doe@test.com
+                                Jane,Smith,456,jane.smith@test.com`;
+            
+            const file = createCSVMockFile(csvContent, 'text/csv');
+            
+            mockService.createMany.mockResolvedValue({ added: 2, skipped: 0 });
 
-            expect(roles).toBeDefined(); 
-            expect(roles).toContain(Role.ADMIN);
+            const result = await controller.import(file, false);
+
+            expect(mockService.createMany).toHaveBeenCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({ email: 'john.doe@test.com', firstName: 'John' }),
+                    expect.objectContaining({ email: 'jane.smith@test.com', firstName: 'Jane' }),
+                ]),
+                false
+            );
+            expect(result).toEqual({ added: 2, skipped: 0 });
+        });
+
+        it('should successfully import a valid CSV file (semicolon separated / Excel style)', async () => {
+            const csvContent = `firstName;lastName;studentNumber;email
+                                Alice;Wonder;789;alice@test.com`;
+            
+            const file = createCSVMockFile(csvContent, 'application/vnd.ms-excel'); 
+            
+            mockService.createMany.mockResolvedValue({ added: 1, skipped: 0 });
+
+            await controller.import(file, false);
+
+            expect(mockService.createMany).toHaveBeenCalledWith(
+                [expect.objectContaining({ email: 'alice@test.com', studentNumber: '789' })],
+                false
+            );
+        });
+
+        it('should throw BadRequestException for unsupported file type', async () => {
+            const file = createCSVMockFile('%PDF-1.5...', 'application/pdf');
+            
+            await expect(controller.import(file)).rejects.toThrow(BadRequestException);
+        });
+
+        it('should throw BadRequestException if DTO validation fails in CSV (e.g., missing email)', async () => {
+            const invalidCsvContent = `firstName,lastName,studentNumber,email
+                                       Alice,Wonder,123,not-an-email`;
+                
+            const file = createCSVMockFile('text/csv', invalidCsvContent);
+
+            await expect(controller.import(file)).rejects.toThrow(BadRequestException);
+
+            expect(mockService.createMany).not.toHaveBeenCalled();
         });
     });
 });
