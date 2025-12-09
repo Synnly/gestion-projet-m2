@@ -103,7 +103,6 @@ function App() {
                         },
                         {
                             path: 'internship',
-                            element: <ProtectedRoutesByRole allowedRoles={['ADMIN', 'STUDENT']} />,
                             children: [
                                 {
                                     element: <VerifiedRoutes redirectPath="/" />,

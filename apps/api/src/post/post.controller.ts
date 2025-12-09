@@ -11,6 +11,7 @@ import {
     UseGuards,
     ValidationPipe,
     Query,
+    Logger,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';
@@ -47,6 +48,7 @@ export class PostController {
         query: PaginationDto,
     ): Promise<PaginationResult<PostDto>> {
         const posts = await this.postService.findAll(query);
+
         return {
             ...posts,
             data: posts.data.map((post) => plainToInstance(PostDto, post)),

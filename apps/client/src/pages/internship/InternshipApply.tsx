@@ -4,13 +4,13 @@ import { Navigate, useNavigate, useParams } from 'react-router';
 import Spinner from '../../components/Spinner/Spinner';
 import FileInput from '../../components/inputs/fileInput/FileInput';
 import InternshipDetail from '../../modules/internship/InternshipDetail';
-import { useRef, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { userStore } from '../../store/userStore';
 import { useUploadFile } from '../../hooks/useUploadFile';
-import { type ModalHandle } from '../../components/ui/modal/Modal';
 import { toast } from 'react-toastify';
 
-const getfileExtension = (file: File): string => {
+const getfileExtension = (file: File | null): string => {
+    if (!file) return null;
     const parts = file.name.lastIndexOf('.');
     return file.name.substring(parts + 1).toLowerCase();
 };
@@ -70,10 +70,10 @@ export const InternshipApply = () => {
 
     const [cv, setCv] = useState<File | null>(null);
     const [coverLetter, setCoverLetter] = useState<File | null>(null);
-
+    const [certifications, setCertifications] = useState<File | null>(null);
     const mutation = useMutation({
         mutationFn: async () => {
-            if (!cv || !coverLetter) return false;
+            if (!cv || (data.isCoverLetterRequired && !coverLetter)) return;
             const fetchApply = await fetch(`${import.meta.env.VITE_APIURL}/api/application`, {
                 method: 'POST',
                 headers: {
@@ -100,7 +100,8 @@ export const InternshipApply = () => {
 
     async function apply(e: FormEvent<HTMLFormElement>): Promise<void> {
         e.preventDefault();
-        if (!cv || !coverLetter) return;
+
+        if (!cv || (data.isCoverLetterRequired && !coverLetter)) return;
         const result = await mutation.mutateAsync();
         if (result) {
             setCoverLetter(null);
@@ -113,13 +114,14 @@ export const InternshipApply = () => {
         toast.error('Vous avez déjà postulé à cette offre.', { toastId: 'already-applied-error' });
         return <Navigate to="/" replace={true} />;
     }
+    console.log(data);
     return (
         <>
             <div className="flex flex-col min-h-screen">
                 <Navbar />
                 <div className="flex-1 flex flex-col">
                     {isLoading || isCheckLoading ? (
-                        <Spinner />
+                        <span className="loading loading-spinner loading-md"></span>
                     ) : (
                         <div className="bg-base-100 mt-5 flex-1 flex-col gap-3 flex">
                             <div className="container mx-auto bg-base-100 rounded-lg flex-1 flex-col">
@@ -134,25 +136,32 @@ export const InternshipApply = () => {
                                         </div>
                                     </div>
                                     <div className="flex flex-row gap-3">
-                                        <FileInput title="CV" file={cv} setFile={setCv} />
+                                        <FileInput title="CV" file={cv} setFile={setCv} svgColor="text-blue-600" />
                                         <FileInput
                                             title="Lettre de motivation"
                                             file={coverLetter}
                                             setFile={setCoverLetter}
+                                            svgColor="text-red-600"
                                         />
                                     </div>
-                                    {cv && coverLetter && (
-                                        <div className="ml-full flex justify-end items-center">
-                                            <button
-                                                type="button"
-                                                className="btn btn-secondary mr-4"
-                                                onClick={() => navigate(-1)}
-                                            >
-                                                Annuler
-                                            </button>
-                                            <input type="submit" className="btn btn-primary  m-4" value="Postuler" />
-                                        </div>
-                                    )}
+                                    {cv &&
+                                        ((data.isCoverLetterRequired && coverLetter) ||
+                                            !data.isCoverLetterRequired) && (
+                                            <div className="ml-full flex justify-end items-center">
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-secondary mr-4"
+                                                    onClick={() => navigate(-1)}
+                                                >
+                                                    Annuler
+                                                </button>
+                                                <input
+                                                    type="submit"
+                                                    className="btn btn-primary  m-4"
+                                                    value="Postuler"
+                                                />
+                                            </div>
+                                        )}
                                 </form>
                             </div>
                         </div>

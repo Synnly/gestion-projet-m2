@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post } from './post.schema';
 import { Model, Types } from 'mongoose';
@@ -46,7 +46,7 @@ export class PostService {
                 company?.streetName,
                 company?.postalCode,
                 company?.city,
-                company?.country
+                company?.country,
             ].filter(Boolean);
             dto.adress = addressParts.join(' ');
         }
@@ -64,6 +64,7 @@ export class PostService {
             ...dto,
             company: new Types.ObjectId(companyId),
             location,
+            isCoverLetterRequired: dto.isCoverLetterRequired,
         });
 
         const saved = await createdPost.save();
@@ -99,7 +100,6 @@ export class PostService {
      */
     async findAll(query: PaginationDto): Promise<PaginationResult<Post>> {
         const { page, limit, sort, ...filters } = query;
-
         // Build dynamic Mongo filters
         const qb = new QueryBuilder<Post>(filters as any, this.geoService);
         const filter = await qb.build();

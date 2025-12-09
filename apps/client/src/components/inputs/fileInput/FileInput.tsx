@@ -5,13 +5,14 @@ interface FileInputProps {
     title: string;
     setFile: (file: File | null) => void;
     file: File | null;
+    svgColor?: string;
 }
 
 const fileTypes = ['PDF', 'DOCX', 'DOC']; // Pour l'affichage
 const fileFormats = fileTypes.join(', ');
 const maxSizeMo = 5;
 
-export default function FileInput({ title, setFile, file }: FileInputProps) {
+export default function FileInput({ title, setFile, file, svgColor }: FileInputProps) {
     const handleChange = (newFile: File | File[]) => {
         if (newFile instanceof File) {
             setFile(newFile);
@@ -37,10 +38,10 @@ export default function FileInput({ title, setFile, file }: FileInputProps) {
 
         return (
             <div className="flex flex-col items-center gap-2">
-                <Upload />
+                <Upload className={svgColor} />
                 <p className="text-gray-700">
                     <span className="font-medium">Glisser-déposer</span> ou
-                    <span className="text-blue-600"> parcourir</span>
+                    <span className={svgColor}> parcourir</span>
                 </p>
                 <p className="text-sm text-gray-500">
                     {fileFormats} jusqu’à {maxSizeMo} Mo

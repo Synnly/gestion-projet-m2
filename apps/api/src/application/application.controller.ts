@@ -12,6 +12,7 @@ import {
     Query,
     UseGuards,
     ValidationPipe,
+    Logger,
 } from '@nestjs/common';
 import { ApplicationService } from './application.service';
 import { AuthGuard } from '../auth/auth.guard';
@@ -99,6 +100,7 @@ export class ApplicationController {
         @Body('postId', ParseObjectIdPipe) postId: Types.ObjectId,
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) application: CreateApplicationDto,
     ): Promise<{ cvUrl: string; lmUrl?: string }> {
+        Logger.log('je recois une candidature');
         return this.applicationService.create(studentId, postId, application);
     }
 

@@ -40,9 +40,10 @@ export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: stri
 
     if (isLoading) {
         return (
-            <div className="mt-6 flex flex-wrap gap-3 justify-center">
-                <Spinner />
-            </div>
+            <button className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2">
+                <ArrowUpRight size={20} />
+                <span className="loading loading-spinner loading-md"></span>
+            </button>
         );
     }
     return (
