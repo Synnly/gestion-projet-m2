@@ -42,9 +42,31 @@ export class StudentService {
     /**
      * Create a new student record.
      * @param dto The creation payload.
+     * @throws {ConflictException} When a student with the same email already exists (handled in controller).
      */
     async create(dto: CreateStudentDto): Promise<void> {
-        await this.studentModel.create({ ...dto, role: Role.STUDENT });
+        const rawPassword = generateRandomPassword();
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(rawPassword, salt);
+        
+        const studentData = {
+            ...dto,
+            role: Role.STUDENT,
+            password: hashedPassword,
+        };
+
+        const newStudent = await this.studentModel.create(studentData);
+
+        try {
+            await this.mailerService.sendAccountCreationEmail(
+                newStudent.email,
+                rawPassword,
+                newStudent.firstName,
+                "Vous pouvez désormais accéder à la plateforme de gestion des stages."
+            );
+        } catch (error) {
+            console.error(`Failed to send welcome email to ${newStudent.email}:`, error);
+        }
         return;
     }
 
