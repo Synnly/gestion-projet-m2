@@ -132,7 +132,6 @@ describe('StudentService', () => {
 
             expect(mockModel.insertMany).toHaveBeenCalledWith([dtos[0]]);
             expect(result).toEqual({
-                message: 'Import successful',
                 added: 1,
                 skipped: 1
             });
@@ -149,7 +148,6 @@ describe('StudentService', () => {
             expect(mockModel.insertMany).not.toHaveBeenCalled();
             expect(result.added).toBe(0);
             expect(result.skipped).toBe(2);
-            expect(result.message).toContain('No new students');
         });
     });
 });

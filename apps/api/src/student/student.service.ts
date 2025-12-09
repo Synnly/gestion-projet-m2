@@ -45,9 +45,10 @@ export class StudentService {
     /**
      * Create a list of new students record.
      * @param createStudentDtos The creation payload.
-     * @returns A response with the error or validation message, containing the number of students created.
+     * @param addOnlyNewEmails Boolean option to ignore already existing emails (if true), and create only new students accounts.
+     * @returns A response with the error or validation message, containing the number of students created (and skipped if addOnlyNewEmails is true).
      */
-    async createMany(dtos: CreateStudentDto[], addOnlyNewEmails: boolean) {
+    async createMany(dtos: CreateStudentDto[], addOnlyNewEmails: boolean): Promise<{ added: number; skipped: number }> {
         const incomingEmails = dtos.map((dto) => dto.email);
 
         const existingStudents = await this.studentModel.find({
@@ -58,30 +59,16 @@ export class StudentService {
 
         // We found duplicates and addOnlyNewEmails is false (we add every student or none if there's any error)
         if (existingEmails.length > 0 && !addOnlyNewEmails) {
-            throw new ConflictException({
-                message: 'Import failed. Some emails already exist.',
-                duplicates: existingEmails,
-                error: "Conflict",
-                statusCode: 409
-            });
+            throw new ConflictException(['Import failed. Some emails already exist :', existingEmails]);
         }
 
         // If addOnlyNewEmails is true, we won't try to insert already existing emails
         const newStudentsToCreate = dtos.filter((dto) => !existingEmails.includes(dto.email));
 
-        if (newStudentsToCreate.length === 0) {
-            return { 
-                message: 'No new students to add.', 
-                added: 0, 
-                skipped: existingEmails.length 
-            };
-        }
-
         // Finally, we add only new students
-        await this.studentModel.insertMany(newStudentsToCreate);
+        if (newStudentsToCreate.length > 0) await this.studentModel.insertMany(newStudentsToCreate);
 
         return {
-            message: 'Import successful',
             added: newStudentsToCreate.length,
             skipped: existingEmails.length,
         };

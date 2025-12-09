@@ -17,7 +17,6 @@ import {
     BadRequestException,
     Query,
     ParseBoolPipe,
-    ParseArrayPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateStudentDto } from './dto/createStudent.dto';
@@ -30,9 +29,7 @@ import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { UpdateStudentDto } from './dto/updateStudent.dto';
-import { OwnerGuard } from 'src/s3/owner.guard';
 import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
-import { validate } from 'class-validator';
 
 @Controller('/api/students')
 /**
@@ -96,8 +93,10 @@ export class StudentController {
 
     /**
      * Import a list of students via a JSON array.
-     * @param dtos An array of CreateStudentDto objects.
+     * @param file A JSON file containing a list of CreateStudentDto objects.
+     * @param addOnlyNewEmails Boolean option to ignore already existing emails (if true), and create only new students accounts.
      * @throws {BadRequestException} When the file is not uploaded or in the wrong format.
+     * @returns A response with the error or validation message, containing the number of students created (and skipped if addOnlyNewEmails is true).
      */
     @Post('/import')
     @UseInterceptors(FileInterceptor('file'))
@@ -108,7 +107,7 @@ export class StudentController {
         @UploadedFile() file: Express.Multer.File,
         @Query('addOnlyNewEmails', new ParseBoolPipe({ optional: true })) 
         addOnlyNewEmails: boolean = false,
-    ) {        
+    ) : Promise<{ added: number; skipped: number }> {        
         if (!file) throw new BadRequestException('File is required');
         if (file.mimetype !== 'application/json') throw new BadRequestException('File must be a JSON');
 
@@ -118,15 +117,21 @@ export class StudentController {
             const jsonContent = JSON.parse(file.buffer.toString());
             if (!Array.isArray(jsonContent)) throw new BadRequestException('JSON content must be an array');
 
-            // Dtos validation
-            studentDtos = plainToInstance(CreateStudentDto, jsonContent);
+            // Dtos validation  
+            const validationPipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });  
+            studentDtos = plainToInstance(CreateStudentDto, jsonContent);  
             for (const [index, dto] of studentDtos.entries()) {
-                const errors = await validate(dto);
-                if (errors.length > 0) {
-                    const msg = errors.map(e => Object.values(e.constraints || {})).join(', ');
-                    throw new BadRequestException(`Validation failed at student with email (${dto.email}) : ${msg}`);
+                try {
+                    await validationPipe.transform(dto, { type: 'body', metatype: CreateStudentDto });
+                } catch (e) {
+                    if (e instanceof BadRequestException) {
+                        const error = `Validation failed at student with email '${dto.email || 'unknown'}' (student #${index+1}) :`;
+                        const response = e.getResponse() as any;
+                        throw new BadRequestException([error, response.message]);
+                    }
+                    throw e;
                 }
-            }
+            }  
         } catch (e) {
             if (e instanceof BadRequestException) throw e;
             throw new BadRequestException('Invalid JSON file format');

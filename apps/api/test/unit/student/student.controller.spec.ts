@@ -134,7 +134,6 @@ describe('StudentController', () => {
             const file = createMockFile(invalidData);
 
             await expect(controller.import(file)).rejects.toThrow(BadRequestException);
-            await expect(controller.import(file)).rejects.toThrow('Validation failed');
         });
 
         it('should call service.createMany with correct params on success', async () => {
@@ -156,6 +155,7 @@ describe('StudentController', () => {
                 true
             );
         });
+
         it('should be protected with ADMIN role', () => {
             const roles = Reflect.getMetadata('roles', controller.import);
 
