@@ -28,6 +28,11 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ToastProvider from './components/ui/toast/ToastProvider';
 import { DarkModeProvider } from './components/darkMode/DarkModeProvider';
+import MainLayout from './components/layout/MainLayout';
+import TermsOfUse from './pages/legal/TermsOfUse';
+import PrivacyPolicy from './pages/legal/PrivacyPolicy';
+import CookiePolicy from './pages/legal/CookiePolicy';
+import SafetyCompliance from './pages/legal/SafetyCompliance';
 
 function App() {
     userStore.persist.rehydrate();
@@ -38,7 +43,7 @@ function App() {
             path: '/',
             id: 'root',
             middleware: [completeProfilMiddleware],
-            element: <Outlet />,
+            element: <MainLayout />,
             children: [
                 {
                     path: 'logout',
@@ -49,6 +54,10 @@ function App() {
                 },
 
                 { index: true, element: <InternshipPage /> },
+                { path: 'terms', element: <TermsOfUse /> },
+                { path: 'privacy', element: <PrivacyPolicy /> },
+                { path: 'cookies', element: <CookiePolicy /> },
+                { path: 'safety', element: <SafetyCompliance /> },
                 {
                     loader: notAuthMiddleWare,
                     children: [
