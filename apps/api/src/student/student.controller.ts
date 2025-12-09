@@ -30,6 +30,9 @@ import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { UpdateStudentDto } from './dto/updateStudent.dto';
 import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
+import { parse } from 'csv-parse/sync';
+import * as chardet from 'chardet';
+import * as iconv from 'iconv-lite';
 
 @Controller('/api/students')
 /**
@@ -76,6 +79,8 @@ export class StudentController {
      * @throws {Error} For other unexpected errors during creation.
      */
     @Post('')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
     @HttpCode(HttpStatus.CREATED)
     async create(
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
@@ -109,23 +114,52 @@ export class StudentController {
         addOnlyNewEmails: boolean = false,
     ) : Promise<{ added: number; skipped: number }> {        
         if (!file) throw new BadRequestException('File is required');
-        if (file.mimetype !== 'application/json') throw new BadRequestException('File must be a JSON');
+
+        // File format verification
+        const allowedMimeTypes = [
+            'application/json',
+            'text/csv',
+            'application/vnd.ms-excel',
+            'text/plain'
+        ];
+
+        if (!allowedMimeTypes.includes(file.mimetype)) {
+            throw new BadRequestException('File must be a JSON or CSV');
+        }
 
         let studentDtos: CreateStudentDto[];
 
         try {
-            const jsonContent = JSON.parse(file.buffer.toString());
-            if (!Array.isArray(jsonContent)) throw new BadRequestException('JSON content must be an array');
+            let rawData: any[];
 
-            // Dtos validation  
+            // Parsing JSON
+            if (file.mimetype === 'application/json') {
+                rawData = JSON.parse(file.buffer.toString());
+                if (!Array.isArray(rawData)) throw new BadRequestException('JSON content must be an array');
+            } else {
+                // Parsing CSV
+                // To deal with accents, we detect the encoded format of the csv file and convert it to utf-8 if needed.
+                const detectedEncoding = chardet.detect(file.buffer);
+                const decodedContent = iconv.decode(file.buffer, detectedEncoding || 'utf-8');
+
+                rawData = parse(decodedContent, {
+                    columns: true,
+                    skip_empty_lines: true,
+                    trim: true,
+                    delimiter: [',', ';', '\t'], 
+                    relax_quotes: true,
+                });
+            }
+
             const validationPipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });  
-            studentDtos = plainToInstance(CreateStudentDto, jsonContent);  
+            studentDtos = plainToInstance(CreateStudentDto, rawData);  
+
             for (const [index, dto] of studentDtos.entries()) {
                 try {
                     await validationPipe.transform(dto, { type: 'body', metatype: CreateStudentDto });
                 } catch (e) {
                     if (e instanceof BadRequestException) {
-                        const error = `Validation failed at student with email '${dto.email || 'unknown'}' (student #${index+1}) :`;
+                        const error = `Validation failed at student with email '${dto.email || 'unknown'}' (row #${index+1}) :`;
                         const response = e.getResponse() as any;
                         throw new BadRequestException([error, response.message]);
                     }
@@ -134,7 +168,10 @@ export class StudentController {
             }  
         } catch (e) {
             if (e instanceof BadRequestException) throw e;
-            throw new BadRequestException('Invalid JSON file format');
+            if (e.code === 'CSV_INVALID_OPTION' || e.message.includes('CSV')) {
+                throw new BadRequestException('Invalid CSV file format');
+            }
+            throw new BadRequestException('Invalid file format');
         }
 
         return await this.studentService.createMany(studentDtos, addOnlyNewEmails);

@@ -103,9 +103,9 @@ describe('StudentController', () => {
             await expect(controller.import(undefined as any)).rejects.toThrow(BadRequestException);
         });
 
-        it('should throw BadRequestException if mimetype is not JSON', async () => {
+        it('should throw BadRequestException if mimetype is not JSON nor CSV', async () => {
             const file = createMockFile([], 'image/png');
-            await expect(controller.import(file)).rejects.toThrow('File must be a JSON');
+            await expect(controller.import(file)).rejects.toThrow('File must be a JSON or CSV');
         });
 
         it('should throw BadRequestException if content is not an array', async () => {
