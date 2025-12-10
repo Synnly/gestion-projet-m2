@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { fetchInternshipById } from '../../../hooks/useFetchInternships.ts';
 import { ApplicationTable } from './component/ApplicationTable.tsx';
+import { fetchInternshipById } from '../../../hooks/useFetchInternships.ts';
 
 export const ApplicationList = () => {
     const internshipId = useParams().postId as string;
@@ -27,7 +27,7 @@ export const ApplicationList = () => {
                 email: 'alice.dupont@example.com',
             } as any,
             status: 'PENDING' as any,
-            cv: 'https://api.minio.synnly.com/api/v1/download-shared-object/aHR0cHM6Ly9hcGkubWluaW8uc3lubmx5LmNvbS9kZXYtZ2VzdGlvbi1wcm9qZXRzLzY5MzA2MWIxZGI0MDZiYTA4ODFiZTM3ZF9jdi5wZGY_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1HRFFNWTkyWVVPRFJYSEQyQTZTUSUyRjIwMjUxMjEwJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTIxMFQxNTE5NTRaJlgtQW16LUV4cGlyZXM9NDMxOTkmWC1BbXotU2VjdXJpdHktVG9rZW49ZXlKaGJHY2lPaUpJVXpVeE1pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SmhZMk5sYzNOTFpYa2lPaUpIUkZGTldUa3lXVlZQUkZKWVNFUXlRVFpUVVNJc0ltVjRjQ0k2TVRjMk5UUXlNekU0TVN3aWNHRnlaVzUwSWpvaVlXUnRhVzRpZlEuNmYyeV82STZaRVZVTElHUnNZcDdmbGx1UXN0XzlPUWRTRFAyWUtzTWtyMTNWbml3bmdWbWRoY0JrNzYycGpHLTNuckdZY0xNeV9Za2VmemRUTkZNWkEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnZlcnNpb25JZD1udWxsJlgtQW16LVNpZ25hdHVyZT1iYmY3N2U1MzkyOWJjYjhiMTY0ZDY5NDNlNDUxODNkMDdhMzk3MzhlMTVkZTE5MmUyMTI1ZjEwZjU1YzdiZTkz',
+            cv: '6934738e16bc97b5e972cfde_cv.pdf',
             coverLetter: 'uploads/cl/alice-dupont.pdf',
         },
         {
@@ -79,7 +79,7 @@ export const ApplicationList = () => {
                 lastName: 'Bowie',
                 email: 'david.bowie@example.com',
             } as any,
-            status: 'INTERVIEWING' as any,
+            status: 'REVIEWING' as any,
             cv: 'uploads/cv/david-bowie.pdf',
         },
         {
@@ -97,7 +97,7 @@ export const ApplicationList = () => {
                 email: 'eva.green@example.com',
             } as any,
             status: 'PENDING' as any,
-            cv: 'uploads/cv/eva-green.pdf',
+            cv: '6934738e16bc97b5e972cfde_cv.pdf',
             coverLetter: 'uploads/cl/eva-green.pdf',
         },
         {
@@ -166,7 +166,7 @@ export const ApplicationList = () => {
                 lastName: 'Reg',
                 email: 'ines.reg@example.com',
             } as any,
-            status: 'INTERVIEWING' as any,
+            status: 'REVIEWING' as any,
             cv: 'uploads/cv/ines-reg.pdf',
             coverLetter: 'uploads/cl/ines-reg.pdf',
         },
@@ -253,7 +253,7 @@ export const ApplicationList = () => {
                 lastName: 'Simone',
                 email: 'nina.simone@example.com',
             } as any,
-            status: 'INTERVIEWING' as any,
+            status: 'REVIEWING' as any,
             cv: 'uploads/cv/nina-simone.pdf',
             coverLetter: 'uploads/cl/nina-simone.pdf',
         },
@@ -323,7 +323,7 @@ export const ApplicationList = () => {
                 lastName: 'Fenty',
                 email: 'rihanna.fenty@example.com',
             } as any,
-            status: 'INTERVIEWING' as any,
+            status: 'REVIEWING' as any,
             cv: 'uploads/cv/rihanna-fenty.pdf',
         },
         {

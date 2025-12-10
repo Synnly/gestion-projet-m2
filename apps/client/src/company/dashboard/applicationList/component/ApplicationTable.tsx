@@ -1,10 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronUp, Eye } from 'lucide-react';
 import { PdfModal } from './PdfModal.tsx';
+import { usePublicSignedUrl } from '../../../../hooks/useBlob.tsx';
 
 export const ApplicationTable = ({ mockedApplications, title }: any) => {
     const [isOpen, setIsOpen] = useState(true);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<string | null>(null);
+
+    // Use React Query to fetch and cache the signed URL
+    const { data: signedUrl, isError } = usePublicSignedUrl(selectedFile);
+
+    /**
+     * Preview PDF file in modal
+     * Sets the selected file name which triggers the useQuery hook
+     * @param fileName - The fileName of the PDF to preview
+     */
+    function previewPdf(fileName: string) {
+        setSelectedFile(fileName);
+    }
+
+    useEffect(() => {
+        if (signedUrl && selectedFile) {
+            setPreviewUrl(signedUrl);
+        } else if (isError && selectedFile) {
+            console.error("Erreur lors de la récupération de l'URL signée:", selectedFile);
+        }
+    }, [signedUrl, selectedFile, isError]);
 
     return (
         <div
@@ -52,23 +74,22 @@ export const ApplicationTable = ({ mockedApplications, title }: any) => {
                                 <td>{mockedApplication.student.email}</td>
                                 <td className="whitespace-nowrap text-center">
                                     {mockedApplication.cv && (
-                                        <a href={mockedApplication.cv} target="_blank" rel="noreferrer">
-                                            <button
-                                                className="btn btn-sm btn-ghost"
-                                                onClick={() => setPreviewUrl(mockedApplication.cv)}
-                                            >
-                                                <Eye strokeWidth={2} />
-                                            </button>
-                                        </a>
+                                        <button
+                                            className="btn btn-sm btn-ghost"
+                                            onClick={() => previewPdf(mockedApplication.cv)}
+                                        >
+                                            <Eye strokeWidth={2} />
+                                        </button>
                                     )}
                                 </td>
                                 <td className="whitespace-nowrap text-center">
                                     {mockedApplication.coverLetter && (
-                                        <a href={mockedApplication.coverLetter} target="_blank" rel="noreferrer">
-                                            <button className="btn btn-sm btn-ghost">
-                                                <Eye strokeWidth={2} />
-                                            </button>
-                                        </a>
+                                        <button
+                                            className="btn btn-sm btn-ghost"
+                                            onClick={() => previewPdf(mockedApplication.coverLetter)}
+                                        >
+                                            <Eye strokeWidth={2} />
+                                        </button>
                                     )}
                                 </td>
                             </tr>
@@ -82,7 +103,15 @@ export const ApplicationTable = ({ mockedApplications, title }: any) => {
                 )}
             </div>
 
-            {previewUrl && <PdfModal url={previewUrl} onClose={() => setPreviewUrl(null)} />}
+            {previewUrl && (
+                <PdfModal
+                    url={previewUrl}
+                    onClose={() => {
+                        setPreviewUrl(null);
+                        setSelectedFile(null);
+                    }}
+                />
+            )}
         </div>
     );
 };
