@@ -73,25 +73,44 @@ export class StudentService {
     /**
      * Create a list of new students record, then send a mail to every student created.
      * @param createStudentDtos The creation payload.
-     * @param addOnlyNewEmails Boolean option to ignore already existing emails (if true), and create only new students accounts.
-     * @returns A response with the error or validation message, containing the number of students created (and skipped if addOnlyNewEmails is true).
+     * @param addOnlyNonConflictingRecords Boolean option to ignore already existing records (if true), and only create new students accounts.
+     * @returns A response with the error or validation message, containing the number of students created (and skipped if addOnlyNonConflictingRecords is true).
      */
-    async createMany(dtos: CreateStudentDto[], addOnlyNewEmails: boolean): Promise<{ added: number; skipped: number }> {
+    async createMany(dtos: CreateStudentDto[], addOnlyNonConflictingRecords: boolean): Promise<{ added: number; skipped: number }> {
+        // Check for already existing data
         const incomingEmails = dtos.map((dto) => dto.email);
+        const incomingStudentNumbers = dtos.map((dto) => dto.studentNumber);
 
-        const existingStudents = await this.studentModel.find({
-            email: { $in: incomingEmails },
+        const conflicts = await this.studentModel.find({
+            $or: [
+                { email: { $in: incomingEmails } },
+                { studentNumber: { $in: incomingStudentNumbers } }
+            ]
         });
 
-        const existingEmails = existingStudents.map((s) => s.email);
+        const existingEmails = new Set(conflicts.map((s) => s.email));
+        const existingStudentNumbers = new Set(conflicts.map((s) => s.studentNumber));
 
-        // We found duplicates and addOnlyNewEmails is false (we add every student or none if there's any error)
-        if (existingEmails.length > 0 && !addOnlyNewEmails) {
-            throw new ConflictException(['Import failed. Some emails already exist :', existingEmails]);
+        const conflictedEmailsInFile = incomingEmails.filter(email => existingEmails.has(email));
+        const conflictedNumbersInFile = incomingStudentNumbers.filter(sn => existingStudentNumbers.has(sn));
+
+        // We found duplicates and addOnlyNonConflictingRecords is false (we add every student or none if there's any error)
+        if ((conflictedEmailsInFile.length > 0 || conflictedNumbersInFile.length > 0) && !addOnlyNonConflictingRecords) {
+            let message: string[] = ['Import failed. Some data already exists in the database:'];
+            if (conflictedEmailsInFile.length > 0) {
+                message.push(`=> Existing emails: ${[...new Set(conflictedEmailsInFile)].join(', ')}`);
+            }
+            if (conflictedNumbersInFile.length > 0) {
+                message.push(`=> Existing student numbers: ${[...new Set(conflictedNumbersInFile)].join(', ')}`);
+            }
+            throw new ConflictException(message);
         }
 
-        // If addOnlyNewEmails is true, we won't try to insert already existing emails
-        const newStudentsToCreateDtos = dtos.filter((dto) => !existingEmails.includes(dto.email));
+        // If addOnlyNonConflictingRecords is true, we won't try to insert already existing emails
+        const newStudentsToCreateDtos = dtos.filter((dto) => 
+            !existingEmails.has(dto.email) && !existingStudentNumbers.has(dto.studentNumber)
+        );
+
         const studentsLogin: StudentLoginInfo[] = [];
 
         // Preparing records for mass insert
@@ -116,7 +135,12 @@ export class StudentService {
                     };
                 })
             );
-            await this.studentModel.insertMany(studentsToInsert);
+
+            try {
+                await this.studentModel.insertMany(studentsToInsert);
+            } catch(e) {
+                throw e;
+            }
             
             // Sending mails for each student created
             const emailResults = await Promise.allSettled(
@@ -141,7 +165,7 @@ export class StudentService {
         
         return {
             added: newStudentsToCreateDtos.length,
-            skipped: existingEmails.length,
+            skipped: dtos.length - newStudentsToCreateDtos.length,
         };
     }
 

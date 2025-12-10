@@ -99,9 +99,9 @@ export class StudentController {
     /**
      * Import a list of students via a JSON array.
      * @param file A JSON file containing a list of CreateStudentDto objects.
-     * @param addOnlyNewEmails Boolean option to ignore already existing emails (if true), and create only new students accounts.
+     * @param addOnlyNonConflictingRecords Boolean option to ignore already existing records (if true), and only create new students accounts.
      * @throws {BadRequestException} When the file is not uploaded or in the wrong format.
-     * @returns A response with the error or validation message, containing the number of students created (and skipped if addOnlyNewEmails is true).
+     * @returns A response with the error or validation message, containing the number of students created (and skipped if addOnlyNonConflictingRecords is true).
      */
     @Post('/import')
     @UseInterceptors(FileInterceptor('file'))
@@ -110,8 +110,8 @@ export class StudentController {
     @HttpCode(HttpStatus.CREATED)
     async import(
         @UploadedFile() file: Express.Multer.File,
-        @Query('addOnlyNewEmails', new ParseBoolPipe({ optional: true })) 
-        addOnlyNewEmails: boolean = false,
+        @Query('addOnlyNonConflictingRecords', new ParseBoolPipe({ optional: true })) 
+        addOnlyNonConflictingRecords: boolean = false,
     ) : Promise<{ added: number; skipped: number }> {        
         if (!file) throw new BadRequestException('File is required');
 
@@ -151,6 +151,40 @@ export class StudentController {
                 });
             }
 
+            // Checking for duplicate records inside the file
+            const emailSet = new Set<string>();
+            const studentNumberSet = new Set<string>();
+            const duplicateEmails: string[] = [];
+            const duplicateStudentNumbers: string[] = [];
+
+            for (const item of rawData) {
+                const email = item.email?.toLowerCase();
+                const studentNumber = item.studentNumber;
+
+                // Verifying duplicate emails
+                if (email && emailSet.has(email)) {
+                    if (!duplicateEmails.includes(email)) duplicateEmails.push(email);
+                }
+                emailSet.add(email);
+
+                // Verifying duplicate studentNumbers
+                if (studentNumber && studentNumberSet.has(studentNumber)) {
+                    if (!duplicateStudentNumbers.includes(studentNumber)) duplicateStudentNumbers.push(studentNumber);
+                }
+                studentNumberSet.add(studentNumber);
+            }
+
+            if (duplicateEmails.length > 0 || duplicateStudentNumbers.length > 0) {
+                let message: string[] = ['Import aborted due to duplicates within the file:'];
+                if (duplicateEmails.length > 0) {
+                    message.push(`- Duplicate emails: ${duplicateEmails.join(', ')}`);
+                }
+                if (duplicateStudentNumbers.length > 0) {
+                    message.push(`- Duplicate student numbers: ${duplicateStudentNumbers.join(', ')}`);
+                }
+                throw new BadRequestException(message);
+            }
+
             const validationPipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });  
             studentDtos = plainToInstance(CreateStudentDto, rawData);  
 
@@ -174,7 +208,7 @@ export class StudentController {
             throw new BadRequestException('Invalid file format');
         }
 
-        return await this.studentService.createMany(studentDtos, addOnlyNewEmails);
+        return await this.studentService.createMany(studentDtos, addOnlyNonConflictingRecords);
     }
 
 
