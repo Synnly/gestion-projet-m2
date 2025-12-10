@@ -136,7 +136,11 @@ describe('StudentService', () => {
         const dtos = [
             { email: 'new1@test.com', studentNumber: '1', firstName: 'A', lastName: 'B' },
             { email: 'exist@test.com', studentNumber: '2', firstName: 'C', lastName: 'D' },
+            { email: 'new3@test.com', studentNumber: '3', firstName: 'E', lastName: 'F' },
+            { email: 'new4@test.com', studentNumber: 'exist_num', firstName: 'G', lastName: 'H' },
         ];
+        const existingStudentEmail = { email: 'exist@test.com', studentNumber: '99', firstName: 'Z' };
+        const existingStudentNumber = { email: 'unique@db.com', studentNumber: 'exist_num', firstName: 'Y' };
 
         it('should insert all students if no duplicates found (Strict Mode)', async () => {
             mockModel.find.mockResolvedValue([]); 
@@ -144,46 +148,89 @@ describe('StudentService', () => {
 
             const result = await service.createMany(dtos, false);
 
-            expect(mockModel.find).toHaveBeenCalledWith({ email: { $in: ['new1@test.com', 'exist@test.com'] } });
+            expect(mockModel.find).toHaveBeenCalledWith({
+                $or: [
+                    { email: { $in: dtos.map(d => d.email) } },
+                    { studentNumber: { $in: dtos.map(d => d.studentNumber) } }
+                ]
+            });
             expect(mockModel.insertMany).toHaveBeenCalled();
-            expect(mockMailerService.sendAccountCreationEmail).toHaveBeenCalledTimes(2);
-            expect(result.added).toBe(2);
+            expect(mockMailerService.sendAccountCreationEmail).toHaveBeenCalledTimes(4);
+            expect(result.added).toBe(4);
         });
 
-        it('should throw ConflictException if duplicates found (Strict Mode)', async () => {
-            mockModel.find.mockResolvedValue([{ email: 'exist@test.com' }]);
+        it('should throw ConflictException if any conflict found (Strict Mode)', async () => {
+            mockModel.find.mockResolvedValue([existingStudentEmail]); 
 
-            await expect(service.createMany(dtos, false)).rejects.toThrow(ConflictException);
+            await expect(service.createMany(dtos, false)).rejects.toThrow(ConflictException); 
             
             expect(mockModel.insertMany).not.toHaveBeenCalled();
-            expect(mockMailerService.sendAccountCreationEmail).not.toHaveBeenCalled();
         });
 
-        it('should skip duplicates and insert only new ones (Filter Mode)', async () => {
-            mockModel.find.mockResolvedValue([{ email: 'exist@test.com' }]);
+        it('should skip duplicates and insert only new ones (Filter Mode - Email conflict)', async () => {
+            mockModel.find.mockResolvedValue([existingStudentEmail]);
             
+            const expectedToInsert = dtos.filter(d => d.email !== 'exist@test.com');
+            mockModel.insertMany.mockResolvedValue(expectedToInsert);
+
             const result = await service.createMany(dtos, true);
 
             expect(mockModel.insertMany).toHaveBeenCalled();
-            expect(mockMailerService.sendAccountCreationEmail).toHaveBeenCalledTimes(1);
+            expect(mockMailerService.sendAccountCreationEmail).toHaveBeenCalledTimes(3);
             expect(result).toEqual({
-                added: 1,
+                added: 3,
                 skipped: 1
             });
         });
 
         it('should return "added: 0" if all exist (Filter Mode)', async () => {
-            mockModel.find.mockResolvedValue([
-                { email: 'new1@test.com' },
-                { email: 'exist@test.com' }
-            ]);
+            const allConflicts = dtos.map(d => ({ email: d.email, studentNumber: d.studentNumber }));
+            mockModel.find.mockResolvedValue(allConflicts);
 
             const result = await service.createMany(dtos, true);
 
             expect(mockModel.insertMany).not.toHaveBeenCalled();
             expect(mockMailerService.sendAccountCreationEmail).not.toHaveBeenCalled();
             expect(result.added).toBe(0);
-            expect(result.skipped).toBe(2);
+            expect(result.skipped).toBe(4);
+        });
+
+        it('should skip email conflict and insert the rest (Skip Mode)', async () => {
+            mockModel.find.mockResolvedValue([existingStudentEmail]); 
+            
+            const expectedToInsert = dtos.filter(d => d.email !== 'exist@test.com');
+            mockModel.insertMany.mockResolvedValue(expectedToInsert);
+
+            const result = await service.createMany(dtos, true); 
+
+            expect(mockModel.insertMany.mock.calls[0][0].length).toBe(3); 
+            expect(result).toEqual({ added: 3, skipped: 1 });
+        });
+
+        it('should skip studentNumber conflict and insert the rest (Skip Mode)', async () => {
+            mockModel.find.mockResolvedValue([existingStudentNumber]); 
+            
+            const expectedToInsert = dtos.filter(d => d.studentNumber !== 'exist_num');
+            mockModel.insertMany.mockResolvedValue(expectedToInsert);
+
+            const result = await service.createMany(dtos, true); 
+
+            expect(mockModel.insertMany.mock.calls[0][0].length).toBe(3); 
+            expect(result).toEqual({ added: 3, skipped: 1 });
+        });
+        
+        it('should skip both email and studentNumber conflicts (Skip Mode)', async () => {
+            mockModel.find.mockResolvedValue([existingStudentEmail, existingStudentNumber]); 
+            
+            const expectedToInsert = dtos.filter(d => 
+                d.email !== 'exist@test.com' && d.studentNumber !== 'exist_num'
+            ); 
+            mockModel.insertMany.mockResolvedValue(expectedToInsert);
+
+            const result = await service.createMany(dtos, true); 
+
+            expect(mockModel.insertMany.mock.calls[0][0].length).toBe(2); 
+            expect(result).toEqual({ added: 2, skipped: 2 });
         });
     });
 });

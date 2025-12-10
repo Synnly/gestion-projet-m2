@@ -162,14 +162,16 @@ describe('StudentController', () => {
             }];
             const file = createJSONMockFile(validData);
             
-            mockService.createMany.mockResolvedValue({ added: 1 });
+            mockService.createMany.mockResolvedValue({ added: 1, skipped: 0 });
 
-            await controller.import(file, true);
+            await controller.import(file); 
+            expect(mockService.createMany).toHaveBeenCalledWith(expect.any(Array), false);
 
-            expect(mockService.createMany).toHaveBeenCalledWith(
-                expect.arrayContaining([expect.objectContaining({ email: 'toto@univ.fr' })]), 
-                true
-            );
+            await controller.import(file, true); 
+            expect(mockService.createMany).toHaveBeenCalledWith(expect.any(Array), true);
+
+            await controller.import(file, false);
+            expect(mockService.createMany).toHaveBeenCalledWith(expect.any(Array), false);
         });
 
         it('should successfully import a valid CSV file (comma separated)', async () => {

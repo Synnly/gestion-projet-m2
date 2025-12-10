@@ -73,14 +73,14 @@ export class StudentService {
     /**
      * Create a list of new students record, then send a mail to every student created.
      * @param createStudentDtos The creation payload.
-     * @param addOnlyNonConflictingRecords Boolean option to ignore already existing records (if true), and only create new students accounts.
-     * @returns A response with the error or validation message, containing the number of students created (and skipped if addOnlyNonConflictingRecords is true).
+     * @param skipExistingRecords Boolean option to ignore already existing records (if true), and only create new students accounts.
+     * @returns A response with the error or validation message, containing the number of students created (and skipped if skipExistingRecords is true).
      */
-    async createMany(dtos: CreateStudentDto[], addOnlyNonConflictingRecords: boolean): Promise<{ added: number; skipped: number }> {
-        // Check for already existing data
+    async createMany(dtos: CreateStudentDto[], skipExistingRecords: boolean): Promise<{ added: number; skipped: number }> {
         const incomingEmails = dtos.map((dto) => dto.email);
         const incomingStudentNumbers = dtos.map((dto) => dto.studentNumber);
 
+        // Check for already existing records in the database
         const conflicts = await this.studentModel.find({
             $or: [
                 { email: { $in: incomingEmails } },
@@ -94,8 +94,8 @@ export class StudentService {
         const conflictedEmailsInFile = incomingEmails.filter(email => existingEmails.has(email));
         const conflictedNumbersInFile = incomingStudentNumbers.filter(sn => existingStudentNumbers.has(sn));
 
-        // We found duplicates and addOnlyNonConflictingRecords is false (we add every student or none if there's any error)
-        if ((conflictedEmailsInFile.length > 0 || conflictedNumbersInFile.length > 0) && !addOnlyNonConflictingRecords) {
+        // We found duplicates and skipExistingRecords is false (we add every student or none if there's any error)
+        if ((conflictedEmailsInFile.length > 0 || conflictedNumbersInFile.length > 0) && !skipExistingRecords) {
             let message: string[] = ['Import failed. Some data already exists in the database:'];
             if (conflictedEmailsInFile.length > 0) {
                 message.push(`=> Existing emails: ${[...new Set(conflictedEmailsInFile)].join(', ')}`);
@@ -106,7 +106,7 @@ export class StudentService {
             throw new ConflictException(message);
         }
 
-        // If addOnlyNonConflictingRecords is true, we won't try to insert already existing emails
+        // If skipExistingRecords is true, we won't try to insert already existing emails
         const newStudentsToCreateDtos = dtos.filter((dto) => 
             !existingEmails.has(dto.email) && !existingStudentNumbers.has(dto.studentNumber)
         );

@@ -99,9 +99,9 @@ export class StudentController {
     /**
      * Import a list of students via a JSON array.
      * @param file A JSON file containing a list of CreateStudentDto objects.
-     * @param addOnlyNonConflictingRecords Boolean option to ignore already existing records (if true), and only create new students accounts.
+     * @param skipExistingRecords Boolean option to ignore already existing records (if true), and only create new students accounts.
      * @throws {BadRequestException} When the file is not uploaded or in the wrong format.
-     * @returns A response with the error or validation message, containing the number of students created (and skipped if addOnlyNonConflictingRecords is true).
+     * @returns A response with the error or validation message, containing the number of students created (and skipped if skipExistingRecords is true).
      */
     @Post('/import')
     @UseInterceptors(FileInterceptor('file'))
@@ -110,8 +110,8 @@ export class StudentController {
     @HttpCode(HttpStatus.CREATED)
     async import(
         @UploadedFile() file: Express.Multer.File,
-        @Query('addOnlyNonConflictingRecords', new ParseBoolPipe({ optional: true })) 
-        addOnlyNonConflictingRecords: boolean = false,
+        @Query('skipExistingRecords', new ParseBoolPipe({ optional: true })) 
+        skipExistingRecords: boolean = false,
     ) : Promise<{ added: number; skipped: number }> {        
         if (!file) throw new BadRequestException('File is required');
 
@@ -208,7 +208,7 @@ export class StudentController {
             throw new BadRequestException('Invalid file format');
         }
 
-        return await this.studentService.createMany(studentDtos, addOnlyNonConflictingRecords);
+        return await this.studentService.createMany(studentDtos, skipExistingRecords);
     }
 
 
