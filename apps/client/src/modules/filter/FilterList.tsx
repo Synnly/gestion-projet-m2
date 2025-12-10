@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import { RotateCcw, MapPin, Map, X, SlidersHorizontal } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { RotateCcw, MapPin, Map, X, ListFilter } from 'lucide-react';
 import { FilterInput } from '../../components/inputs/selectInput';
 import { internshipFilters, mapOptionToPayload } from './filters';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import SortSelect from './SortSelect';
 import CityRadiusModal from '../../components/CityRadius/CityRadiusModal';
+import SalaryRangeSelector from '../../components/inputs/range/SalaryRangeSelector';
 
 function FilterChip({
     label,
@@ -37,6 +38,14 @@ export function FilterList() {
     const setFilters = useInternshipStore((s) => s.setFilters);
     const [minimal, setMinimal] = useState<boolean>(true);
     const [mapOpen, setMapOpen] = useState(false);
+    const [_, setSalaryRange] = useState<{ min: number; max: number }>({
+        min: (filters as any).minSalary ?? 0,
+        max: (filters as any).maxSalary ?? 2500,
+    });
+
+    useEffect(() => {
+        setSalaryRange({ min: (filters as any).minSalary ?? 0, max: (filters as any).maxSalary ?? 2500 });
+    }, [(filters as any).minSalary, (filters as any).maxSalary]);
 
     const resetFilters = () =>
         setFilters({
@@ -78,7 +87,7 @@ export function FilterList() {
         <div className="w-full space-y-2 pb-4">
             <div className="card bg-base-100 shadow-md">
                 <div className="card-body p-3">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
@@ -90,8 +99,9 @@ export function FilterList() {
                                 Réinitialiser
                             </button>
 
-                            <div className="ml-2">
+                            <div className="btn btn-xs btn-ghost ml-2">
                                 <SortSelect />
+                                Trier
                             </div>
                         </div>
 
@@ -113,7 +123,8 @@ export function FilterList() {
                                 title={minimal ? 'Afficher les filtres' : 'Masquer les filtres'}
                                 aria-pressed={!minimal}
                             >
-                                <SlidersHorizontal className="h-4 w-4" />
+                                <ListFilter className="h-4 w-4" />
+                                Filtrer
                             </button>
                         </div>
                     </div>
@@ -142,41 +153,59 @@ export function FilterList() {
                     )}
 
                     <div
-                        className={`mt-3 flex flex-row gap-x-4 items-start transition-all duration-200 ${
+                        className={`mt-3 flex flex-row gap-x-4 items-center transition-all duration-200 ${
                             minimal
                                 ? 'max-h-0 overflow-hidden opacity-0 pointer-events-none'
-                                : 'max-h-[200px] opacity-100'
+                                : 'max-h-[260px] opacity-100'
                         }`}
                         aria-hidden={minimal}
                     >
                         {internshipFilters
                             .filter((f) => f.key !== 'city' && f.key !== 'radiusKm')
-                            .map((f) => (
-                                <div key={f.key} className="form-control min-w-[150px]">
-                                    <label className="label py-0.5">
-                                        <span className="label-text text-sm">{f.label}</span>
-                                    </label>
-                                    <FilterInput
-                                        label={f.label}
-                                        options={f.options}
-                                        value={(filters as any)[f.key] ? String((filters as any)[f.key]) : ''}
-                                        onChange={(v) => {
-                                            const payload: any = {};
-                                            const mapped = mapOptionToPayload(f.key, v);
-                                            if (mapped === undefined) payload[f.key] = undefined;
-                                            else payload[f.key] = mapped;
-                                            payload.page = 1;
-                                            setFilters(payload);
-                                        }}
-                                    />
-                                </div>
-                            ))}
+                            .map((f) => {
+                                if (f.key === 'minSalary') {
+                                    return (
+                                        <SalaryRangeSelector
+                                            key="salary-range"
+                                            min={(filters as any).minSalary}
+                                            max={(filters as any).maxSalary}
+                                            onChange={({ min, max }) => {
+                                                setFilters({ minSalary: min, maxSalary: max, page: 1 });
+                                            }}
+                                        />
+                                    );
+                                }
+
+                                // Render normal des autres filtres
+                                if (f.key === 'maxSalary') return null;
+
+                                return (
+                                    <div key={f.key} className="form-control min-w-[150px]">
+                                        <label className="label py-0.5">
+                                            <span className="label-text text-sm">{f.label}</span>
+                                        </label>
+                                        <FilterInput
+                                            label={f.label}
+                                            options={f.options}
+                                            value={(filters as any)[f.key] ? String((filters as any)[f.key]) : ''}
+                                            onChange={(v) => {
+                                                const payload: any = {};
+                                                const mapped = mapOptionToPayload(f.key, v);
+                                                if (mapped === undefined) payload[f.key] = undefined;
+                                                else payload[f.key] = mapped;
+                                                payload.page = 1;
+                                                setFilters(payload);
+                                            }}
+                                        />
+                                    </div>
+                                );
+                            })}
                     </div>
                 </div>
 
                 <div className="card-body p-3 pt-0">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setMapOpen(true)}>
                             <MapPin className="h-4 w-4 text-primary" />
                             <div>
                                 <div className="text-sm font-medium">Localisation</div>

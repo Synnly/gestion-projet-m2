@@ -40,7 +40,7 @@ export default function CityRadiusModal({
         className="relative bg-base-100 rounded-lg shadow-xl z-10 p-4"
       >
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-base font-semibold">Localiser une ville</h3>
+          <h3 className="text-base font-semibold">Chercher une ville</h3>
           <button
             className="btn btn-ghost btn-sm"
             onClick={onClose}
@@ -63,7 +63,11 @@ export default function CityRadiusModal({
           <button
             type="button"
             className="btn btn-sm btn-ghost"
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              setCity(initialCity);
+              setRadius(initialRadius);
+            }}
           >
             Annuler
           </button>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Circle, Marker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Circle, Marker, useMap, useMapEvent } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -10,6 +10,48 @@ function RecenterMap({ position, zoom }: { position: [number, number]; zoom: num
             map.setView(position, zoom);
         }
     }, [position, zoom, map]);
+    return null;
+}
+
+function MapClickHandler({
+    setPosition,
+    setCity,
+    onCityChange,
+    setZoom,
+}: {
+    setPosition: (p: [number, number]) => void;
+    setCity: (s: string) => void;
+    onCityChange?: (s: string) => void;
+    setZoom: (z: number) => void;
+}) {
+    useMapEvent('click', async (e: any) => {
+        const lat = e.latlng.lat;
+        const lon = e.latlng.lng;
+
+        // update map marker/position
+        setPosition([lat, lon]);
+        setZoom(11);
+
+        // reverse geocode to get a readable place name and fill input
+        try {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(
+                lat,
+            )}&lon=${encodeURIComponent(lon)}&accept-language=fr`;
+            const res = await fetch(url, { headers: { 'Accept-Language': 'fr' } });
+            const data = await res.json();
+            const addr = data?.address;
+            const name =
+                addr?.city || addr?.town || addr?.village || addr?.county || data?.display_name || `${lat}, ${lon}`;
+            setCity(name);
+            onCityChange?.(name);
+        } catch (err) {
+            // fallback: set lat,lng string
+            const fallback = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+            setCity(fallback);
+            onCityChange?.(fallback);
+        }
+    });
+
     return null;
 }
 
@@ -95,7 +137,7 @@ export default function CityRadiusMap({
                 </div>
 
                 <button onClick={geocodeCity} className="btn btn-primary btn-sm">
-                    Localiser
+                    Chercher
                 </button>
 
                 <div className="flex items-center gap-2 flex-1 min-w-[200px]">
@@ -116,6 +158,12 @@ export default function CityRadiusMap({
                 <MapContainer center={position} zoom={zoom} className="w-full h-full">
                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                     <RecenterMap position={position} zoom={zoom} />
+                    <MapClickHandler
+                        setPosition={setPosition}
+                        setCity={setCity}
+                        onCityChange={onCityChange}
+                        setZoom={setZoom}
+                    />
 
                     <Marker position={position} />
 
