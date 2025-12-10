@@ -92,7 +92,7 @@ export const InternshipApply = () => {
             }
             const link = await fetchApply.json();
             upload(cv, link.cvUrl);
-            upload(coverLetter, link.lmUrl);
+            if (coverLetter) upload(coverLetter, link.lmUrl);
             queryClient.invalidateQueries({ queryKey: ['application', payload?.id, internshipId] });
             return true;
         },

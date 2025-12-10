@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Share2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApplicationStatus } from './ApplicationStatus';
-import Spinner from '../../../components/Spinner/Spinner';
 export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: string; adId: string }) => {
     const { data: application, isLoading } = useQuery({
         queryKey: ['application', studentId, adId],
