@@ -29,6 +29,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { InternshipApply } from './pages/internship/InternshipApply';
 import { DarkModeProvider } from './components/darkMode/DarkModeProvider';
 import { MainLayout } from './pages/layout/MainLayout';
+import { ApplicationList } from './company/dashboard/applicationList/ApplicationList.tsx';
 function App() {
     userStore.persist.rehydrate();
     const queryClient = new QueryClient();
@@ -83,6 +84,7 @@ function App() {
                                             index: true,
                                             element: <DashboardInternshipList />,
                                         },
+                                        { path: 'post/:postId/applications', element: <ApplicationList /> },
                                     ],
                                 },
                                 { path: 'profile', element: <CompanyProfile /> },
