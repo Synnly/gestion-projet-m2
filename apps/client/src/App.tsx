@@ -1,7 +1,6 @@
 import './App.css';
-import { createBrowserRouter, Outlet, redirect, RouterProvider } from 'react-router';
-import { QueryClient, QueryClientProvider, dehydrate } from '@tanstack/react-query';
-import { fetchInternshipById } from './hooks/useFetchInternships';
+import { createBrowserRouter, redirect, RouterProvider } from 'react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CompanySignup } from './auth/companySignup/index';
 import { Login } from './auth/Login/index';
 import { CompleteProfil } from './company/completeProfil/index';
@@ -29,6 +28,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { InternshipApply } from './pages/internship/InternshipApply';
 import { DarkModeProvider } from './components/darkMode/DarkModeProvider';
 import { MainLayout } from './pages/layout/MainLayout';
+import { internshipLoader } from './loaders/intershipLoader';
 function App() {
     userStore.persist.rehydrate();
     const queryClient = new QueryClient();
@@ -51,7 +51,7 @@ function App() {
                 {
                     loader: notAuthMiddleWare,
                     children: [
-                        { path: 'signin', element: <Login />, handle: { title: 'Connection' } },
+                        { path: 'signin', element: <Login />, handle: { title: 'Connectez-vous' } },
                         {
                             path: 'forgot-password',
                             element: <ForgotPassword />,
@@ -60,7 +60,7 @@ function App() {
                         {
                             path: 'company/signup',
                             element: <CompanySignup />,
-                            handle: { title: "Inscription d'entreprise" },
+                            handle: { title: 'Inscription entreprise' },
                         },
                     ],
                 },
@@ -68,8 +68,12 @@ function App() {
                     loader: protectedMiddleware,
                     element: <AuthRoutes />,
                     children: [
-                        { path: 'verify', element: <VerifyEmail />, handle: { title: 'Vérification email' } },
-                        { path: 'complete-profil', element: <CompleteProfil />, handle: { title: 'Compléter profil' } },
+                        { path: 'verify', element: <VerifyEmail />, handle: { title: 'Vérifier votre mail' } },
+                        {
+                            path: 'complete-profil',
+                            element: <CompleteProfil />,
+                            handle: { title: 'Compléter votre profil' },
+                        },
                         {
                             path: 'company',
                             element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
@@ -85,19 +89,35 @@ function App() {
                                         },
                                     ],
                                 },
-                                { path: 'profile', element: <CompanyProfile /> },
-                                { path: 'profile/edit', element: <EditCompanyProfile /> },
-                                { path: 'profile/change-password', element: <ChangePassword /> },
-                                { path: 'projects', element: <div>Company Projects</div> },
+                                {
+                                    path: 'profile',
+                                    element: <CompanyProfile />,
+                                    handle: { title: "Profil de l'entreprise" },
+                                },
+                                {
+                                    path: 'profile/edit',
+                                    element: <EditCompanyProfile />,
+                                    handle: { title: 'Éditer le profil' },
+                                },
+                                {
+                                    path: 'profile/change-password',
+                                    element: <ChangePassword />,
+                                    handle: { title: 'Changer le mot de passe' },
+                                },
                                 {
                                     element: <VerifiedRoutes redirectPath="/company/dashboard" />,
                                     children: [],
                                 },
-                                { path: 'offers/add', element: <CreatePostPage /> },
+                                {
+                                    path: 'offers/add',
+                                    element: <CreatePostPage />,
+                                    handle: { title: 'Créer une offre' },
+                                },
                                 {
                                     path: 'offers/:postId/edit',
                                     loader: updatePostLoader,
                                     element: <UpdatePostPage />,
+                                    handle: { title: 'Modifier une offre' },
                                 },
                             ],
                         },
@@ -112,21 +132,7 @@ function App() {
                                 {
                                     path: 'detail/:id',
                                     element: <InternshipDetailPage />,
-                                    loader: async ({ params }: any) => {
-                                        const id = params?.id;
-                                        if (!id) throw new Response('Missing id', { status: 400 });
-                                        const qc = new QueryClient();
-                                        try {
-                                            await qc.fetchQuery({
-                                                queryKey: ['internship', id],
-                                                queryFn: () => fetchInternshipById(id),
-                                            });
-                                        } catch (e) {
-                                            throw new Response('Not found', { status: 404 });
-                                        }
-
-                                        return { id, dehydratedState: dehydrate(qc) };
-                                    },
+                                    loader: internshipLoader,
                                 },
                                 {
                                     element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} />,
@@ -136,6 +142,7 @@ function App() {
                                             element: <InternshipApply />,
                                         },
                                     ],
+                                    handle: { title: 'Postuler à un stage' },
                                 },
                             ],
                         },
