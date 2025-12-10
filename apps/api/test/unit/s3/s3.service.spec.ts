@@ -32,7 +32,7 @@ describe('S3Service (unit) - provider delegation', () => {
 
         const result = await service.generatePresignedDownloadUrl('file.png', 'user-1');
 
-        expect(mockProvider.generatePresignedDownloadUrl).toHaveBeenCalledWith('file.png', 'user-1');
+        expect(mockProvider.generatePresignedDownloadUrl).toHaveBeenCalledWith('file.png', 'user-1', undefined);
         expect(result).toBe(expected);
     });
 

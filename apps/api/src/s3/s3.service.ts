@@ -27,8 +27,8 @@ export class S3Service {
      * configured storage provider which may perform access checks and throw
      * appropriate exceptions (e.g. NotFound, Forbidden).
      */
-    generatePresignedDownloadUrl(fileName: string, userId: string) {
-        return this.provider.generatePresignedDownloadUrl(fileName, userId);
+    generatePresignedDownloadUrl(fileName: string, userId: string, userRole?: string) {
+        return this.provider.generatePresignedDownloadUrl(fileName, userId, userRole);
     }
 
     /**

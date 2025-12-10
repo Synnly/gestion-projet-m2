@@ -9,6 +9,7 @@ import { Types } from 'mongoose';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
 import { ApplicationOwnerGuard } from '../../../src/common/roles/applicationOwner.guard';
+import { S3Service } from '../../../src/s3/s3.service';
 
 describe('ApplicationController', () => {
     let controller: ApplicationController;
@@ -19,6 +20,11 @@ describe('ApplicationController', () => {
         findOne: jest.fn(),
         create: jest.fn(),
         updateStatus: jest.fn(),
+    };
+
+    const mockS3Service = {
+        generatePublicDownloadUrl: jest.fn(),
+        generatePresignedUploadUrl: jest.fn(),
     };
 
     const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
@@ -36,6 +42,10 @@ describe('ApplicationController', () => {
                 {
                     provide: ApplicationService,
                     useValue: mockApplicationService,
+                },
+                {
+                    provide: S3Service,
+                    useValue: mockS3Service,
                 },
             ],
         })

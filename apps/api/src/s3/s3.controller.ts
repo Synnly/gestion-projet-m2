@@ -116,7 +116,8 @@ export class S3Controller {
             throw new BadRequestException('User ID not found in request');
         }
 
-        const url = await this.s3Service.generatePresignedDownloadUrl(fileName, userId);
+        const userRole = req.user?.role;
+        const url = await this.s3Service.generatePresignedDownloadUrl(fileName, userId, userRole);
         return url;
     }
 

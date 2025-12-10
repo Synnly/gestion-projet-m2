@@ -13,6 +13,7 @@ import {
     ValidationPipe,
 } from '@nestjs/common';
 import { ApplicationService } from './application.service';
+import { S3Service } from '../s3/s3.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
@@ -27,7 +28,10 @@ import { ApplicationStatus } from './application.schema';
 
 @Controller('/api/application')
 export class ApplicationController {
-    constructor(private readonly applicationService: ApplicationService) {}
+    constructor(
+        private readonly applicationService: ApplicationService,
+        private readonly s3Service: S3Service,
+    ) {}
 
     /**
      * Return a list of all applications.
@@ -60,6 +64,37 @@ export class ApplicationController {
         const application = await this.applicationService.findOne(applicationId);
         if (!application) throw new NotFoundException(`Application with id ${applicationId} not found`);
         return plainToInstance(ApplicationDto, application, { excludeExtraneousValues: true });
+    }
+
+    /**
+     * Return a presigned download URL for a document attached to an application.
+     * Supported document types: `cv`, `lm` (lettre de motivation). Accessible by
+     * ADMIN, the STUDENT who owns the application, or the COMPANY owning the post
+     * related to the application (checked by `ApplicationOwnerGuard`).
+     *
+     * Behaviour: select the appropriate application field according to the
+     * provided `fileType` and generate a presigned URL via `S3Service`.
+     */
+
+    @Get(':applicationId/file/:fileType')
+    @UseGuards(AuthGuard, RolesGuard, ApplicationOwnerGuard)
+    @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
+    @HttpCode(HttpStatus.OK)
+    async getApplicationFile(
+        @Param('applicationId', ParseObjectIdPipe) ApplicationDto: Types.ObjectId,
+        @Param('fileType') fileType: string,
+    ): Promise<{ downloadUrl: string }> {
+        const application = await this.applicationService.findOne(ApplicationDto);
+        if (!application) throw new NotFoundException(`Application with id ${ApplicationDto} not found`);
+
+        let path: string | undefined;
+        if (fileType === 'cv') path = application.cv;
+        else if (fileType === 'lm') path = application.coverLetter as string | undefined;
+
+        if (!path) throw new NotFoundException(`${fileType} not found for this application`);
+
+        const url = await this.s3Service.generatePublicDownloadUrl(path);
+        return url;
     }
 
     /**

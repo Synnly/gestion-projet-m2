@@ -192,7 +192,7 @@ describe('S3Controller', () => {
 
             const result = await controller.generateDownloadUrl(fileName, mockRequest);
 
-            expect(s3Service.generatePresignedDownloadUrl).toHaveBeenCalledWith(fileName, 'user123');
+            expect(s3Service.generatePresignedDownloadUrl).toHaveBeenCalledWith(fileName, 'user123', undefined);
             expect(result).toEqual(mockResult);
         });
 
