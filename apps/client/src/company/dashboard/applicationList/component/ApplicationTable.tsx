@@ -3,8 +3,14 @@ import { ChevronUp, Eye } from 'lucide-react';
 import { PdfModal } from './PdfModal.tsx';
 import { usePublicSignedUrl } from '../../../../hooks/useBlob.tsx';
 
-export const ApplicationTable = ({ mockedApplications, title }: any) => {
-    const [isOpen, setIsOpen] = useState(true);
+interface Props {
+    mockedApplications: any[];
+    title: string;
+    defaultOpened?: boolean;
+}
+
+export const ApplicationTable = ({ mockedApplications, title, defaultOpened = false }: Props) => {
+    const [isOpen, setIsOpen] = useState(defaultOpened);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
 

@@ -397,7 +397,11 @@ export const ApplicationList = () => {
                     </div>
 
                     <div className="flex-1 flex flex-col gap-6 p-6 pt-0 min-h-0 overflow-hidden">
-                        <ApplicationTable mockedApplications={pending} title="Candidatures en attente" />
+                        <ApplicationTable
+                            mockedApplications={pending}
+                            title="Candidatures en attente"
+                            defaultOpened={true}
+                        />
                         <ApplicationTable mockedApplications={accepted} title="Candidatures acceptées" />
                         <ApplicationTable mockedApplications={rejected} title="Candidatures refusées" />
                     </div>
