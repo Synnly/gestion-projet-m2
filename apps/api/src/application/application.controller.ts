@@ -28,6 +28,7 @@ import { CreateApplicationDto } from './dto/createApplication.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { ApplicationStatus } from './application.schema';
 import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
+import { ApplicationPaginationDto } from './dto/application.dto';
 
 @Controller('/api/application')
 export class ApplicationController {
@@ -100,21 +101,25 @@ export class ApplicationController {
         @Param('studentId', ParseObjectIdPipe) studentId: Types.ObjectId,
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
         @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    ): Promise<{ data: ApplicationDto[]; page: number; limit: number; total: number }> {
+    ): Promise<ApplicationPaginationDto> {
         const { data, total, limit: appliedLimit, page: appliedPage } = await this.applicationService.findByStudent(
             studentId,
             page,
             limit,
         );
 
-        return {
-            data: data.map((application) =>
-                plainToInstance(ApplicationDto, application, { excludeExtraneousValues: true }),
-            ),
-            page: appliedPage,
-            limit: appliedLimit,
-            total,
-        };
+        return plainToInstance(
+            ApplicationPaginationDto,
+            {
+                data: data.map((application) =>
+                    plainToInstance(ApplicationDto, application, { excludeExtraneousValues: true }),
+                ),
+                page: appliedPage,
+                limit: appliedLimit,
+                total,
+            },
+            { excludeExtraneousValues: true },
+        );
     }
 
     /**

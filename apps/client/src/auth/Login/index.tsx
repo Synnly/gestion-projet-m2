@@ -2,6 +2,8 @@ import { NavLink } from 'react-router';
 import { LoginForm } from './component/loginForm';
 import { AnimatePresence, motion } from 'motion/react';
 import Logo from '../../components/icons/Logo';
+import StudentSignup from '../../components/dev/StudentSignup';
+
 export const Login = () => {
     return (
         <AnimatePresence mode="wait">
@@ -18,8 +20,13 @@ export const Login = () => {
                 </div>
                 <LoginForm />
                 <NavLink to="/forgot-password" className="mt-4 text-sm text-center text-gray-500 underline">
-                    Mot de passe oublié ?
+                    Mot de passe oubliǸ ?
                 </NavLink>
+                {import.meta.env.DEV && (
+                    <div className="mt-4">
+                        <StudentSignup />
+                    </div>
+                )}
             </motion.div>
         </AnimatePresence>
     );

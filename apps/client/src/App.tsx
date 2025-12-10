@@ -28,6 +28,8 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ToastProvider from './components/ui/toast/ToastProvider';
 import { DarkModeProvider } from './components/darkMode/DarkModeProvider';
+import ApplicationPage from './pages/applications/ApplicationPage';
+import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
 
 function App() {
     userStore.persist.rehydrate();
@@ -128,6 +130,18 @@ function App() {
 
                                         return { id, dehydratedState: dehydrate(qc) };
                                     },
+                                },
+                            ],
+                        },
+                        {
+                            path: 'applications',
+                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT', 'ADMIN']} redirectPath="/" />,
+                            children: [
+                                {
+                                    children: [
+                                        { index: true, element: <ApplicationPage /> },
+                                        { path: ':applicationId', element: <ApplicationDetailPage /> },
+                                    ],
                                 },
                             ],
                         },
