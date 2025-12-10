@@ -27,7 +27,7 @@ export const ApplicationList = () => {
                 email: 'alice.dupont@example.com',
             } as any,
             status: 'PENDING' as any,
-            cv: 'uploads/cv/alice-dupont.pdf',
+            cv: 'https://api.minio.synnly.com/api/v1/download-shared-object/aHR0cHM6Ly9hcGkubWluaW8uc3lubmx5LmNvbS9kZXYtZ2VzdGlvbi1wcm9qZXRzLzY5MzA2MWIxZGI0MDZiYTA4ODFiZTM3ZF9jdi5wZGY_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1HRFFNWTkyWVVPRFJYSEQyQTZTUSUyRjIwMjUxMjEwJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTIxMFQxNTE5NTRaJlgtQW16LUV4cGlyZXM9NDMxOTkmWC1BbXotU2VjdXJpdHktVG9rZW49ZXlKaGJHY2lPaUpJVXpVeE1pSXNJblI1Y0NJNklrcFhWQ0o5LmV5SmhZMk5sYzNOTFpYa2lPaUpIUkZGTldUa3lXVlZQUkZKWVNFUXlRVFpUVVNJc0ltVjRjQ0k2TVRjMk5UUXlNekU0TVN3aWNHRnlaVzUwSWpvaVlXUnRhVzRpZlEuNmYyeV82STZaRVZVTElHUnNZcDdmbGx1UXN0XzlPUWRTRFAyWUtzTWtyMTNWbml3bmdWbWRoY0JrNzYycGpHLTNuckdZY0xNeV9Za2VmemRUTkZNWkEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnZlcnNpb25JZD1udWxsJlgtQW16LVNpZ25hdHVyZT1iYmY3N2U1MzkyOWJjYjhiMTY0ZDY5NDNlNDUxODNkMDdhMzk3MzhlMTVkZTE5MmUyMTI1ZjEwZjU1YzdiZTkz',
             coverLetter: 'uploads/cl/alice-dupont.pdf',
         },
         {
@@ -397,15 +397,9 @@ export const ApplicationList = () => {
                     </div>
 
                     <div className="flex-1 flex flex-col gap-6 p-6 pt-0 min-h-0 overflow-hidden">
-                        <div className="flex-1 min-h-0">
-                            <ApplicationTable mockedApplications={pending} title="Candidatures en attente" />
-                        </div>
-                        <div className="flex-1 min-h-0">
-                            <ApplicationTable mockedApplications={accepted} title="Candidatures acceptées" />
-                        </div>
-                        <div className="flex-1 min-h-0">
-                            <ApplicationTable mockedApplications={rejected} title="Candidatures refusées" />
-                        </div>
+                        <ApplicationTable mockedApplications={pending} title="Candidatures en attente" />
+                        <ApplicationTable mockedApplications={accepted} title="Candidatures acceptées" />
+                        <ApplicationTable mockedApplications={rejected} title="Candidatures refusées" />
                     </div>
                 </div>
             )}
