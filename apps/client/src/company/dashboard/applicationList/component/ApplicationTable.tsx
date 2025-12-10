@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ChevronUp, Eye } from 'lucide-react';
 import { PdfModal } from './PdfModal.tsx';
 import { usePublicSignedUrl } from '../../../../hooks/useBlob.tsx';
+import { ApplicationPagination } from './ApplicationPagination.tsx';
 
 interface Props {
     mockedApplications: any[];
@@ -49,6 +50,10 @@ export const ApplicationTable = ({ mockedApplications, title, defaultOpened = fa
                     <span className="badge badge-sm badge-ghost ml-2 font-normal">
                         {mockedApplications?.length || 0}
                     </span>
+                </div>
+
+                <div className={`${!isOpen ? 'hidden' : ''}`}>
+                    <ApplicationPagination />
                 </div>
 
                 <ChevronUp
