@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StudentController } from '../../../src/student/student.controller';
 import { StudentService } from '../../../src/student/student.service';
-import { BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, ConflictException, PayloadTooLargeException } from '@nestjs/common';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
 import { Role } from '../../../src/common/roles/roles.enum';
+import { ConfigService } from '@nestjs/config';
 
 describe('StudentController', () => {
     let controller: StudentController;
@@ -17,13 +18,26 @@ describe('StudentController', () => {
         createMany: jest.fn(),
     } as any;
 
+    const TEST_MAX_ROWS = 1000; 
+    const TEST_MAX_SIZE = 2 * 1024 * 1024;
+    const mockConfigService = {
+        get: jest.fn((key: string) => {
+            if (key === 'IMPORT_MAX_SIZE_BYTES') return TEST_MAX_SIZE; // 2 Mo
+            if (key === 'IMPORT_MAX_ROWS') return TEST_MAX_ROWS; // 1000 records
+            return null;
+        }),
+    };;
+
     beforeEach(async () => {
         const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
         const mockRolesGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
         const module: TestingModule = await Test.createTestingModule({
             controllers: [StudentController],
-            providers: [{ provide: StudentService, useValue: mockService }],
+            providers: [
+                { provide: StudentService, useValue: mockService },
+                { provide: ConfigService, useValue: mockConfigService },
+            ],
         })
             .overrideGuard(AuthGuard)
             .useValue(mockAuthGuard)
@@ -111,6 +125,15 @@ describe('StudentController', () => {
             filename: '',
             path: '',
         } as Express.Multer.File);
+
+        const generateCsvContent = (rowsCount: number): string => {
+            const header = 'firstName,lastName,studentNumber,email\n';
+            let rows = '';
+            for (let i = 1; i <= rowsCount; i++) {
+                rows += `John,Doe,${i},john.doe${i}@test.com\n`;
+            }
+            return header + rows;
+        };
 
 
         it('should be protected with ADMIN role', () => {
@@ -226,6 +249,32 @@ describe('StudentController', () => {
             await expect(controller.import(file)).rejects.toThrow(BadRequestException);
 
             expect(mockService.createMany).not.toHaveBeenCalled();
+        });
+
+
+        it(`should throw BadRequestException if file contains TOO MANY rows (> ${TEST_MAX_ROWS})`, async () => {
+            const hugeCsvContent = generateCsvContent(TEST_MAX_ROWS + 1);
+            const file = createCSVMockFile(hugeCsvContent, 'text/csv');
+
+            await expect(controller.import(file)).rejects.toThrow(BadRequestException);
+            await expect(controller.import(file)).rejects.toThrow(/too many records/);
+            
+            expect(mockService.createMany).not.toHaveBeenCalled();
+        });
+
+        it(`should accept file with EXACTLY the max rows allowed (${TEST_MAX_ROWS})`, async () => {
+            const validHugeCsvContent = generateCsvContent(TEST_MAX_ROWS);
+            const file = createCSVMockFile(validHugeCsvContent, 'text/csv');
+
+            mockService.createMany.mockResolvedValue({ added: TEST_MAX_ROWS, skipped: 0 });
+
+            const result = await controller.import(file);
+
+            expect(mockService.createMany).toHaveBeenCalled();
+            const lastCallArgs = mockService.createMany.mock.lastCall;
+            expect(lastCallArgs[0].length).toBe(TEST_MAX_ROWS); 
+            
+            expect(result.added).toBe(TEST_MAX_ROWS);
         });
     });
 });

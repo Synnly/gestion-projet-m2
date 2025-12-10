@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { generateRandomPassword } from '../common/utils/password.utils'; 
 import { StudentLoginInfo } from './student.types';
 import { MailerService } from '../mailer/mailer.service';
+
 @Injectable()
 /**
  * Service that handles student data operations.

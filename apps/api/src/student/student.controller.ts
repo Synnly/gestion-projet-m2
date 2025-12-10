@@ -18,6 +18,7 @@ import {
     Query,
     ParseBoolPipe,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateStudentDto } from './dto/createStudent.dto';
 import { StudentService } from './student.service';
@@ -33,6 +34,7 @@ import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
 import { parse } from 'csv-parse/sync';
 import * as chardet from 'chardet';
 import * as iconv from 'iconv-lite';
+import { FileSizeValidationPipe } from '../common/pipes/file-size-validation.pipe';
 
 @Controller('/api/students')
 /**
@@ -41,7 +43,10 @@ import * as iconv from 'iconv-lite';
  * Exposes REST endpoints to create, read, update and delete student resources.
  */
 export class StudentController {
-    constructor(private readonly studentService: StudentService) {}
+    constructor(
+        private readonly studentService: StudentService,
+        private readonly configService: ConfigService
+    ) {}
 
     /**
      * Return a list of all students.
@@ -109,11 +114,12 @@ export class StudentController {
     @Roles(Role.ADMIN)
     @HttpCode(HttpStatus.CREATED)
     async import(
-        @UploadedFile() file: Express.Multer.File,
+        @UploadedFile(FileSizeValidationPipe) file: Express.Multer.File,
         @Query('skipExistingRecords', new ParseBoolPipe({ optional: true })) 
         skipExistingRecords: boolean = false,
     ) : Promise<{ added: number; skipped: number }> {        
         if (!file) throw new BadRequestException('File is required');
+        const maxRows = this.configService.get<number>('IMPORT_MAX_ROWS') || 1000;
 
         // File format verification
         const allowedMimeTypes = [
@@ -149,6 +155,12 @@ export class StudentController {
                     delimiter: [',', ';', '\t'], 
                     relax_quotes: true,
                 });
+            }
+
+            if (rawData.length > maxRows) {
+                throw new BadRequestException(
+                    `File contains too many records (${rawData.length}). Please upload a file with maximum ${maxRows} students to avoid server timeout.`
+                );
             }
 
             // Checking for duplicate records inside the file
