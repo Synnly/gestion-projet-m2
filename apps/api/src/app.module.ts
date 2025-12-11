@@ -10,7 +10,6 @@ import { PostModule } from './post/post.module';
 import { MailerProviderType } from './mailer/constants';
 import { StorageProviderType } from './s3/s3.constants';
 import { StudentModule } from './student/student.module';
-import { StorageProviderType } from './s3/s3.constants';
 import { ApplicationModule } from './application/application.module';
 
 @Module({
