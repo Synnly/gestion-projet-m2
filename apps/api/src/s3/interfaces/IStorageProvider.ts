@@ -35,7 +35,13 @@ export interface IStorageProvider {
      * @param userId - Requesting user's id used for ownership checks.
      * @returns Promise resolving to an object with a `downloadUrl` string.
      */
-    generatePresignedDownloadUrl(fileName: string, userId: string, userRole?: string): Promise<{ downloadUrl: string }>;
+    // `postId` is optional and can be provided to scope company access checks
+    generatePresignedDownloadUrl(
+        fileName: string,
+        userId: string,
+        userRole?: string,
+        postId?: string,
+    ): Promise<{ downloadUrl: string }>;
 
     /**
      * Generate a public download URL for a file (no ownership checks).

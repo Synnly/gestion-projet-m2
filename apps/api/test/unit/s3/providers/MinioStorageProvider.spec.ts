@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { Types } from 'mongoose';
 import {
     NotFoundException,
     ForbiddenException,
@@ -297,7 +298,7 @@ describe('MinioStorageProvider', () => {
         const mockAppModel: any = {
             findOne: jest.fn().mockReturnValue({
                 populate: jest.fn().mockReturnThis(),
-                exec: jest.fn().mockResolvedValue({ post: { company: companyId } }),
+                exec: jest.fn().mockResolvedValue({ post: { company: { _id: companyId } } }),
             }),
         };
 
@@ -306,6 +307,63 @@ describe('MinioStorageProvider', () => {
         const res = await provider.generatePresignedDownloadUrl('somefile.pdf', companyId, Role.COMPANY);
         expect(res.downloadUrl).toBe('http://download-url-company');
         expect(mockAppModel.findOne).toHaveBeenCalled();
+    });
+
+    it('generatePresignedDownloadUrl - company role allowed when postId provided and matches application', async () => {
+        const cfg = makeConfig();
+        const studentId = '507f1f77bcf86cd799439011';
+        const companyId = '507f1f77bcf86cd799439099';
+        const postId = '507f1f77bcf86cd7994390ff';
+
+        const mockClient: any = {
+            statObject: jest.fn().mockResolvedValue({ metaData: { uploaderid: studentId } }),
+            presignedGetObject: jest.fn().mockResolvedValue('http://download-url-company-post'),
+        };
+
+        (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
+
+        // mock applicationModel to return application matching postId and student
+        const mockAppModel: any = {
+            findOne: jest.fn().mockReturnValue({
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue({ post: { company: { _id: companyId } } }),
+            }),
+        };
+
+        const provider = new MinioStorageProvider(cfg, mockAppModel as any);
+
+        const res = await provider.generatePresignedDownloadUrl('somefile.pdf', companyId, Role.COMPANY, postId);
+        expect(res.downloadUrl).toBe('http://download-url-company-post');
+        expect(mockAppModel.findOne).toHaveBeenCalled();
+        const calledQuery = mockAppModel.findOne.mock.calls[0][0];
+        expect(calledQuery.post.toString()).toBe(new Types.ObjectId(postId).toString());
+        expect(calledQuery.student.toString()).toBe(new Types.ObjectId(studentId).toString());
+    });
+
+    it('generatePresignedDownloadUrl - company role forbidden when postId provided but application not found', async () => {
+        const cfg = makeConfig();
+        const studentId = '507f1f77bcf86cd799439022';
+        const companyId = '507f1f77bcf86cd799439033';
+        const postId = '507f1f77bcf86cd7994390aa';
+
+        const mockClient: any = {
+            statObject: jest.fn().mockResolvedValue({ metaData: { uploaderid: studentId } }),
+        };
+
+        (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
+
+        const mockAppModel: any = {
+            findOne: jest.fn().mockReturnValue({
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(null),
+            }),
+        };
+
+        const provider = new MinioStorageProvider(cfg, mockAppModel as any);
+
+        await expect(
+            provider.generatePresignedDownloadUrl('somefile.pdf', companyId, Role.COMPANY, postId),
+        ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
     it('generatePresignedDownloadUrl - company role forbidden when application does not link to company', async () => {
@@ -331,6 +389,32 @@ describe('MinioStorageProvider', () => {
         await expect(provider.generatePresignedDownloadUrl('somefile.pdf', companyId, Role.COMPANY)).rejects.toBeInstanceOf(
             ForbiddenException,
         );
+    });
+
+    it('generatePresignedDownloadUrl - company role forbidden when application links to other company', async () => {
+        const cfg = makeConfig();
+        const studentId = '507f1f77bcf86cd799439044';
+        const requestingCompanyId = '507f1f77bcf86cd799439055'; // requester
+        const actualCompanyId = '507f1f77bcf86cd799439066'; // company on the application
+
+        const mockClient: any = {
+            statObject: jest.fn().mockResolvedValue({ metaData: { uploaderid: studentId } }),
+        };
+
+        (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
+
+        const mockAppModel: any = {
+            findOne: jest.fn().mockReturnValue({
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue({ post: { company: { _id: actualCompanyId } } }),
+            }),
+        };
+
+        const provider = new MinioStorageProvider(cfg, mockAppModel as any);
+
+        await expect(
+            provider.generatePresignedDownloadUrl('somefile.pdf', requestingCompanyId, Role.COMPANY),
+        ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
     it('generatePresignedDownloadUrl - throws InternalServerError when presignedGetObject fails', async () => {

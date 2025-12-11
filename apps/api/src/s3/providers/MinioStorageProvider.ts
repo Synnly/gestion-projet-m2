@@ -134,7 +134,7 @@ export class MinioStorageProvider implements IStorageProvider {
      * @param userId - Requesting user's id used for ownership checks.
      * @throws NotFoundException | ForbiddenException | Error
      */
-    async generatePresignedDownloadUrl(fileName: string, userId: string, userRole?: string) {
+    async generatePresignedDownloadUrl(fileName: string, userId: string, userRole?: string, postId?: string) {
         // Validate path to prevent traversal
         if (!PATH_REGEX.SAFE_PATH.test(fileName)) {
             throw new BadRequestException('Invalid file path');
@@ -171,10 +171,16 @@ export class MinioStorageProvider implements IStorageProvider {
                         // Application model not available -> deny
                         throw new ForbiddenException('You do not have permission to access this file');
                     }
+                    const query: any = { deletedAt: { $exists: false } };
+                    if (postId && /^[0-9a-fA-F]{24}$/.test(postId)) {
+                        query.post = new Types.ObjectId(postId);
+                    }
+                    if (uploaderId && /^[0-9a-fA-F]{24}$/.test(uploaderId)) {
+                        query.student = new Types.ObjectId(uploaderId);
+                    }
 
-                    // Find application for student (uploaderId) that is not deleted
                     const application = await this.applicationModel
-                        .findOne({ student: new Types.ObjectId(uploaderId), deletedAt: { $exists: false } })
+                        .findOne(query)
                         .populate({ path: 'post', select: 'company' })
                         .exec();
 
@@ -182,9 +188,7 @@ export class MinioStorageProvider implements IStorageProvider {
                         throw new ForbiddenException('You do not have permission to access this file');
                     }
 
-                    const companyId =
-                        (application.post as any).company?._id?.toString() ||
-                        (application.post as any).company?.toString();
+                    const companyId = application.post.company?._id?.toString();
                     if (!companyId || companyId !== userId.toString()) {
                         throw new ForbiddenException('You do not have permission to access this file');
                     }
