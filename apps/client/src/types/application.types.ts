@@ -1,6 +1,13 @@
 import type { Internship } from './internship.types';
 
-export type ApplicationStatus = 'PENDING' | 'REJECTED' | 'ACCEPTED' | 'REVIEWING';
+export const ApplicationStatusEnum = {
+    PENDING: 'PENDING',
+    REJECTED: 'REJECTED',
+    ACCEPTED: 'ACCEPTED',
+    REVIEWING: 'REVIEWING',
+} as const;
+
+export type ApplicationStatus = (typeof ApplicationStatusEnum)[keyof typeof ApplicationStatusEnum];
 
 export interface ApplicationStudent {
     _id: string;
