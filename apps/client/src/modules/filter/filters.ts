@@ -16,7 +16,7 @@ export const internshipFilters = [
         'Opérations / Logistique',
         'Santé / Biotech',
         'Éducation / Formation'] },
-    { label: 'Durée', key: 'duration', options: ['1 mois', '2 mois', '3 mois', '6 mois'] },
+    { label: 'Durée', key: 'duration', options: ['1 mois', '2 mois', '3 mois', '4 mois', '5 mois', '6 mois'] },
     { label: 'Salaire min', key: 'minSalary', options: ['0', '500', '1000', '1500', '2000'] },
     { label: 'Salaire max', key: 'maxSalary', options: ['500', '1000', '1500', '2000', '2500'] },
     { label: 'Ville', key: 'city', options: [] },
