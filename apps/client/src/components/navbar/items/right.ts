@@ -6,7 +6,7 @@ export const rightNavItems: NavItem[] = [
         title: 'Ajouter annonce',
         to: '/company/offers/add',
         type: 'button',
-        className: 'btn btn-primary text-black rounded-xl',
+        className: 'btn btn-primary text-primary-content',
         role: ['COMPANY'],
     },
     {

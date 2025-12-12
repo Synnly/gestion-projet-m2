@@ -92,24 +92,24 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
                                                 className="h-8 w-8 object-contain rounded"
                                             />
                                         ) : (
-                                            <User />
+                                            <User className="size-7 text-primary" />
                                         )}
                                     </div>
 
                                     <ul
                                         tabIndex={-1}
-                                        className="menu dropdown-content bg-base-100 rounded-box z-10 mt-4 w-52 p-2 shadow-sm"
+                                        className="menu dropdown-content bg-base-100 rounded-box z-10 mt-4 p-2 shadow-sm"
                                     >
                                         {item.children?.map((child) => {
                                             const role = get(user!)?.role;
                                             return (
                                                 role &&
                                                 child.role?.includes(role) && (
-                                                    <li key={child.key}>
+                                                    <li key={child.key} className="min-w-max">
                                                         {child.to ? (
                                                             <ItemLink item={child} className={child.className ?? ''} />
                                                         ) : (
-                                                            <a className={child.className ?? ''}>{child.title}</a>
+                                                            <a className={`${child.className ?? ''}`}>{child.title}</a>
                                                         )}
                                                     </li>
                                                 )

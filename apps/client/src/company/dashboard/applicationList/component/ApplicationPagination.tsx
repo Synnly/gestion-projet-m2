@@ -1,19 +1,14 @@
-import { useApplicationStore } from '../../../../store/applicationStore.ts';
 import Pagination from '../../../../components/ui/pagination/Pagination.tsx';
+import type { Application } from '../../../../types/application.types.ts';
+import type { PaginationResult } from '../../../../types/internship.types.ts';
 
-export const ApplicationPagination = () => {
-    const pagination = useApplicationStore((s) => s.pagination);
-    const filters = useApplicationStore((s) => s.filters);
-    const setFilters = useApplicationStore((s) => s.setFilters);
+interface Props {
+    pagination: PaginationResult<Application>;
+    handlePageChange: (newPage: number) => void;
+}
 
+export const ApplicationPagination = ({ pagination, handlePageChange }: Props) => {
     if (!pagination) return null;
-
-    const handlePageChange = (newPage: number) => {
-        const maxPage = pagination.totalPages ?? newPage;
-        const target = Math.max(1, Math.min(newPage, maxPage));
-        if (filters.page === target) return;
-        setFilters({ page: target });
-    };
 
     return (
         <div>
