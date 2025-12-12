@@ -1,6 +1,6 @@
 import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Post } from './post.schema';
+import { Post, PostDocument } from './post.schema';
 import { Model, Types } from 'mongoose';
 import { CreatePostDto } from './dto/createPost.dto';
 import { UpdatePostDto } from './dto/updatePost';
@@ -17,6 +17,7 @@ export class PostService {
     constructor(
         @InjectModel(Post.name) private readonly postModel: Model<Post>,
         private readonly paginationService: PaginationService,
+
         private readonly geoService: GeoService,
         @Inject(forwardRef(() => CompanyService)) private readonly companyService: CompanyService,
     ) {}

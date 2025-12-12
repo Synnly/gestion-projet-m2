@@ -114,7 +114,6 @@ export const InternshipApply = () => {
         toast.error('Vous avez déjà postulé à cette offre.', { toastId: 'already-applied-error' });
         return <Navigate to="/" replace={true} />;
     }
-    console.log(data);
     return (
         <>
             <div className="flex flex-col min-h-screen">

@@ -12,7 +12,6 @@ import {
     Query,
     UseGuards,
     ValidationPipe,
-    Logger,
 } from '@nestjs/common';
 import { ApplicationService } from './application.service';
 import { AuthGuard } from '../auth/auth.guard';
@@ -25,7 +24,7 @@ import { ApplicationDto } from './dto/application.dto';
 import { ApplicationOwnerGuard } from '../common/roles/applicationOwner.guard';
 import { CreateApplicationDto } from './dto/createApplication.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
-import { Application, ApplicationStatus } from './application.schema';
+import { ApplicationStatus } from './application.schema';
 
 @Controller('/api/application')
 export class ApplicationController {
@@ -63,7 +62,9 @@ export class ApplicationController {
     ): Promise<ApplicationDto> {
         const application = await this.applicationService.getApplicationByStudentAndPost(studentId, postId);
         if (!application) {
-            throw new NotFoundException(`No application found for student ${studentId} and post ${postId}`);
+            throw new NotFoundException(
+                `No application found for student ${studentId.toString()} and post ${postId.toString()}`,
+            );
         }
         return plainToInstance(ApplicationDto, application, { excludeExtraneousValues: true });
     }
@@ -80,7 +81,7 @@ export class ApplicationController {
     @HttpCode(HttpStatus.OK)
     async findOne(@Param('applicationId', ParseObjectIdPipe) applicationId: Types.ObjectId): Promise<ApplicationDto> {
         const application = await this.applicationService.findOne(applicationId);
-        if (!application) throw new NotFoundException(`Application with id ${applicationId} not found`);
+        if (!application) throw new NotFoundException(`Application with id ${applicationId.toString()} not found`);
         return plainToInstance(ApplicationDto, application, { excludeExtraneousValues: true });
     }
 
@@ -100,7 +101,6 @@ export class ApplicationController {
         @Body('postId', ParseObjectIdPipe) postId: Types.ObjectId,
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) application: CreateApplicationDto,
     ): Promise<{ cvUrl: string; lmUrl?: string }> {
-        Logger.log('je recois une candidature');
         return this.applicationService.create(studentId, postId, application);
     }
 

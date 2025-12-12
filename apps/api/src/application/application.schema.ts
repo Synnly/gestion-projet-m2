@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { Post } from '../post/post.schema';
 import { Student } from '../student/student.schema';
 
@@ -54,3 +54,11 @@ export class Application {
 export type ApplicationDocument = Application & Document;
 
 export const ApplicationSchema = SchemaFactory.createForClass(Application);
+
+ApplicationSchema.post('save', async function (doc: Application, next: mongoose.CallbackWithoutResultAndOptionalError) {
+    const postModel = mongoose.model('Post');
+    await postModel.findByIdAndUpdate(doc.post, {
+        $addToSet: { applications: doc._id },
+    });
+    next();
+});

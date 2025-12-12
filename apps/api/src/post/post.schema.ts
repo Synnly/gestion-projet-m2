@@ -96,6 +96,9 @@ export class Post {
     /** Reference to the company offering the internship */
     @Prop({ required: true, type: Types.ObjectId, ref: 'Company' })
     company: Company;
+
+    @Prop({ default: [] })
+    applications: Types.ObjectId[];
 }
 
 export type PostDocument = Post & Document;

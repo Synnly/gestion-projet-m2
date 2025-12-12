@@ -98,6 +98,9 @@ export class PostDto {
     @Type(() => CompanyDto)
     company: CompanyDto;
 
+    @Expose()
+    @ValidateNested({ each: true })
+    applicationIds?: Types.ObjectId[];
     constructor(partial?: Partial<Post>) {
         if (partial) {
             Object.assign(this, partial);

@@ -6,7 +6,6 @@ import { CreateApplicationDto } from './dto/createApplication.dto';
 import { PostService } from '../post/post.service';
 import { StudentService } from '../student/student.service';
 import { S3Service } from '../s3/s3.service';
-
 @Injectable()
 export class ApplicationService {
     /**
@@ -107,13 +106,15 @@ export class ApplicationService {
             );
         }
 
-        await new this.applicationModel({
+        const newApplication = await new this.applicationModel({
             student: student,
             post: post,
             cv: cv.fileName,
             coverLetter: lm?.fileName,
         }).save();
-
+        if (!newApplication) {
+            throw new ConflictException('Failed to create application');
+        }
         return { cvUrl: cv.uploadUrl, lmUrl: lm?.uploadUrl };
     }
 
