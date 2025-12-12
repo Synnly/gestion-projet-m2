@@ -6,13 +6,14 @@ interface FileInputProps {
     setFile: (file: File | null) => void;
     file: File | null;
     svgColor?: string;
+    required?: boolean;
 }
 
 const fileTypes = ['PDF', 'DOCX', 'DOC']; // Pour l'affichage
 const fileFormats = fileTypes.join(', ');
 const maxSizeMo = 5;
 
-export default function FileInput({ title, setFile, file, svgColor }: FileInputProps) {
+export default function FileInput({ title, setFile, file, svgColor, required }: FileInputProps) {
     const handleChange = (newFile: File | File[]) => {
         if (newFile instanceof File) {
             setFile(newFile);
@@ -24,6 +25,7 @@ export default function FileInput({ title, setFile, file, svgColor }: FileInputP
         setFile(null);
     };
 
+    const isRequired = required ? <span className="text-red-600">*</span> : null;
     const ConditionalContent = () => {
         if (file) {
             return (
@@ -53,7 +55,7 @@ export default function FileInput({ title, setFile, file, svgColor }: FileInputP
     return (
         <div className="flex flex-col gap-2 w-full">
             <label className="font-medium">
-                {title} <span className="text-red-500">*</span>
+                {title} {isRequired}
             </label>
             <div className="relative w-full">
                 {file && (

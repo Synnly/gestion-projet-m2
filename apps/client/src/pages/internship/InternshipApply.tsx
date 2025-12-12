@@ -141,6 +141,7 @@ export const InternshipApply = () => {
                                             file={coverLetter}
                                             setFile={setCoverLetter}
                                             svgColor="text-red-600"
+                                            required={data.isCoverLetterRequired}
                                         />
                                     </div>
                                     {cv &&

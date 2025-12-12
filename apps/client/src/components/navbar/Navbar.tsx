@@ -80,11 +80,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
                         if (item.type === 'dropdown') {
                             return (
                                 <div key={item.key} className="dropdown dropdown-end">
-                                    <div
-                                        tabIndex={0}
-                                        role="button"
-                                        className="btn btn-ghost rounded-xl p-2 text-neutral"
-                                    >
+                                    <div tabIndex={0} role="button" className="btn btn-ghost rounded- p-2 text-neutral">
                                         {companyLogoUrl ? (
                                             <img
                                                 src={companyLogoUrl}
