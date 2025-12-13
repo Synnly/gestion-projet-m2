@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateStudentDto } from './dto/createStudent.dto';
@@ -8,8 +8,12 @@ import { Role } from '../common/roles/roles.enum';
 import { UpdateStudentDto } from './dto/updateStudent.dto';
 import * as bcrypt from 'bcrypt';
 import { generateRandomPassword } from '../common/utils/password.utils'; 
-import { StudentLoginInfo } from './student.types';
+import { StudentLoginInfo } from '../common/types/student.types';
 import { MailerService } from '../mailer/mailer.service';
+import * as chardet from 'chardet';
+import * as iconv from 'iconv-lite';
+import { parse } from 'csv-parse/sync';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 /**
@@ -20,7 +24,8 @@ import { MailerService } from '../mailer/mailer.service';
 export class StudentService {
     constructor(
         @InjectModel(Student.name) private readonly studentModel: Model<StudentUserDocument>,
-        private readonly mailerService: MailerService
+        private readonly mailerService: MailerService,
+        private readonly configService: ConfigService
     ) {}
 
     /**
@@ -47,13 +52,11 @@ export class StudentService {
      */
     async create(dto: CreateStudentDto): Promise<void> {
         const rawPassword = generateRandomPassword();
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(rawPassword, salt);
         
         const studentData = {
             ...dto,
             role: Role.STUDENT,
-            password: hashedPassword,
+            password: rawPassword,
         };
 
         const newStudent = await this.studentModel.create(studentData);
@@ -78,39 +81,7 @@ export class StudentService {
      * @returns A response with the error or validation message, containing the number of students created (and skipped if skipExistingRecords is true).
      */
     async createMany(dtos: CreateStudentDto[], skipExistingRecords: boolean): Promise<{ added: number; skipped: number }> {
-        const incomingEmails = dtos.map((dto) => dto.email);
-        const incomingStudentNumbers = dtos.map((dto) => dto.studentNumber);
-
-        // Check for already existing records in the database
-        const conflicts = await this.studentModel.find({
-            $or: [
-                { email: { $in: incomingEmails } },
-                { studentNumber: { $in: incomingStudentNumbers } }
-            ]
-        });
-
-        const existingEmails = new Set(conflicts.map((s) => s.email));
-        const existingStudentNumbers = new Set(conflicts.map((s) => s.studentNumber));
-
-        const conflictedEmailsInFile = incomingEmails.filter(email => existingEmails.has(email));
-        const conflictedNumbersInFile = incomingStudentNumbers.filter(sn => existingStudentNumbers.has(sn));
-
-        // We found duplicates and skipExistingRecords is false (we add every student or none if there's any error)
-        if ((conflictedEmailsInFile.length > 0 || conflictedNumbersInFile.length > 0) && !skipExistingRecords) {
-            let message: string[] = ['Import failed. Some data already exists in the database:'];
-            if (conflictedEmailsInFile.length > 0) {
-                message.push(`=> Existing emails: ${[...new Set(conflictedEmailsInFile)].join(', ')}`);
-            }
-            if (conflictedNumbersInFile.length > 0) {
-                message.push(`=> Existing student numbers: ${[...new Set(conflictedNumbersInFile)].join(', ')}`);
-            }
-            throw new ConflictException(message);
-        }
-
-        // If skipExistingRecords is true, we won't try to insert already existing emails
-        const newStudentsToCreateDtos = dtos.filter((dto) => 
-            !existingEmails.has(dto.email) && !existingStudentNumbers.has(dto.studentNumber)
-        );
+        const newStudentsToCreateDtos = await this.checkConflicts(dtos, skipExistingRecords);
 
         const studentsLogin: StudentLoginInfo[] = [];
 
@@ -201,5 +172,89 @@ export class StudentService {
 
         if (!updated) throw new NotFoundException('Student not found or already deleted');
         return;
+    }
+
+
+
+    /**
+     * Parse a JSON or CSV file, then return raw data.
+     * 
+     * @param file The JSON or CSV file
+     * @throws {BadRequestException} When the file is not uploaded or in the wrong format.
+     * @returns The raw data of the file.
+     */
+    async parseFileContent(file: Express.Multer.File): Promise<any[]> {
+        const maxRows = this.configService.get<number>('IMPORT_MAX_ROWS') || 1000;
+        let rawData: any[];
+
+        try {
+            // Parsing JSON
+            if (file.mimetype === 'application/json') {
+                rawData = JSON.parse(file.buffer.toString());
+                if (!Array.isArray(rawData)) {
+                    throw new BadRequestException('JSON content must be an array');
+                }
+            } else {
+                // Parsing CSV
+                const detectedEncoding = chardet.detect(file.buffer);
+                const decodedContent = iconv.decode(file.buffer, detectedEncoding || 'utf-8');
+
+                rawData = parse(decodedContent, {
+                    columns: true,
+                    skip_empty_lines: true,
+                    trim: true,
+                    delimiter: [',', ';', '\t'],
+                    relax_quotes: true,
+                });
+            }
+            if (rawData.length > maxRows) {
+                throw new BadRequestException(
+                    `File contains too many records (${rawData.length}). Please upload a file with maximum ${maxRows} students to avoid server timeout.`
+                );
+            }
+        } catch (e) {
+            if (e instanceof BadRequestException) throw e;
+            if (e.code === 'CSV_INVALID_OPTION' || (e.message && e.message.includes('CSV'))) {
+                throw new BadRequestException('Invalid CSV file format');
+            }
+            throw new BadRequestException('Invalid file format');
+        }
+
+        return rawData;
+    }
+
+
+
+    async checkConflicts(dtos: CreateStudentDto[], skipExistingRecords: boolean) : Promise<CreateStudentDto[]> {
+        const incomingEmails = dtos.map((dto) => dto.email);
+        const incomingStudentNumbers = dtos.map((dto) => dto.studentNumber);
+        // Check for already existing records in the database
+        const conflicts = await this.studentModel.find({
+            $or: [
+                { email: { $in: incomingEmails } },
+                { studentNumber: { $in: incomingStudentNumbers } }
+            ]
+        });
+
+        const existingEmails = new Set(conflicts.map((s) => s.email));
+        const existingStudentNumbers = new Set(conflicts.map((s) => s.studentNumber));
+
+        const conflictedEmailsInFile = incomingEmails.filter(email => existingEmails.has(email));
+        const conflictedNumbersInFile = incomingStudentNumbers.filter(sn => existingStudentNumbers.has(sn));
+
+        // We found duplicates and skipExistingRecords is false (we add every student or none if there's any error)
+        if ((conflictedEmailsInFile.length > 0 || conflictedNumbersInFile.length > 0) && !skipExistingRecords) {
+            let message: string[] = ['Import failed. Some data already exists in the database:'];
+            if (conflictedEmailsInFile.length > 0) {
+                message.push(`=> Existing emails: ${[...new Set(conflictedEmailsInFile)].join(', ')}`);
+            }
+            if (conflictedNumbersInFile.length > 0) {
+                message.push(`=> Existing student numbers: ${[...new Set(conflictedNumbersInFile)].join(', ')}`);
+            }
+            throw new ConflictException(message);
+        }
+
+        // If skipExistingRecords is true, we won't try to insert already existing emails
+        return dtos.filter((dto) => !existingEmails.has(dto.email) && !existingStudentNumbers.has(dto.studentNumber));
     }
 }
