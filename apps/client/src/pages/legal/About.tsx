@@ -3,7 +3,7 @@ import { Home } from 'lucide-react';
 
 export default function About() {
     const year = new Date().getFullYear();
-    const contactEmail = import.meta.env.VITE_CONTACT_EMAIL
+    const contactEmail = import.meta.env.VITE_CONTACT_EMAIL;
 
     return (
         <main className="max-w-4xl mx-auto py-12 px-6">
