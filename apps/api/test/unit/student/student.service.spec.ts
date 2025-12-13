@@ -3,8 +3,9 @@ import { getModelToken } from '@nestjs/mongoose';
 import { StudentService } from '../../../src/student/student.service';
 import { Student } from '../../../src/student/student.schema';
 import { Role } from '../../../src/common/roles/roles.enum';
-import { ConflictException } from '@nestjs/common';
-import { MailerService } from '../../../src/mailer/mailer.service'; // 1. Import du service
+import { BadRequestException, ConflictException } from '@nestjs/common';
+import { MailerService } from '../../../src/mailer/mailer.service';
+import { ConfigService } from '@nestjs/config';
 
 describe('StudentService', () => {
     let service: StudentService;
@@ -18,6 +19,16 @@ describe('StudentService', () => {
         insertMany: jest.fn(),
     } as any;
 
+    const TEST_MAX_ROWS = 1000; 
+    const TEST_MAX_SIZE = 2 * 1024 * 1024;
+    const mockConfigService = {
+        get: jest.fn((key: string) => {
+            if (key === 'IMPORT_MAX_SIZE_BYTES') return TEST_MAX_SIZE; // 2 Mo
+            if (key === 'IMPORT_MAX_ROWS') return TEST_MAX_ROWS; // 1000 records
+            return null;
+        }),
+    };;
+
     const mockMailerService = {
         sendAccountCreationEmail: jest.fn().mockResolvedValue(true),
     };
@@ -27,6 +38,7 @@ describe('StudentService', () => {
             providers: [
                 StudentService,
                 { provide: getModelToken(Student.name), useValue: mockModel },
+                { provide: ConfigService, useValue: mockConfigService },
                 { provide: MailerService, useValue: mockMailerService },
             ],
         }).compile();
@@ -231,6 +243,75 @@ describe('StudentService', () => {
 
             expect(mockModel.insertMany.mock.calls[0][0].length).toBe(2); 
             expect(result).toEqual({ added: 2, skipped: 2 });
+        });
+    });
+
+    describe('parseFileContent', () => {
+        const createMockFile = (content: any, mimetype: string): Express.Multer.File => ({
+            fieldname: 'file',
+            originalname: 'test',
+            encoding: '7bit',
+            mimetype,
+            buffer: Buffer.from(typeof content === 'string' ? content : JSON.stringify(content)),
+            size: 100,
+            stream: null as any,
+            destination: '',
+            filename: '',
+            path: '',
+        });
+
+        it('should parse valid JSON array', async () => {
+            const data = [{ email: 'test@test.com' }];
+            const file = createMockFile(data, 'application/json');
+            
+            const result = await service.parseFileContent(file);
+            expect(result).toEqual(data);
+        });
+
+        it('should throw BadRequestException if JSON is not an array', async () => {
+            const data = { email: 'test@test.com' };
+            const file = createMockFile(data, 'application/json');
+
+            await expect(service.parseFileContent(file)).rejects.toThrow(BadRequestException);
+            await expect(service.parseFileContent(file)).rejects.toThrow('JSON content must be an array');
+        });
+
+        it('should parse valid CSV content', async () => {
+            const csvContent = 'email,firstName\ntest@test.com,John';
+            const file = createMockFile(csvContent, 'text/csv');
+
+            const result = await service.parseFileContent(file);
+            expect(result).toHaveLength(1);
+            expect(result[0]).toEqual(expect.objectContaining({
+                email: 'test@test.com',
+                firstName: 'John'
+            }));
+        });
+
+        it('should throw BadRequestException if parsing fails (Invalid JSON syntax)', async () => {
+            const file = {
+                mimetype: 'application/json',
+                buffer: Buffer.from('{ invalid json '),
+            } as any;
+
+            await expect(service.parseFileContent(file)).rejects.toThrow(BadRequestException);
+            await expect(service.parseFileContent(file)).rejects.toThrow('Invalid file format');
+        });
+
+        it(`should throw BadRequestException if content exceeds max rows (${TEST_MAX_ROWS})`, async () => {
+            const largeData = Array.from({ length: TEST_MAX_ROWS + 1 }, (_, i) => ({ email: `u${i}@t.com` }));
+            const file = createMockFile(largeData, 'application/json');
+
+            await expect(service.parseFileContent(file)).rejects.toThrow(BadRequestException);
+            await expect(service.parseFileContent(file)).rejects.toThrow(/too many records/);
+        });
+
+        it(`should accept content with EXACTLY max rows (${TEST_MAX_ROWS})`, async () => {
+            const limitData = Array.from({ length: TEST_MAX_ROWS }, (_, i) => ({ email: `u${i}@t.com` }));
+            const file = createMockFile(limitData, 'application/json');
+
+            const result = await service.parseFileContent(file);
+            expect(result).toHaveLength(TEST_MAX_ROWS);
         });
     });
 });

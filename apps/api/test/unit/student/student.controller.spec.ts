@@ -16,6 +16,7 @@ describe('StudentController', () => {
         update: jest.fn(),
         remove: jest.fn(),
         createMany: jest.fn(),
+        parseFileContent: jest.fn(),
     } as any;
 
     const TEST_MAX_ROWS = 1000; 
@@ -104,76 +105,65 @@ describe('StudentController', () => {
     });
 
     describe('import', () => {
-        const createJSONMockFile = (content: any, mimetype = 'application/json') => ({
+        const mockFile = {
             fieldname: 'file',
             originalname: 'students.json',
             encoding: '7bit',
-            mimetype,
-            buffer: Buffer.from(JSON.stringify(content)),
+            mimetype: 'application/json',
+            buffer: Buffer.from('[]'),
             size: 100,
-        } as Express.Multer.File);
-        
-        const createCSVMockFile = (content: string, mimetype = 'text/csv'): Express.Multer.File => ({
-            fieldname: 'file',
-            originalname: 'students.csv',
-            encoding: '7bit',
-            mimetype,
-            buffer: Buffer.from(content),
-            size: content.length,
-            stream: null as any,
-            destination: '',
-            filename: '',
-            path: '',
-        } as Express.Multer.File);
-
-        const generateCsvContent = (rowsCount: number): string => {
-            const header = 'firstName,lastName,studentNumber,email\n';
-            let rows = '';
-            for (let i = 1; i <= rowsCount; i++) {
-                rows += `John,Doe,${i},john.doe${i}@test.com\n`;
-            }
-            return header + rows;
-        };
-
+        } as Express.Multer.File;
 
         it('should be protected with ADMIN role', () => {
             const roles = Reflect.getMetadata('roles', controller.import);
-
-            expect(roles).toBeDefined(); 
+            expect(roles).toBeDefined();
             expect(roles).toContain(Role.ADMIN);
         });
 
-        it('should throw BadRequestException if file is undefined', async () => {
-            await expect(controller.import(undefined as any)).rejects.toThrow(BadRequestException);
+        it('should throw BadRequestException if parseFileContent throws (e.g. invalid JSON)', async () => {
+            mockService.parseFileContent.mockRejectedValue(new BadRequestException('Invalid file format'));
+            
+            await expect(controller.import(mockFile)).rejects.toThrow('Invalid file format');
         });
 
-        it('should throw BadRequestException if mimetype is not JSON nor CSV', async () => {
-            const file = createJSONMockFile([], 'image/png');
-            await expect(controller.import(file)).rejects.toThrow('File must be a JSON or CSV');
+        it('should throw BadRequestException if content parsed is not an array (logic from service)', async () => {
+            mockService.parseFileContent.mockRejectedValue(new BadRequestException('JSON content must be an array'));
+            
+            await expect(controller.import(mockFile)).rejects.toThrow('JSON content must be an array');
         });
 
-        it('should throw BadRequestException if content is not an array', async () => {
-            const file = createJSONMockFile({ email: 'test@test.com' });
-            await expect(controller.import(file)).rejects.toThrow('JSON content must be an array');
+        it('should SKIP invalid DTOs (e.g. invalid email) and return skipped count', async () => {
+            const invalidData = [{ firstName: 'Toto', lastName: 'Test', email: 'invalid-email' }];
+            
+            mockService.parseFileContent.mockResolvedValue(invalidData);
+            
+            mockService.createMany.mockResolvedValue({ added: 0, skipped: 0 });
+
+            const result = await controller.import(mockFile);
+
+            expect(mockService.createMany).toHaveBeenCalledWith([], false); 
+            expect(result).toEqual({ added: 0, skipped: 1 });
         });
 
-        it('should throw BadRequestException if JSON is invalid', async () => {
-            const file = {
-                mimetype: 'application/json',
-                buffer: Buffer.from('{ bad json '),
-            } as any;
-            await expect(controller.import(file)).rejects.toThrow('Invalid file format');
-        });
+        it('should SKIP duplicates found within the file itself', async () => {
+            const duplicateData = [
+                { email: 'a@a.com', studentNumber: '1', firstName: 'John', lastName: 'Doe' }, 
+                { email: 'a@a.com', studentNumber: '2', firstName: 'Jane', lastName: 'Doe' }
+            ];
+            
+            mockService.parseFileContent.mockResolvedValue(duplicateData);
+            
+            mockService.createMany.mockResolvedValue({ added: 1, skipped: 0 });
 
-        it('should throw BadRequestException if DTO validation fails (invalid email)', async () => {
-            const invalidData = [{
-                firstName: 'Toto',
-                lastName: 'Test',
-                email: 'invalid-email'
-            }];
-            const file = createJSONMockFile(invalidData);
+            const result = await controller.import(mockFile);
 
-            await expect(controller.import(file)).rejects.toThrow(BadRequestException);
+            expect(mockService.createMany).toHaveBeenCalledWith(
+                expect.arrayContaining([expect.objectContaining({ email: 'a@a.com', studentNumber: '1' })]), 
+                false
+            );
+            expect(mockService.createMany.mock.calls[0][0]).toHaveLength(1);
+
+            expect(result).toEqual({ added: 1, skipped: 1 });
         });
 
         it('should call service.createMany with correct params on success', async () => {
@@ -183,98 +173,22 @@ describe('StudentController', () => {
                 email: 'toto@univ.fr',
                 studentNumber: '1'
             }];
-            const file = createJSONMockFile(validData);
             
+            mockService.parseFileContent.mockResolvedValue(validData);
             mockService.createMany.mockResolvedValue({ added: 1, skipped: 0 });
 
-            await controller.import(file); 
-            expect(mockService.createMany).toHaveBeenCalledWith(expect.any(Array), false);
+            await controller.import(mockFile); 
 
-            await controller.import(file, true); 
-            expect(mockService.createMany).toHaveBeenCalledWith(expect.any(Array), true);
-
-            await controller.import(file, false);
             expect(mockService.createMany).toHaveBeenCalledWith(expect.any(Array), false);
         });
 
-        it('should successfully import a valid CSV file (comma separated)', async () => {
-            const csvContent = `firstName,lastName,studentNumber,email
-                                John,Doe,123,john.doe@test.com
-                                Jane,Smith,456,jane.smith@test.com`;
-            
-            const file = createCSVMockFile(csvContent, 'text/csv');
-            
-            mockService.createMany.mockResolvedValue({ added: 2, skipped: 0 });
-
-            const result = await controller.import(file, false);
-
-            expect(mockService.createMany).toHaveBeenCalledWith(
-                expect.arrayContaining([
-                    expect.objectContaining({ email: 'john.doe@test.com', firstName: 'John' }),
-                    expect.objectContaining({ email: 'jane.smith@test.com', firstName: 'Jane' }),
-                ]),
-                false
+        it('should throw BadRequestException if service throws "Too many records"', async () => {
+            mockService.parseFileContent.mockRejectedValue(
+                new BadRequestException('File contains too many records')
             );
-            expect(result).toEqual({ added: 2, skipped: 0 });
-        });
 
-        it('should successfully import a valid CSV file (semicolon separated / Excel style)', async () => {
-            const csvContent = `firstName;lastName;studentNumber;email
-                                Alice;Wonder;789;alice@test.com`;
-            
-            const file = createCSVMockFile(csvContent, 'application/vnd.ms-excel'); 
-            
-            mockService.createMany.mockResolvedValue({ added: 1, skipped: 0 });
-
-            await controller.import(file, false);
-
-            expect(mockService.createMany).toHaveBeenCalledWith(
-                [expect.objectContaining({ email: 'alice@test.com', studentNumber: '789' })],
-                false
-            );
-        });
-
-        it('should throw BadRequestException for unsupported file type', async () => {
-            const file = createCSVMockFile('%PDF-1.5...', 'application/pdf');
-            
-            await expect(controller.import(file)).rejects.toThrow(BadRequestException);
-        });
-
-        it('should throw BadRequestException if DTO validation fails in CSV (e.g., missing email)', async () => {
-            const invalidCsvContent = `firstName,lastName,studentNumber,email
-                                       Alice,Wonder,123,not-an-email`;
-                
-            const file = createCSVMockFile('text/csv', invalidCsvContent);
-
-            await expect(controller.import(file)).rejects.toThrow(BadRequestException);
-
+            await expect(controller.import(mockFile)).rejects.toThrow(/too many records/);
             expect(mockService.createMany).not.toHaveBeenCalled();
-        });
-
-
-        it(`should throw BadRequestException if file contains TOO MANY rows (> ${TEST_MAX_ROWS})`, async () => {
-            const hugeCsvContent = generateCsvContent(TEST_MAX_ROWS + 1);
-            const file = createCSVMockFile(hugeCsvContent, 'text/csv');
-
-            await expect(controller.import(file)).rejects.toThrow(BadRequestException);
-            await expect(controller.import(file)).rejects.toThrow(/too many records/);
-            
-            expect(mockService.createMany).not.toHaveBeenCalled();
-        });
-
-        it(`should accept file with EXACTLY the max rows allowed (${TEST_MAX_ROWS})`, async () => {
-            const validHugeCsvContent = generateCsvContent(TEST_MAX_ROWS);
-            const file = createCSVMockFile(validHugeCsvContent, 'text/csv');
-
-            mockService.createMany.mockResolvedValue({ added: TEST_MAX_ROWS, skipped: 0 });
-
-            const result = await controller.import(file);
-
-            expect(mockService.createMany).toHaveBeenCalled();
-            const lastCallArgs = mockService.createMany.mock.lastCall;
-            expect(lastCallArgs[0].length).toBe(TEST_MAX_ROWS); 
-            
-            expect(result.added).toBe(TEST_MAX_ROWS);
         });
     });
 });
