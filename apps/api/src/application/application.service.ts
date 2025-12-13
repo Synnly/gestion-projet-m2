@@ -76,11 +76,11 @@ export class ApplicationService {
     ): Promise<{ cvUrl: string; lmUrl: string | undefined }> {
         // Validate existence of student
         const student = await this.studentService.findOne(studentId.toString());
-        if (!student) throw new NotFoundException(`Student with id ${studentId} not found`);
+        if (!student) throw new NotFoundException(`Student with id ${studentId.toString()} not found`);
 
         // Validate existence of post
         const post = await this.postService.findOne(postId.toString());
-        if (!post) throw new NotFoundException(`Post with id ${postId} not found`);
+        if (!post) throw new NotFoundException(`Post with id ${postId.toString()} not found`);
 
         // Check for existing application to prevent duplicates
         const application = await this.applicationModel
