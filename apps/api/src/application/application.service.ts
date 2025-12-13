@@ -92,11 +92,12 @@ export class ApplicationService {
         }
 
         // Generate presigned URLs for CV and cover letter uploads
-        const objectname: string = `${studentId.toString()}_${postId.toString()}`;
+        const objectname: string = `${studentId.toString()}`;
         const cv = await this.s3Service.generatePresignedUploadUrl(
             `${objectname}.${dto.cvExtension}`,
             'cv',
             studentId.toString(),
+            postId.toString(),
         );
         let lm: { fileName: string; uploadUrl?: string } | undefined = undefined;
         if (dto?.lmExtension) {
