@@ -53,7 +53,7 @@ export class ApplicationService {
         return this.applicationModel
             .findOne({ _id: id, deletedAt: { $exists: false } })
             .populate([
-                { path: 'post', select: this.postFieldsToPopulate },
+                { path: 'post', select: this.postFieldsToPopulate, populate: { path: 'company', select: '_id name' } },
                 { path: 'student', select: this.studentFieldsToPopulate },
             ])
             .exec();
@@ -153,5 +153,89 @@ export class ApplicationService {
                 { path: 'student', select: this.studentFieldsToPopulate },
             ])
             .exec();
+    }
+
+    /**
+     * Return paginated applications for a given student.
+     * @param studentId Student identifier.
+     * @param page Page number (1-based).
+     * @param limit Items per page (capped server-side).
+     * @returns Paginated applications and pagination metadata.
+     */
+    async findByStudent(
+        studentId: Types.ObjectId,
+        page = 1,
+        limit = 10,
+        status?: ApplicationStatus,
+        searchQuery?: string,
+    ): Promise<{ data: Application[]; total: number; limit: number; page: number }> {
+        // > 0 && <= 50
+        const safeLimit = Math.min(Math.max(limit, 1), 50);
+        // > 0
+        const safePage = Math.max(page, 1);
+
+        const skip = (safePage - 1) * safeLimit;
+
+        const baseMatch: any = { student: studentId, deletedAt: { $exists: false } };
+      
+        const matchStage: any[] = [{ $match: baseMatch }];
+
+        // filtre searchQuery
+        const searchStage =
+            typeof searchQuery === 'string' && searchQuery.trim().length > 0
+                ? {
+                      $or: [
+                          { 'post.title': { $regex: searchQuery, $options: 'i' } },
+                          { 'post.company.name': { $regex: searchQuery, $options: 'i' } },
+                      ],
+                  }
+                : null;
+
+        // filtre status
+        if (status) {
+            matchStage.push({ $match: { status } });
+        }
+
+        const pipeline: any[] = [
+            ...matchStage,
+            {
+                $lookup: {
+                    from: 'posts',
+                    localField: 'post',
+                    foreignField: '_id',
+                    as: 'post',
+                },
+            },
+            { $unwind: '$post' },
+            {
+                $lookup: {
+                    from: 'companies',
+                    localField: 'post.company',
+                    foreignField: '_id',
+                    as: 'post.company',
+                },
+            },
+            { $unwind: { path: '$post.company', preserveNullAndEmptyArrays: true } },
+        ];
+
+        if (searchStage) {
+            pipeline.push({ $match: searchStage });
+        }
+
+        pipeline.push({ $sort: { createdAt: -1 } });
+
+        pipeline.push({
+            $facet: {
+                data: [{ $skip: skip }, { $limit: safeLimit }],
+                totalCount: [{ $count: 'count' }],
+            },
+        });
+
+        const agg = await this.applicationModel.aggregate(pipeline).exec();
+        const facet = agg[0] || { data: [], totalCount: [] };
+        const total = facet.totalCount[0]?.count ?? 0;
+        const data = facet.data as Application[];
+
+        return { data, total, limit: safeLimit, page: safePage };
     }
 }

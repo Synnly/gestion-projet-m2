@@ -1,5 +1,5 @@
 import './App.css';
-import { createBrowserRouter, redirect, RouterProvider } from 'react-router';
+import { createBrowserRouter, redirect, RouterProvider, Navigate } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CompanySignup } from './auth/companySignup/index';
 import { Login } from './auth/Login/index';
@@ -37,6 +37,10 @@ import Contact from './pages/legal/Contact';
 import FAQ from './pages/legal/FAQ';
 import Help from './pages/legal/Help';
 import { internshipLoader } from './loaders/intershipLoader';
+import ApplicationPage from './pages/applications/ApplicationPage';
+import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
+import { StudentDashboard } from './student/dashboard';
+
 function App() {
     userStore.persist.rehydrate();
     const queryClient = new QueryClient();
@@ -145,7 +149,6 @@ function App() {
                                     element: <VerifiedRoutes redirectPath="/" />,
                                     children: [],
                                 },
-
                                 {
                                     path: 'detail/:id',
                                     element: <InternshipDetailPage />,
@@ -162,6 +165,24 @@ function App() {
                                     handle: { title: 'Postuler à un stage' },
                                 },
                             ],
+                        },
+                        {
+                            path: 'student',
+                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT', 'ADMIN']} redirectPath="/" />,
+                            children: [
+                                {
+                                    path: 'dashboard',
+                                    element: <StudentDashboard />,
+                                    children: [
+                                        { index: true, element: <ApplicationPage /> },
+                                        { path: ':applicationId', element: <ApplicationDetailPage /> },
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            path: 'applications',
+                            element: <Navigate to="/student/dashboard" replace />,
                         },
                     ],
                 },

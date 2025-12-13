@@ -6,7 +6,6 @@ import { Navbar } from '../../components/navbar/Navbar';
 import { userStore } from '../../store/userStore';
 import { useNavigation } from 'react-router-dom';
 import Spinner from '../../components/Spinner/Spinner';
-import ToastProvider from '../../components/ui/toast/ToastProvider';
 
 export function InternshipPage() {
     const navigation = useNavigation();
@@ -47,7 +46,6 @@ export function InternshipPage() {
                             </div>
                         </div>
                     </section>
-
                     <SearchBar
                         searchQuery={filters.searchQuery || ''}
                         setSearchQuery={handleSearchChange}
