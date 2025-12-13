@@ -6,6 +6,8 @@ import { CreateApplicationDto } from './dto/createApplication.dto';
 import { PostService } from '../post/post.service';
 import { StudentService } from '../student/student.service';
 import { S3Service } from '../s3/s3.service';
+import { PaginationDto } from '../common/pagination/dto/pagination.dto';
+import { PaginationService } from '../common/pagination/pagination.service';
 
 @Injectable()
 export class ApplicationService {
@@ -15,12 +17,14 @@ export class ApplicationService {
      * @param postService - Injected PostService for managing related posts
      * @param studentService - Injected StudentService for managing related students
      * @param s3Service - Injected S3Service for handling S3 operations
+     * @param paginationService - Injected PaginationService for managing pagination
      */
     constructor(
         @InjectModel('Application') private readonly applicationModel: Model<ApplicationDocument>,
         private readonly postService: PostService,
         private readonly studentService: StudentService,
         private readonly s3Service: S3Service,
+        private readonly paginationService: PaginationService,
     ) {}
 
     /** Fields to populate when retrieving related Post documents */
@@ -130,5 +134,24 @@ export class ApplicationService {
 
         application.status = status;
         await application.save();
+    }
+
+    /**
+     * Retrieve all applications for a post that have not been soft-deleted and populate related Post and Student fields.
+     * @param postId Post id for the applications
+     * @param query Pagination and filter parameters provided by the
+     *                incoming HTTP request (`PaginationDto`).
+     */
+    async findByPostPaginated(postId: Types.ObjectId, query: PaginationDto) {
+        const { page = 1, limit = 20 } = query;
+
+        const filter = { post: postId, deletedAt: { $exists: false } };
+
+        const populateOptions = [
+            { path: 'student', select: this.studentFieldsToPopulate },
+            { path: 'post', select: this.postFieldsToPopulate },
+        ];
+
+        return this.paginationService.paginate(this.applicationModel, filter, page, limit, populateOptions);
     }
 }

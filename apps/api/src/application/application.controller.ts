@@ -9,6 +9,7 @@ import {
     ParseEnumPipe,
     Post,
     Put,
+    Query,
     UseGuards,
     ValidationPipe,
 } from '@nestjs/common';
@@ -24,6 +25,7 @@ import { ApplicationOwnerGuard } from '../common/roles/applicationOwner.guard';
 import { CreateApplicationDto } from './dto/createApplication.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { ApplicationStatus } from './application.schema';
+import { PaginationDto } from '../common/pagination/dto/pagination.dto';
 
 @Controller('/api/application')
 export class ApplicationController {
@@ -96,5 +98,28 @@ export class ApplicationController {
         @Body('status', new ParseEnumPipe(ApplicationStatus)) status: ApplicationStatus,
     ): Promise<void> {
         await this.applicationService.updateStatus(applicationId, status);
+    }
+
+    /**
+     * Return a list of the applications for a company's post
+     * @param postId The id of the post
+     * @param query Pagination parameters (page, limit)
+     */
+    @Get('/post/:postId')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN, Role.COMPANY)
+    @HttpCode(HttpStatus.OK)
+    async findByPostPaginated(
+        @Param('postId', ParseObjectIdPipe) postId: Types.ObjectId,
+        @Query() query: PaginationDto,
+    ) {
+        const result = await this.applicationService.findByPostPaginated(postId, query);
+
+        return {
+            data: result.data.map((app) => plainToInstance(ApplicationDto, app, { excludeExtraneousValues: true })),
+            total: result.total,
+            totalPages: result.totalPages,
+            page: result.page,
+        };
     }
 }
