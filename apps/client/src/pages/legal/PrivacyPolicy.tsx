@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 export default function PrivacyPolicy() {
     const today = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+    const contactEmail = import.meta.env.VITE_CONTACT_EMAIL;
 
     return (
         <main className="max-w-4xl mx-auto py-12 px-6">
@@ -82,8 +83,8 @@ export default function PrivacyPolicy() {
                 <h2 className="text-lg font-semibold">9. Contact et réclamations</h2>
                 <p>
                     Pour exercer vos droits ou poser une question, contactez-nous :
-                    <a className="link link-hover ml-1" href="mailto:privacy@stagera.example">
-                        privacy@stagera.example
+                    <a className="link link-hover ml-1" href={`mailto:${contactEmail}`}>
+                        {contactEmail}
                     </a>
                     . Vous pouvez saisir l'autorité de contrôle compétente (CNIL) en cas de réclamation.
                 </p>

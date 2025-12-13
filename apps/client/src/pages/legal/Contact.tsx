@@ -3,6 +3,8 @@ import { Home } from 'lucide-react';
 
 export default function Contact() {
     const year = new Date().getFullYear();
+    const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL;
+    const legalEmail = import.meta.env.VITE_LEGAL_EMAIL;
 
     return (
         <main className="max-w-4xl mx-auto py-12 px-6">
@@ -26,14 +28,14 @@ export default function Contact() {
                 <ul>
                     <li>
                         Support général :
-                        <a className="link link-hover ml-1" href="mailto:support@stagera.example">
-                            support@stagera.example
+                        <a className="link link-hover ml-1" href={`mailto:${supportEmail}`}>
+                            {supportEmail}
                         </a>
                     </li>
                     <li>
                         Questions juridiques :
-                        <a className="link link-hover ml-1" href="mailto:legal@stagera.example">
-                            legal@stagera.example
+                        <a className="link link-hover ml-1" href={`mailto:${legalEmail}`}>
+                            {legalEmail}
                         </a>
                     </li>
                 </ul>

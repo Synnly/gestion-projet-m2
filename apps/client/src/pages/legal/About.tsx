@@ -3,6 +3,7 @@ import { Home } from 'lucide-react';
 
 export default function About() {
     const year = new Date().getFullYear();
+    const contactEmail = import.meta.env.VITE_CONTACT_EMAIL
 
     return (
         <main className="max-w-4xl mx-auto py-12 px-6">
@@ -37,8 +38,8 @@ export default function About() {
                 <h2 className="text-lg font-semibold">Vous joindre</h2>
                 <p>
                     Pour toute demande, écrivez à
-                    <a className="link link-hover ml-1" href="mailto:contact@stagera.example">
-                        contact@stagera.example
+                    <a className="link link-hover ml-1" href={`mailto:${contactEmail}`}>
+                        {contactEmail}
                     </a>
                     .
                 </p>

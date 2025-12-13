@@ -3,6 +3,8 @@ import { Home } from 'lucide-react';
 
 export default function CookiePolicy() {
     const today = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+    const contactEmail = import.meta.env.VITE_CONTACT_EMAIL;
+
     return (
         <main className="max-w-4xl mx-auto py-12 px-6">
             <header className="mb-8">
@@ -71,8 +73,8 @@ export default function CookiePolicy() {
                 <h2 className="text-lg font-semibold">6. Contact</h2>
                 <p>
                     Pour toute question relative aux cookies, contactez
-                    <a className="link link-hover ml-1" href="mailto:privacy@stagera.example">
-                        privacy@stagera.example
+                    <a className="link link-hover ml-1" href={`mailto:${contactEmail}`}>
+                        {contactEmail}
                     </a>
                     .
                 </p>

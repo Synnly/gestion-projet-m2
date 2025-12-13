@@ -3,6 +3,8 @@ import { Home } from 'lucide-react';
 
 export default function SafetyCompliance() {
     const today = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+    const contactEmail = import.meta.env.VITE_CONTACT_EMAIL;
+
     return (
         <main className="max-w-4xl mx-auto py-12 px-6">
             <header className="mb-8">
@@ -76,8 +78,8 @@ export default function SafetyCompliance() {
                 <h2 className="text-lg font-semibold">7. Signalement des vulnérabilités</h2>
                 <p>
                     Si vous identifiez une vulnérabilité, merci de nous contacter immédiatement à
-                    <a className="link link-hover ml-1" href="mailto:security@stagera.example">
-                        security@stagera.example
+                    <a className="link link-hover ml-1" href={`mailto:${contactEmail}`}>
+                        {contactEmail}
                     </a>
                     . Nous répondrons rapidement et vous informerons des étapes prises pour corriger le problème.
                 </p>
@@ -91,8 +93,8 @@ export default function SafetyCompliance() {
                 <h2 className="text-lg font-semibold">9. Questions et assistance</h2>
                 <p>
                     Pour toute question relative à la sécurité ou la conformité, écrivez à
-                    <a className="link link-hover ml-1" href="mailto:security@stagera.example">
-                        security@stagera.example
+                    <a className="link link-hover ml-1" href={`mailto:${contactEmail}`}>
+                        {contactEmail}
                     </a>
                     .
                 </p>

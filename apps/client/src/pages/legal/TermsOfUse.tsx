@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 export default function TermsOfUse() {
     const today = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+    const contactEmail = import.meta.env.VITE_LEGAL_EMAIL;
 
     return (
         <main className="max-w-4xl mx-auto py-12 px-6">
@@ -83,8 +84,8 @@ export default function TermsOfUse() {
                 <h2 className="text-lg font-semibold">9. Contact</h2>
                 <p>
                     Pour toute question concernant ces conditions, contactez-nous à
-                    <a className="link link-hover ml-1" href="mailto:legal@stagera.example">
-                        legal@stagera.example
+                    <a className="link link-hover ml-1" href={`mailto:${contactEmail}`}>
+                        {contactEmail}
                     </a>
                     .
                 </p>

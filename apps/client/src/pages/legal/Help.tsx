@@ -3,6 +3,7 @@ import { Home } from 'lucide-react';
 
 export default function Help() {
     const year = new Date().getFullYear();
+    const contactEmail = import.meta.env.VITE_CONTACT_EMAIL;
 
     return (
         <main className="max-w-4xl mx-auto py-12 px-6">
@@ -32,8 +33,8 @@ export default function Help() {
                     </li>
                     <li>
                         Pour une aide personnalisée, contactez{' '}
-                        <a className="link link-hover" href="mailto:support@stagera.example">
-                            support@stagera.example
+                        <a className="link link-hover" href={`mailto:${contactEmail}`}>
+                            {contactEmail}
                         </a>
                         .
                     </li>
