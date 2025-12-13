@@ -16,8 +16,7 @@ export default function Footer() {
                     </div>
 
                     <p className="text-sm text-base-content/70 max-w-sm">
-                        We connect students and companies through quality internship listings — trusted by thousands of
-                        organizations.
+                        Nous mettons en relation les étudiants et les entreprises grâce à des offres de stage de qualité — approuvé par des milliers d'organisations.
                     </p>
 
                     <div className="flex items-center gap-3 mt-2">
