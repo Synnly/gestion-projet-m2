@@ -55,7 +55,6 @@ export function useFetchApplications() {
     // Synchronise le store quand les données changent
     useEffect(() => {
         if (query.data) {
-            console.log(query.data)
             setApplications(query.data);
         }
     }, [query.data, setApplications]);

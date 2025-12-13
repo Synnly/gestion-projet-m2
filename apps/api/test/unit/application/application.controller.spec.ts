@@ -199,7 +199,7 @@ describe('ApplicationController', () => {
                 data: [
                     {
                         _id: applicationId,
-                        post: { _id: postId, title: 'Post filtr?' },
+                        post: { _id: postId, title: 'Post filtré' },
                         student: { _id: studentId },
                         status: ApplicationStatus.Pending,
                         cv: 'cv.pdf',

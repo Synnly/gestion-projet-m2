@@ -19,7 +19,7 @@ export const Login = () => {
                 </div>
                 <LoginForm />
                 <NavLink to="/forgot-password" className="mt-4 text-sm text-center text-gray-500 underline">
-                    Mot de passe oubliǸ ?
+                    Mot de passe oublié ?
                 </NavLink>
             </motion.div>
         </AnimatePresence>

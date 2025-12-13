@@ -6,8 +6,6 @@ import { Navbar } from '../../components/navbar/Navbar';
 import { userStore } from '../../store/userStore';
 import { useNavigation } from 'react-router-dom';
 import Spinner from '../../components/Spinner/Spinner';
-import ToastProvider from '../../components/ui/toast/ToastProvider';
-import { useMemo } from 'react';
 
 export function InternshipPage() {
     const navigation = useNavigation();

@@ -105,7 +105,7 @@ export class ApplicationController {
     }
 
     /**
-     * Return paginated applications for a given student id.     *
+     * Return paginated applications for a given student id.
      * @param studentId The student identifier whose applications are requested.
      * @param page The page number (1-based).
      * @param limit The number of items per page (capped server-side).

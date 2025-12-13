@@ -20,7 +20,7 @@ export class ApplicationService {
         private readonly postService: PostService,
         private readonly studentService: StudentService,
         private readonly s3Service: S3Service,
-    ) { }
+    ) {}
 
     /** Fields to populate when retrieving related Post documents */
     readonly postFieldsToPopulate: string =
@@ -155,7 +155,7 @@ export class ApplicationService {
     }
 
     /**
-     * Return paginated applications for a given student.     *
+     * Return paginated applications for a given student.
      * @param studentId Student identifier.
      * @param page Page number (1-based).
      * @param limit Items per page (capped server-side).
