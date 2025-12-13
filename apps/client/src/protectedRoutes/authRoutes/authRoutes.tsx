@@ -1,4 +1,4 @@
-import { Outlet, useLoaderData } from 'react-router';
+import { Navigate, Outlet, useLoaderData, useLocation } from 'react-router';
 import { userStore } from '../../store/userStore';
 /**
  * @description Function which refresh user session.
@@ -10,7 +10,11 @@ import { userStore } from '../../store/userStore';
  *
  */
 export const AuthRoutes = () => {
-    const access = useLoaderData() as string;
+    const access = useLoaderData();
+    const location = useLocation();
+    if (!access) {
+        return <Navigate to="/signin" state={{ from: location.pathname }} replace />;
+    }
     const get = userStore((state) => state.get);
     return <Outlet context={{ accessToken: access, get }} />;
 };

@@ -25,6 +25,14 @@ export class StudentDto {
     @Expose()
     lastName: string;
 
+    /** Student's unique institutional number */
+    @Expose()
+    studentNumber: string;
+
+    /** Whether this account is the user's first time on the platform */
+    @Expose()
+    isFirstTime: boolean;
+
     /**
      * Create a partial `StudentDto` instance.
      * @param partial Optional partial data to assign to the DTO.

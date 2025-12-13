@@ -10,6 +10,9 @@ export const notAuthMiddleWare = () => {
     const get = userStore.getState().get;
     if (access) {
         const payload = get(access);
+        if (!payload) {
+            return redirect('/');
+        }
         return redirect(`/${payload.role.toLowerCase()}/dashboard`);
     }
 };
