@@ -34,7 +34,7 @@ export function TableRow({ internship }: { internship: Internship }) {
                     className="text-color-accent hover:underline text-center"
                     to={`/company/offers/${internship._id}/applications`}
                 >
-                    {internship.applications.length} candidatures
+                    {internship.applications?.length || 0} candidatures
                 </NavLink>
             </td>
 
