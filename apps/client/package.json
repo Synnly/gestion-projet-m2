@@ -23,6 +23,7 @@
     "motion": "^12.23.24",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-drag-drop-files": "^3.1.0",
     "react-hook-form": "^7.66.0",
     "react-router": "^7.9.5",
     "react-router-dom": "^7.9.5",
@@ -51,4 +52,3 @@
     "vite": "^7.1.7"
   }
 }
-

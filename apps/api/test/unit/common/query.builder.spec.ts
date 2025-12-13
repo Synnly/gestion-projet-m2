@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { QueryBuilder } from '../../../src/common/pagination/query.builder';
 import { Types } from 'mongoose';
 
@@ -104,7 +105,7 @@ describe('QueryBuilder', () => {
                 const filter = await qb.build();
 
                 expect(filter.$or).toBeDefined();
-                const regexObj = filter.$or[0].title as any;
+                const regexObj = filter.$or[0].title;
                 const expectedEscaped = special.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 expect(regexObj).toHaveProperty('$regex', expectedEscaped);
                 expect(regexObj).toHaveProperty('$options', 'i');
@@ -156,11 +157,10 @@ describe('QueryBuilder', () => {
         });
 
         it('filters by company ObjectId', async () => {
-            const companyId = new Types.ObjectId().toString();
-            const qb = new QueryBuilder({ company: companyId } as any, mockGeoService as any);
+            const companyId = new Types.ObjectId('507f1f77bcf86cd799439011');
+            const qb = new QueryBuilder({ company: companyId.toString() } as any, mockGeoService as any);
             const filter = await qb.build();
-
-            expect(filter.company).toBe(companyId);
+            expect(filter.company.toString()).toBe(companyId.toString());
         });
 
         it('does not map companyName to nested company.name by default', async () => {
@@ -235,12 +235,15 @@ describe('QueryBuilder', () => {
         });
 
         it('combines multiple filters (text preferred, regex fallback)', async () => {
-            const qb = new QueryBuilder({
-                searchQuery: 'dev',
-                sector: 'IT',
-                minSalary: 2000,
-                keySkills: ['JavaScript'],
-            } as any, mockGeoService as any);
+            const qb = new QueryBuilder(
+                {
+                    searchQuery: 'dev',
+                    sector: 'IT',
+                    minSalary: 2000,
+                    keySkills: ['JavaScript'],
+                } as any,
+                mockGeoService as any,
+            );
             const filter = await qb.build();
 
             expect(filter.isVisible).toBe(true);
