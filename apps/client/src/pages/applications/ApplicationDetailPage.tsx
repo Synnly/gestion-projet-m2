@@ -63,7 +63,9 @@ export default function ApplicationDetailPage() {
                             <div className="flex items-start justify-between gap-4">
                                 <div>
                                     <h1 className="text-2xl font-bold text-base-content">{data.post?.title}</h1>
-                                    <p className="text-sm text-base-content/70">{data.post?.company?.name ?? 'Entreprise'}</p>
+                                    <p className="text-sm text-base-content/70">
+                                        {data.post?.company?.name ?? 'Entreprise'}
+                                    </p>
                                     <p className="text-sm text-base-content/60">
                                         {data.post?.type ?? ''} - {data.post?.duration ?? ''}
                                     </p>
@@ -78,10 +80,12 @@ export default function ApplicationDetailPage() {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-base-content/70">
                                 <div>
-                                    <span className="font-semibold text-base-content">Type :</span> {data.post?.type ?? '-'}
+                                    <span className="font-semibold text-base-content">Type :</span>{' '}
+                                    {data.post?.type ?? '-'}
                                 </div>
                                 <div>
-                                    <span className="font-semibold text-base-content">Adresse :</span> {data.post?.adress ?? '-'}
+                                    <span className="font-semibold text-base-content">Adresse :</span>{' '}
+                                    {data.post?.adress ?? '-'}
                                 </div>
                             </div>
                         </header>
@@ -91,8 +95,10 @@ export default function ApplicationDetailPage() {
                                 <div className="card bg-base-100 shadow-sm">
                                     <div className="card-body space-y-2">
                                         <h2 className="card-title text-base-content">Description du poste</h2>
-                                        <div className="prose prose-sm max-w-none text-base-content/80">
-                                            <ReactMarkdown>{data.post?.description ?? 'Aucune description'}</ReactMarkdown>
+                                        <div className="wmde-markdown wmde-markdown-color bg-transparent! text-base-content!">
+                                            <ReactMarkdown>
+                                                {data.post?.description ?? 'Aucune description'}
+                                            </ReactMarkdown>
                                         </div>
                                     </div>
                                 </div>
