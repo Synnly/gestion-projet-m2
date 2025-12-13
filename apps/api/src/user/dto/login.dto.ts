@@ -43,24 +43,11 @@ export class LoginDto {
     /**
      * User's password for authentication
      *
-     * Must meet the same strong password requirements as registration:
-     * - Minimum 8 characters
-     * - At least 1 uppercase letter
-     * - At least 1 lowercase letter
-     * - At least 1 number
-     * - At least 1 special symbol
-     *
      * This password will be compared with the stored bcrypt hash
      * to authenticate the user.
-     *
-     * @remarks
-     * The password is validated here to ensure it meets minimum requirements,
-     * but the actual authentication happens by comparing with the stored hash
-     * using the User.comparePassword() method.
      *
      * @example 'MySecureP@ssw0rd!'
      */
     @IsNotEmpty()
-    @IsStrongPassword({ minLength: 8, minUppercase: 1, minLowercase: 1, minNumbers: 1, minSymbols: 1 })
     password: string;
 }

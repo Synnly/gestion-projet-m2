@@ -89,11 +89,18 @@ export class PostDto {
     @Expose()
     createdAt?: string;
 
+    @Expose()
+    isCoverLetterRequired: boolean;
+
     /** Reference to the company offering the internship */
     @Expose()
     @ValidateNested({ each: true })
     @Type(() => CompanyDto)
     company: CompanyDto;
+
+    @Expose()
+    @ValidateNested({ each: true })
+    applications?: Types.ObjectId[];
 
     constructor(partial?: Partial<Post>) {
         if (partial) {

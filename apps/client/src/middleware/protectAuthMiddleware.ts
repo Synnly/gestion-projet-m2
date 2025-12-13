@@ -1,4 +1,3 @@
-import { redirect } from 'react-router-dom';
 import { userStore } from '../store/userStore';
 
 /**
@@ -7,12 +6,12 @@ import { userStore } from '../store/userStore';
  * @param {Request} param0.request - The request object.
  * @returns {Promise<Response|void>} - Redirects to signin if not authenticated, or to complete-profil if profile is incomplete.
  */
-export async function protectedMiddleware(): Promise<Response | string> {
+export async function protectedMiddleware(): Promise<string | void> {
     const API_URL = import.meta.env.VITE_APIURL;
     const { access, set: setAccess, logout } = userStore.getState();
 
     if (!access) {
-        return redirect('/signin');
+        return;
     }
 
     const refreshRes = await fetch(`${API_URL}/api/auth/refresh`, {
@@ -23,7 +22,7 @@ export async function protectedMiddleware(): Promise<Response | string> {
 
     if (!refreshRes.ok) {
         logout();
-        return redirect('/signin');
+        return;
     }
 
     const refreshed = await refreshRes.text();

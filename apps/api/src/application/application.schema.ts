@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { Post } from '../post/post.schema';
 import { Student } from '../student/student.schema';
+import { Logger } from '@nestjs/common';
 
 /**
  * Enumeration of possible application statuses.

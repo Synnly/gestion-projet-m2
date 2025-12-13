@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Application, ApplicationDocument, ApplicationStatus } from './application.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -6,7 +6,6 @@ import { CreateApplicationDto } from './dto/createApplication.dto';
 import { PostService } from '../post/post.service';
 import { StudentService } from '../student/student.service';
 import { S3Service } from '../s3/s3.service';
-
 @Injectable()
 export class ApplicationService {
     /**
@@ -77,11 +76,11 @@ export class ApplicationService {
     ): Promise<{ cvUrl: string; lmUrl: string | undefined }> {
         // Validate existence of student
         const student = await this.studentService.findOne(studentId.toString());
-        if (!student) throw new NotFoundException(`Student with id ${studentId} not found`);
+        if (!student) throw new NotFoundException(`Student with id ${studentId.toString()} not found`);
 
         // Validate existence of post
         const post = await this.postService.findOne(postId.toString());
-        if (!post) throw new NotFoundException(`Post with id ${postId} not found`);
+        if (!post) throw new NotFoundException(`Post with id ${postId.toString()} not found`);
 
         // Check for existing application to prevent duplicates
         const application = await this.applicationModel
@@ -92,11 +91,12 @@ export class ApplicationService {
         }
 
         // Generate presigned URLs for CV and cover letter uploads
-        const objectname: string = `${studentId.toString()}_${postId.toString()}`;
+        const objectname: string = `${studentId.toString()}`;
         const cv = await this.s3Service.generatePresignedUploadUrl(
             `${objectname}.${dto.cvExtension}`,
             'cv',
             studentId.toString(),
+            postId.toString(),
         );
         let lm: { fileName: string; uploadUrl?: string } | undefined = undefined;
         if (dto?.lmExtension) {
@@ -107,13 +107,13 @@ export class ApplicationService {
             );
         }
 
-        await new this.applicationModel({
+        const newApplication = await new this.applicationModel({
             student: student,
             post: post,
             cv: cv.fileName,
             coverLetter: lm?.fileName,
         }).save();
-
+        await this.postService.addApplication(postId.toString(), newApplication._id.toString());
         return { cvUrl: cv.uploadUrl, lmUrl: lm?.uploadUrl };
     }
 
@@ -130,5 +130,28 @@ export class ApplicationService {
 
         application.status = status;
         await application.save();
+    }
+
+    /**
+     * Return apply with studentId and postId.
+     * @param studentId The id of student
+     * @param postId The id of post
+     * @returns A promise with the application or null if not found
+     */
+    async getApplicationByStudentAndPost(
+        studentId: Types.ObjectId,
+        postId: Types.ObjectId,
+    ): Promise<Application | null> {
+        return await this.applicationModel
+            .findOne({
+                student: studentId,
+                post: postId,
+                deletedAt: { $exists: false },
+            })
+            .populate([
+                { path: 'post', select: this.postFieldsToPopulate },
+                { path: 'student', select: this.studentFieldsToPopulate },
+            ])
+            .exec();
     }
 }
