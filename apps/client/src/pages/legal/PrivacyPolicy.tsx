@@ -2,7 +2,7 @@ import { Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function PrivacyPolicy() {
-    const today = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+    const today = "29 novembre 2025";
     const contactEmail = import.meta.env.VITE_CONTACT_EMAIL;
 
     return (

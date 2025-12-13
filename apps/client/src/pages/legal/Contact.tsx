@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Home } from 'lucide-react';
 
 export default function Contact() {
-    const year = new Date().getFullYear();
+    const year = "2025";
     const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL;
     const legalEmail = import.meta.env.VITE_LEGAL_EMAIL;
 

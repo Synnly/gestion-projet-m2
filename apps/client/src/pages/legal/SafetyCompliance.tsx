@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Home } from 'lucide-react';
 
 export default function SafetyCompliance() {
-    const today = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+    const today = "29 novembre 2025";
     const contactEmail = import.meta.env.VITE_CONTACT_EMAIL;
 
     return (

@@ -3,7 +3,7 @@ import { Mail } from 'lucide-react';
 import Logo from '../../icons/Logo';
 
 export default function Footer() {
-    const year = new Date().getFullYear();
+    const year = "2025";
     const contactEmail = import.meta.env.VITE_CONTACT_EMAIL;
 
     return (
