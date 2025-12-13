@@ -18,7 +18,6 @@ import {
     Query,
     ParseBoolPipe,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateStudentDto } from './dto/createStudent.dto';
 import { StudentService } from './student.service';
@@ -31,10 +30,8 @@ import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { UpdateStudentDto } from './dto/updateStudent.dto';
 import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
-import { parse } from 'csv-parse/sync';
-import * as chardet from 'chardet';
-import * as iconv from 'iconv-lite';
 import { FileSizeValidationPipe } from '../common/pipes/file-size-validation.pipe';
+import { FileTypeValidationPipe } from '../common/pipes/file-type-validation.pipe';
 
 @Controller('/api/students')
 /**
@@ -44,8 +41,7 @@ import { FileSizeValidationPipe } from '../common/pipes/file-size-validation.pip
  */
 export class StudentController {
     constructor(
-        private readonly studentService: StudentService,
-        private readonly configService: ConfigService
+        private readonly studentService: StudentService
     ) {}
 
     /**
@@ -103,10 +99,10 @@ export class StudentController {
 
     /**
      * Import a list of students via a JSON array.
-     * @param file A JSON file containing a list of CreateStudentDto objects.
+     * @param file A JSON or CSV file containing a list of CreateStudentDto objects.
      * @param skipExistingRecords Boolean option to ignore already existing records (if true), and only create new students accounts.
      * @throws {BadRequestException} When the file is not uploaded or in the wrong format.
-     * @returns A response with the error or validation message, containing the number of students created (and skipped if skipExistingRecords is true).
+     * @returns A response containing the number of created and skipped students (always 0 if skipExistingRecords is false).
      */
     @Post('/import')
     @UseInterceptors(FileInterceptor('file'))
@@ -114,110 +110,61 @@ export class StudentController {
     @Roles(Role.ADMIN)
     @HttpCode(HttpStatus.CREATED)
     async import(
-        @UploadedFile(FileSizeValidationPipe) file: Express.Multer.File,
+        @UploadedFile(FileSizeValidationPipe, FileTypeValidationPipe) file: Express.Multer.File,
         @Query('skipExistingRecords', new ParseBoolPipe({ optional: true })) 
         skipExistingRecords: boolean = false,
-    ) : Promise<{ added: number; skipped: number }> {        
-        if (!file) throw new BadRequestException('File is required');
-        const maxRows = this.configService.get<number>('IMPORT_MAX_ROWS') || 1000;
+    ) : Promise<{ added: number; skipped: number }> {
+        let studentDtos: CreateStudentDto[];
+        const rawData = await this.studentService.parseFileContent(file);
 
-        // File format verification
-        const allowedMimeTypes = [
-            'application/json',
-            'text/csv',
-            'application/vnd.ms-excel',
-            'text/plain'
-        ];
+        // Checking for duplicate records inside the file
+        const emailSet = new Set<string>();
+        const studentNumberSet = new Set<string>();
+        const duplicateEmails: string[] = [];
+        const duplicateStudentNumbers: string[] = [];
 
-        if (!allowedMimeTypes.includes(file.mimetype)) {
-            throw new BadRequestException('File must be a JSON or CSV');
+        for (const item of rawData) {
+            const email = item.email?.toLowerCase();
+            const studentNumber = item.studentNumber;
+
+            // Verifying duplicate emails
+            if (email && emailSet.has(email)) {
+                if (!duplicateEmails.includes(email)) duplicateEmails.push(email);
+            }
+            emailSet.add(email);
+
+            // Verifying duplicate studentNumbers
+            if (studentNumber && studentNumberSet.has(studentNumber)) {
+                if (!duplicateStudentNumbers.includes(studentNumber)) duplicateStudentNumbers.push(studentNumber);
+            }
+            studentNumberSet.add(studentNumber);
         }
 
-        let studentDtos: CreateStudentDto[];
-
-        try {
-            let rawData: any[];
-
-            // Parsing JSON
-            if (file.mimetype === 'application/json') {
-                rawData = JSON.parse(file.buffer.toString());
-                if (!Array.isArray(rawData)) throw new BadRequestException('JSON content must be an array');
-            } else {
-                // Parsing CSV
-                // To deal with accents, we detect the encoded format of the csv file and convert it to utf-8 if needed.
-                const detectedEncoding = chardet.detect(file.buffer);
-                const decodedContent = iconv.decode(file.buffer, detectedEncoding || 'utf-8');
-
-                rawData = parse(decodedContent, {
-                    columns: true,
-                    skip_empty_lines: true,
-                    trim: true,
-                    delimiter: [',', ';', '\t'], 
-                    relax_quotes: true,
-                });
+        if (duplicateEmails.length > 0 || duplicateStudentNumbers.length > 0) {
+            let message: string[] = ['Import aborted due to duplicates within the file:'];
+            if (duplicateEmails.length > 0) {
+                message.push(`- Duplicate emails: ${duplicateEmails.join(', ')}`);
             }
-
-            if (rawData.length > maxRows) {
-                throw new BadRequestException(
-                    `File contains too many records (${rawData.length}). Please upload a file with maximum ${maxRows} students to avoid server timeout.`
-                );
+            if (duplicateStudentNumbers.length > 0) {
+                message.push(`- Duplicate student numbers: ${duplicateStudentNumbers.join(', ')}`);
             }
+            throw new BadRequestException(message);
+        }
 
-            // Checking for duplicate records inside the file
-            const emailSet = new Set<string>();
-            const studentNumberSet = new Set<string>();
-            const duplicateEmails: string[] = [];
-            const duplicateStudentNumbers: string[] = [];
+        const validationPipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });  
+        studentDtos = plainToInstance(CreateStudentDto, rawData);  
 
-            for (const item of rawData) {
-                const email = item.email?.toLowerCase();
-                const studentNumber = item.studentNumber;
-
-                // Verifying duplicate emails
-                if (email && emailSet.has(email)) {
-                    if (!duplicateEmails.includes(email)) duplicateEmails.push(email);
+        for (const [index, dto] of studentDtos.entries()) {
+            try {
+                await validationPipe.transform(dto, { type: 'body', metatype: CreateStudentDto });
+            } catch (e) {
+                if (e instanceof BadRequestException) {
+                    const error = `Validation failed at student with email '${dto.email || 'unknown'}' (row #${index+1}) :`;
+                    const response = e.getResponse() as any;
+                    throw new BadRequestException([error, response.message]);
                 }
-                emailSet.add(email);
-
-                // Verifying duplicate studentNumbers
-                if (studentNumber && studentNumberSet.has(studentNumber)) {
-                    if (!duplicateStudentNumbers.includes(studentNumber)) duplicateStudentNumbers.push(studentNumber);
-                }
-                studentNumberSet.add(studentNumber);
+                throw e;
             }
-
-            if (duplicateEmails.length > 0 || duplicateStudentNumbers.length > 0) {
-                let message: string[] = ['Import aborted due to duplicates within the file:'];
-                if (duplicateEmails.length > 0) {
-                    message.push(`- Duplicate emails: ${duplicateEmails.join(', ')}`);
-                }
-                if (duplicateStudentNumbers.length > 0) {
-                    message.push(`- Duplicate student numbers: ${duplicateStudentNumbers.join(', ')}`);
-                }
-                throw new BadRequestException(message);
-            }
-
-            const validationPipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });  
-            studentDtos = plainToInstance(CreateStudentDto, rawData);  
-
-            for (const [index, dto] of studentDtos.entries()) {
-                try {
-                    await validationPipe.transform(dto, { type: 'body', metatype: CreateStudentDto });
-                } catch (e) {
-                    if (e instanceof BadRequestException) {
-                        const error = `Validation failed at student with email '${dto.email || 'unknown'}' (row #${index+1}) :`;
-                        const response = e.getResponse() as any;
-                        throw new BadRequestException([error, response.message]);
-                    }
-                    throw e;
-                }
-            }  
-        } catch (e) {
-            if (e instanceof BadRequestException) throw e;
-            if (e.code === 'CSV_INVALID_OPTION' || e.message.includes('CSV')) {
-                throw new BadRequestException('Invalid CSV file format');
-            }
-            throw new BadRequestException('Invalid file format');
         }
 
         return await this.studentService.createMany(studentDtos, skipExistingRecords);
