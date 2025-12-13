@@ -35,6 +35,8 @@ export interface Internship {
     isVisible?: boolean;
     company: CompanyInInternship;
     createdAt: string;
+    isCoverLetterRequired: boolean;
+    applications: String[];
 }
 
 export interface PaginationResult<T> {

@@ -17,6 +17,7 @@ export class PostService {
     constructor(
         @InjectModel(Post.name) private readonly postModel: Model<Post>,
         private readonly paginationService: PaginationService,
+
         private readonly geoService: GeoService,
         @Inject(forwardRef(() => CompanyService)) private readonly companyService: CompanyService,
     ) {}
@@ -46,7 +47,7 @@ export class PostService {
                 company?.streetName,
                 company?.postalCode,
                 company?.city,
-                company?.country
+                company?.country,
             ].filter(Boolean);
             dto.adress = addressParts.join(' ');
         }
@@ -64,6 +65,7 @@ export class PostService {
             ...dto,
             company: new Types.ObjectId(companyId),
             location,
+            isCoverLetterRequired: dto.isCoverLetterRequired,
         });
 
         const saved = await createdPost.save();
@@ -99,7 +101,6 @@ export class PostService {
      */
     async findAll(query: PaginationDto): Promise<PaginationResult<Post>> {
         const { page, limit, sort, ...filters } = query;
-
         // Build dynamic Mongo filters
         const qb = new QueryBuilder<Post>(filters as any, this.geoService);
         const filter = await qb.build();
@@ -163,6 +164,21 @@ export class PostService {
                 path: 'company',
                 select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
             })
+            .exec();
+    }
+
+    /**
+    add application to post
+    * @param postId - Post id (MongoDB ObjectId as string)
+    * @param applicationId - Application id (MongoDB ObjectId as string)
+    */
+    async addApplication(postId: string, applicationId: string): Promise<void> {
+        await this.postModel
+            .findByIdAndUpdate(
+                postId,
+                { $addToSet: { applications: new Types.ObjectId(applicationId) } },
+                { new: true },
+            )
             .exec();
     }
 }

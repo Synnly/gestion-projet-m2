@@ -9,6 +9,7 @@ import {
     ParseEnumPipe,
     Post,
     Put,
+    Query,
     UseGuards,
     ValidationPipe,
 } from '@nestjs/common';
@@ -46,6 +47,24 @@ export class ApplicationController {
     }
 
     /**
+    @Param studentId The id of the student applying.
+    * @param postId The id of the post to which the student is applying.
+    * @returns boolean if an application exists for the given student and post.
+    * @throws NotFoundException if no application exists for the given student and post.
+    **/
+    @Get('check')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN, Role.STUDENT)
+    @HttpCode(HttpStatus.OK)
+    async getApplicationByStudentAndPost(
+        @Query('studentId', ParseObjectIdPipe) studentId: Types.ObjectId,
+        @Query('postId', ParseObjectIdPipe) postId: Types.ObjectId,
+    ): Promise<ApplicationDto | null> {
+        const application = await this.applicationService.getApplicationByStudentAndPost(studentId, postId);
+
+        return plainToInstance(ApplicationDto, application, { excludeExtraneousValues: true });
+    }
+    /**
      * Return a single application by id.
      * Accessible by ADMIN, or by the STUDENT or COMPANY who owns the application.
      * @param applicationId The id of the application to retrieve.
@@ -58,7 +77,7 @@ export class ApplicationController {
     @HttpCode(HttpStatus.OK)
     async findOne(@Param('applicationId', ParseObjectIdPipe) applicationId: Types.ObjectId): Promise<ApplicationDto> {
         const application = await this.applicationService.findOne(applicationId);
-        if (!application) throw new NotFoundException(`Application with id ${applicationId} not found`);
+        if (!application) throw new NotFoundException(`Application with id ${applicationId.toString()} not found`);
         return plainToInstance(ApplicationDto, application, { excludeExtraneousValues: true });
     }
 

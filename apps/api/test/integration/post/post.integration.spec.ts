@@ -329,6 +329,7 @@ describe('Post Integration Tests', () => {
                 keySkills: ['Python', 'Django'],
                 adress: 'Lyon, France',
                 type: PostType.Presentiel,
+                isCoverLetterRequired: true,
             };
 
             await request(app.getHttpServer())
@@ -348,6 +349,7 @@ describe('Post Integration Tests', () => {
                 title: 'Titre Minimal',
                 description: 'Description Minimale',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())
@@ -552,6 +554,7 @@ describe('Post Integration Tests', () => {
                 description: 'Description',
                 keySkills: ['Skill1'],
                 type: PostType.Presentiel,
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())
@@ -570,6 +573,7 @@ describe('Post Integration Tests', () => {
                 description: 'Description',
                 keySkills: ['Skill1'],
                 type: PostType.Teletravail,
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())
@@ -588,6 +592,7 @@ describe('Post Integration Tests', () => {
                 description: 'Description',
                 keySkills: ['Skill1'],
                 type: PostType.Hybride,
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())
@@ -612,6 +617,7 @@ describe('Post Integration Tests', () => {
                 keySkills: ['Java', 'Spring'],
                 adress: 'Marseille, France',
                 type: PostType.Hybride,
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())

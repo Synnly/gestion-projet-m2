@@ -1,6 +1,5 @@
 import {
     ArrayMaxSize,
-    ArrayMinSize,
     ArrayUnique,
     IsArray,
     IsBoolean,
@@ -100,6 +99,10 @@ export class CreatePostDto {
     @IsOptional()
     @IsBoolean()
     isVisible?: boolean;
+
+    @IsBoolean()
+    @Type(() => Boolean)
+    isCoverLetterRequired: boolean;
 
     constructor(partial?: Partial<CreatePostDto>) {
         if (partial) {
