@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type ApplicationStatus = 'Applied' | 'Under Review' | 'Interviewing' | 'Offer' | 'Rejected';
+export type ApplicationStatus = 'Pending' | 'Read' | 'Accepted' | 'Rejected';
 
 export interface ApplicationListItem {
     _id: string;
@@ -53,7 +53,7 @@ export type ApplicationStore = {
     resetFilters: () => void;
 };
 
-const DEFAULT_FILTERS: ApplicationFilters = { page: 1, limit: 10 };
+const DEFAULT_FILTERS: ApplicationFilters = { page: 1, limit: 5 };
 
 export const useApplicationStore = create<ApplicationStore>()(
     persist(

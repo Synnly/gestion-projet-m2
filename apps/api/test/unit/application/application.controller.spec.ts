@@ -19,6 +19,7 @@ describe('ApplicationController', () => {
         findOne: jest.fn(),
         create: jest.fn(),
         updateStatus: jest.fn(),
+        findByStudent: jest.fn(),
     };
 
     const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
@@ -52,6 +53,7 @@ describe('ApplicationController', () => {
 
         jest.clearAllMocks();
     });
+
 
     it('should be defined when controller is instantiated', () => {
         expect(controller).toBeDefined();
@@ -161,4 +163,61 @@ describe('ApplicationController', () => {
             expect(service.updateStatus).toHaveBeenCalledTimes(1);
         });
     });
+
+    describe('findMine', () => {
+        it('devrait retourner une pagination filtree pour un etudiant', async () => {
+            const pagination = {
+                data: [
+                    {
+                        _id: applicationId,
+                        post: { _id: postId, title: 'Post filtr?' },
+                        student: { _id: studentId },
+                        status: ApplicationStatus.Pending,
+                        cv: 'cv.pdf',
+                    },
+                ],
+                total: 1,
+                page: 1,
+                limit: 10,
+            };
+            mockApplicationService.findByStudent.mockResolvedValue(pagination);
+
+            const result = await controller.findMine(studentId, 1, 10, ApplicationStatus.Pending, 'query');
+
+            expect(result.data).toHaveLength(1);
+            expect(result.total).toBe(1);
+            expect(mockApplicationService.findByStudent).toHaveBeenCalledWith(
+                studentId,
+                1,
+                10,
+                ApplicationStatus.Pending,
+                'query',
+            );
+        });
+
+        it('retourne une pagination vide quand le service renvoie vide', async () => {
+            mockApplicationService.findByStudent.mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 });
+
+            const result = await controller.findMine(studentId, 1, 10);
+
+            expect(result.data).toEqual([]);
+            expect(result.total).toBe(0);
+            expect(mockApplicationService.findByStudent).toHaveBeenCalledWith(studentId, 1, 10, undefined, undefined);
+        });
+
+        it('propage les erreurs du service', async () => {
+            mockApplicationService.findByStudent.mockRejectedValue(new Error('boom'));
+
+            await expect(controller.findMine(studentId, 1, 10)).rejects.toThrow('boom');
+        });
+
+        it('passe bien la recherche sans status', async () => {
+            mockApplicationService.findByStudent.mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 });
+
+            await controller.findMine(studentId, 1, 5, undefined, 'test');
+
+            expect(mockApplicationService.findByStudent).toHaveBeenCalledWith(studentId, 1, 5, undefined, 'test');
+        });
+    });
+
 });

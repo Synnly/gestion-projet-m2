@@ -33,7 +33,6 @@ async function fetchApplications(
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || 'Impossible de récupérer les candidatures');
     }
-    console.log(res.json);
     return res.json();
 }
 
@@ -56,6 +55,7 @@ export function useFetchApplications() {
     // Synchronise le store quand les données changent
     useEffect(() => {
         if (query.data) {
+            console.log(query.data)
             setApplications(query.data);
         }
     }, [query.data, setApplications]);

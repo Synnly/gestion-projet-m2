@@ -101,11 +101,15 @@ export class ApplicationController {
         @Param('studentId', ParseObjectIdPipe) studentId: Types.ObjectId,
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
         @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+        @Query('status', new ParseEnumPipe(ApplicationStatus, { optional: true })) status?: ApplicationStatus,
+        @Query('searchQuery') searchQuery?: string,
     ): Promise<ApplicationPaginationDto> {
         const { data, total, limit: appliedLimit, page: appliedPage } = await this.applicationService.findByStudent(
             studentId,
             page,
             limit,
+            status,
+            searchQuery,
         );
 
         return plainToInstance(
