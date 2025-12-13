@@ -541,12 +541,12 @@ describe('Application Integration Tests', () => {
                 .expect(400);
         });
 
-        it('should return 404 for non-existent postings', async () => {
+        it('should return 200 even if non-existent postings', async () => {
             const student = await createStudent();
             await request(app.getHttpServer())
                 .get('/api/application/check?studentId=507f1f77bcf86cd799439098&postId=507f1f77bcf86cd799439099')
                 .set('Authorization', `Bearer ${tokenFor(Role.STUDENT, student._id)}`)
-                .expect(404);
+                .expect(200);
         });
     });
 });

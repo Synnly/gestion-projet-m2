@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Application, ApplicationDocument, ApplicationStatus } from './application.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -112,9 +112,7 @@ export class ApplicationService {
             cv: cv.fileName,
             coverLetter: lm?.fileName,
         }).save();
-        if (!newApplication) {
-            throw new ConflictException('Failed to create application');
-        }
+        await this.postService.addApplication(postId.toString(), newApplication._id.toString());
         return { cvUrl: cv.uploadUrl, lmUrl: lm?.uploadUrl };
     }
 

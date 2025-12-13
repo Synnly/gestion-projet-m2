@@ -12,6 +12,7 @@ const formatDate = (timeStamp: string) => {
 };
 
 export function TableRow({ internship }: { internship: Internship }) {
+    console.log(internship);
     return (
         <tr className="border-t border-t-slate-200 dark:border-t-slate-800">
             <td className="px-4 py-2 text-color-accent text-center text-sm font-medium">
@@ -29,9 +30,12 @@ export function TableRow({ internship }: { internship: Internship }) {
                 </div>
             </td>
             <td className=" px-4 py-2 text-slate-600 text-center text-sm">
-                <a className="text-color-accent hover:underline text-center" href="">
-                    Aucun candidat
-                </a>
+                <NavLink
+                    className="text-color-accent hover:underline text-center"
+                    to={`/company/offers/${internship._id}/applications`}
+                >
+                    {internship.applications.length} candidatures
+                </NavLink>
             </td>
 
             <td className="h-[72px] px-4 py-2  text-center text-sm">

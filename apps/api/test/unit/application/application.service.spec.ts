@@ -21,6 +21,7 @@ describe('ApplicationService', () => {
     };
     const mockPostService = {
         findOne: jest.fn(),
+        addApplication: jest.fn(),
     };
     const mockS3Service = {
         generatePresignedUploadUrl: jest.fn(),
@@ -180,6 +181,7 @@ describe('ApplicationService', () => {
             const save = jest.fn().mockResolvedValue(undefined);
             mockApplicationModel.mockImplementation(() => ({ save }));
 
+            save.mockReturnValueOnce({ _id: '5457f1f77bcf86cd799439013' });
             const result = await service.create(studentId, postId, dto);
 
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
@@ -215,7 +217,7 @@ describe('ApplicationService', () => {
             });
             const save = jest.fn().mockResolvedValue(undefined);
             mockApplicationModel.mockImplementation(() => ({ save }));
-
+            save.mockReturnValueOnce({ _id: '5457f1f77bcf86cd799439013' });
             const result = await service.create(studentId, postId, { cvExtension: 'pdf' });
 
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenCalledTimes(1);

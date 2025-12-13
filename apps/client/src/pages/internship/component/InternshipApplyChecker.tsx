@@ -15,16 +15,16 @@ export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: stri
                 credentials: 'include',
             });
 
-            if (res.status === 404) {
-                return null;
-            }
-
             if (res.ok) {
-                const responseData = await res.json();
-                return responseData;
+                try {
+                    const responseData = await res.json();
+                    return responseData;
+                } catch (e) {
+                    return null;
+                }
             }
-
-            throw new Error(`Erreur serveur: Statut ${res.status}`);
+            let errorMessage = `Erreur HTTP ${res.status}`;
+            throw new Error(errorMessage);
         },
 
         enabled: !!studentId && !!adId,

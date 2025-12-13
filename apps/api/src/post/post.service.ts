@@ -1,6 +1,6 @@
-import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Post, PostDocument } from './post.schema';
+import { Post } from './post.schema';
 import { Model, Types } from 'mongoose';
 import { CreatePostDto } from './dto/createPost.dto';
 import { UpdatePostDto } from './dto/updatePost';
@@ -164,6 +164,21 @@ export class PostService {
                 path: 'company',
                 select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
             })
+            .exec();
+    }
+
+    /**
+    add application to post
+    * @param postId - Post id (MongoDB ObjectId as string)
+    * @param applicationId - Application id (MongoDB ObjectId as string)
+    */
+    async addApplication(postId: string, applicationId: string): Promise<void> {
+        await this.postModel
+            .findByIdAndUpdate(
+                postId,
+                { $addToSet: { applications: new Types.ObjectId(applicationId) } },
+                { new: true },
+            )
             .exec();
     }
 }

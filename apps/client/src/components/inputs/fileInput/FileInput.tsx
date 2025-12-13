@@ -7,13 +7,14 @@ interface FileInputProps {
     file: File | null;
     svgColor?: string;
     required?: boolean;
+    dropMessage?: string;
 }
 
 const fileTypes = ['PDF', 'DOCX', 'DOC']; // Pour l'affichage
 const fileFormats = fileTypes.join(', ');
 const maxSizeMo = 5;
 
-export default function FileInput({ title, setFile, file, svgColor, required }: FileInputProps) {
+export default function FileInput({ title, setFile, file, svgColor, required = true, dropMessage }: FileInputProps) {
     const handleChange = (newFile: File | File[]) => {
         if (newFile instanceof File) {
             setFile(newFile);
@@ -74,6 +75,7 @@ export default function FileInput({ title, setFile, file, svgColor, required }: 
                     types={fileTypes}
                     maxSize={maxSizeMo}
                     disabled={!!file}
+                    hoverTitle={dropMessage}
                 >
                     <div
                         className="

@@ -100,7 +100,8 @@ export class PostDto {
 
     @Expose()
     @ValidateNested({ each: true })
-    applicationIds?: Types.ObjectId[];
+    applications?: Types.ObjectId[];
+
     constructor(partial?: Partial<Post>) {
         if (partial) {
             Object.assign(this, partial);

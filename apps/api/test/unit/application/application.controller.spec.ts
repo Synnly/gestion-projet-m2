@@ -79,7 +79,7 @@ describe('ApplicationController', () => {
             expect(result[0]).toBeInstanceOf(ApplicationDto);
             expect(result[0]._id.toString()).toBe(applicationId.toString());
             expect((result[0] as any).deletedAt).toBeUndefined();
-            expect(service.findAll).toHaveBeenCalledTimes(1);
+            expect(mockApplicationService.findAll).toHaveBeenCalledTimes(1);
         });
 
         it('should return an empty array when findAll is called and no applications exist', async () => {
@@ -88,7 +88,7 @@ describe('ApplicationController', () => {
             const result = await controller.findAll();
 
             expect(result).toEqual([]);
-            expect(service.findAll).toHaveBeenCalledTimes(1);
+            expect(mockApplicationService.findAll).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -109,7 +109,7 @@ describe('ApplicationController', () => {
             expect(result).toBeInstanceOf(ApplicationDto);
             expect(result._id.toString()).toBe(applicationId.toString());
             expect(result.status).toBe(ApplicationStatus.Accepted);
-            expect(service.findOne).toHaveBeenCalledWith(applicationId);
+            expect(mockApplicationService.findOne).toHaveBeenCalledWith(applicationId);
         });
 
         it('should throw NotFoundException when application does not exist for the provided id', async () => {
@@ -117,9 +117,9 @@ describe('ApplicationController', () => {
 
             await expect(controller.findOne(applicationId)).rejects.toThrow(NotFoundException);
             await expect(controller.findOne(applicationId)).rejects.toThrow(
-                `Application with id ${applicationId} not found`,
+                `Application with id ${applicationId.toString()} not found`,
             );
-            expect(service.findOne).toHaveBeenCalledWith(applicationId);
+            expect(mockApplicationService.findOne).toHaveBeenCalledWith(applicationId);
         });
 
         it('should await service result before mapping when service returns a Promise', async () => {
@@ -148,7 +148,7 @@ describe('ApplicationController', () => {
             const result = await controller.create(studentId, postId, dto);
 
             expect(result).toEqual(creationResult);
-            expect(service.create).toHaveBeenCalledWith(studentId, postId, dto);
+            expect(mockApplicationService.create).toHaveBeenCalledWith(studentId, postId, dto);
         });
     });
 
@@ -158,8 +158,8 @@ describe('ApplicationController', () => {
 
             await controller.updateStatus(applicationId, ApplicationStatus.Read);
 
-            expect(service.updateStatus).toHaveBeenCalledWith(applicationId, ApplicationStatus.Read);
-            expect(service.updateStatus).toHaveBeenCalledTimes(1);
+            expect(mockApplicationService.updateStatus).toHaveBeenCalledWith(applicationId, ApplicationStatus.Read);
+            expect(mockApplicationService.updateStatus).toHaveBeenCalledTimes(1);
         });
     });
     describe('getApplicationByStudentAndPost', () => {
@@ -175,19 +175,18 @@ describe('ApplicationController', () => {
             mockApplicationService.getApplicationByStudentAndPost.mockResolvedValue(application);
 
             const result = await controller.getApplicationByStudentAndPost(studentId, postId);
-
+            expect(result).toBeDefined();
+            expect(result).not.toBeNull();
             expect(result).toBeInstanceOf(ApplicationDto);
-            expect(result._id.toString()).toBe(applicationId.toString());
-            expect(result.status).toBe(ApplicationStatus.Pending);
+            expect(result?._id.toString()).toBe(applicationId.toString());
+            expect(result?.status).toBe(ApplicationStatus.Pending);
             expect(service.getApplicationByStudentAndPost).toHaveBeenCalledWith(studentId, postId);
         });
 
         it('should throw NotFoundException when no application is found for the provided studentId and postId', async () => {
             mockApplicationService.getApplicationByStudentAndPost.mockResolvedValue(null);
 
-            await expect(controller.getApplicationByStudentAndPost(studentId, postId)).rejects.toThrow(
-                NotFoundException,
-            );
+            expect(await controller.getApplicationByStudentAndPost(studentId, postId)).toBeNull();
             expect(service.getApplicationByStudentAndPost).toHaveBeenCalledWith(studentId, postId);
         });
     });

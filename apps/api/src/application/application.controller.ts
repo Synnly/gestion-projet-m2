@@ -59,13 +59,9 @@ export class ApplicationController {
     async getApplicationByStudentAndPost(
         @Query('studentId', ParseObjectIdPipe) studentId: Types.ObjectId,
         @Query('postId', ParseObjectIdPipe) postId: Types.ObjectId,
-    ): Promise<ApplicationDto> {
+    ): Promise<ApplicationDto | null> {
         const application = await this.applicationService.getApplicationByStudentAndPost(studentId, postId);
-        if (!application) {
-            throw new NotFoundException(
-                `No application found for student ${studentId.toString()} and post ${postId.toString()}`,
-            );
-        }
+
         return plainToInstance(ApplicationDto, application, { excludeExtraneousValues: true });
     }
     /**
