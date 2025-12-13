@@ -36,8 +36,6 @@ import About from './pages/legal/About';
 import Contact from './pages/legal/Contact';
 import FAQ from './pages/legal/FAQ';
 import Help from './pages/legal/Help';
-
-import { MainLayout } from './pages/layout/MainLayout';
 import { internshipLoader } from './loaders/intershipLoader';
 function App() {
     userStore.persist.rehydrate();
