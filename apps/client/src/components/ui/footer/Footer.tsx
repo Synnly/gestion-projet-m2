@@ -4,6 +4,7 @@ import Logo from '../../icons/Logo';
 
 export default function Footer() {
     const year = new Date().getFullYear();
+    const contactEmail = import.meta.env.VITE_CONTACT_EMAIL;
 
     return (
         <footer className="footer bg-base-200 text-base-content p-6 md:p-8">
@@ -21,7 +22,7 @@ export default function Footer() {
                     </p>
 
                     <div className="flex items-center gap-3 mt-2">
-                        <a href="mailto:contact@acme.example" aria-label="Contact email" className="link link-hover">
+                        <a href={`mailto:${contactEmail}`} aria-label="Contact email" className="link link-hover">
                             <Mail className="h-5 w-5 inline-block" />
                         </a>
                     </div>
