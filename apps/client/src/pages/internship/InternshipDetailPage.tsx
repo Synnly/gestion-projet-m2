@@ -7,8 +7,8 @@ import { hydrate, useQueryClient } from '@tanstack/react-query';
 import Spinner from '../../components/Spinner/Spinner';
 import type { Internship, PaginationResult } from '../../types/internship.types';
 import { useInternshipStore } from '../../store/useInternshipStore';
-import { useToast } from '../../components/ui/toast/ToastProvider';
 import { useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 export default function InternshipDetailPage() {
     const { id, dehydratedState } = useLoaderData() as { id?: string; dehydratedState?: unknown };
@@ -34,14 +34,13 @@ export default function InternshipDetailPage() {
     });
 
     const removeInternshipsByIds = useInternshipStore((s) => s.removeInternshipsByIds);
-    const toast = useToast();
 
     useEffect(() => {
         if (internship && !internship.company) {
             // Remove from store and notify
             removeInternshipsByIds([internship._id]);
             try {
-                toast.error(`Impossible d'afficher 1 stage(s)`);
+                toast.error(`Impossible d'afficher 1 stage(s)`, { toastId: 'fetch-internship-detail' });
             } catch (e) {}
         }
     }, [internship, removeInternshipsByIds, toast]);

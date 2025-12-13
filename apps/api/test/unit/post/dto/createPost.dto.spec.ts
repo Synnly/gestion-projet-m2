@@ -9,6 +9,7 @@ describe('CreatePostDto', () => {
                 title: 'Développeur Full Stack',
                 description: 'Nous recherchons un développeur expérimenté',
                 keySkills: ['JavaScript', 'TypeScript'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -19,6 +20,7 @@ describe('CreatePostDto', () => {
             const dto = new CreatePostDto({
                 description: 'Description',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             } as any);
 
             const errors = await validate(dto);
@@ -30,6 +32,7 @@ describe('CreatePostDto', () => {
             const dto = new CreatePostDto({
                 title: 'Title',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             } as any);
 
             const errors = await validate(dto);
@@ -42,6 +45,7 @@ describe('CreatePostDto', () => {
                 title: 123,
                 description: 'Description',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             } as any);
 
             const errors = await validate(dto);
@@ -55,6 +59,7 @@ describe('CreatePostDto', () => {
                 title: 'Title',
                 description: 123,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             } as any);
 
             const errors = await validate(dto);
@@ -69,6 +74,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 duration: '6 mois',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -81,6 +87,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 duration: 6,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             } as any);
 
             const errors = await validate(dto);
@@ -95,6 +102,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 startDate: '2025-01-15',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -107,6 +115,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 startDate: 'invalid-date',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             } as any);
 
             const errors = await validate(dto);
@@ -121,6 +130,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 minSalary: 2000,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -133,6 +143,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 minSalary: 0,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -145,6 +156,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 minSalary: -1,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -159,6 +171,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 minSalary: 'not-a-number',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             } as any);
 
             const errors = await validate(dto);
@@ -173,6 +186,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 maxSalary: 3000,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -185,6 +199,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 maxSalary: -1,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -199,6 +214,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 sector: 'IT',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -211,6 +227,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 sector: 123,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             } as any);
 
             const errors = await validate(dto);
@@ -224,6 +241,7 @@ describe('CreatePostDto', () => {
                 title: 'Title',
                 description: 'Description',
                 keySkills: ['Skill1', 'Skill2'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -235,6 +253,7 @@ describe('CreatePostDto', () => {
                 title: 'Title',
                 description: 'Description',
                 keySkills: ['Skill1', 'Skill2', 'Skill3', 'Skill4', 'Skill5', 'Skill6'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -248,6 +267,7 @@ describe('CreatePostDto', () => {
                 title: 'Title',
                 description: 'Description',
                 keySkills: ['Skill1', 'Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -261,6 +281,7 @@ describe('CreatePostDto', () => {
                 title: 'Title',
                 description: 'Description',
                 keySkills: 'not-an-array',
+                isCoverLetterRequired: true,
             } as any);
 
             const errors = await validate(dto);
@@ -274,6 +295,7 @@ describe('CreatePostDto', () => {
                 title: 'Title',
                 description: 'Description',
                 keySkills: ['Skill1', 123],
+                isCoverLetterRequired: true,
             } as any);
 
             const errors = await validate(dto);
@@ -288,6 +310,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 adress: 'Paris, France',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -300,6 +323,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 adress: 123,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             } as any);
 
             const errors = await validate(dto);
@@ -314,6 +338,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 type: PostType.Presentiel,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -326,6 +351,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 type: PostType.Teletravail,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -338,6 +364,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 type: PostType.Hybride,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -350,6 +377,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 type: 'InvalidType',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             } as any);
 
             const errors = await validate(dto);
@@ -364,6 +392,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 isVisible: true,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -376,6 +405,7 @@ describe('CreatePostDto', () => {
                 description: 'Description',
                 isVisible: false,
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             });
 
             const errors = await validate(dto);
@@ -397,6 +427,7 @@ describe('CreatePostDto', () => {
                 adress: 'Paris, France',
                 type: PostType.Hybride,
                 isVisible: true,
+                isCoverLetterRequired: true,
             };
 
             const dto = new CreatePostDto(data);
@@ -419,6 +450,7 @@ describe('CreatePostDto', () => {
                 title: 'Titre',
                 description: 'Description',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             };
 
             const dto = new CreatePostDto(data);
@@ -431,6 +463,7 @@ describe('CreatePostDto', () => {
                 title: '',
                 description: 'Description',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             };
 
             const dto = new CreatePostDto(data);
@@ -443,6 +476,7 @@ describe('CreatePostDto', () => {
                 title: 'Titre',
                 description: '',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             };
 
             const dto = new CreatePostDto(data);
@@ -455,6 +489,7 @@ describe('CreatePostDto', () => {
                 title: '',
                 description: '',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             };
 
             const dto = new CreatePostDto(data);
@@ -467,6 +502,7 @@ describe('CreatePostDto', () => {
                 title: 'Titre',
                 description: 'Description',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: true,
             };
 
             const dto = new CreatePostDto(data);

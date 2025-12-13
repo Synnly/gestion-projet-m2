@@ -49,6 +49,9 @@ export class Post {
     @Prop({ min: 0 })
     maxSalary: number;
 
+    @Prop({ type: Boolean, default: false })
+    isCoverLetterRequired: string;
+
     /** Work sector of the internship (IT, Science, ...) */
     @Prop()
     sector: string;
@@ -80,6 +83,7 @@ export class Post {
             required: false,
         },
     })
+
     /**
      * Optional GeoJSON point describing the post's coordinates.
      * Stored as `{ type: 'Point', coordinates: [lon, lat] }`.
@@ -92,13 +96,16 @@ export class Post {
     /** Reference to the company offering the internship */
     @Prop({ required: true, type: Types.ObjectId, ref: 'Company' })
     company: Company;
+
+    @Prop({ default: [] })
+    applications: Types.ObjectId[];
 }
 
 export type PostDocument = Post & Document;
 
 export const PostSchema = SchemaFactory.createForClass(Post);
 
-// DATABASE INDEXES 
+// DATABASE INDEXES
 
 // Geospatial index for location-based queries (radius search)
 PostSchema.index({ location: '2dsphere' });

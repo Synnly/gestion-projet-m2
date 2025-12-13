@@ -13,13 +13,20 @@ export const rightNavItems: NavItem[] = [
         key: 'profileDropdown',
         title: 'ProfileDropdown',
         type: 'dropdown',
-        role: ['COMPANY'],
         children: [
             {
                 key: 'profile',
                 title: 'Profil',
                 to: '/company/profile',
                 type: 'link',
+                role: ['COMPANY'],
+            },
+            {
+                key: 'profile',
+                title: 'Profil',
+                to: '/student/profile',
+                type: 'link',
+                role: ['STUDENT'],
             },
             {
                 key: 'logout',
@@ -27,6 +34,7 @@ export const rightNavItems: NavItem[] = [
                 type: 'link',
                 to: '/logout',
                 className: 'text-red-600',
+                role: ['COMPANY', 'STUDENT', 'ADMIN'],
             },
         ],
     },
