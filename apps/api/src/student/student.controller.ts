@@ -114,60 +114,46 @@ export class StudentController {
         @Query('skipExistingRecords', new ParseBoolPipe({ optional: true })) 
         skipExistingRecords: boolean = false,
     ) : Promise<{ added: number; skipped: number }> {
-        let studentDtos: CreateStudentDto[];
         const rawData = await this.studentService.parseFileContent(file);
+        const validStudentDtos: CreateStudentDto[] = [];
+        let skippedByController = 0;
 
-        // Checking for duplicate records inside the file
         const emailSet = new Set<string>();
         const studentNumberSet = new Set<string>();
-        const duplicateEmails: string[] = [];
-        const duplicateStudentNumbers: string[] = [];
+
+        const validationPipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });
 
         for (const item of rawData) {
-            const email = item.email?.toLowerCase();
-            const studentNumber = item.studentNumber;
+        // Checking for duplicate records inside the file
+            const email = item.email ? String(item.email).toLowerCase().trim() : null;
+            const studentNumber = item.studentNumber ? String(item.studentNumber).trim() : null;
 
-            // Verifying duplicate emails
-            if (email && emailSet.has(email)) {
-                if (!duplicateEmails.includes(email)) duplicateEmails.push(email);
+            if ((email && emailSet.has(email)) || (studentNumber && studentNumberSet.has(studentNumber))) {
+                skippedByController++;
+                continue;
             }
-            emailSet.add(email);
 
-            // Verifying duplicate studentNumbers
-            if (studentNumber && studentNumberSet.has(studentNumber)) {
-                if (!duplicateStudentNumbers.includes(studentNumber)) duplicateStudentNumbers.push(studentNumber);
-            }
-            studentNumberSet.add(studentNumber);
-        }
-
-        if (duplicateEmails.length > 0 || duplicateStudentNumbers.length > 0) {
-            let message: string[] = ['Import aborted due to duplicates within the file:'];
-            if (duplicateEmails.length > 0) {
-                message.push(`- Duplicate emails: ${duplicateEmails.join(', ')}`);
-            }
-            if (duplicateStudentNumbers.length > 0) {
-                message.push(`- Duplicate student numbers: ${duplicateStudentNumbers.join(', ')}`);
-            }
-            throw new BadRequestException(message);
-        }
-
-        const validationPipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });  
-        studentDtos = plainToInstance(CreateStudentDto, rawData);  
-
-        for (const [index, dto] of studentDtos.entries()) {
+            const dto = plainToInstance(CreateStudentDto, item);
             try {
                 await validationPipe.transform(dto, { type: 'body', metatype: CreateStudentDto });
+                
+                if (email) emailSet.add(email);
+                if (studentNumber) studentNumberSet.add(studentNumber);
+                
+                validStudentDtos.push(dto);
             } catch (e) {
-                if (e instanceof BadRequestException) {
-                    const error = `Validation failed at student with email '${dto.email || 'unknown'}' (row #${index+1}) :`;
-                    const response = e.getResponse() as any;
-                    throw new BadRequestException([error, response.message]);
-                }
-                throw e;
+                // Failed verification
+                skippedByController++;
+                // We continue anyway (maybe we should log the error)
             }
         }
 
-        return await this.studentService.createMany(studentDtos, skipExistingRecords);
+        const serviceResult = await this.studentService.createMany(validStudentDtos, skipExistingRecords);
+
+        return {
+            added: serviceResult.added,
+            skipped: serviceResult.skipped + skippedByController,
+        };
     }
 
 
