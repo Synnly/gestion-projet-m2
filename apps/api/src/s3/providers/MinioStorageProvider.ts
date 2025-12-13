@@ -85,12 +85,10 @@ export class MinioStorageProvider implements IStorageProvider {
         originalFilename: string,
         fileType: 'logo' | 'cv' | 'lm',
         userId: string,
+        postId?: string,
     ): Promise<PresignedUploadResult> {
-        // Extract extension from original filename
         const extension = originalFilename.split('.').pop()?.toLowerCase() || '';
-
-        // Generate filename: userId_logo.ext or userId_cv.ext (no folder prefix)
-        const fileName = `${userId}_${fileType}.${extension}`;
+        const fileName = `${userId}${postId ? `_${postId}` : ''}_${fileType}.${extension}`;
 
         // Validate path
         if (!PATH_REGEX.SAFE_PATH.test(fileName)) {

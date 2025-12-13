@@ -22,7 +22,8 @@ describe('S3Service (unit) - provider delegation', () => {
 
         const result = await service.generatePresignedUploadUrl('photo.png', 'logo', 'user-1');
 
-        expect(mockProvider.generatePresignedUploadUrl).toHaveBeenCalledWith('photo.png', 'logo', 'user-1');
+        // signature now accepts optional postId as fourth parameter; expect undefined when not provided
+        expect(mockProvider.generatePresignedUploadUrl).toHaveBeenCalledWith('photo.png', 'logo', 'user-1', undefined);
         expect(result).toBe(expected);
     });
 

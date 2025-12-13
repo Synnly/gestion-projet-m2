@@ -18,8 +18,13 @@ export class S3Service {
      * Return a presigned upload URL and the calculated storage filename.
      * Delegates to the configured storage provider.
      */
-    generatePresignedUploadUrl(originalFilename: string, fileType: 'logo' | 'cv' | 'lm', userId: string) {
-        return this.provider.generatePresignedUploadUrl(originalFilename, fileType, userId);
+    generatePresignedUploadUrl(
+        originalFilename: string,
+        fileType: 'logo' | 'cv' | 'lm',
+        userId: string,
+        postId?: string,
+    ) {
+        return this.provider.generatePresignedUploadUrl(originalFilename, fileType, userId, postId);
     }
 
     /**

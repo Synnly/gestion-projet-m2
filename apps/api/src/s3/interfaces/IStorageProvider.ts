@@ -25,6 +25,16 @@ export interface IStorageProvider {
         fileType: 'logo' | 'cv' | 'lm',
         userId: string,
     ): Promise<{ fileName: string; uploadUrl: string }>;
+    // optional postId allows scoping filenames to a specific post: userId_postId_fileType.ext
+    generatePresignedUploadUrl(
+        originalFilename: string,
+        fileType: 'logo' | 'cv' | 'lm',
+        userId: string,
+        postId?: string,
+    ): Promise<{
+        fileName: string;
+        uploadUrl: string;
+    }>;
 
     /**
      * Generate a presigned URL that allows a client to download a private file.
