@@ -2,9 +2,9 @@ import type { Internship } from './internship.types';
 
 export const ApplicationStatusEnum = {
     PENDING: 'Pending',
+    READ: 'Read',
     REJECTED: 'Rejected',
     ACCEPTED: 'Accepted',
-    REVIEWING: 'Reviewing',
 } as const;
 
 export type ApplicationStatus = (typeof ApplicationStatusEnum)[keyof typeof ApplicationStatusEnum];
