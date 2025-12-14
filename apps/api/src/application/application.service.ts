@@ -147,11 +147,12 @@ export class ApplicationService {
     async findByPostPaginated(postId: Types.ObjectId, query: ApplicationPaginationDto) {
         const { page, limit, ...rest } = query;
         const filterQuery = { post: postId, ...rest };
+        if (filterQuery.status === ApplicationStatus.Pending) {
+            filterQuery.status = [ApplicationStatus.Pending, ApplicationStatus.Read];
+        }
         const applicationQueryBuilder = new ApplicationQueryBuilder<ApplicationDocument>(filterQuery);
         const sort = applicationQueryBuilder.buildSort();
-        if (query.status === ApplicationStatus.Pending) {
-            query.status = [ApplicationStatus.Pending, ApplicationStatus.Read];
-        }
+
         const builtFilter = { ...applicationQueryBuilder.build(), deletedAt: { $exists: false } };
 
         const populateOptions = [{ path: 'student', select: this.studentFieldsToPopulate }];
