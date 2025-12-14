@@ -12,8 +12,11 @@ import {
     Query,
     UseGuards,
     ValidationPipe,
+    DefaultValuePipe,
+    ParseIntPipe,
 } from '@nestjs/common';
 import { ApplicationService } from './application.service';
+import { S3Service } from '../s3/s3.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
@@ -25,10 +28,15 @@ import { ApplicationOwnerGuard } from '../common/roles/applicationOwner.guard';
 import { CreateApplicationDto } from './dto/createApplication.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { ApplicationStatus } from './application.schema';
+import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
+import { ApplicationPaginationDto } from './dto/application.dto';
 
 @Controller('/api/application')
 export class ApplicationController {
-    constructor(private readonly applicationService: ApplicationService) {}
+    constructor(
+        private readonly applicationService: ApplicationService,
+        private readonly s3Service: S3Service,
+    ) {}
 
     /**
      * Return a list of all applications.
@@ -82,6 +90,37 @@ export class ApplicationController {
     }
 
     /**
+     * Return a presigned download URL for a document attached to an application.
+     * Supported document types: `cv`, `lm` (lettre de motivation). Accessible by
+     * ADMIN, the STUDENT who owns the application, or the COMPANY owning the post
+     * related to the application (checked by `ApplicationOwnerGuard`).
+     *
+     * Behaviour: select the appropriate application field according to the
+     * provided `fileType` and generate a presigned URL via `S3Service`.
+     */
+
+    @Get(':applicationId/file/:fileType')
+    @UseGuards(AuthGuard, RolesGuard, ApplicationOwnerGuard)
+    @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
+    @HttpCode(HttpStatus.OK)
+    async getApplicationFile(
+        @Param('applicationId', ParseObjectIdPipe) ApplicationDto: Types.ObjectId,
+        @Param('fileType') fileType: string,
+    ): Promise<{ downloadUrl: string }> {
+        const application = await this.applicationService.findOne(ApplicationDto);
+        if (!application) throw new NotFoundException(`Application with id ${ApplicationDto} not found`);
+
+        let path: string | undefined;
+        if (fileType === 'cv') path = application.cv;
+        else if (fileType === 'lm') path = application.coverLetter as string | undefined;
+
+        if (!path) throw new NotFoundException(`${fileType} not found for this application`);
+
+        const url = await this.s3Service.generatePublicDownloadUrl(path);
+        return url;
+    }
+
+    /**
      * Create a new application for a specific student and post.
      * @param studentId The id of the student applying.
      * @param postId The id of the post to which the student is applying.
@@ -98,6 +137,46 @@ export class ApplicationController {
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) application: CreateApplicationDto,
     ): Promise<{ cvUrl: string; lmUrl?: string }> {
         return this.applicationService.create(studentId, postId, application);
+    }
+
+    /**
+     * Return paginated applications for a given student id.
+     * @param studentId The student identifier whose applications are requested.
+     * @param page The page number (1-based).
+     * @param limit The number of items per page (capped server-side).
+     * @returns Paginated applications with pagination metadata.
+     */
+    @Get('student/:studentId')
+    @UseGuards(AuthGuard, RolesGuard, StudentOwnerGuard)
+    @Roles(Role.ADMIN, Role.STUDENT)
+    @HttpCode(HttpStatus.OK)
+    async findMine(
+        @Param('studentId', ParseObjectIdPipe) studentId: Types.ObjectId,
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+        @Query('status', new ParseEnumPipe(ApplicationStatus, { optional: true })) status?: ApplicationStatus,
+        @Query('searchQuery') searchQuery?: string,
+    ): Promise<ApplicationPaginationDto> {
+        const { data, total, limit: appliedLimit, page: appliedPage } = await this.applicationService.findByStudent(
+            studentId,
+            page,
+            limit,
+            status,
+            searchQuery,
+        );
+
+        return plainToInstance(
+            ApplicationPaginationDto,
+            {
+                data: data.map((application) =>
+                    plainToInstance(ApplicationDto, application, { excludeExtraneousValues: true }),
+                ),
+                page: appliedPage,
+                limit: appliedLimit,
+                total,
+            },
+            { excludeExtraneousValues: true },
+        );
     }
 
     /**

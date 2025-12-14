@@ -9,7 +9,7 @@ const Logo: React.FC<LogoProps> = ({ className, title = 'Stagora' }) => (
         role="img"
         aria-label={title}
         width="128"
-        height="full"
+        height="100%"
         viewBox="0 0 590.000000 241.000000"
         xmlns="http://www.w3.org/2000/svg"
         preserveAspectRatio="xMidYMid meet"

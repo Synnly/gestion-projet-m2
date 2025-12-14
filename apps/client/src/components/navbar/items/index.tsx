@@ -14,7 +14,7 @@ export const ItemLink: React.FC<ItemLinkProps> = ({ item, className }) => (
         to={item.to ?? '#'}
         className={({ isActive }) => {
             const baseClasses = className ?? item.className ?? 'hover:text-info btn btn-ghost transition-colors';
-            return isActive ? `${baseClasses} text-info` : `${baseClasses}`;
+            return isActive && item.to !== '/' ? `${baseClasses} text-info` : `${baseClasses}`;
         }}
     >
         {item.title}
