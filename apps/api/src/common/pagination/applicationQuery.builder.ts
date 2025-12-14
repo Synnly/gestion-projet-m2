@@ -15,7 +15,9 @@ export class ApplicationQueryBuilder<T> {
      */
     build(): FilterQuery<T> {
         const mutableFilter: Record<string, unknown> = {};
-        if (this.params.status) {
+        if (Array.isArray(this.params.status)) {
+            mutableFilter.status = { $in: this.params.status };
+        } else if (this.params.status) {
             mutableFilter.status = this.params.status;
         }
         if (this.params.post) {

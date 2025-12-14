@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Application, ApplicationDocument, ApplicationStatus } from './application.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -149,6 +149,9 @@ export class ApplicationService {
         const filterQuery = { post: postId, ...rest };
         const applicationQueryBuilder = new ApplicationQueryBuilder<ApplicationDocument>(filterQuery);
         const sort = applicationQueryBuilder.buildSort();
+        if (query.status === ApplicationStatus.Pending) {
+            query.status = [ApplicationStatus.Pending, ApplicationStatus.Read];
+        }
         const builtFilter = { ...applicationQueryBuilder.build(), deletedAt: { $exists: false } };
 
         const populateOptions = [{ path: 'student', select: this.studentFieldsToPopulate }];

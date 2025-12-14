@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 
 interface PdfModalProps {
-    url: string;
+    url: string | null;
     onClose: () => void;
 }
 
@@ -18,8 +18,14 @@ export const PdfModal = ({ url, onClose }: PdfModalProps) => {
                         <X />
                     </button>
                 </div>
-                <div className="flex-1 bg-base-200 rounded-lg overflow-hidden">
-                    <iframe src={url} className="w-full h-full" title="Document" />
+                <div className="flex flex-1 bg-base-200 rounded-lg overflow-hidden">
+                    {!url ? (
+                        <div className="flex flex-1 justify-center items-center">
+                            <div className="loading loading-spinner loading-xl"></div>
+                        </div>
+                    ) : (
+                        <iframe src={url} className="w-full h-full" title="Document" />
+                    )}
                 </div>
             </div>
         </div>

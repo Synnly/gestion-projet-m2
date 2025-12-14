@@ -20,7 +20,7 @@ export class ApplicationPaginationDto {
 
     /** Optional status filter to retrieve applications with a specific status. */
     @IsOptional()
-    status?: ApplicationStatus;
+    status?: ApplicationStatus | ApplicationStatus[];
 
     /** Optional sort order for the results. */
     @IsOptional()

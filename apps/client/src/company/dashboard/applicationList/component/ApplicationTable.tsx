@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronUp, Eye } from 'lucide-react';
 import { PdfModal } from './PdfModal.tsx';
 import { ApplicationPagination } from './ApplicationPagination.tsx';
@@ -17,38 +17,34 @@ interface Props {
 
 export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Props) => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [modalOpen, setModalOpen] = useState(false);
     const [selectedApplication, setSelectedApplication] = useState<{ id: string; type: 'cv' | 'lm' } | null>(null);
     const [filters, setFilters] = useState<ApplicationFilters>({ page: 1, limit: 5, status });
+    const [paginationShown, setPaginationShown] = useState<PaginationResult<Application> | undefined>();
+
     const postId = useParams().postId as string;
 
-    // Use React Query to fetch applications with current filters
     const { data: applicationsData, isLoading } = useQuery<PaginationResult<Application>, Error>({
-        queryKey: ['applications', filters],
-
+        queryKey: ['applications', postId, filters],
         queryFn: async () => {
             return await fetchApplicationsByPost(postId, filters);
         },
-
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
         retry: 2,
     });
 
-    // Use React Query to fetch and cache the signed URL
     const { data: signedUrl, isError: pubUrlIsError } = useFetchFileSignedUrl(
         selectedApplication?.id,
         selectedApplication?.type,
     );
 
-    /**
-     * Handle page change for pagination
-     * @param newPage - The new page number to navigate to
-     */
     function handlePageChange(newPage: number) {
         const maxPage = applicationsData?.totalPages ?? newPage;
         const target = Math.max(1, Math.min(newPage, maxPage));
         if (filters.page === target) return;
         setFilters((prev) => ({ ...prev, page: target }));
+        if (paginationShown) setPaginationShown({ ...paginationShown, page: newPage });
     }
 
     function handleClickTable() {
@@ -63,11 +59,15 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
         }
     }, [signedUrl, selectedApplication, pubUrlIsError]);
 
+    useEffect(() => {
+        if (applicationsData) setPaginationShown(applicationsData);
+    }, [applicationsData]);
+
+    const isActive = activeTab === status;
+
     return (
         <div
-            className={`card bg-base-100 shadow-xl shadow-base-300 overflow-hidden m-1 p-3 transition-[flex] duration-500 ease-in-out ${
-                activeTab === status ? 'flex-1 min-h-0' : 'flex-none'
-            }`}
+            className={`card h-fit bg-base-100 shadow-xl shadow-base-300 overflow-hidden m-1 p-3 transition-[flex] duration-500 ease-in-out`}
         >
             <>
                 <div className="flex-none p-4 border-base-200 z-20 bg-base-100 flex justify-between items-center">
@@ -80,86 +80,102 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                         )}
                     </div>
 
-                    <div className={`${!(activeTab === status) ? 'hidden' : ''}`}>
-                        {applicationsData?.data && (
-                            <ApplicationPagination pagination={applicationsData} handlePageChange={handlePageChange} />
-                        )}
+                    <div
+                        className={`transition-opacity duration-300 ${!isActive ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                    >
+                        <ApplicationPagination pagination={paginationShown} handlePageChange={handlePageChange} />
                     </div>
 
                     <div onClick={() => handleClickTable()} className="btn btn-square btn-ghost cursor-pointer">
                         <ChevronUp
                             strokeWidth={2}
                             stroke="currentColor"
-                            className={`w-5 h-5 transition-transform duration-300 ease-out ${activeTab === status ? 'rotate-0' : 'rotate-180'}`}
+                            className={`w-5 h-5 transition-transform duration-500 ease-out ${isActive ? 'rotate-0' : 'rotate-180'}`}
                         />
                     </div>
                 </div>
-                {isLoading || !applicationsData ? (
-                    <div className={`flex justify-center items-center flex-1 ${!(activeTab === status) && 'hidden'}`}>
-                        <span className="loading loading-spinner loading-xl"></span>
-                    </div>
-                ) : (
-                    <div
-                        className={`flex-1 overflow-y-auto min-h-0 bg-base-100 ${!(activeTab === status) && 'hidden'}`}
-                    >
-                        <table className="table table-pin-rows table-zebra">
-                            <thead>
-                                <tr className="bg-base-100">
-                                    <th>Prénom</th>
-                                    <th>Nom</th>
-                                    <th>Email</th>
-                                    <th className="w-px whitespace-nowrap text-center">CV</th>
-                                    <th className="w-px whitespace-nowrap text-center">Lettre de motivation</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {applicationsData.data.map((app: any) => (
-                                    <tr
-                                        key={app._id}
-                                        className="hover:bg-base-300 duration-300 ease-out transition-color"
-                                    >
-                                        <td>{app.student.firstName}</td>
-                                        <td>{app.student.lastName}</td>
-                                        <td>{app.student.email}</td>
-                                        <td className="whitespace-nowrap text-center">
-                                            {app.cv && (
-                                                <button
-                                                    className="btn btn-sm btn-ghost"
-                                                    onClick={() => setSelectedApplication({ id: app._id, type: 'cv' })}
-                                                >
-                                                    <Eye strokeWidth={2} />
-                                                </button>
-                                            )}
-                                        </td>
-                                        <td className="whitespace-nowrap text-center">
-                                            {app.coverLetter && (
-                                                <button
-                                                    className="btn btn-sm btn-ghost"
-                                                    onClick={() => setSelectedApplication({ id: app._id, type: 'lm' })}
-                                                >
-                                                    <Eye strokeWidth={2} />
-                                                </button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
 
-                        {applicationsData.data.length === 0 && (
-                            <div className="flex justify-center items-center h-20 text-base-content/50 italic">
-                                Aucune candidature
-                            </div>
-                        )}
-                    </div>
-                )}
+                <div
+                    className={`grid transition-[grid-template-rows] duration-500 ease-in-out ${
+                        isActive ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                    }`}
+                >
+                    <div className="overflow-hidden min-h-0">
+                        <div className="bg-base-100 pt-2">
+                            {isLoading || !applicationsData ? (
+                                <div className="flex justify-center items-center p-10">
+                                    <span className="loading loading-spinner loading-xl"></span>
+                                </div>
+                            ) : (
+                                <div className="overflow-y-auto">
+                                    <table className="table table-pin-rows table-zebra">
+                                        <thead>
+                                            <tr className="bg-base-100">
+                                                <th>Prénom</th>
+                                                <th>Nom</th>
+                                                <th>Email</th>
+                                                <th className="w-px whitespace-nowrap text-center">CV</th>
+                                                <th className="w-px whitespace-nowrap text-center">
+                                                    Lettre de motivation
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {applicationsData.data.map((app: any) => (
+                                                <tr
+                                                    key={app._id}
+                                                    className="hover:bg-base-300 duration-300 ease-out transition-color"
+                                                >
+                                                    <td>{app.student.firstName}</td>
+                                                    <td>{app.student.lastName}</td>
+                                                    <td>{app.student.email}</td>
+                                                    <td className="whitespace-nowrap text-center">
+                                                        {app.cv && (
+                                                            <button
+                                                                className="btn btn-sm btn-ghost"
+                                                                onClick={() => {
+                                                                    setSelectedApplication({ id: app._id, type: 'cv' });
+                                                                    setModalOpen(true);
+                                                                }}
+                                                            >
+                                                                <Eye strokeWidth={2} />
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                    <td className="whitespace-nowrap text-center">
+                                                        {app.coverLetter && (
+                                                            <button
+                                                                className="btn btn-sm btn-ghost"
+                                                                onClick={() => {
+                                                                    setSelectedApplication({ id: app._id, type: 'lm' });
+                                                                    setModalOpen(true);
+                                                                }}
+                                                            >
+                                                                <Eye strokeWidth={2} />
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
 
-                {previewUrl && (
+                                    {applicationsData.data.length === 0 && (
+                                        <div className="flex justify-center items-center h-20 text-base-content/50 italic">
+                                            Aucune candidature
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {modalOpen && (
                     <PdfModal
                         url={previewUrl}
                         onClose={() => {
-                            setPreviewUrl(null);
-                            setSelectedApplication(null);
+                            setModalOpen(false);
                         }}
                     />
                 )}
