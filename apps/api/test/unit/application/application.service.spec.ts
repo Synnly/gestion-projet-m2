@@ -7,6 +7,7 @@ import { Application, ApplicationStatus } from '../../../src/application/applica
 import { CreateApplicationDto } from '../../../src/application/dto/createApplication.dto';
 import { PostService } from '../../../src/post/post.service';
 import { StudentService } from '../../../src/student/student.service';
+import { PaginationService } from '../../../src/common/pagination/pagination.service';
 import { S3Service } from '../../../src/s3/s3.service';
 
 describe('ApplicationService', () => {
@@ -26,6 +27,10 @@ describe('ApplicationService', () => {
     };
     const mockS3Service = {
         generatePresignedUploadUrl: jest.fn(),
+    };
+
+    const mockPaginationService = {
+        paginate: jest.fn(),
     };
 
     const studentId = new Types.ObjectId('507f1f77bcf86cd799439011');
@@ -50,6 +55,10 @@ describe('ApplicationService', () => {
                 {
                     provide: S3Service,
                     useValue: mockS3Service,
+                },
+                {
+                    provide: PaginationService,
+                    useValue: mockPaginationService,
                 },
             ],
         }).compile();
@@ -195,13 +204,14 @@ describe('ApplicationService', () => {
 
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 1,
-                `${studentId.toString()}_${postId.toString()}.pdf`,
+                `${studentId.toString()}.pdf`,
                 'cv',
                 studentId.toString(),
+                post._id.toString(),
             );
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 2,
-                `${studentId.toString()}_${postId.toString()}.docx`,
+                `${studentId.toString()}.docx`,
                 'lm',
                 studentId.toString(),
             );
@@ -267,6 +277,82 @@ describe('ApplicationService', () => {
 
             await expect(service.updateStatus(postId, ApplicationStatus.Rejected)).rejects.toThrow(NotFoundException);
             expect(exec).toHaveBeenCalledTimes(1);
+        });
+    });
+    describe('findByPostPaginated', () => {
+        const postId = new Types.ObjectId('507f1f77bcf86cd799439012');
+
+        const paginatedResult = {
+            data: [
+                {
+                    _id: new Types.ObjectId(),
+                    status: ApplicationStatus.Pending,
+                    student: { _id: new Types.ObjectId(), firstName: 'John', lastName: 'Doe' },
+                    post: { _id: postId, title: 'Internship' },
+                },
+            ],
+            total: 1,
+            page: 1,
+            limit: 10,
+            hasNext: true,
+            hasPrev: false,
+        };
+
+        it('should call paginationService.paginate with default page and limit', async () => {
+            mockPaginationService.paginate.mockResolvedValue(paginatedResult);
+
+            const result = await service.findByPostPaginated(postId, { page: 1, limit: 10 });
+
+            expect(mockPaginationService.paginate).toHaveBeenCalledWith(
+                mockApplicationModel,
+                { post: postId, deletedAt: { $exists: false } },
+                1,
+                10,
+                [],
+                'createdAt',
+            );
+
+            expect(result).toEqual(paginatedResult);
+        });
+
+        it('should use provided page and limit from query', async () => {
+            mockPaginationService.paginate.mockResolvedValue({
+                ...paginatedResult,
+                page: 2,
+                limit: 10,
+            });
+
+            const query = { page: 2, limit: 10 };
+
+            const result = await service.findByPostPaginated(postId, query);
+
+            expect(mockPaginationService.paginate).toHaveBeenCalledWith(
+                mockApplicationModel,
+                { post: postId, deletedAt: { $exists: false } },
+                2,
+                10,
+                [],
+                'createdAt',
+            );
+
+            expect(result.page).toBe(2);
+            expect(result.limit).toBe(10);
+        });
+
+        it('should return empty data when paginationService returns no results', async () => {
+            const emptyResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 20,
+            };
+
+            mockPaginationService.paginate.mockResolvedValue(emptyResult);
+
+            const result = await service.findByPostPaginated(postId, {});
+
+            expect(result).toEqual(emptyResult);
+            expect(result.data).toHaveLength(0);
         });
     });
 
@@ -380,9 +466,7 @@ describe('ApplicationService', () => {
             await service.findByStudent(studentId, 1, 10, undefined, 'Data');
 
             const pipeline = mockApplicationModel.aggregate.mock.calls[0][0];
-            const searchStage = pipeline.find(
-                (stage: any) => typeof stage === 'object' && stage?.$match?.$or,
-            );
+            const searchStage = pipeline.find((stage: any) => typeof stage === 'object' && stage?.$match?.$or);
             expect(searchStage).toBeDefined();
             expect(searchStage.$match.$or).toEqual(
                 expect.arrayContaining([

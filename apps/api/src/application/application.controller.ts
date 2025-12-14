@@ -28,6 +28,7 @@ import { ApplicationOwnerGuard } from '../common/roles/applicationOwner.guard';
 import { CreateApplicationDto } from './dto/createApplication.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { ApplicationStatus } from './application.schema';
+import { PostOwnerGuard } from 'src/post/guard/IsPostOwnerGuard';
 import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
 import { ApplicationPaginationDto } from './dto/application.dto';
 
@@ -194,5 +195,38 @@ export class ApplicationController {
         @Body('status', new ParseEnumPipe(ApplicationStatus)) status: ApplicationStatus,
     ): Promise<void> {
         await this.applicationService.updateStatus(applicationId, status);
+    }
+
+    /**
+     * Return a list of the applications for a company's post
+     * @param postId The id of the post
+     * @param query Pagination parameters (page, limit)
+     * @returns A paginated list of applications for the specified post
+     */
+    @Get('/post/:postId')
+    @UseGuards(AuthGuard, RolesGuard, PostOwnerGuard)
+    @Roles(Role.ADMIN, Role.COMPANY)
+    @HttpCode(HttpStatus.OK)
+    async findByPostPaginated(
+        @Param('postId', ParseObjectIdPipe) postId: Types.ObjectId,
+        @Query() query: ApplicationPaginationDto,
+    ): Promise<{
+        data: ApplicationDto[];
+        total: number;
+        totalPages: number;
+        page: number;
+        hasNext: boolean;
+        hasPrev: boolean;
+    }> {
+        const result = await this.applicationService.findByPostPaginated(postId, query);
+
+        return {
+            data: result.data.map((app) => plainToInstance(ApplicationDto, app, { excludeExtraneousValues: true })),
+            total: result.total,
+            totalPages: result.totalPages,
+            page: result.page,
+            hasNext: result.hasNext,
+            hasPrev: result.hasPrev,
+        };
     }
 }
