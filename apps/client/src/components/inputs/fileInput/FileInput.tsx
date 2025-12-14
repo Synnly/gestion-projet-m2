@@ -5,13 +5,16 @@ interface FileInputProps {
     title: string;
     setFile: (file: File | null) => void;
     file: File | null;
+    svgColor?: string;
+    required?: boolean;
+    dropMessage?: string;
 }
 
 const fileTypes = ['PDF', 'DOCX', 'DOC']; // Pour l'affichage
 const fileFormats = fileTypes.join(', ');
 const maxSizeMo = 5;
 
-export default function FileInput({ title, setFile, file }: FileInputProps) {
+export default function FileInput({ title, setFile, file, svgColor, required = true, dropMessage }: FileInputProps) {
     const handleChange = (newFile: File | File[]) => {
         if (newFile instanceof File) {
             setFile(newFile);
@@ -23,6 +26,7 @@ export default function FileInput({ title, setFile, file }: FileInputProps) {
         setFile(null);
     };
 
+    const isRequired = required ? <span className="text-red-600">*</span> : null;
     const ConditionalContent = () => {
         if (file) {
             return (
@@ -37,10 +41,10 @@ export default function FileInput({ title, setFile, file }: FileInputProps) {
 
         return (
             <div className="flex flex-col items-center gap-2">
-                <Upload />
+                <Upload className={svgColor} />
                 <p className="text-gray-700">
                     <span className="font-medium">Glisser-déposer</span> ou
-                    <span className="text-blue-600"> parcourir</span>
+                    <span className={svgColor}> parcourir</span>
                 </p>
                 <p className="text-sm text-gray-500">
                     {fileFormats} jusqu’à {maxSizeMo} Mo
@@ -52,7 +56,7 @@ export default function FileInput({ title, setFile, file }: FileInputProps) {
     return (
         <div className="flex flex-col gap-2 w-full">
             <label className="font-medium">
-                {title} <span className="text-red-500">*</span>
+                {title} {isRequired}
             </label>
             <div className="relative w-full">
                 {file && (
@@ -71,6 +75,7 @@ export default function FileInput({ title, setFile, file }: FileInputProps) {
                     types={fileTypes}
                     maxSize={maxSizeMo}
                     disabled={!!file}
+                    hoverTitle={dropMessage}
                 >
                     <div
                         className="

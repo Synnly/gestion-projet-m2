@@ -3,14 +3,19 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as path from 'path';
+import { MailerProviderType, MAIL_PROVIDER_HOST, MAIL_PROVIDER_PORT } from './constants';
 import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
 
 @Injectable()
 export class MailerConfigService implements MailerOptionsFactory {
     constructor(private configService: ConfigService) {}
-
     /**
-     * Create mailer options for NestJS MailerModule configuration
+     * Create mailer options for NestJS MailerModule configuration.
+     *
+     * Reads SMTP credentials and template settings from environment
+     * variables via `ConfigService` and returns a `MailerOptions` object
+     * consumed by `@nestjs-modules/mailer`.
+     *
      * @returns Mailer configuration object with SMTP transport and Handlebars templates
      */
     createMailerOptions(): MailerOptions {
@@ -30,8 +35,8 @@ export class MailerConfigService implements MailerOptionsFactory {
         }
         return {
             transport: {
-                host: 'smtp.gmail.com',
-                port: 587,
+                host: MAIL_PROVIDER_HOST[MailerProviderType.gmail],
+                port: MAIL_PROVIDER_PORT[MailerProviderType.gmail],
                 secure: false,
                 auth: {
                     user,

@@ -100,6 +100,10 @@ export class UpdatePostDto {
     @IsBoolean()
     isVisible?: boolean;
 
+    @IsBoolean()
+    @Type(() => Boolean)
+    isCoverLetterRequired: boolean;
+
     constructor(partial?: Partial<UpdatePostDto>) {
         if (partial) {
             Object.assign(this, partial);

@@ -7,7 +7,11 @@ describe('AppModule import (mongoose factory executed)', () => {
 
             jest.doMock('../../src/company/company.module', () => ({ CompanyModule: {} }));
             jest.doMock('../../src/auth/auth.module', () => ({ AuthModule: {} }));
-            jest.doMock('../../src/mailer/mailer.module', () => ({ MailerModule: {} }));
+            jest.doMock('../../src/mailer/mailer.module', () => ({
+                MailerModule: {
+                    register: () => ({})
+                }
+            }));
 
             jest.doMock('@nestjs/mongoose', () => {
                 const actual = jest.requireActual('@nestjs/mongoose');

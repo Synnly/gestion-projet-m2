@@ -25,6 +25,16 @@ export interface IStorageProvider {
         fileType: 'logo' | 'cv' | 'lm',
         userId: string,
     ): Promise<{ fileName: string; uploadUrl: string }>;
+    // optional postId allows scoping filenames to a specific post: userId_postId_fileType.ext
+    generatePresignedUploadUrl(
+        originalFilename: string,
+        fileType: 'logo' | 'cv' | 'lm',
+        userId: string,
+        postId?: string,
+    ): Promise<{
+        fileName: string;
+        uploadUrl: string;
+    }>;
 
     /**
      * Generate a presigned URL that allows a client to download a private file.
@@ -35,7 +45,13 @@ export interface IStorageProvider {
      * @param userId - Requesting user's id used for ownership checks.
      * @returns Promise resolving to an object with a `downloadUrl` string.
      */
-    generatePresignedDownloadUrl(fileName: string, userId: string): Promise<{ downloadUrl: string }>;
+    // `postId` is optional and can be provided to scope company access checks
+    generatePresignedDownloadUrl(
+        fileName: string,
+        userId: string,
+        userRole?: string,
+        postId?: string,
+    ): Promise<{ downloadUrl: string }>;
 
     /**
      * Generate a public download URL for a file (no ownership checks).

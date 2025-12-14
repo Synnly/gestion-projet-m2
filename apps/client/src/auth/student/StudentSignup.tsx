@@ -4,7 +4,6 @@ const API_URL = import.meta.env.VITE_APIURL;
 export const StudentSignup = () => {
     const [success, setsuccess] = useState<String>('');
     const createStudent = async () => {
-        console.log("création de l'étudiant");
         try {
             await fetch(`${API_URL}/api/students`, {
                 method: 'POST',

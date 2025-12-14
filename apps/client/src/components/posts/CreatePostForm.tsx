@@ -32,6 +32,7 @@ type InitialPostData = Partial<{
     keySkills: string[];
     workMode: WorkMode;
     isVisibleToStudents: boolean;
+    isCoverLetterRequired: boolean;
 }>;
 
 type PostFormProps = {
@@ -54,6 +55,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         minSalary,
         maxSalary,
         isVisibleToStudents,
+        isCoverLetterRequired,
         skills,
         workMode,
         setTitle,
@@ -72,6 +74,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         addSkill,
         removeSkill,
         setWorkMode,
+        setIsCoverLetterRequired,
     } = useCreatePostStore();
 
     const profile = profileStore((state) => state.profile);
@@ -101,6 +104,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         setIsVisibleToStudents(initialData.isVisibleToStudents ?? true);
         if (initialData.keySkills) setSkills(initialData.keySkills);
         if (initialData.workMode) setWorkMode(initialData.workMode);
+        setIsCoverLetterRequired(initialData.isCoverLetterRequired ?? false);
     }, [
         initialData,
         setAddressLine,
@@ -117,6 +121,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         setStartDate,
         setTitle,
         setWorkMode,
+        setIsCoverLetterRequired,
     ]);
 
     // Concatène adresse/CP/ville vers location
@@ -217,6 +222,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
             adress: location || undefined,
             type: workModeMap[workMode],
             isVisible: isVisibleToStudents,
+            isCoverLetterRequired: isCoverLetterRequired,
         };
 
         await mutation.mutateAsync({ companyId: profile._id, data: payload });
@@ -461,7 +467,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             Paramètres de publication
                         </h2>
 
-                        <div className="form-control">
+                        <div className="form-control flex flex-col gap-2">
                             <label className="label cursor-pointer justify-between px-0">
                                 <div className="text-[11px] text-base-500">
                                     Rendre cette offre visible aux étudiants.
@@ -471,6 +477,17 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                     className="toggle toggle-primary toggle-sm ml-4"
                                     checked={isVisibleToStudents}
                                     onChange={(e) => setIsVisibleToStudents(e.target.checked)}
+                                />
+                            </label>
+                            <label className="label cursor-pointer justify-between px-0">
+                                <div className="text-[11px] text-base-500">
+                                    Rendre le dépôt de la lettre de motivation obligatoire.
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    className="toggle toggle-primary toggle-sm ml-4"
+                                    checked={isCoverLetterRequired}
+                                    onChange={(e) => setIsCoverLetterRequired(e.target.checked)}
                                 />
                             </label>
                         </div>

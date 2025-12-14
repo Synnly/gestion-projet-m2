@@ -4,10 +4,22 @@ export const ApplicationStatus = ({ status }: { status: string }) => {
     if (status === 'Pending') {
         return (
             <div className="flex flex-col items-center">
-                <Clock size={64} className="text-primary mb-2" />
+                <Clock size={48} className="text-primary mb-2" />
                 <div className="px-3 py-2 rounded-3xl bg-secondary flex flex-col items-center gap-1 mb-4">
-                    <span className="text-lg font-bold">Statut : En attente de réception </span>
-                    <span> Votre candidature est en attente</span>
+                    <span className="text-sm font-bold">Statut : En attente de réception </span>
+                    <span> Votre candidature est en attente d'analyse</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (status === 'Read') {
+        return (
+            <div className="flex flex-col items-center">
+                <Clock size={48} className="text-primary mb-2" />
+                <div className="px-3 py-2 rounded-3xl bg-secondary flex flex-col items-center gap-1 mb-4">
+                    <span className="text-sm font-bold">Statut : En attente de réception </span>
+                    <span> Votre candidature à été reçu, elle en cours d'analyse'</span>
                 </div>
             </div>
         );

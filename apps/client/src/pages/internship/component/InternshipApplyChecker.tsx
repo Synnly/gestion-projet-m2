@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Share2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApplicationStatus } from './ApplicationStatus';
-import Spinner from '../../../components/Spinner/Spinner';
 export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: string; adId: string }) => {
     const { data: application, isLoading } = useQuery({
         queryKey: ['application', studentId, adId],
@@ -16,16 +15,16 @@ export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: stri
                 credentials: 'include',
             });
 
-            if (res.status === 404) {
-                return null;
-            }
-
             if (res.ok) {
-                const responseData = await res.json();
-                return responseData;
+                try {
+                    const responseData = await res.json();
+                    return responseData;
+                } catch (e) {
+                    return null;
+                }
             }
-
-            throw new Error(`Erreur serveur: Statut ${res.status}`);
+            let errorMessage = `Erreur HTTP ${res.status}`;
+            throw new Error(errorMessage);
         },
 
         enabled: !!studentId && !!adId,
@@ -40,9 +39,10 @@ export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: stri
 
     if (isLoading) {
         return (
-            <div className="mt-6 flex flex-wrap gap-3 justify-center">
-                <Spinner />
-            </div>
+            <button className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2">
+                <ArrowUpRight size={20} />
+                <span className="loading loading-spinner loading-md"></span>
+            </button>
         );
     }
     return (

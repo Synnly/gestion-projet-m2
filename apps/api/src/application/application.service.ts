@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Application, ApplicationDocument, ApplicationStatus } from './application.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -6,6 +6,9 @@ import { CreateApplicationDto } from './dto/createApplication.dto';
 import { PostService } from '../post/post.service';
 import { StudentService } from '../student/student.service';
 import { S3Service } from '../s3/s3.service';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { ApplicationQueryBuilder } from '../common/pagination/applicationQuery.builder';
+import { ApplicationPaginationDto } from 'src/common/pagination/dto/applicationPagination.dto';
 
 @Injectable()
 export class ApplicationService {
@@ -15,12 +18,14 @@ export class ApplicationService {
      * @param postService - Injected PostService for managing related posts
      * @param studentService - Injected StudentService for managing related students
      * @param s3Service - Injected S3Service for handling S3 operations
+     * @param paginationService - Injected PaginationService for managing pagination
      */
     constructor(
         @InjectModel('Application') private readonly applicationModel: Model<ApplicationDocument>,
         private readonly postService: PostService,
         private readonly studentService: StudentService,
         private readonly s3Service: S3Service,
+        private readonly paginationService: PaginationService,
     ) {}
 
     /** Fields to populate when retrieving related Post documents */
@@ -54,7 +59,7 @@ export class ApplicationService {
         return this.applicationModel
             .findOne({ _id: id, deletedAt: { $exists: false } })
             .populate([
-                { path: 'post', select: this.postFieldsToPopulate },
+                { path: 'post', select: this.postFieldsToPopulate, populate: { path: 'company', select: '_id name' } },
                 { path: 'student', select: this.studentFieldsToPopulate },
             ])
             .exec();
@@ -77,11 +82,11 @@ export class ApplicationService {
     ): Promise<{ cvUrl: string; lmUrl: string | undefined }> {
         // Validate existence of student
         const student = await this.studentService.findOne(studentId.toString());
-        if (!student) throw new NotFoundException(`Student with id ${studentId} not found`);
+        if (!student) throw new NotFoundException(`Student with id ${studentId.toString()} not found`);
 
         // Validate existence of post
         const post = await this.postService.findOne(postId.toString());
-        if (!post) throw new NotFoundException(`Post with id ${postId} not found`);
+        if (!post) throw new NotFoundException(`Post with id ${postId.toString()} not found`);
 
         // Check for existing application to prevent duplicates
         const application = await this.applicationModel
@@ -92,11 +97,12 @@ export class ApplicationService {
         }
 
         // Generate presigned URLs for CV and cover letter uploads
-        const objectname: string = `${studentId.toString()}_${postId.toString()}`;
+        const objectname: string = `${studentId.toString()}`;
         const cv = await this.s3Service.generatePresignedUploadUrl(
             `${objectname}.${dto.cvExtension}`,
             'cv',
             studentId.toString(),
+            postId.toString(),
         );
         let lm: { fileName: string; uploadUrl?: string } | undefined = undefined;
         if (dto?.lmExtension) {
@@ -107,13 +113,13 @@ export class ApplicationService {
             );
         }
 
-        await new this.applicationModel({
+        const newApplication = await new this.applicationModel({
             student: student,
             post: post,
             cv: cv.fileName,
             coverLetter: lm?.fileName,
         }).save();
-
+        await this.postService.addApplication(postId.toString(), newApplication._id.toString());
         return { cvUrl: cv.uploadUrl, lmUrl: lm?.uploadUrl };
     }
 
@@ -132,6 +138,22 @@ export class ApplicationService {
         await application.save();
     }
 
+    /**
+     * Retrieve all applications for a post that have not been soft-deleted and populate related Post and Student fields.
+     * @param postId Post id for the applications
+     * @param query Pagination and filter parameters provided by the
+     *                incoming HTTP request (`PaginationDto`).
+     */
+    async findByPostPaginated(postId: Types.ObjectId, query: ApplicationPaginationDto) {
+        const { page, limit, ...rest } = query;
+        const filterQuery = { post: postId, ...rest };
+        const applicationQueryBuilder = new ApplicationQueryBuilder<ApplicationDocument>(filterQuery);
+        const sort = applicationQueryBuilder.buildSort();
+        const builtFilter = { ...applicationQueryBuilder.build(), deletedAt: { $exists: false } };
+
+        return this.paginationService.paginate(this.applicationModel, builtFilter, page, limit, [], sort);
+    }
+  
     /**
      * Return apply with studentId and postId.
      * @param studentId The id of student
@@ -153,5 +175,89 @@ export class ApplicationService {
                 { path: 'student', select: this.studentFieldsToPopulate },
             ])
             .exec();
+    }
+
+    /**
+     * Return paginated applications for a given student.
+     * @param studentId Student identifier.
+     * @param page Page number (1-based).
+     * @param limit Items per page (capped server-side).
+     * @returns Paginated applications and pagination metadata.
+     */
+    async findByStudent(
+        studentId: Types.ObjectId,
+        page = 1,
+        limit = 10,
+        status?: ApplicationStatus,
+        searchQuery?: string,
+    ): Promise<{ data: Application[]; total: number; limit: number; page: number }> {
+        // > 0 && <= 50
+        const safeLimit = Math.min(Math.max(limit, 1), 50);
+        // > 0
+        const safePage = Math.max(page, 1);
+
+        const skip = (safePage - 1) * safeLimit;
+
+        const baseMatch: any = { student: studentId, deletedAt: { $exists: false } };
+      
+        const matchStage: any[] = [{ $match: baseMatch }];
+
+        // filtre searchQuery
+        const searchStage =
+            typeof searchQuery === 'string' && searchQuery.trim().length > 0
+                ? {
+                      $or: [
+                          { 'post.title': { $regex: searchQuery, $options: 'i' } },
+                          { 'post.company.name': { $regex: searchQuery, $options: 'i' } },
+                      ],
+                  }
+                : null;
+
+        // filtre status
+        if (status) {
+            matchStage.push({ $match: { status } });
+        }
+
+        const pipeline: any[] = [
+            ...matchStage,
+            {
+                $lookup: {
+                    from: 'posts',
+                    localField: 'post',
+                    foreignField: '_id',
+                    as: 'post',
+                },
+            },
+            { $unwind: '$post' },
+            {
+                $lookup: {
+                    from: 'companies',
+                    localField: 'post.company',
+                    foreignField: '_id',
+                    as: 'post.company',
+                },
+            },
+            { $unwind: { path: '$post.company', preserveNullAndEmptyArrays: true } },
+        ];
+
+        if (searchStage) {
+            pipeline.push({ $match: searchStage });
+        }
+
+        pipeline.push({ $sort: { createdAt: -1 } });
+
+        pipeline.push({
+            $facet: {
+                data: [{ $skip: skip }, { $limit: safeLimit }],
+                totalCount: [{ $count: 'count' }],
+            },
+        });
+
+        const agg = await this.applicationModel.aggregate(pipeline).exec();
+        const facet = agg[0] || { data: [], totalCount: [] };
+        const total = facet.totalCount[0]?.count ?? 0;
+        const data = facet.data as Application[];
+
+        return { data, total, limit: safeLimit, page: safePage };
     }
 }
