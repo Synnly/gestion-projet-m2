@@ -86,8 +86,14 @@ export class QueryBuilder<T> {
         }
 
         // Salary interval: match posts whose salary range overlaps the requested interval
-        const minSalary = this.params.minSalary as number | undefined;
-        const maxSalary = this.params.maxSalary as number | undefined;
+        let minSalary = this.params.minSalary as number | undefined;
+        let maxSalary = this.params.maxSalary as number | undefined;
+
+        if (minSalary && maxSalary && minSalary > maxSalary) {
+            const temp = minSalary;
+            minSalary = maxSalary;
+            maxSalary = temp;
+        }
 
         if (minSalary || maxSalary) {
             const andConditions = (mutableFilter.$and ??= []) as Array<Record<string, unknown>>;
@@ -131,15 +137,15 @@ export class QueryBuilder<T> {
         return mutableFilter as FilterQuery<T>;
     }
 
-    buildSort() {
+    buildSort(sortParam: string | undefined): string {
         // return string acceptable by Mongoose `sort()`
-        switch (this.params.sort) {
-            case 'dateAsc':
-                return 'createdAt';
-            case 'dateDesc':
-                return '-createdAt';
+        switch (sortParam) {
+            case "dateAsc":
+                return '1';
+            case "dateDesc":
+                return '-1';
             default:
-                return 'createdAt';
+                return '-1';
         }
     }
 }
