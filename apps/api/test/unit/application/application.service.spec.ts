@@ -204,13 +204,14 @@ describe('ApplicationService', () => {
 
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 1,
-                `${studentId.toString()}_${postId.toString()}.pdf`,
+                `${studentId.toString()}.pdf`,
                 'cv',
                 studentId.toString(),
+                post._id.toString(),
             );
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 2,
-                `${studentId.toString()}_${postId.toString()}.docx`,
+                `${studentId.toString()}.docx`,
                 'lm',
                 studentId.toString(),
             );
@@ -358,8 +359,8 @@ describe('ApplicationService', () => {
 
             expect(result).toEqual(emptyResult);
             expect(result.data).toHaveLength(0);
-        }
-     }
+        });
+    });
 
     describe('getApplicationByStudentAndPost', () => {
         it('should return an application when valid studentId and postId are provided, with populated fields', async () => {
@@ -471,9 +472,7 @@ describe('ApplicationService', () => {
             await service.findByStudent(studentId, 1, 10, undefined, 'Data');
 
             const pipeline = mockApplicationModel.aggregate.mock.calls[0][0];
-            const searchStage = pipeline.find(
-                (stage: any) => typeof stage === 'object' && stage?.$match?.$or,
-            );
+            const searchStage = pipeline.find((stage: any) => typeof stage === 'object' && stage?.$match?.$or);
             expect(searchStage).toBeDefined();
             expect(searchStage.$match.$or).toEqual(
                 expect.arrayContaining([

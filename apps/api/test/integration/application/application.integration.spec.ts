@@ -300,13 +300,14 @@ describe('Application Integration Tests', () => {
 
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 1,
-                `${student._id}_${post._id}.pdf`,
+                `${student._id}.pdf`,
                 'cv',
                 student._id.toString(),
+                post._id.toString(),
             );
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 2,
-                `${student._id}_${post._id}.docx`,
+                `${student._id}.docx`,
                 'lm',
                 student._id.toString(),
             );
