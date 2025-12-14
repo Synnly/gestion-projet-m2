@@ -13,6 +13,7 @@ import {
     Put,
     Query,
     Req,
+    UnauthorizedException,
     UseGuards,
     ValidationPipe,
 } from '@nestjs/common';
@@ -110,6 +111,8 @@ export class ApplicationController {
         @Param('fileType') fileType: string,
         @Req() req: Request,
     ): Promise<{ downloadUrl: string }> {
+        if (!req.user || !req.user.sub || !req.user.role) throw new UnauthorizedException('User not authenticated');
+
         const application = await this.applicationService.findOne(ApplicationDto);
         if (!application) throw new NotFoundException(`Application with id ${ApplicationDto} not found`);
 
@@ -121,8 +124,8 @@ export class ApplicationController {
 
         return await this.s3Service.generatePresignedDownloadUrl(
             path,
-            req.user?.sub!,
-            req.user?.role!,
+            req.user.sub,
+            req.user.role,
             application.post._id.toString(),
         );
     }

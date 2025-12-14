@@ -2,12 +2,19 @@ import { useEffect, useState } from 'react';
 import { ChevronUp, Eye } from 'lucide-react';
 import { PdfModal } from './PdfModal.tsx';
 import { ApplicationPagination } from './ApplicationPagination.tsx';
-import type { Application, ApplicationFilters, ApplicationStatus } from '../../../../types/application.types.ts';
+import {
+    type Application,
+    type ApplicationFilters,
+    type ApplicationStatus,
+    ApplicationStatusEnum,
+} from '../../../../types/application.types.ts';
 import { useQuery } from '@tanstack/react-query';
 import type { PaginationResult } from '../../../../types/internship.types.ts';
 import { useParams } from 'react-router';
 import { fetchApplicationsByPost, useFetchFileSignedUrl } from '../../../../hooks/useFetchApplications.ts';
 import { formatDate } from '../../intershipList/component/tableRow.tsx';
+
+const API_URL = import.meta.env.VITE_APIURL;
 
 interface Props {
     status: ApplicationStatus;
@@ -58,18 +65,19 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
 
         (async () => {
             try {
-                const res = await fetch(`/api/application/${id}`, {
+                if (status !== ApplicationStatusEnum.PENDING) return;
+
+                const res = await fetch(`${API_URL}/api/application/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'READ' }),
+                    credentials: 'include',
+                    body: JSON.stringify({ status: 'Read' }),
                 });
 
                 if (!res.ok) {
                     console.error('Échec mise à jour statut candidature:', await res.text());
                     return;
                 }
-
-                queryClient.invalidateQueries(['applications', postId]);
             } catch (err) {
                 console.error('Erreur lors de la requête PUT /api/application/:id', err);
             }
@@ -147,7 +155,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {applicationsData.data.map((app: any) => (
+                                            {applicationsData.data.map((app: Application) => (
                                                 <tr
                                                     key={app._id}
                                                     className="hover:bg-base-300 duration-300 ease-out transition-color"

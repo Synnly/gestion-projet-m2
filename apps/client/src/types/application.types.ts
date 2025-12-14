@@ -24,6 +24,7 @@ export interface Application {
     status: ApplicationStatus;
     cv: string;
     coverLetter?: string;
+    createdAt: string;
 }
 
 export interface ApplicationFilters {

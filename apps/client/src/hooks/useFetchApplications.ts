@@ -23,7 +23,7 @@ function buildQueryParams(filters: Partial<{ page: number; limit: number; status
  */
 async function fetchApplicationsByStudent(
     studentId: string,
-    filters: any,
+    filters: Partial<{ page: number; limit: number; status?: string; searchQuery?: string }>,
     access?: string | null,
 ): Promise<ApplicationResponse> {
     const qs = buildQueryParams(filters);
@@ -102,13 +102,10 @@ export const fetchFileSignedUrl = async (applicationId: string, type: 'cv' | 'lm
     const access = userStore.getState().access;
 
     try {
-        const controller = new AbortController();
-
         const res = await fetch(url, {
             method: 'GET',
             credentials: 'include',
             headers: { Authorization: `Bearer ${access}` },
-            signal: controller.signal,
         });
 
         const data = await res.json();
@@ -127,7 +124,7 @@ export const fetchFileSignedUrl = async (applicationId: string, type: 'cv' | 'lm
  */
 export const useFetchFileSignedUrl = (applicationId: string | undefined, type: 'cv' | 'lm' | undefined) => {
     return useQuery({
-        queryKey: ['publicSignedUrl', applicationId],
+        queryKey: ['publicSignedUrl', applicationId, type],
         queryFn: async () => {
             if (!applicationId || !type) return null;
             return await fetchFileSignedUrl(applicationId, type);
