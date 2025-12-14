@@ -37,6 +37,7 @@ import Contact from './pages/legal/Contact';
 import FAQ from './pages/legal/FAQ';
 import Help from './pages/legal/Help';
 import { internshipLoader } from './loaders/intershipLoader';
+import AdminDashboard from './admin/dashboard';
 function App() {
     userStore.persist.rehydrate();
     const queryClient = new QueryClient();
@@ -163,6 +164,17 @@ function App() {
                                 },
                             ],
                         },
+                        {
+                            path: 'admin',
+                            element: <ProtectedRoutesByRole allowedRoles={['ADMIN']} />,
+                            children: [
+                                {
+                                    path: 'dashboard',
+                                    element: <AdminDashboard />,                            
+                                    handle: { title: 'Tableau de bord admin' }
+                                }
+                            ]
+                        }
                     ],
                 },
             ],
