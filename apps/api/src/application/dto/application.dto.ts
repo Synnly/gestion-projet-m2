@@ -44,3 +44,20 @@ export class ApplicationDto {
         Object.assign(this, application);
     }
 }
+
+@Exclude()
+export class ApplicationPaginationDto {
+    @Expose()
+    @ValidateNested({ each: true })
+    @Type(() => ApplicationDto)
+    data: ApplicationDto[];
+
+    @Expose()
+    total: number;
+
+    @Expose()
+    page: number;
+
+    @Expose()
+    limit: number;
+}

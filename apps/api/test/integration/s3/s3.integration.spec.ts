@@ -1,5 +1,7 @@
 import { Test as NestTest, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import request from 'supertest';
@@ -123,7 +125,11 @@ startxref
         }
     }
 
+    let mongod: MongoMemoryServer;
+
     beforeAll(async () => {
+        mongod = await MongoMemoryServer.create();
+        const uri = mongod.getUri();
         // Override MinIO credentials for testing
         process.env.MINIO_ENDPOINT = 'localhost';
         process.env.MINIO_PORT = '9000';
@@ -186,6 +192,7 @@ startxref
                     secret,
                     signOptions: { expiresIn: '1h' },
                 }),
+                MongooseModule.forRoot(uri),
                 S3Module.register({ provider: StorageProviderType.MINIO }),
             ],
         })
@@ -246,6 +253,7 @@ startxref
             }
         } catch (error) {}
         await app.close();
+        if (mongod) await mongod.stop();
     });
 
     describe('POST /files/signed/logo', () => {

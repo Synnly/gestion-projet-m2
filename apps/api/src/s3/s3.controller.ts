@@ -5,6 +5,7 @@ import {
     Delete,
     Param,
     Body,
+    Query,
     UseGuards,
     HttpCode,
     HttpStatus,
@@ -109,6 +110,7 @@ export class S3Controller {
     async generateDownloadUrl(
         @Param('fileName') fileName: string,
         @Request() req: any,
+        @Query('postId') postId?: string,
     ): Promise<{ downloadUrl: string }> {
         const userId = req.user?.sub || req.user?.id;
 
@@ -116,7 +118,8 @@ export class S3Controller {
             throw new BadRequestException('User ID not found in request');
         }
 
-        const url = await this.s3Service.generatePresignedDownloadUrl(fileName, userId);
+        const userRole = req.user?.role;
+        const url = await this.s3Service.generatePresignedDownloadUrl(fileName, userId, userRole, postId);
         return url;
     }
 

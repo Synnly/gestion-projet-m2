@@ -82,7 +82,7 @@ export class QueryBuilder<T> {
 
         // Company filter (by ObjectId)
         if (this.params.company) {
-            mutableFilter.company = this.params.company;
+            mutableFilter.company = new Types.ObjectId(this.params.company);
         }
 
         // Salary interval: match posts whose salary range overlaps the requested interval

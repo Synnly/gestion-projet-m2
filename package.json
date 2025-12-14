@@ -20,6 +20,7 @@
     },
     "dependencies": {
         "@isaacs/brace-expansion": "^5.0.0",
+        "csv-parse": "^6.1.0",
         "ts-jest": "^29.4.5"
     }
 }

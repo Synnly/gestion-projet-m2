@@ -8,6 +8,7 @@ import { StudentModule } from '../../../src/student/student.module';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
 import { Role } from '../../../src/common/roles/roles.enum';
+import { ConfigModule } from '@nestjs/config';
 
 describe('Student Integration', () => {
     let mongod: MongoMemoryServer;
@@ -29,7 +30,15 @@ describe('Student Integration', () => {
         const mockRolesGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
         const moduleRef = await Test.createTestingModule({
-            imports: [MongooseModule.forRoot(uri), UsersModule, StudentModule],
+            imports: [
+                MongooseModule.forRoot(uri),
+                UsersModule,
+                StudentModule,
+                ConfigModule.forRoot({
+                    envFilePath: '.env',
+                    isGlobal: true, 
+                }),
+            ],
         })
             .overrideGuard(AuthGuard)
             .useValue(mockAuthGuard)
@@ -50,8 +59,7 @@ describe('Student Integration', () => {
     it('POST /api/students -> creates student; GET returns it', async () => {
         const dto = {
             email: 'student1@example.com',
-            password: 'StrongP@ss1',
-            role: Role.STUDENT,
+            studentNumber: 'SN-001',
             firstName: 'John',
             lastName: 'Doe',
         };
@@ -66,20 +74,6 @@ describe('Student Integration', () => {
     it('POST /api/students -> fails validation when firstName is missing', async () => {
         const dto = {
             email: 'student2@example.com',
-            password: 'StrongP@ss1',
-            role: Role.STUDENT,
-            lastName: 'Doe',
-        };
-
-        await request(app.getHttpServer()).post('/api/students').send(dto).expect(400);
-    });
-
-    it('POST /api/students -> fails validation when password is weak', async () => {
-        const dto = {
-            email: 'student3@example.com',
-            password: 'weak',
-            role: Role.STUDENT,
-            firstName: 'John',
             lastName: 'Doe',
         };
 
@@ -89,8 +83,7 @@ describe('Student Integration', () => {
     it('POST /api/students -> returns 409 when email already exists', async () => {
         const dto = {
             email: 'duplicate@example.com',
-            password: 'StrongP@ss1',
-            role: Role.STUDENT,
+            studentNumber: 'SN-DUP',
             firstName: 'John',
             lastName: 'Doe',
         };
@@ -102,8 +95,7 @@ describe('Student Integration', () => {
     it('GET /api/students/:studentId -> returns student when exists', async () => {
         const dto = {
             email: 'studentget@example.com',
-            password: 'StrongP@ss1',
-            role: Role.STUDENT,
+            studentNumber: 'SN-GET',
             firstName: 'Jane',
             lastName: 'Smith',
         };
@@ -125,8 +117,7 @@ describe('Student Integration', () => {
     it('PUT /api/students/:studentId -> updates existing student', async () => {
         const dto = {
             email: 'studentupdate@example.com',
-            password: 'StrongP@ss1',
-            role: Role.STUDENT,
+            studentNumber: 'SN-UPD',
             firstName: 'Old',
             lastName: 'Name',
         };
@@ -152,6 +143,7 @@ describe('Student Integration', () => {
         const createDto = {
             email: 'newthroughput@example.com',
             password: 'StrongP@ss1',
+            studentNumber: 'SN-PUT',
             role: Role.STUDENT,
             firstName: 'Created',
             lastName: 'Via-Put',
@@ -168,8 +160,7 @@ describe('Student Integration', () => {
     it('DELETE /api/students/:studentId -> soft deletes student', async () => {
         const dto = {
             email: 'studentdelete@example.com',
-            password: 'StrongP@ss1',
-            role: Role.STUDENT,
+            studentNumber: 'SN-DEL',
             firstName: 'To',
             lastName: 'Delete',
         };

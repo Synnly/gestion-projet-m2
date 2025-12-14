@@ -6,7 +6,6 @@ import { Navbar } from '../../components/navbar/Navbar';
 import { userStore } from '../../store/userStore';
 import { useNavigation } from 'react-router-dom';
 import Spinner from '../../components/Spinner/Spinner';
-import ToastProvider from '../../components/ui/toast/ToastProvider';
 
 export function InternshipPage() {
     const navigation = useNavigation();
@@ -14,7 +13,7 @@ export function InternshipPage() {
         { label: 'Localisation', options: ['À distance', 'Sur site', 'Hybride'] },
         { label: 'Type de stage', options: ['Temps plein', 'Temps partiel', 'Contrat'] },
         { label: 'Secteur', options: ['Tech', 'Finance', 'Santé'] },
-        { label: 'Date de publication', options: ['Moins de 24 heures', 'Moins d\'une semaine', 'Moins de 30 jours'] },
+        { label: 'Date de publication', options: ['Moins de 24 heures', "Moins d'une semaine", 'Moins de 30 jours'] },
     ];
     const internships = useInternshipStore((state) => state.internships);
     const selectedInternshipId = useInternshipStore((state) => state.selectedInternshipId);
@@ -47,7 +46,6 @@ export function InternshipPage() {
                             </div>
                         </div>
                     </section>
-
                     <SearchBar
                         searchQuery={filters.searchQuery || ''}
                         setSearchQuery={handleSearchChange}
@@ -55,10 +53,7 @@ export function InternshipPage() {
                     />
                     <div className="grid grid-cols-12 gap-8 pb-8 flex-1 overflow-hidden">
                         <div className="col-span-12 lg:col-span-5 h-full overflow-y-auto">
-                        <ToastProvider>
-                                <InternshipList />
-                        </ToastProvider>
-
+                            <InternshipList />
                         </div>
 
                         {selectedInternship ? (

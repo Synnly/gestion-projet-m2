@@ -16,12 +16,14 @@ describe('ApplicationService', () => {
     const mockApplicationModel: any = jest.fn();
     mockApplicationModel.find = jest.fn();
     mockApplicationModel.findOne = jest.fn();
+    mockApplicationModel.aggregate = jest.fn();
 
     const mockStudentService = {
         findOne: jest.fn(),
     };
     const mockPostService = {
         findOne: jest.fn(),
+        addApplication: jest.fn(),
     };
     const mockS3Service = {
         generatePresignedUploadUrl: jest.fn(),
@@ -87,10 +89,12 @@ describe('ApplicationService', () => {
             const result = await service.findAll();
 
             expect(mockApplicationModel.find).toHaveBeenCalledWith({ deletedAt: { $exists: false } });
-            expect(populate).toHaveBeenCalledWith([
-                { path: 'post', select: service.postFieldsToPopulate },
-                { path: 'student', select: service.studentFieldsToPopulate },
-            ]);
+            expect(populate).toHaveBeenCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({ path: 'post', select: service.postFieldsToPopulate }),
+                    expect.objectContaining({ path: 'student', select: service.studentFieldsToPopulate }),
+                ]),
+            );
             expect(exec).toHaveBeenCalledTimes(1);
             expect(result).toEqual(applications);
         });
@@ -126,10 +130,16 @@ describe('ApplicationService', () => {
                 _id: postId,
                 deletedAt: { $exists: false },
             });
-            expect(populate).toHaveBeenCalledWith([
-                { path: 'post', select: service.postFieldsToPopulate },
-                { path: 'student', select: service.studentFieldsToPopulate },
-            ]);
+            expect(populate).toHaveBeenCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        path: 'post',
+                        select: service.postFieldsToPopulate,
+                        populate: expect.anything(),
+                    }),
+                    expect.objectContaining({ path: 'student', select: service.studentFieldsToPopulate }),
+                ]),
+            );
             expect(exec).toHaveBeenCalledTimes(1);
             expect(result).toEqual(application);
         });
@@ -189,6 +199,7 @@ describe('ApplicationService', () => {
             const save = jest.fn().mockResolvedValue(undefined);
             mockApplicationModel.mockImplementation(() => ({ save }));
 
+            save.mockReturnValueOnce({ _id: '5457f1f77bcf86cd799439013' });
             const result = await service.create(studentId, postId, dto);
 
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
@@ -224,7 +235,7 @@ describe('ApplicationService', () => {
             });
             const save = jest.fn().mockResolvedValue(undefined);
             mockApplicationModel.mockImplementation(() => ({ save }));
-
+            save.mockReturnValueOnce({ _id: '5457f1f77bcf86cd799439013' });
             const result = await service.create(studentId, postId, { cvExtension: 'pdf' });
 
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenCalledTimes(1);
@@ -347,6 +358,129 @@ describe('ApplicationService', () => {
 
             expect(result).toEqual(emptyResult);
             expect(result.data).toHaveLength(0);
+        }
+     }
+
+    describe('getApplicationByStudentAndPost', () => {
+        it('should return an application when valid studentId and postId are provided, with populated fields', async () => {
+            const application = {
+                _id: new Types.ObjectId(),
+                student: studentId,
+                post: postId,
+                status: ApplicationStatus.Pending,
+                cv: 'cv.pdf',
+                coverLetter: 'lm.docx',
+            };
+
+            const exec = jest.fn().mockResolvedValue(application);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+
+            const result = await service.getApplicationByStudentAndPost(studentId, postId);
+
+            expect(mockApplicationModel.findOne).toHaveBeenCalledWith({
+                student: studentId,
+                post: postId,
+                deletedAt: { $exists: false },
+            });
+            expect(populate).toHaveBeenCalledWith([
+                { path: 'post', select: service.postFieldsToPopulate },
+                { path: 'student', select: service.studentFieldsToPopulate },
+            ]);
+            expect(exec).toHaveBeenCalledTimes(1);
+            expect(result).toEqual(application);
+        });
+
+        it('should return null when no application exists for the provided studentId and postId, with populated fields', async () => {
+            const exec = jest.fn().mockResolvedValue(null);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+
+            const result = await service.getApplicationByStudentAndPost(studentId, postId);
+
+            expect(mockApplicationModel.findOne).toHaveBeenCalledWith({
+                student: studentId,
+                post: postId,
+                deletedAt: { $exists: false },
+            });
+            expect(populate).toHaveBeenCalledWith([
+                { path: 'post', select: service.postFieldsToPopulate },
+                { path: 'student', select: service.studentFieldsToPopulate },
+            ]);
+            expect(exec).toHaveBeenCalledTimes(1);
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('findByStudent', () => {
+        it('devrait retourner des résultats paginés avec filtrage status/search', async () => {
+            const aggResult = [
+                {
+                    data: [
+                        {
+                            _id: postId,
+                            status: ApplicationStatus.Pending,
+                            post: { _id: postId, title: 'Titre', company: { _id: new Types.ObjectId(), name: 'Comp' } },
+                            student: { _id: studentId },
+                        },
+                    ],
+                    totalCount: [{ count: 1 }],
+                },
+            ];
+            const exec = jest.fn().mockResolvedValue(aggResult);
+            mockApplicationModel.aggregate.mockReturnValue({ exec });
+
+            const res = await service.findByStudent(studentId, 1, 5, ApplicationStatus.Pending, 'Titre');
+
+            expect(mockApplicationModel.aggregate).toHaveBeenCalledTimes(1);
+            expect(res.total).toBe(1);
+            expect(res.data).toHaveLength(1);
+            expect(res.limit).toBe(5);
+            expect(res.page).toBe(1);
+        });
+
+        it('returns empty result when aggregate returns empty', async () => {
+            const exec = jest.fn().mockResolvedValue([{ data: [], totalCount: [] }]);
+            mockApplicationModel.aggregate.mockReturnValue({ exec });
+
+            const res = await service.findByStudent(studentId, 2, 5);
+
+            expect(res.total).toBe(0);
+            expect(res.data).toEqual([]);
+            expect(res.page).toBe(2);
+            expect(res.limit).toBe(5);
+        });
+
+        it('adds a status match when status is provided', async () => {
+            const exec = jest.fn().mockResolvedValue([{ data: [], totalCount: [] }]);
+            mockApplicationModel.aggregate.mockReturnValue({ exec });
+
+            await service.findByStudent(studentId, 1, 10, ApplicationStatus.Accepted);
+
+            const pipeline = mockApplicationModel.aggregate.mock.calls[0][0];
+            const hasStatusMatch = pipeline.some(
+                (stage: any) => typeof stage === 'object' && stage?.$match?.status === ApplicationStatus.Accepted,
+            );
+            expect(hasStatusMatch).toBe(true);
+        });
+
+        it('adds regex filtering when searchQuery is provided', async () => {
+            const exec = jest.fn().mockResolvedValue([{ data: [], totalCount: [] }]);
+            mockApplicationModel.aggregate.mockReturnValue({ exec });
+
+            await service.findByStudent(studentId, 1, 10, undefined, 'Data');
+
+            const pipeline = mockApplicationModel.aggregate.mock.calls[0][0];
+            const searchStage = pipeline.find(
+                (stage: any) => typeof stage === 'object' && stage?.$match?.$or,
+            );
+            expect(searchStage).toBeDefined();
+            expect(searchStage.$match.$or).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ 'post.title': expect.any(Object) }),
+                    expect.objectContaining({ 'post.company.name': expect.any(Object) }),
+                ]),
+            );
         });
     });
 });
