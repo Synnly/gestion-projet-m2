@@ -150,11 +150,6 @@ export class ApplicationService {
         const sort = applicationQueryBuilder.buildSort();
         const builtFilter = { ...applicationQueryBuilder.build(), deletedAt: { $exists: false } };
 
-        const populateOptions = [
-            { path: 'student', select: this.studentFieldsToPopulate },
-            { path: 'post', select: this.postFieldsToPopulate },
-        ];
-
-        return this.paginationService.paginate(this.applicationModel, builtFilter, page, limit, populateOptions, sort);
+        return this.paginationService.paginate(this.applicationModel, builtFilter, page, limit, [], sort);
     }
 }
