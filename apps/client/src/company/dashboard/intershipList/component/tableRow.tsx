@@ -2,7 +2,7 @@ import EditPencilIcon from '../../../../components/icons/EditPencilIcon';
 import type { Internship } from '../../../../types/internship.types';
 import { NavLink } from 'react-router-dom';
 
-const formatDate = (timeStamp: string) => {
+export const formatDate = (timeStamp: string) => {
     const date = new Date(timeStamp);
     return date.toLocaleDateString('fr-FR', {
         year: 'numeric',

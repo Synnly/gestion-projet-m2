@@ -37,6 +37,12 @@ export class ApplicationDto {
     coverLetter?: string;
 
     /**
+     * Timestamp when the application was created
+     */
+    @Expose()
+    createdAt: string;
+
+    /**
      * Constructor to create an ApplicationDto instance
      * @param application Partial application data to initialize the DTO
      */

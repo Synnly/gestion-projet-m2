@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { PaginationResult } from '../../../../types/internship.types.ts';
 import { useParams } from 'react-router';
 import { fetchApplicationsByPost, useFetchFileSignedUrl } from '../../../../hooks/useFetchApplications.ts';
+import { formatDate } from '../../intershipList/component/tableRow.tsx';
 
 interface Props {
     status: ApplicationStatus;
@@ -49,6 +50,30 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
 
     function handleClickTable() {
         setActiveTab(activeTab === status ? null : status);
+    }
+
+    function previewFile(id: string, type: 'cv' | 'lm') {
+        setSelectedApplication({ id, type });
+        setModalOpen(true);
+
+        (async () => {
+            try {
+                const res = await fetch(`/api/application/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'READ' }),
+                });
+
+                if (!res.ok) {
+                    console.error('Échec mise à jour statut candidature:', await res.text());
+                    return;
+                }
+
+                queryClient.invalidateQueries(['applications', postId]);
+            } catch (err) {
+                console.error('Erreur lors de la requête PUT /api/application/:id', err);
+            }
+        })();
     }
 
     useEffect(() => {
@@ -114,6 +139,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                                 <th>Prénom</th>
                                                 <th>Nom</th>
                                                 <th>Email</th>
+                                                <th>Date</th>
                                                 <th className="w-px whitespace-nowrap text-center">CV</th>
                                                 <th className="w-px whitespace-nowrap text-center">
                                                     Lettre de motivation
@@ -129,14 +155,12 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                                     <td>{app.student.firstName}</td>
                                                     <td>{app.student.lastName}</td>
                                                     <td>{app.student.email}</td>
+                                                    <td>{formatDate(app.createdAt)}</td>
                                                     <td className="whitespace-nowrap text-center">
                                                         {app.cv && (
                                                             <button
                                                                 className="btn btn-sm btn-ghost"
-                                                                onClick={() => {
-                                                                    setSelectedApplication({ id: app._id, type: 'cv' });
-                                                                    setModalOpen(true);
-                                                                }}
+                                                                onClick={() => previewFile(app._id, 'cv')}
                                                             >
                                                                 <Eye strokeWidth={2} />
                                                             </button>
@@ -146,10 +170,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                                         {app.coverLetter && (
                                                             <button
                                                                 className="btn btn-sm btn-ghost"
-                                                                onClick={() => {
-                                                                    setSelectedApplication({ id: app._id, type: 'lm' });
-                                                                    setModalOpen(true);
-                                                                }}
+                                                                onClick={() => previewFile(app._id, 'lm')}
                                                             >
                                                                 <Eye strokeWidth={2} />
                                                             </button>
