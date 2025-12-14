@@ -98,23 +98,3 @@ export const useBlob = (fileName: string) => {
 
     return data || null;
 };
-
-/**
- * Hook to get public signed URL from backend with caching
- * @param fileName - The fileName of your file (e.g., "logo.png")
- * @param enabled - Whether the query should run (default: true when fileName exists)
- * @returns { data: string | null, isLoading: boolean, isError: boolean }
- */
-export const usePublicSignedUrl = (fileName: string | null, enabled: boolean = true) => {
-    return useQuery({
-        queryKey: ['publicSignedUrl', fileName],
-        queryFn: async () => {
-            if (!fileName) return null;
-            return await fetchPublicSignedUrl(fileName);
-        },
-        enabled: !!fileName && enabled,
-        staleTime: 1000 * 60 * 30, // cache 30 min
-        retry: 1,
-        gcTime: 1000 * 60 * 60, // Keep in cache for 1h
-    });
-};

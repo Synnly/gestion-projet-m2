@@ -1,19 +1,20 @@
 import {
     Body,
     Controller,
+    DefaultValuePipe,
     Get,
     HttpCode,
     HttpStatus,
     NotFoundException,
     Param,
     ParseEnumPipe,
+    ParseIntPipe,
     Post,
     Put,
     Query,
+    Req,
     UseGuards,
     ValidationPipe,
-    DefaultValuePipe,
-    ParseIntPipe,
 } from '@nestjs/common';
 import { ApplicationService } from './application.service';
 import { S3Service } from '../s3/s3.service';
@@ -23,14 +24,14 @@ import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { Types } from 'mongoose';
 import { plainToInstance } from 'class-transformer';
-import { ApplicationDto } from './dto/application.dto';
+import { ApplicationDto, ApplicationPaginationDto } from './dto/application.dto';
 import { ApplicationOwnerGuard } from '../common/roles/applicationOwner.guard';
 import { CreateApplicationDto } from './dto/createApplication.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { ApplicationStatus } from './application.schema';
 import { PostOwnerGuard } from 'src/post/guard/IsPostOwnerGuard';
 import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
-import { ApplicationPaginationDto } from './dto/application.dto';
+import type { Request } from 'express';
 
 @Controller('/api/application')
 export class ApplicationController {
@@ -107,6 +108,7 @@ export class ApplicationController {
     async getApplicationFile(
         @Param('applicationId', ParseObjectIdPipe) ApplicationDto: Types.ObjectId,
         @Param('fileType') fileType: string,
+        @Req() req: Request,
     ): Promise<{ downloadUrl: string }> {
         const application = await this.applicationService.findOne(ApplicationDto);
         if (!application) throw new NotFoundException(`Application with id ${ApplicationDto} not found`);
@@ -117,8 +119,12 @@ export class ApplicationController {
 
         if (!path) throw new NotFoundException(`${fileType} not found for this application`);
 
-        const url = await this.s3Service.generatePublicDownloadUrl(path);
-        return url;
+        return await this.s3Service.generatePresignedDownloadUrl(
+            path,
+            req.user?.sub!,
+            req.user?.role!,
+            application.post._id.toString(),
+        );
     }
 
     /**
@@ -158,13 +164,12 @@ export class ApplicationController {
         @Query('status', new ParseEnumPipe(ApplicationStatus, { optional: true })) status?: ApplicationStatus,
         @Query('searchQuery') searchQuery?: string,
     ): Promise<ApplicationPaginationDto> {
-        const { data, total, limit: appliedLimit, page: appliedPage } = await this.applicationService.findByStudent(
-            studentId,
-            page,
-            limit,
-            status,
-            searchQuery,
-        );
+        const {
+            data,
+            total,
+            limit: appliedLimit,
+            page: appliedPage,
+        } = await this.applicationService.findByStudent(studentId, page, limit, status, searchQuery);
 
         return plainToInstance(
             ApplicationPaginationDto,

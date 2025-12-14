@@ -11,7 +11,7 @@ export class PostOwnerGuard implements CanActivate {
 
         const user = request.user;
 
-        const postId = (request.params.id || request.body.postId) as string;
+        const postId = (request.params.postId || request.body.postId) as string;
 
         if (!user || !user.sub) {
             return false;
@@ -42,7 +42,7 @@ export class PostOwnerGuard implements CanActivate {
             if (!post) {
                 return false;
             }
-            return post._id.toString() === userId;
+            return post.company._id.toString() === userId;
         } catch (error) {
             return false;
         }

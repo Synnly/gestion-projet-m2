@@ -151,9 +151,11 @@ export class ApplicationService {
         const sort = applicationQueryBuilder.buildSort();
         const builtFilter = { ...applicationQueryBuilder.build(), deletedAt: { $exists: false } };
 
-        return this.paginationService.paginate(this.applicationModel, builtFilter, page, limit, [], sort);
+        const populateOptions = [{ path: 'student', select: this.studentFieldsToPopulate }];
+
+        return this.paginationService.paginate(this.applicationModel, builtFilter, page, limit, populateOptions, sort);
     }
-  
+
     /**
      * Return apply with studentId and postId.
      * @param studentId The id of student
@@ -199,7 +201,7 @@ export class ApplicationService {
         const skip = (safePage - 1) * safeLimit;
 
         const baseMatch: any = { student: studentId, deletedAt: { $exists: false } };
-      
+
         const matchStage: any[] = [{ $match: baseMatch }];
 
         // filtre searchQuery
