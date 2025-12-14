@@ -1,37 +1,11 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { RotateCcw, MapPin, Map, X, ListFilter } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { RotateCcw, MapPin, ListFilter } from 'lucide-react';
 import { FilterInput } from '../../components/inputs/selectInput';
 import { internshipFilters, mapOptionToPayload } from './filters';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import SortSelect from './SortSelect';
 import CityRadiusModal from '../../components/CityRadius/CityRadiusModal';
 import SalaryRangeSelector from '../../components/inputs/range/SalaryRangeSelector';
-
-function FilterChip({
-    label,
-    onRemove,
-    children,
-}: {
-    label: string;
-    onRemove?: () => void;
-    children?: React.ReactNode;
-}) {
-    return (
-        <div className="badge badge-outline gap-2 rounded-md px-2 py-1 flex items-center">
-            <span className="text-sm">{children ?? label}</span>
-            {onRemove && (
-                <button
-                    type="button"
-                    className="btn btn-ghost btn-xs p-0 ml-1"
-                    onClick={onRemove}
-                    aria-label={`Retirer ${label}`}
-                >
-                    <X className="h-4 w-4" />
-                </button>
-            )}
-        </div>
-    );
-}
 
 export function FilterList() {
     const filters = useInternshipStore((s) => s.filters);
@@ -63,26 +37,6 @@ export function FilterList() {
             sort: undefined,
         });
 
-    const activeChips = useMemo(() => {
-        const chips: Array<{ key: string; label: string; value: any }> = [];
-
-        internshipFilters.forEach((f) => {
-            if (f.key === 'city') return;
-
-            const value = (filters as any)[f.key];
-            if (value !== undefined && value !== null && value !== '') {
-                if (f.key === 'radiusKm') {
-                    const city = (filters as any).city;
-                    if (city) chips.push({ key: 'location', label: `${city} – ${value} km`, value });
-                } else {
-                    chips.push({ key: f.key, label: `${f.label}: ${String(value)}`, value });
-                }
-            }
-        });
-
-        return chips;
-    }, [filters]);
-
     return (
         <div className="w-full space-y-2 pb-4">
             <div className="card bg-base-100 shadow-md">
@@ -101,21 +55,21 @@ export function FilterList() {
 
                             <div className="btn btn-xs btn-ghost ml-2">
                                 <SortSelect />
-                                Trier
                             </div>
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                className="btn btn-xs btn-ghost flex items-center"
-                                onClick={() => setMapOpen(true)}
-                                title="Afficher la carte"
-                            >
-                                <Map className="h-4 w-4 mr-1" />
-                                Localisation
-                            </button>
-
+                            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setMapOpen(true)}>
+                                <MapPin className="h-4 w-4 text-base-content" />
+                                <div>
+                                    <div className="text-xs font-medium">Localisation</div>
+                                    <div className="text-xs text-base-content/60">
+                                        {filters.city && filters.radiusKm
+                                            ? `${filters.city} – ${filters.radiusKm} km`
+                                            : 'Aucune sélection'}
+                                    </div>
+                                </div>
+                            </div>
                             <button
                                 type="button"
                                 className="btn btn-xs btn-ghost"
@@ -123,98 +77,59 @@ export function FilterList() {
                                 title={minimal ? 'Afficher les filtres' : 'Masquer les filtres'}
                                 aria-pressed={!minimal}
                             >
-                                <ListFilter className="h-4 w-4" />
+                                {minimal ? (
+                                    <ListFilter className="h-4 w-4" />
+                                ) : (
+                                    <ListFilter className="h-4 w-4 rotate-180" />
+                                )}
                                 Filtrer
                             </button>
                         </div>
-                    </div>
+                        <div
+                            className={`flex flex-row gap-x-6 items-center transition-all duration-200 ${
+                                minimal
+                                    ? 'max-h-0 overflow-hidden opacity-0 pointer-events-none'
+                                    : 'max-h-[260px] opacity-100 ml-6 pl-4 border-l border-base-200'
+                            }`}
+                            aria-hidden={minimal}
+                        >
+                            {internshipFilters
+                                .filter((f) => f.key !== 'city' && f.key !== 'radiusKm')
+                                .map((f) => {
+                                    if (f.key === 'minSalary') {
+                                        return (
+                                            <SalaryRangeSelector
+                                                key="salary-range"
+                                                min={(filters as any).minSalary}
+                                                max={(filters as any).maxSalary}
+                                                onChange={({ min, max }) => {
+                                                    setFilters({ minSalary: min, maxSalary: max, page: 1 });
+                                                }}
+                                            />
+                                        );
+                                    }
 
-                    {activeChips.length > 0 && (
-                        <div className="flex items-center gap-2 flex-wrap mt-2">
-                            {activeChips.map((c) => (
-                                <FilterChip
-                                    key={c.key}
-                                    label={c.label}
-                                    onRemove={() => {
-                                        if (c.key === 'location') {
-                                            setFilters({ city: undefined, radiusKm: undefined, page: 1 });
-                                        } else {
-                                            const payload: any = {};
-                                            payload[c.key] = undefined;
-                                            payload.page = 1;
-                                            setFilters(payload);
-                                        }
-                                    }}
-                                >
-                                    {c.label}
-                                </FilterChip>
-                            ))}
-                        </div>
-                    )}
+                                    // Render normal des autres filtres
+                                    if (f.key === 'maxSalary') return null;
 
-                    <div
-                        className={`mt-3 flex flex-row gap-x-4 items-center transition-all duration-200 ${
-                            minimal
-                                ? 'max-h-0 overflow-hidden opacity-0 pointer-events-none'
-                                : 'max-h-[260px] opacity-100'
-                        }`}
-                        aria-hidden={minimal}
-                    >
-                        {internshipFilters
-                            .filter((f) => f.key !== 'city' && f.key !== 'radiusKm')
-                            .map((f) => {
-                                if (f.key === 'minSalary') {
                                     return (
-                                        <SalaryRangeSelector
-                                            key="salary-range"
-                                            min={(filters as any).minSalary}
-                                            max={(filters as any).maxSalary}
-                                            onChange={({ min, max }) => {
-                                                setFilters({ minSalary: min, maxSalary: max, page: 1 });
-                                            }}
-                                        />
+                                        <div key={f.key} className="form-control min-w-[150px]">
+                                            <FilterInput
+                                                label={f.label}
+                                                options={f.options}
+                                                value={(filters as any)[f.key] ? String((filters as any)[f.key]) : ''}
+                                                onChange={(v) => {
+                                                    const payload: any = {};
+                                                    const mapped = mapOptionToPayload(f.key, v);
+                                                    if (mapped === undefined) payload[f.key] = undefined;
+                                                    else payload[f.key] = mapped;
+                                                    payload.page = 1;
+                                                    setFilters(payload);
+                                                }}
+                                            />
+                                        </div>
                                     );
-                                }
-
-                                // Render normal des autres filtres
-                                if (f.key === 'maxSalary') return null;
-
-                                return (
-                                    <div key={f.key} className="form-control min-w-[150px]">
-                                        <label className="label py-0.5">
-                                            <span className="label-text text-sm">{f.label}</span>
-                                        </label>
-                                        <FilterInput
-                                            label={f.label}
-                                            options={f.options}
-                                            value={(filters as any)[f.key] ? String((filters as any)[f.key]) : ''}
-                                            onChange={(v) => {
-                                                const payload: any = {};
-                                                const mapped = mapOptionToPayload(f.key, v);
-                                                if (mapped === undefined) payload[f.key] = undefined;
-                                                else payload[f.key] = mapped;
-                                                payload.page = 1;
-                                                setFilters(payload);
-                                            }}
-                                        />
-                                    </div>
-                                );
-                            })}
-                    </div>
-                </div>
-
-                <div className="card-body p-3 pt-0">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 cursor-pointer" onClick={() => setMapOpen(true)}>
-                            <MapPin className="h-4 w-4 text-primary" />
-                            <div>
-                                <div className="text-sm font-medium">Localisation</div>
-                                <div className="text-xs text-base-content/60">
-                                    {filters.city && filters.radiusKm
-                                        ? `${filters.city} – ${filters.radiusKm} km`
-                                        : 'Aucune sélection'}
-                                </div>
-                            </div>
+                                })}
                         </div>
                     </div>
                 </div>

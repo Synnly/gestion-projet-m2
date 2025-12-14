@@ -11,6 +11,7 @@ export default function SortSelect() {
         <div className="dropdown dropdown-end">
             <label tabIndex={0} className="btn btn-ghost btn-xs">
                 <Filter className="h-4 w-4" />
+                Trier
             </label>
             <ul tabIndex={0} className="dropdown-content menu p-1 shadow bg-base-100 rounded-box w-40">
                 <li>

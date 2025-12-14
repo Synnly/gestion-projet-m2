@@ -60,24 +60,16 @@ export default function SalaryRangeSelector({
     const maxPercent = ((range.max - minAllowed) / (maxAllowed - minAllowed)) * 100;
 
     return (
-        <div className="form-control w-80">
-            <label className="label py-0.5 pb-2">
-                <span className="label-text text-sm font-medium">Salaire mensuel</span>
-            </label>
-
-            <div className="flex items-center justify-between gap-2 mb-4">
-                <div className="badge badge-lg badge-primary gap-2">
-                    <span className="text-xs opacity-70">Min</span>
-                    <span className="font-semibold">{formatSalary(range.min)}€</span>
-                </div>
-                <div className="divider divider-horizontal mx-0 w-8"></div>
-                <div className="badge badge-lg badge-secondary gap-2">
-                    <span className="text-xs opacity-70">Max</span>
-                    <span className="font-semibold">{formatSalary(range.max)}€</span>
-                </div>
-            </div>
-
+        <div className="form-control w-80 ml-24">
+           
             <div className="relative pt-2 pb-6">
+                 <div className="badge badge-sm badge-primary absolute -left-20 top-1/2 -translate-y-1/2">
+                    <span className="text-xs">Min {range.min}€</span>
+                </div>
+
+                <div className="badge badge-sm badge-secondary absolute -right-24 top-1/2 -translate-y-1/2">
+                    <span className="text-xs">Max {range.max}€</span>
+                </div>
                 <div className="absolute top-1/2 left-0 right-0 h-2 -translate-y-1/2 bg-base-300 rounded-full"></div>
 
                 <div
