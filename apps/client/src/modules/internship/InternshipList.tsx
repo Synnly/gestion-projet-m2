@@ -57,7 +57,7 @@ const InternshipList: React.FC = () => {
 
     return (
         <ListContainer>
-            <div style={innerStyle} className={detailHeight ? 'pr-6 overflow-y-auto space-y-3 p-3' : 'space-y-3 p-3'}>
+            <div style={innerStyle} className={detailHeight ? 'pr-6 space-y-3 p-3' : 'space-y-3 p-3'}>
                 {internships.map((internship) => (
                     <InternshipCard
                         key={internship._id}

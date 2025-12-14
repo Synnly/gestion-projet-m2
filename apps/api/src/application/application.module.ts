@@ -7,6 +7,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Application, ApplicationSchema } from './application.schema';
 import { S3Module } from '../s3/s3.module';
 import { StorageProviderType } from '../s3/s3.constants';
+import { PaginationService } from '../common/pagination/pagination.service';
 
 @Module({
     imports: [
@@ -16,7 +17,7 @@ import { StorageProviderType } from '../s3/s3.constants';
         S3Module.register({ provider: StorageProviderType.MINIO }),
     ],
     controllers: [ApplicationController],
-    providers: [ApplicationService],
+    providers: [ApplicationService, PaginationService],
     exports: [ApplicationService],
 })
 export class ApplicationModule {}

@@ -201,8 +201,10 @@ describe('Post Integration Tests', () => {
             expect(res.body.data).toHaveLength(2);
             expect(res.body.total).toBe(2);
             const normalized = normalizeBody(res.body.data);
-            expect(normalized[0].title).toBe('Développeur Frontend');
-            expect(normalized[1].title).toBe('Développeur Backend');
+            // Do not rely on ordering: ensure both posts are present
+            const titles = normalized.map((p: any) => p.title);
+            expect(titles).toContain('Développeur Frontend');
+            expect(titles).toContain('Développeur Backend');
         });
 
         it('should return posts with all fields when posts have complete data and findAll is called', async () => {

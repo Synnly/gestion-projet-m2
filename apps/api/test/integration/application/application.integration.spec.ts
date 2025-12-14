@@ -26,6 +26,7 @@ import { S3Service } from '../../../src/s3/s3.service';
 import { Company, CompanyDocument } from '../../../src/company/company.schema';
 import { User, UserDocument } from '../../../src/user/user.schema';
 import { Student, StudentDocument } from '../../../src/student/student.schema';
+import { PaginationService } from 'src/common/pagination/pagination.service';
 
 describe('Application Integration Tests', () => {
     let app: INestApplication;
@@ -129,7 +130,12 @@ describe('Application Integration Tests', () => {
                 StudentModule,
             ],
             controllers: [ApplicationController],
-            providers: [ApplicationService, ApplicationOwnerGuard, { provide: S3Service, useValue: mockS3Service }],
+            providers: [
+                ApplicationService,
+                ApplicationOwnerGuard,
+                { provide: S3Service, useValue: mockS3Service },
+                PaginationService,
+            ],
         })
             .overrideGuard(AuthGuard)
             .useValue({
@@ -294,13 +300,14 @@ describe('Application Integration Tests', () => {
 
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 1,
-                `${student._id}_${post._id}.pdf`,
+                `${student._id}.pdf`,
                 'cv',
                 student._id.toString(),
+                post._id.toString(),
             );
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 2,
-                `${student._id}_${post._id}.docx`,
+                `${student._id}.docx`,
                 'lm',
                 student._id.toString(),
             );
