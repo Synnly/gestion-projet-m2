@@ -1,5 +1,7 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+import { Application, ApplicationSchema } from 'src/application/application.schema';
 import { S3Controller } from './s3.controller';
 import { S3Service } from './s3.service';
 import { STORAGE_PROVIDER, StorageProviderType } from './s3.constants';
@@ -32,6 +34,7 @@ export class S3Module {
             module: S3Module,
             imports: [
                 ConfigModule,
+                MongooseModule.forFeature([{ name: Application.name, schema: ApplicationSchema }]),
                 ThrottlerModule.forRoot([
                     {
                         ttl: parseInt(process.env.RATE_LIMIT_TTL || '60000'),

@@ -10,6 +10,7 @@ import { AuthGuard } from '../../../src/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
 import { ApplicationOwnerGuard } from '../../../src/common/roles/applicationOwner.guard';
 import { PostOwnerGuard } from 'src/post/guard/IsPostOwnerGuard';
+import { S3Service } from '../../../src/s3/s3.service';
 
 describe('ApplicationController', () => {
     let controller: ApplicationController;
@@ -20,6 +21,13 @@ describe('ApplicationController', () => {
         findOne: jest.fn(),
         create: jest.fn(),
         updateStatus: jest.fn(),
+        getApplicationByStudentAndPost: jest.fn(),
+        findByStudent: jest.fn(),
+    };
+
+    const mockS3Service = {
+        generatePublicDownloadUrl: jest.fn(),
+        generatePresignedUploadUrl: jest.fn(),
     };
 
     const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
@@ -38,6 +46,10 @@ describe('ApplicationController', () => {
                     provide: ApplicationService,
                     useValue: mockApplicationService,
                 },
+                {
+                    provide: S3Service,
+                    useValue: mockS3Service,
+                },
             ],
         })
             .overrideGuard(AuthGuard)
@@ -55,6 +67,7 @@ describe('ApplicationController', () => {
 
         jest.clearAllMocks();
     });
+
 
     it('should be defined when controller is instantiated', () => {
         expect(controller).toBeDefined();
@@ -81,7 +94,7 @@ describe('ApplicationController', () => {
             expect(result[0]).toBeInstanceOf(ApplicationDto);
             expect(result[0]._id.toString()).toBe(applicationId.toString());
             expect((result[0] as any).deletedAt).toBeUndefined();
-            expect(service.findAll).toHaveBeenCalledTimes(1);
+            expect(mockApplicationService.findAll).toHaveBeenCalledTimes(1);
         });
 
         it('should return an empty array when findAll is called and no applications exist', async () => {
@@ -90,7 +103,7 @@ describe('ApplicationController', () => {
             const result = await controller.findAll();
 
             expect(result).toEqual([]);
-            expect(service.findAll).toHaveBeenCalledTimes(1);
+            expect(mockApplicationService.findAll).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -111,7 +124,7 @@ describe('ApplicationController', () => {
             expect(result).toBeInstanceOf(ApplicationDto);
             expect(result._id.toString()).toBe(applicationId.toString());
             expect(result.status).toBe(ApplicationStatus.Accepted);
-            expect(service.findOne).toHaveBeenCalledWith(applicationId);
+            expect(mockApplicationService.findOne).toHaveBeenCalledWith(applicationId);
         });
 
         it('should throw NotFoundException when application does not exist for the provided id', async () => {
@@ -119,9 +132,9 @@ describe('ApplicationController', () => {
 
             await expect(controller.findOne(applicationId)).rejects.toThrow(NotFoundException);
             await expect(controller.findOne(applicationId)).rejects.toThrow(
-                `Application with id ${applicationId} not found`,
+                `Application with id ${applicationId.toString()} not found`,
             );
-            expect(service.findOne).toHaveBeenCalledWith(applicationId);
+            expect(mockApplicationService.findOne).toHaveBeenCalledWith(applicationId);
         });
 
         it('should await service result before mapping when service returns a Promise', async () => {
@@ -150,7 +163,7 @@ describe('ApplicationController', () => {
             const result = await controller.create(studentId, postId, dto);
 
             expect(result).toEqual(creationResult);
-            expect(service.create).toHaveBeenCalledWith(studentId, postId, dto);
+            expect(mockApplicationService.create).toHaveBeenCalledWith(studentId, postId, dto);
         });
     });
 
@@ -160,8 +173,93 @@ describe('ApplicationController', () => {
 
             await controller.updateStatus(applicationId, ApplicationStatus.Read);
 
-            expect(service.updateStatus).toHaveBeenCalledWith(applicationId, ApplicationStatus.Read);
-            expect(service.updateStatus).toHaveBeenCalledTimes(1);
+            expect(mockApplicationService.updateStatus).toHaveBeenCalledWith(applicationId, ApplicationStatus.Read);
+            expect(mockApplicationService.updateStatus).toHaveBeenCalledTimes(1);
         });
     });
+    describe('getApplicationByStudentAndPost', () => {
+        it('should return an application when valid studentId and postId are provided', async () => {
+            const application = {
+                _id: applicationId,
+                post: { _id: postId, title: 'Test Post' },
+                student: { _id: studentId, firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+                status: ApplicationStatus.Pending,
+                cv: 'cv.pdf',
+                coverLetter: 'lm.docx',
+            };
+            mockApplicationService.getApplicationByStudentAndPost.mockResolvedValue(application);
+
+            const result = await controller.getApplicationByStudentAndPost(studentId, postId);
+            expect(result).toBeDefined();
+            expect(result).not.toBeNull();
+            expect(result).toBeInstanceOf(ApplicationDto);
+            expect(result?._id.toString()).toBe(applicationId.toString());
+            expect(result?.status).toBe(ApplicationStatus.Pending);
+            expect(service.getApplicationByStudentAndPost).toHaveBeenCalledWith(studentId, postId);
+        });
+
+        it('should throw NotFoundException when no application is found for the provided studentId and postId', async () => {
+            mockApplicationService.getApplicationByStudentAndPost.mockResolvedValue(null);
+
+            expect(await controller.getApplicationByStudentAndPost(studentId, postId)).toBeNull();
+            expect(service.getApplicationByStudentAndPost).toHaveBeenCalledWith(studentId, postId);
+        });
+    });
+
+    describe('findMine', () => {
+        it('devrait retourner une pagination filtree pour un etudiant', async () => {
+            const pagination = {
+                data: [
+                    {
+                        _id: applicationId,
+                        post: { _id: postId, title: 'Post filtré' },
+                        student: { _id: studentId },
+                        status: ApplicationStatus.Pending,
+                        cv: 'cv.pdf',
+                    },
+                ],
+                total: 1,
+                page: 1,
+                limit: 10,
+            };
+            mockApplicationService.findByStudent.mockResolvedValue(pagination);
+
+            const result = await controller.findMine(studentId, 1, 10, ApplicationStatus.Pending, 'query');
+
+            expect(result.data).toHaveLength(1);
+            expect(result.total).toBe(1);
+            expect(mockApplicationService.findByStudent).toHaveBeenCalledWith(
+                studentId,
+                1,
+                10,
+                ApplicationStatus.Pending,
+                'query',
+            );
+        });
+
+        it('retourne une pagination vide quand le service renvoie vide', async () => {
+            mockApplicationService.findByStudent.mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 });
+
+            const result = await controller.findMine(studentId, 1, 10);
+
+            expect(result.data).toEqual([]);
+            expect(result.total).toBe(0);
+            expect(mockApplicationService.findByStudent).toHaveBeenCalledWith(studentId, 1, 10, undefined, undefined);
+        });
+
+        it('propage les erreurs du service', async () => {
+            mockApplicationService.findByStudent.mockRejectedValue(new Error('boom'));
+
+            await expect(controller.findMine(studentId, 1, 10)).rejects.toThrow('boom');
+        });
+
+        it('passe bien la recherche sans status', async () => {
+            mockApplicationService.findByStudent.mockResolvedValue({ data: [], total: 0, page: 1, limit: 10 });
+
+            await controller.findMine(studentId, 1, 5, undefined, 'test');
+
+            expect(mockApplicationService.findByStudent).toHaveBeenCalledWith(studentId, 1, 5, undefined, 'test');
+        });
+    });
+
 });

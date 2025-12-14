@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { companyInternshipStore } from '../store/companyInternshipStore';
 import type { Internship, InternshipFilters, PaginationResult } from '../types/internship.types';
 import { userStore } from '../store/userStore';
-import { useToast } from '../components/ui/toast/ToastProvider';
+import { toast } from 'react-toastify';
 import { useEffect } from 'react';
 
 const API_URL = import.meta.env.VITE_APIURL;
@@ -39,7 +39,6 @@ export function useFetchCompanyInternships() {
     const companyId = getPayload(access)?.id;
     const filters = companyInternshipStore((state) => state.filters);
     const setInternships = companyInternshipStore((state) => state.setInternships);
-    const toast = useToast();
     const query = useQuery<PaginationResult<Internship>, Error>({
         queryKey: ['companyInternships', filters],
 
@@ -56,7 +55,9 @@ export function useFetchCompanyInternships() {
             const removedCount = originalLength - validPosts.length;
             if (removedCount > 0) {
                 try {
-                    toast.error(`Impossible d'afficher ${removedCount} stage(s)`);
+                    toast.error(`Impossible d'afficher ${removedCount} stage(s)`, {
+                        toastId: 'fetch-company-internships',
+                    });
                 } catch (e) {
                     // ignore if toast not available
                 }

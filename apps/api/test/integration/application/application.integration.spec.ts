@@ -72,6 +72,7 @@ describe('Application Integration Tests', () => {
         return studentModel.create({
             email: (attrs.email as any) || `student-${unique}@test.com`,
             password: attrs.password || 'TestP@ss123',
+            studentNumber: (attrs as any).studentNumber || `SN-${unique}`,
             role: Role.STUDENT,
             firstName: (attrs as any).firstName || 'John',
             lastName: (attrs as any).lastName || 'Doe',
@@ -299,13 +300,14 @@ describe('Application Integration Tests', () => {
 
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 1,
-                `${student._id}_${post._id}.pdf`,
+                `${student._id}.pdf`,
                 'cv',
                 student._id.toString(),
+                post._id.toString(),
             );
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 2,
-                `${student._id}_${post._id}.docx`,
+                `${student._id}.docx`,
                 'lm',
                 student._id.toString(),
             );
@@ -520,6 +522,39 @@ describe('Application Integration Tests', () => {
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
                 .send({ status: ApplicationStatus.Accepted })
                 .expect(400);
+        });
+    });
+
+    describe('GET /check', () => {
+        it('should return 403 if request come from companies', async () => {
+            const company = await createCompany();
+
+            await request(app.getHttpServer())
+                .get('/api/application/check?studentId=507f1f77bcf86cd799439098&postId=507f1f77bcf86cd799439099')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id)}`)
+                .expect(403);
+        });
+
+        it('should return 401 if user is not authentified', async () => {
+            await request(app.getHttpServer())
+                .get('/api/application/check?studentId=507f1f77bcf86cd799439098&postId=507f1f77bcf86cd799439099')
+                .expect(401);
+        });
+
+        it('should validate request parameters', async () => {
+            const student = await createStudent();
+            await request(app.getHttpServer())
+                .get('/api/application/check?studentId=invalid&postId=alsoinvalid')
+                .set('Authorization', `Bearer ${tokenFor(Role.STUDENT, student._id)}`)
+                .expect(400);
+        });
+
+        it('should return 200 even if non-existent postings', async () => {
+            const student = await createStudent();
+            await request(app.getHttpServer())
+                .get('/api/application/check?studentId=507f1f77bcf86cd799439098&postId=507f1f77bcf86cd799439099')
+                .set('Authorization', `Bearer ${tokenFor(Role.STUDENT, student._id)}`)
+                .expect(200);
         });
     });
 });

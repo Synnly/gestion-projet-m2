@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { Types } from 'mongoose';
 import {
     NotFoundException,
     ForbiddenException,
@@ -9,6 +10,7 @@ import * as Minio from 'minio';
 import { MinioStorageProvider } from '../../../../src/s3/providers/MinioStorageProvider';
 import { URL_EXPIRY } from '../../../../src/s3/s3.constants';
 import { InvalidConfigurationException } from 'src/common/exceptions/invalidConfiguration.exception';
+import { Role } from '../../../../src/common/roles/roles.enum';
 
 describe('MinioStorageProvider', () => {
     let mockClient: any;
@@ -136,8 +138,8 @@ describe('MinioStorageProvider', () => {
     describe('generatePublicDownloadUrl', () => {
         it('delegates to presignedGetObject and returns url', async () => {
             mockClient.presignedGetObject.mockResolvedValue('public-url');
-            const res = await provider.generatePublicDownloadUrl('f');
-            expect(mockClient.presignedGetObject).toHaveBeenCalledWith('uploads', 'f', URL_EXPIRY.DOWNLOAD);
+            const res = await provider.generatePublicDownloadUrl('logos/f');
+            expect(mockClient.presignedGetObject).toHaveBeenCalledWith('uploads', 'logos/f', URL_EXPIRY.DOWNLOAD);
             expect(res).toEqual({ downloadUrl: 'public-url' });
         });
     });
@@ -267,6 +269,154 @@ describe('MinioStorageProvider', () => {
         expect(res.downloadUrl).toBe('http://download-url');
     });
 
+    it('generatePresignedDownloadUrl - student role gets Forbidden when uploader differs', async () => {
+        const cfg = makeConfig();
+        const mockClient: any = {
+            statObject: jest.fn().mockResolvedValue({ metaData: { uploaderid: 'student1234567890123456789012' } }),
+        };
+        (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
+        const provider = new MinioStorageProvider(cfg);
+
+        await expect(
+            provider.generatePresignedDownloadUrl('somefile.pdf', 'differentUser', Role.STUDENT),
+        ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('generatePresignedDownloadUrl - company role allowed when application links student to company', async () => {
+        const cfg = makeConfig();
+        const studentId = '507f1f77bcf86cd799439011';
+        const companyId = '507f1f77bcf86cd799439099';
+
+        const mockClient: any = {
+            statObject: jest.fn().mockResolvedValue({ metaData: { uploaderid: studentId } }),
+            presignedGetObject: jest.fn().mockResolvedValue('http://download-url-company'),
+        };
+
+        (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
+
+        // mock applicationModel with findOne(...).populate(...).exec() chain
+        const mockAppModel: any = {
+            findOne: jest.fn().mockReturnValue({
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue({ post: { company: { _id: companyId } } }),
+            }),
+        };
+
+        const provider = new MinioStorageProvider(cfg, mockAppModel as any);
+
+        const res = await provider.generatePresignedDownloadUrl('somefile.pdf', companyId, Role.COMPANY);
+        expect(res.downloadUrl).toBe('http://download-url-company');
+        expect(mockAppModel.findOne).toHaveBeenCalled();
+    });
+
+    it('generatePresignedDownloadUrl - company role allowed when postId provided and matches application', async () => {
+        const cfg = makeConfig();
+        const studentId = '507f1f77bcf86cd799439011';
+        const companyId = '507f1f77bcf86cd799439099';
+        const postId = '507f1f77bcf86cd7994390ff';
+
+        const mockClient: any = {
+            statObject: jest.fn().mockResolvedValue({ metaData: { uploaderid: studentId } }),
+            presignedGetObject: jest.fn().mockResolvedValue('http://download-url-company-post'),
+        };
+
+        (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
+
+        // mock applicationModel to return application matching postId and student
+        const mockAppModel: any = {
+            findOne: jest.fn().mockReturnValue({
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue({ post: { company: { _id: companyId } } }),
+            }),
+        };
+
+        const provider = new MinioStorageProvider(cfg, mockAppModel as any);
+
+        const res = await provider.generatePresignedDownloadUrl('somefile.pdf', companyId, Role.COMPANY, postId);
+        expect(res.downloadUrl).toBe('http://download-url-company-post');
+        expect(mockAppModel.findOne).toHaveBeenCalled();
+        const calledQuery = mockAppModel.findOne.mock.calls[0][0];
+        expect(calledQuery.post.toString()).toBe(new Types.ObjectId(postId).toString());
+        expect(calledQuery.student.toString()).toBe(new Types.ObjectId(studentId).toString());
+    });
+
+    it('generatePresignedDownloadUrl - company role forbidden when postId provided but application not found', async () => {
+        const cfg = makeConfig();
+        const studentId = '507f1f77bcf86cd799439022';
+        const companyId = '507f1f77bcf86cd799439033';
+        const postId = '507f1f77bcf86cd7994390aa';
+
+        const mockClient: any = {
+            statObject: jest.fn().mockResolvedValue({ metaData: { uploaderid: studentId } }),
+        };
+
+        (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
+
+        const mockAppModel: any = {
+            findOne: jest.fn().mockReturnValue({
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(null),
+            }),
+        };
+
+        const provider = new MinioStorageProvider(cfg, mockAppModel as any);
+
+        await expect(
+            provider.generatePresignedDownloadUrl('somefile.pdf', companyId, Role.COMPANY, postId),
+        ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('generatePresignedDownloadUrl - company role forbidden when application does not link to company', async () => {
+        const cfg = makeConfig();
+        const studentId = '507f1f77bcf86cd799439022';
+        const companyId = '507f1f77bcf86cd799439033';
+
+        const mockClient: any = {
+            statObject: jest.fn().mockResolvedValue({ metaData: { uploaderid: studentId } }),
+        };
+
+        (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
+
+        const mockAppModel: any = {
+            findOne: jest.fn().mockReturnValue({
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(null),
+            }),
+        };
+
+        const provider = new MinioStorageProvider(cfg, mockAppModel as any);
+
+        await expect(provider.generatePresignedDownloadUrl('somefile.pdf', companyId, Role.COMPANY)).rejects.toBeInstanceOf(
+            ForbiddenException,
+        );
+    });
+
+    it('generatePresignedDownloadUrl - company role forbidden when application links to other company', async () => {
+        const cfg = makeConfig();
+        const studentId = '507f1f77bcf86cd799439044';
+        const requestingCompanyId = '507f1f77bcf86cd799439055'; // requester
+        const actualCompanyId = '507f1f77bcf86cd799439066'; // company on the application
+
+        const mockClient: any = {
+            statObject: jest.fn().mockResolvedValue({ metaData: { uploaderid: studentId } }),
+        };
+
+        (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
+
+        const mockAppModel: any = {
+            findOne: jest.fn().mockReturnValue({
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue({ post: { company: { _id: actualCompanyId } } }),
+            }),
+        };
+
+        const provider = new MinioStorageProvider(cfg, mockAppModel as any);
+
+        await expect(
+            provider.generatePresignedDownloadUrl('somefile.pdf', requestingCompanyId, Role.COMPANY),
+        ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
     it('generatePresignedDownloadUrl - throws InternalServerError when presignedGetObject fails', async () => {
         const cfg = makeConfig();
         const mockClient: any = {
@@ -289,8 +439,68 @@ describe('MinioStorageProvider', () => {
         (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
         const provider = new MinioStorageProvider(cfg);
 
-        const res = await provider.generatePublicDownloadUrl('public-file.pdf');
+        const res = await provider.generatePublicDownloadUrl('logos/public-file.pdf');
         expect(res.downloadUrl).toBe('http://pub-url');
+    });
+
+    it('generatePublicDownloadUrl - rejects non-logo public files with BadRequest', async () => {
+        const cfg = makeConfig();
+        const mockClient: any = {
+            presignedGetObject: jest.fn().mockResolvedValue('http://pub-url'),
+        };
+        (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
+        const provider = new MinioStorageProvider(cfg);
+
+        await expect(provider.generatePublicDownloadUrl('cvs/resume.pdf')).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('generatePresignedDownloadUrl - student role forbidden when uploader parsed from filename differs', async () => {
+        const cfg = makeConfig();
+        // statObject returns no metadata, so uploaderId will be parsed from filename
+        const mockClient: any = {
+            statObject: jest.fn().mockResolvedValue({}),
+        };
+        (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
+
+        const provider = new MinioStorageProvider(cfg);
+
+        // filename starts with a 24-hex id (uploader) that differs from requesting user
+        const uploaderId = '507f1f77bcf86cd7994390aa';
+        await expect(
+            provider.generatePresignedDownloadUrl(`${uploaderId}_cv.pdf`, 'someOtherUser', Role.STUDENT),
+        ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('generatePresignedDownloadUrl - throws Forbidden when uploader parsed from filename differs and no role provided', async () => {
+        const cfg = makeConfig();
+        const uploaderId = '507f1f77bcf86cd7994390cc';
+        // statObject returns empty metadata so uploader will be parsed from filename
+        const mockClient: any = {
+            statObject: jest.fn().mockResolvedValue({}),
+        };
+        (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
+
+        const provider = new MinioStorageProvider(cfg);
+
+        await expect(provider.generatePresignedDownloadUrl(`${uploaderId}_cv.pdf`, 'differentUser')).rejects.toBeInstanceOf(
+            ForbiddenException,
+        );
+    });
+
+    it('generatePresignedDownloadUrl - company role forbidden when applicationModel not available', async () => {
+        const cfg = makeConfig();
+        const uploaderId = '507f1f77bcf86cd7994390bb';
+        const mockClient: any = {
+            statObject: jest.fn().mockResolvedValue({ metaData: { uploaderid: uploaderId } }),
+        };
+        (Minio.Client as unknown as jest.Mock).mockImplementation(() => mockClient);
+
+        // Create provider without applicationModel (undefined) to simulate missing model
+        const provider = new MinioStorageProvider(cfg);
+
+        await expect(
+            provider.generatePresignedDownloadUrl('somefile.pdf', 'companyId', Role.COMPANY),
+        ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
     it('generatePublicDownloadUrl - rejects invalid path', async () => {
