@@ -9,6 +9,7 @@ import { Types } from 'mongoose';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
 import { ApplicationOwnerGuard } from '../../../src/common/roles/applicationOwner.guard';
+import { PostOwnerGuard } from 'src/post/guard/IsPostOwnerGuard';
 
 describe('ApplicationController', () => {
     let controller: ApplicationController;
@@ -24,7 +25,7 @@ describe('ApplicationController', () => {
     const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
     const mockRolesGuard = { canActivate: jest.fn().mockReturnValue(true) };
     const mockApplicationOwnerGuard = { canActivate: jest.fn().mockReturnValue(true) };
-
+    const mockPostOwnerGuard = { canActivate: jest.fn().mockReturnValue(true) };
     const applicationId = new Types.ObjectId('507f1f77bcf86cd799439011');
     const studentId = new Types.ObjectId('507f1f77bcf86cd799439012');
     const postId = new Types.ObjectId('507f1f77bcf86cd799439013');
@@ -45,6 +46,8 @@ describe('ApplicationController', () => {
             .useValue(mockRolesGuard)
             .overrideGuard(ApplicationOwnerGuard)
             .useValue(mockApplicationOwnerGuard)
+            .overrideGuard(PostOwnerGuard)
+            .useValue(mockPostOwnerGuard)
             .compile();
 
         controller = module.get<ApplicationController>(ApplicationController);

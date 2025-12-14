@@ -6,8 +6,9 @@ import { CreateApplicationDto } from './dto/createApplication.dto';
 import { PostService } from '../post/post.service';
 import { StudentService } from '../student/student.service';
 import { S3Service } from '../s3/s3.service';
-import { PaginationDto } from '../common/pagination/dto/pagination.dto';
 import { PaginationService } from '../common/pagination/pagination.service';
+import { ApplicationQueryBuilder } from '../common/pagination/applicationQuery.builder';
+import { ApplicationPaginationDto } from 'src/common/pagination/dto/applicationPagination.dto';
 
 @Injectable()
 export class ApplicationService {
@@ -142,16 +143,18 @@ export class ApplicationService {
      * @param query Pagination and filter parameters provided by the
      *                incoming HTTP request (`PaginationDto`).
      */
-    async findByPostPaginated(postId: Types.ObjectId, query: PaginationDto) {
-        const { page = 1, limit = 20 } = query;
-
-        const filter = { post: postId, deletedAt: { $exists: false } };
+    async findByPostPaginated(postId: Types.ObjectId, query: ApplicationPaginationDto) {
+        const { page, limit, ...rest } = query;
+        const filterQuery = { post: postId, ...rest };
+        const applicationQueryBuilder = new ApplicationQueryBuilder<ApplicationDocument>(filterQuery);
+        const sort = applicationQueryBuilder.buildSort();
+        const builtFilter = { ...applicationQueryBuilder.build(), deletedAt: { $exists: false } };
 
         const populateOptions = [
             { path: 'student', select: this.studentFieldsToPopulate },
             { path: 'post', select: this.postFieldsToPopulate },
         ];
 
-        return this.paginationService.paginate(this.applicationModel, filter, page, limit, populateOptions);
+        return this.paginationService.paginate(this.applicationModel, builtFilter, page, limit, populateOptions, sort);
     }
 }

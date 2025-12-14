@@ -7,7 +7,7 @@ import { Application, ApplicationStatus } from '../../../src/application/applica
 import { CreateApplicationDto } from '../../../src/application/dto/createApplication.dto';
 import { PostService } from '../../../src/post/post.service';
 import { StudentService } from '../../../src/student/student.service';
-import { PaginationService} from '../../../src/common/pagination/pagination.service';
+import { PaginationService } from '../../../src/common/pagination/pagination.service';
 import { S3Service } from '../../../src/s3/s3.service';
 
 describe('ApplicationService', () => {
@@ -281,19 +281,21 @@ describe('ApplicationService', () => {
             ],
             total: 1,
             page: 1,
-            limit: 20,
+            limit: 10,
+            hasNext: true,
+            hasPrev: false,
         };
 
         it('should call paginationService.paginate with default page and limit', async () => {
             mockPaginationService.paginate.mockResolvedValue(paginatedResult);
 
-            const result = await service.findByPostPaginated(postId, {});
+            const result = await service.findByPostPaginated(postId, { page: 1, limit: 10 });
 
             expect(mockPaginationService.paginate).toHaveBeenCalledWith(
                 mockApplicationModel,
                 { post: postId, deletedAt: { $exists: false } },
                 1,
-                20,
+                10,
                 [
                     { path: 'student', select: service.studentFieldsToPopulate },
                     { path: 'post', select: service.postFieldsToPopulate },
