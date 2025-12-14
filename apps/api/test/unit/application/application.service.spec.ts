@@ -300,6 +300,7 @@ describe('ApplicationService', () => {
                     { path: 'student', select: service.studentFieldsToPopulate },
                     { path: 'post', select: service.postFieldsToPopulate },
                 ],
+                'createdAt',
             );
 
             expect(result).toEqual(paginatedResult);
@@ -325,6 +326,7 @@ describe('ApplicationService', () => {
                     { path: 'student', select: service.studentFieldsToPopulate },
                     { path: 'post', select: service.postFieldsToPopulate },
                 ],
+                'createdAt',
             );
 
             expect(result.page).toBe(2);
