@@ -37,10 +37,11 @@ import Contact from './pages/legal/Contact';
 import FAQ from './pages/legal/FAQ';
 import Help from './pages/legal/Help';
 import { internshipLoader } from './loaders/intershipLoader';
-import AdminDashboard from './admin/dashboard';
+import { AdminDashboard } from './admin/dashboard';
 import ApplicationPage from './pages/applications/ApplicationPage';
 import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
 import { StudentDashboard } from './student/dashboard';
+import ImportStudent from './admin/importStudent.tsx';
 
 function App() {
     userStore.persist.rehydrate();
@@ -173,11 +174,13 @@ function App() {
                             children: [
                                 {
                                     path: 'dashboard',
-                                    element: <AdminDashboard />,                            
-                                    handle: { title: 'Tableau de bord admin' }
-                                }
-                            ]
-                        }
+                                    element: <AdminDashboard />,
+                                    handle: { title: 'Tableau de bord admin' },
+                                    children: [{ index: true, element: <ImportStudent /> }],
+                                },
+                            ],
+                        },
+                        {
                             path: 'student',
                             element: <ProtectedRoutesByRole allowedRoles={['STUDENT', 'ADMIN']} redirectPath="/" />,
                             children: [
