@@ -53,15 +53,15 @@ export function InternshipPage() {
                             <FilterList />
                         </div>
                     </div>
-                    <div className="grid grid-cols-12 gap-4 pb-2 flex-1 overflow-hidden">
-                        <div className="col-span-12 lg:col-span-5 h-full">
+                    <div className="flex gap-4 pb-2 flex-1 overflow-hidden">
+                        <div className="flex flex-col col-span-12 lg:col-span-5 h-full overflow-hidden">
                             <ToastProvider>
                                 <InternshipList />
                             </ToastProvider>
                         </div>
 
                         {selectedInternship ? (
-                            <div className="col-span-12 lg:col-span-7 h-full overflow-y-auto">
+                            <div className="flex flex-1 h-full overflow-y-auto">
                                 <InternshipDetail internship={selectedInternship} />
                             </div>
                         ) : (

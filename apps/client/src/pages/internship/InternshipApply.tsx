@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navbar } from '../../components/navbar/Navbar';
 import { Navigate, useNavigate, useParams } from 'react-router';
-import Spinner from '../../components/Spinner/Spinner';
 import FileInput from '../../components/inputs/fileInput/FileInput';
 import InternshipDetail from '../../modules/internship/InternshipDetail';
 import { useState, type FormEvent } from 'react';
