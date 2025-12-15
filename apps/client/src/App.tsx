@@ -184,7 +184,7 @@ function App() {
                         },
                         {
                             path: 'student',
-                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT', 'ADMIN']} redirectPath="/" />,
+                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} redirectPath="/" />,
                             children: [
                                 {
                                     path: 'dashboard',
