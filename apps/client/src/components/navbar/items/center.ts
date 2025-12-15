@@ -15,6 +15,13 @@ export const centerNavItems: NavItem[] = [
         type: 'link',
         role: ['STUDENT'],
     },
+    {
+        key: 'home-admin',
+        title: 'TABLEAU DE BORD',
+        to: '/admin/dashboard',
+        type: 'link',
+        role: ['ADMIN'],
+    },
     /*{
         key: 'offers',
         title: 'Annonces',
