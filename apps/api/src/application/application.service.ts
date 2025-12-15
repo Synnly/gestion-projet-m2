@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Application, ApplicationDocument, ApplicationStatus } from './application.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -110,6 +110,7 @@ export class ApplicationService {
                 `${objectname}.${dto.lmExtension}`,
                 'lm',
                 studentId.toString(),
+                postId.toString(),
             );
         }
 
@@ -147,13 +148,20 @@ export class ApplicationService {
     async findByPostPaginated(postId: Types.ObjectId, query: ApplicationPaginationDto) {
         const { page, limit, ...rest } = query;
         const filterQuery = { post: postId, ...rest };
-        const applicationQueryBuilder = new ApplicationQueryBuilder<ApplicationDocument>(filterQuery);
+        const finalFilterQuery =
+            filterQuery.status === ApplicationStatus.Pending
+                ? { ...filterQuery, status: [ApplicationStatus.Pending, ApplicationStatus.Read] }
+                : filterQuery;
+        const applicationQueryBuilder = new ApplicationQueryBuilder<ApplicationDocument>(finalFilterQuery);
         const sort = applicationQueryBuilder.buildSort();
+
         const builtFilter = { ...applicationQueryBuilder.build(), deletedAt: { $exists: false } };
 
-        return this.paginationService.paginate(this.applicationModel, builtFilter, page, limit, [], sort);
+        const populateOptions = [{ path: 'student', select: this.studentFieldsToPopulate }];
+
+        return this.paginationService.paginate(this.applicationModel, builtFilter, page, limit, populateOptions, sort);
     }
-  
+
     /**
      * Return apply with studentId and postId.
      * @param studentId The id of student
@@ -199,7 +207,7 @@ export class ApplicationService {
         const skip = (safePage - 1) * safeLimit;
 
         const baseMatch: any = { student: studentId, deletedAt: { $exists: false } };
-      
+
         const matchStage: any[] = [{ $match: baseMatch }];
 
         // filtre searchQuery

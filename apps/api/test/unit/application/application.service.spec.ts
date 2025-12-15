@@ -214,6 +214,7 @@ describe('ApplicationService', () => {
                 `${studentId.toString()}.docx`,
                 'lm',
                 studentId.toString(),
+                post._id.toString(),
             );
             expect(mockApplicationModel).toHaveBeenCalledWith({
                 student,
@@ -308,7 +309,7 @@ describe('ApplicationService', () => {
                 { post: postId, deletedAt: { $exists: false } },
                 1,
                 10,
-                [],
+                [{ path: 'student', select: '_id firstName lastName email' }],
                 'createdAt',
             );
 
@@ -331,7 +332,7 @@ describe('ApplicationService', () => {
                 { post: postId, deletedAt: { $exists: false } },
                 2,
                 10,
-                [],
+                [{ path: 'student', select: '_id firstName lastName email' }],
                 'createdAt',
             );
 

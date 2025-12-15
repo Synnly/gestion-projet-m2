@@ -21,7 +21,7 @@ export const Pagination: React.FC<Props> = ({ page, totalPages, onPageChange, ma
     for (let i = start; i <= end; i++) pages.push(i);
 
     return (
-        <nav className={`flex items-center justify-center gap-2 py-3 ${className}`} aria-label="Pagination">
+        <nav className={`${className} flex items-center justify-center gap-2 py-3 `} aria-label="Pagination">
             <button
                 className="btn btn-ghost btn-sm"
                 onClick={() => onPageChange(1)}

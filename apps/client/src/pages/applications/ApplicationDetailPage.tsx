@@ -1,8 +1,10 @@
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useFetchApplicationDetail } from '../../hooks/useFetchApplicationDetail';
 import { type ApplicationStatus } from '../../store/useApplicationStore';
+import { PdfModal } from '../../company/dashboard/applicationList/component/PdfModal.tsx';
+import { useState } from 'react';
 
 const statusStyles: Record<ApplicationStatus | string, string> = {
     Pending: 'badge badge-sm bg-blue-100 text-blue-700 border-blue-200',
@@ -19,8 +21,15 @@ const statusLabels: Record<ApplicationStatus, string> = {
 };
 
 export default function ApplicationDetailPage() {
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedApplication, setSelectedApplication] = useState<{ id: string; type: 'cv' | 'lm' } | null>(null);
     const { applicationId } = useParams();
     const { data, isLoading, error } = useFetchApplicationDetail(applicationId);
+
+    function previewFile(id: string, type: 'cv' | 'lm') {
+        setSelectedApplication({ id, type });
+        setModalOpen(true);
+    }
 
     return (
         <div className="w-full flex justify-center px-4 md:px-8 py-8">
@@ -110,16 +119,24 @@ export default function ApplicationDetailPage() {
                                         <h2 className="card-title text-base-content text-lg">Documents</h2>
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-base-content/80">CV</span>
-                                            <button className="btn btn-ghost btn-xs" disabled>
-                                                {data.cv ?? 'Non fourni'} (à implémenter)
+                                            <button
+                                                className="btn btn-ghost btn-xs"
+                                                onClick={() => previewFile(data._id, 'cv')}
+                                            >
+                                                <Eye />
                                             </button>
                                         </div>
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-base-content/80">Lettre de motivation</span>
-                                            <button className="btn btn-ghost btn-xs" disabled>
-                                                {data.coverLetter ?? 'Non fournie'} (à implémenter)
-                                            </button>
-                                        </div>
+                                        {data.coverLetter && (
+                                            <div className="flex items-center justify-between text-sm">
+                                                <span className="text-base-content/80">Lettre de motivation</span>
+                                                <button
+                                                    className="btn btn-ghost btn-xs"
+                                                    onClick={() => previewFile(data._id, 'lm')}
+                                                >
+                                                    <Eye />
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -133,6 +150,14 @@ export default function ApplicationDetailPage() {
                     </>
                 )}
             </div>
+            {modalOpen && (
+                <PdfModal
+                    selectedApplication={selectedApplication}
+                    onClose={() => {
+                        setModalOpen(false);
+                    }}
+                />
+            )}
         </div>
     );
 }

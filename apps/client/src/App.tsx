@@ -41,6 +41,7 @@ import { AdminDashboard } from './admin/dashboard';
 import ApplicationPage from './pages/applications/ApplicationPage';
 import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
 import { StudentDashboard } from './student/dashboard';
+import { ApplicationList } from './company/dashboard/applicationList/ApplicationList.tsx';
 import ImportStudent from './admin/importStudent.tsx';
 
 function App() {
@@ -110,6 +111,7 @@ function App() {
                                             index: true,
                                             element: <DashboardInternshipList />,
                                         },
+                                        { path: 'post/:postId/applications', element: <ApplicationList /> },
                                     ],
                                 },
                                 {
@@ -182,7 +184,7 @@ function App() {
                         },
                         {
                             path: 'student',
-                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT', 'ADMIN']} redirectPath="/" />,
+                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} redirectPath="/" />,
                             children: [
                                 {
                                     path: 'dashboard',
