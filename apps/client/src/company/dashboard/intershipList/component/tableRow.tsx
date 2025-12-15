@@ -1,8 +1,8 @@
-import EditPencilIcon from '../../../components/icons/EditPencilIcon';
-import type { Internship } from '../../../types/internship.types';
+import EditPencilIcon from '../../../../components/icons/EditPencilIcon';
+import type { Internship } from '../../../../types/internship.types';
 import { NavLink } from 'react-router-dom';
 
-const formatDate = (timeStamp: string) => {
+export const formatDate = (timeStamp: string) => {
     const date = new Date(timeStamp);
     return date.toLocaleDateString('fr-FR', {
         year: 'numeric',
@@ -14,25 +14,27 @@ const formatDate = (timeStamp: string) => {
 export function TableRow({ internship }: { internship: Internship }) {
     return (
         <tr className="border-t border-t-slate-200 dark:border-t-slate-800">
-          <td className="px-4 py-2 text-color-accent text-center text-sm font-medium">
+            <td className="px-4 py-2 text-color-accent text-center text-sm font-medium">
                 <div className="flex flex-col items-center gap-1">
-                    <NavLink to={`/internship/detail/${internship._id}`}><div>{internship.title}</div></NavLink>
+                    <NavLink to={`/internship/detail/${internship._id}`}>
+                        <div>{internship.title}</div>
+                    </NavLink>
 
                     <div className="text-xs flex flex-row items-center gap-2">
-
                         <span>{internship.sector}</span>
-                        <div
-                            className={`size-1 rounded-full bg-green-500`}
-                        />
+                        <div className={`size-1 rounded-full bg-green-500`} />
 
                         <span>{internship.adress}</span>
                     </div>
                 </div>
             </td>
             <td className=" px-4 py-2 text-slate-600 text-center text-sm">
-                <a className="text-color-accent hover:underline text-center" href="">
-                    Aucun candidat
-                </a>
+                <NavLink
+                    className="text-color-accent hover:underline text-center"
+                    to={`/company/dashboard/post/${internship._id}/applications`}
+                >
+                    {internship.applications?.length || 0} candidatures
+                </NavLink>
             </td>
 
             <td className="h-[72px] px-4 py-2  text-center text-sm">

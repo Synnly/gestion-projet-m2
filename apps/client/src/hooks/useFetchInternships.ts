@@ -3,20 +3,39 @@ import { useInternshipStore } from '../store/useInternshipStore';
 import type { PaginationResult, Internship } from '../types/internship.types';
 import { fetchPublicSignedUrl } from './useBlob';
 import { useQuery } from '@tanstack/react-query';
-import { useToast } from '../components/ui/toast/ToastProvider';
+import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
 export function buildQueryParams(filters: any) {
-    return new URLSearchParams(
-        Object.entries({
-            page: filters.page ?? 1,
-            limit: filters.limit ?? 10,
-            searchQuery: filters.searchQuery,
-        })
-            .filter(([, v]) => v !== undefined && v !== null && v !== '')
-            .map(([k, v]) => [k, String(v)]),
-    );
+    const params = new URLSearchParams();
+
+    const setParam = (key: string, value: any) => {
+        if (value === undefined || value === null || value === '') return;
+        if (Array.isArray(value)) {
+            value.forEach((v) => params.append(key, String(v)));
+        } else {
+            params.set(key, String(value));
+        }
+    };
+
+    params.set('page', String(filters.page ?? 1));
+    params.set('limit', String(filters.limit ?? 10));
+
+    setParam('searchQuery', filters.searchQuery);
+    setParam('title', filters.title);
+    setParam('description', filters.description);
+    setParam('duration', filters.duration);
+    setParam('sector', filters.sector);
+    setParam('type', filters.type);
+    setParam('minSalary', filters.minSalary);
+    setParam('maxSalary', filters.maxSalary);
+    setParam('keySkills', filters.keySkills);
+    setParam('city', filters.city);
+    setParam('radiusKm', filters.radiusKm);
+    setParam('sort', filters.sort);
+    setParam('company', filters.company);
+    return params;
 }
 
 export async function fetchPosts(API_URL: string, params: URLSearchParams) {
@@ -79,7 +98,6 @@ export function applyLogosToPosts(posts: any[], profiles: any[], signedMap: Map<
 export function useFetchInternships() {
     const filters = useInternshipStore((state) => state.filters);
     const setInternships = useInternshipStore((state) => state.setInternships);
-    const toast = useToast();
     const query = useQuery<PaginationResult<Internship>, Error>({
         queryKey: ['internships', filters],
 
@@ -96,7 +114,9 @@ export function useFetchInternships() {
             const removedCount = originalLength - validPosts.length;
             if (removedCount > 0) {
                 try {
-                    toast.error(`Impossible d'afficher ${removedCount} stage(s)`);
+                    toast.error(`Impossible d'afficher ${removedCount} stage(s)`, {
+                        toastId: 'fetch-company-internships',
+                    });
                 } catch (e) {
                     // ignore if toast not available
                 }
@@ -137,6 +157,13 @@ export function useFetchInternships() {
             setInternships(query.data);
         }
     }, [query.data, setInternships]);
+
+    // Enregistrer la fonction refetch dans le store pour permettre le refetch lors du changement de filtres
+    const setRefetchCallback = useInternshipStore((state) => state.setRefetchCallback);
+    useEffect(() => {
+        setRefetchCallback(query.refetch);
+        return () => setRefetchCallback(null);
+    }, [query.refetch, setRefetchCallback]);
 
     return query;
 }

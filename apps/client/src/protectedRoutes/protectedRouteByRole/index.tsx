@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useOutletContext } from 'react-router-dom';
 import type { userContext } from '../type';
+import { toast } from 'react-toastify';
 type ProtectedRouteByRoleProps = {
     allowedRoles: string[];
     redirectPath?: string;
@@ -12,6 +13,7 @@ export const ProtectedRoutesByRole = ({ allowedRoles, redirectPath = '/' }: Prot
     }
     const payload = user.get(user.accessToken);
     if (!allowedRoles.includes(payload.role)) {
+        toast.error("Vous n'avez pas les permissions nécessaires pour accéder à cette page.", { toastId: 'forbidden' });
         return <Navigate to={redirectPath} replace />;
     }
     return <Outlet context={user} />;

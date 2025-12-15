@@ -1,5 +1,7 @@
 import { Test as NestTest, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import request from 'supertest';
@@ -7,6 +9,7 @@ import * as Minio from 'minio';
 import { EventEmitter } from 'events';
 import cookieParser from 'cookie-parser';
 import { S3Module } from '../../../src/s3/s3.module';
+import { StorageProviderType } from '../../../src/s3/s3.constants';
 import { S3Service } from '../../../src/s3/s3.service';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { OwnerGuard } from '../../../src/s3/owner.guard';
@@ -122,7 +125,11 @@ startxref
         }
     }
 
+    let mongod: MongoMemoryServer;
+
     beforeAll(async () => {
+        mongod = await MongoMemoryServer.create();
+        const uri = mongod.getUri();
         // Override MinIO credentials for testing
         process.env.MINIO_ENDPOINT = 'localhost';
         process.env.MINIO_PORT = '9000';
@@ -142,7 +149,7 @@ startxref
                 const extension = originalFilename.split('.').pop()?.toLowerCase() || '';
                 const fileName = `${userId}_${fileType}.${extension}`;
                 const uploadUrl = `http://mock/${fileName}`;
-                
+
                 // Check if file exists and delete it (simulate overwrite)
                 const exists = await mockMinio
                     .statObject(process.env.MINIO_BUCKET || 'test-uploads', fileName)
@@ -151,7 +158,7 @@ startxref
                 if (exists) {
                     await mockMinio.removeObject(process.env.MINIO_BUCKET || 'test-uploads', fileName);
                 }
-                
+
                 return { fileName, uploadUrl };
             },
             async generatePresignedDownloadUrl(fileName: string) {
@@ -185,7 +192,8 @@ startxref
                     secret,
                     signOptions: { expiresIn: '1h' },
                 }),
-                S3Module,
+                MongooseModule.forRoot(uri),
+                S3Module.register({ provider: StorageProviderType.MINIO }),
             ],
         })
             .overrideGuard(AuthGuard)
@@ -243,9 +251,9 @@ startxref
             if (objectsList.length > 0) {
                 await minioClient.removeObjects(testBucket, objectsList);
             }
-        } catch (error) {
-        }
+        } catch (error) {}
         await app.close();
+        if (mongod) await mongod.stop();
     });
 
     describe('POST /files/signed/logo', () => {

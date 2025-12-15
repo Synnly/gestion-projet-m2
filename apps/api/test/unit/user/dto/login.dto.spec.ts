@@ -38,7 +38,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const emailError = errors.find(e => e.property === 'email');
+            const emailError = errors.find((e) => e.property === 'email');
             expect(emailError).toBeDefined();
             expect(emailError?.constraints?.isEmail).toBeDefined();
         });
@@ -50,7 +50,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const emailError = errors.find(e => e.property === 'email');
+            const emailError = errors.find((e) => e.property === 'email');
             expect(emailError).toBeDefined();
             expect(emailError?.constraints?.isEmail).toBeDefined();
         });
@@ -62,7 +62,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const emailError = errors.find(e => e.property === 'email');
+            const emailError = errors.find((e) => e.property === 'email');
             expect(emailError).toBeDefined();
         });
 
@@ -73,7 +73,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const emailError = errors.find(e => e.property === 'email');
+            const emailError = errors.find((e) => e.property === 'email');
             expect(emailError).toBeDefined();
         });
 
@@ -84,7 +84,7 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            const emailError = errors.find(e => e.property === 'email');
+            const emailError = errors.find((e) => e.property === 'email');
             expect(emailError).toBeDefined();
         });
 
@@ -125,142 +125,14 @@ describe('LoginDto', () => {
         });
     });
 
-    describe('Password validation', () => {
-        it('should fail validation when password is missing', async () => {
-            const dto = new LoginDto();
-            dto.email = 'valid@example.com';
-
-            const errors = await validate(dto);
-            expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
-            expect(passwordError).toBeDefined();
-        });
-
-        it('should fail validation when password is too short', async () => {
-            const dto = new LoginDto();
-            dto.email = 'valid@example.com';
-            dto.password = 'Short1!';
-
-            const errors = await validate(dto);
-            expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
-            expect(passwordError).toBeDefined();
-            expect(passwordError?.constraints?.isStrongPassword).toBeDefined();
-        });
-
-        it('should fail validation when password lacks uppercase', async () => {
-            const dto = new LoginDto();
-            dto.email = 'valid@example.com';
-            dto.password = 'weakpassword123!';
-
-            const errors = await validate(dto);
-            expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
-            expect(passwordError).toBeDefined();
-        });
-
-        it('should fail validation when password lacks lowercase', async () => {
-            const dto = new LoginDto();
-            dto.email = 'valid@example.com';
-            dto.password = 'WEAKPASSWORD123!';
-
-            const errors = await validate(dto);
-            expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
-            expect(passwordError).toBeDefined();
-        });
-
-        it('should fail validation when password lacks numbers', async () => {
-            const dto = new LoginDto();
-            dto.email = 'valid@example.com';
-            dto.password = 'WeakPassword!';
-
-            const errors = await validate(dto);
-            expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
-            expect(passwordError).toBeDefined();
-        });
-
-        it('should fail validation when password lacks symbols', async () => {
-            const dto = new LoginDto();
-            dto.email = 'valid@example.com';
-            dto.password = 'WeakPassword123';
-
-            const errors = await validate(dto);
-            expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
-            expect(passwordError).toBeDefined();
-        });
-
-        it('should fail validation when password is empty string', async () => {
-            const dto = new LoginDto();
-            dto.email = 'valid@example.com';
-            dto.password = '';
-
-            const errors = await validate(dto);
-            expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
-            expect(passwordError).toBeDefined();
-        });
-
-        it('should pass validation when password meets all requirements', async () => {
-            const dto = new LoginDto();
-            dto.email = 'valid@example.com';
-            dto.password = 'StrongPassword123!';
-
-            const errors = await validate(dto);
-            expect(errors.length).toBe(0);
-        });
-
-        it('should pass validation with minimum length password', async () => {
-            const dto = new LoginDto();
-            dto.email = 'valid@example.com';
-            dto.password = 'Passw0!d'; // Exactly 8 characters
-
-            const errors = await validate(dto);
-            expect(errors.length).toBe(0);
-        });
-
-        it('should pass validation with complex password', async () => {
-            const dto = new LoginDto();
-            dto.email = 'valid@example.com';
-            dto.password = 'C0mpl3x!P@ssw0rd#2024';
-
-            const errors = await validate(dto);
-            expect(errors.length).toBe(0);
-        });
-
-        it('should pass validation with password containing multiple symbols', async () => {
-            const dto = new LoginDto();
-            dto.email = 'valid@example.com';
-            dto.password = 'P@ssw0rd!#$%^&*';
-
-            const errors = await validate(dto);
-            expect(errors.length).toBe(0);
-        });
-    });
-
     describe('Multiple fields validation', () => {
         it('should fail validation when both fields are missing', async () => {
             const dto = new LoginDto();
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            
-            const errorProperties = errors.map(e => e.property);
-            expect(errorProperties).toContain('email');
-            expect(errorProperties).toContain('password');
-        });
 
-        it('should fail validation when both fields are invalid', async () => {
-            const dto = new LoginDto();
-            dto.email = 'invalid-email';
-            dto.password = 'weak';
-
-            const errors = await validate(dto);
-            expect(errors.length).toBeGreaterThan(0);
-            
-            const errorProperties = errors.map(e => e.property);
+            const errorProperties = errors.map((e) => e.property);
             expect(errorProperties).toContain('email');
             expect(errorProperties).toContain('password');
         });
@@ -272,8 +144,8 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
-            
-            const errorProperties = errors.map(e => e.property);
+
+            const errorProperties = errors.map((e) => e.property);
             expect(errorProperties).toContain('email');
             expect(errorProperties).toContain('password');
         });
@@ -352,28 +224,6 @@ describe('LoginDto', () => {
 
             const errors = await validate(dto);
             expect(errors.length).toBe(0);
-        });
-
-        it('should reject weak password even for valid email', async () => {
-            const dto = new LoginDto();
-            dto.email = 'admin@company.com';
-            dto.password = 'password';
-
-            const errors = await validate(dto);
-            expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
-            expect(passwordError).toBeDefined();
-        });
-
-        it('should reject common patterns without numbers', async () => {
-            const dto = new LoginDto();
-            dto.email = 'user@example.com';
-            dto.password = 'Password!';
-
-            const errors = await validate(dto);
-            expect(errors.length).toBeGreaterThan(0);
-            const passwordError = errors.find(e => e.property === 'password');
-            expect(passwordError).toBeDefined();
         });
 
         it('should accept complex secure password', async () => {

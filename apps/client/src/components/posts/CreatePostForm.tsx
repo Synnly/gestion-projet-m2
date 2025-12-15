@@ -1,7 +1,7 @@
-import { FormEvent, KeyboardEvent, useEffect, useState } from 'react';
+import { type FormEvent, type KeyboardEvent, useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
@@ -11,6 +11,8 @@ import { updatePost } from '../../api/update_post';
 import { useCreatePostStore, type WorkMode } from '../../store/CreatePostStore';
 import { profileStore } from '../../store/profileStore';
 import { useInternshipStore } from '../../store/useInternshipStore';
+import { companyInternshipStore } from '../../store/companyInternshipStore';
+import { toast } from 'react-toastify';
 
 type PostFormMode = 'create' | 'edit';
 
@@ -30,6 +32,7 @@ type InitialPostData = Partial<{
     keySkills: string[];
     workMode: WorkMode;
     isVisibleToStudents: boolean;
+    isCoverLetterRequired: boolean;
 }>;
 
 type PostFormProps = {
@@ -52,6 +55,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         minSalary,
         maxSalary,
         isVisibleToStudents,
+        isCoverLetterRequired,
         skills,
         workMode,
         setTitle,
@@ -70,6 +74,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         addSkill,
         removeSkill,
         setWorkMode,
+        setIsCoverLetterRequired,
     } = useCreatePostStore();
 
     const profile = profileStore((state) => state.profile);
@@ -79,7 +84,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
     const filters = useInternshipStore((state) => state.filters);
     const queryClient = useQueryClient();
     const resetInternship = useInternshipStore((state) => state.clearInternships);
-
+    const resetDashboardInternship = companyInternshipStore((state) => state.clearInternships);
     // Pour refetcher la query
     // Pré-remplissage en mode édition
     useEffect(() => {
@@ -99,6 +104,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         setIsVisibleToStudents(initialData.isVisibleToStudents ?? true);
         if (initialData.keySkills) setSkills(initialData.keySkills);
         if (initialData.workMode) setWorkMode(initialData.workMode);
+        setIsCoverLetterRequired(initialData.isCoverLetterRequired ?? false);
     }, [
         initialData,
         setAddressLine,
@@ -115,6 +121,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         setStartDate,
         setTitle,
         setWorkMode,
+        setIsCoverLetterRequired,
     ]);
 
     // Concatène adresse/CP/ville vers location
@@ -136,7 +143,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         'Data / IA',
         'Product Management',
         'Support / Customer Success',
-        'Operations / Logistique',
+        'Opérations / Logistique',
         'Santé / Biotech',
         'Éducation / Formation',
     ];
@@ -159,7 +166,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
     const mutation = useMutation({
         mutationFn: async (payload: { companyId: string; data: CreatePostPayload['data'] }) => {
             if (mode === 'edit') {
-                if (!postId) throw new Error("Identifiant de l'annonce manquant pour la mise a jour.");
+                if (!postId) throw new Error("Identifiant de l'annonce manquant pour la mise à jour.");
                 return updatePost({ companyId: payload.companyId, postId, data: payload.data });
             }
             return createPost(payload);
@@ -167,16 +174,17 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         onSuccess: () => {
             const successText =
                 mode === 'edit'
-                    ? "L'offre de stage a été mise a jour avec succès."
+                    ? "L'offre de stage a été mise à jour avec succès."
                     : "L'offre de stage a été créée avec succès.";
 
-            toast.success(successText);
+            toast.success(successText, { toastId: 'post-success' });
             navigate('/company/dashboard');
         },
         onError: (error) => {
             console.error(error);
             toast.error(
                 error instanceof Error ? error.message : "Une erreur est survenue lors de l'envoi de l'offre de stage.",
+                { toastId: 'post-error' },
             );
         },
     });
@@ -186,7 +194,9 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         if (mutation.isPending) return;
 
         if (!profile?._id) {
-            toast.error("Impossible de créer l'annonce : identifiant entreprise manquant.");
+            toast.error("Impossible de créer l'annonce : identifiant entreprise manquant.", {
+                toastId: 'missing-company-id',
+            });
             return;
         }
 
@@ -212,11 +222,18 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
             adress: location || undefined,
             type: workModeMap[workMode],
             isVisible: isVisibleToStudents,
+            isCoverLetterRequired: isCoverLetterRequired,
         };
 
         await mutation.mutateAsync({ companyId: profile._id, data: payload });
-        await queryClient.invalidateQueries(['internships', filters]);
+        await queryClient.invalidateQueries({
+            queryKey: ['internships', filters],
+        });
+        await queryClient.invalidateQueries({
+            queryKey: ['companyInternships', filters],
+        });
         resetInternship();
+        resetDashboardInternship();
     }
 
     return (
@@ -224,7 +241,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
             <div className="rounded-2xl border border-base-300 bg-base-100 shadow-sm">
                 <div className="border-b border-base-100 px-6 pb-4 pt-5">
                     <h1 className="text-base font-semibold text-base-900">
-                        {mode === 'edit' ? "Mêttre à jour l'offre de stage" : 'Créer une offre de stage'}
+                        {mode === 'edit' ? "Mettre à jour l'offre de stage" : 'Créer une offre de stage'}
                     </h1>
                 </div>
 
@@ -236,7 +253,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             </label>
                             <input
                                 className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                placeholder="Ex : Stagiaire Developpeur Frontend"
+                                placeholder="Ex : Stagiaire Développeur Frontend"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
                             />
@@ -323,7 +340,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
 
                             <input
                                 className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                placeholder="Ajouter une competence et appuyer sur Entree"
+                                placeholder="Ajouter une compétence et appuyer sur Entrée"
                                 value={skillInput}
                                 onChange={(e) => setSkillInput(e.target.value)}
                                 onKeyDown={handleSkillKeyDown}
@@ -450,7 +467,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             Paramètres de publication
                         </h2>
 
-                        <div className="form-control">
+                        <div className="form-control flex flex-col gap-2">
                             <label className="label cursor-pointer justify-between px-0">
                                 <div className="text-[11px] text-base-500">
                                     Rendre cette offre visible aux étudiants.
@@ -460,6 +477,17 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                     className="toggle toggle-primary toggle-sm ml-4"
                                     checked={isVisibleToStudents}
                                     onChange={(e) => setIsVisibleToStudents(e.target.checked)}
+                                />
+                            </label>
+                            <label className="label cursor-pointer justify-between px-0">
+                                <div className="text-[11px] text-base-500">
+                                    Rendre le dépôt de la lettre de motivation obligatoire.
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    className="toggle toggle-primary toggle-sm ml-4"
+                                    checked={isCoverLetterRequired}
+                                    onChange={(e) => setIsCoverLetterRequired(e.target.checked)}
                                 />
                             </label>
                         </div>

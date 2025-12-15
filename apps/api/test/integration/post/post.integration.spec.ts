@@ -201,10 +201,11 @@ describe('Post Integration Tests', () => {
             expect(res.body.data).toHaveLength(2);
             expect(res.body.total).toBe(2);
             const normalized = normalizeBody(res.body.data);
-            expect(normalized[0].title).toBe('Développeur Frontend');
-            expect(normalized[1].title).toBe('Développeur Backend');
+            // Do not rely on ordering: ensure both posts are present
+            const titles = normalized.map((p: any) => p.title);
+            expect(titles).toContain('Développeur Frontend');
+            expect(titles).toContain('Développeur Backend');
         });
-
 
         it('should return posts with all fields when posts have complete data and findAll is called', async () => {
             await createPost({
@@ -280,7 +281,6 @@ describe('Post Integration Tests', () => {
                 .expect(400);
         });
 
-
         it('should return post with all fields when post has complete data and findOne is called', async () => {
             const post = await createPost({
                 title: 'Développeur Full Stack',
@@ -329,6 +329,7 @@ describe('Post Integration Tests', () => {
                 keySkills: ['Python', 'Django'],
                 adress: 'Lyon, France',
                 type: PostType.Presentiel,
+                isCoverLetterRequired: true,
             };
 
             await request(app.getHttpServer())
@@ -348,6 +349,7 @@ describe('Post Integration Tests', () => {
                 title: 'Titre Minimal',
                 description: 'Description Minimale',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())
@@ -552,6 +554,7 @@ describe('Post Integration Tests', () => {
                 description: 'Description',
                 keySkills: ['Skill1'],
                 type: PostType.Presentiel,
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())
@@ -570,6 +573,7 @@ describe('Post Integration Tests', () => {
                 description: 'Description',
                 keySkills: ['Skill1'],
                 type: PostType.Teletravail,
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())
@@ -588,6 +592,7 @@ describe('Post Integration Tests', () => {
                 description: 'Description',
                 keySkills: ['Skill1'],
                 type: PostType.Hybride,
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())
@@ -612,6 +617,7 @@ describe('Post Integration Tests', () => {
                 keySkills: ['Java', 'Spring'],
                 adress: 'Marseille, France',
                 type: PostType.Hybride,
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())

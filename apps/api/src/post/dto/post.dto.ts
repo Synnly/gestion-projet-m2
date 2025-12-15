@@ -5,12 +5,13 @@
 import { Types } from 'mongoose';
 import { Post, PostType } from '../post.schema';
 import { CompanyDto } from '../../company/dto/company.dto';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { ValidateNested } from 'class-validator';
 
 @Exclude()
 export class PostDto {
     /** Unique identifier of the company */
+    @Transform((params) => params.obj._id)
     @Expose()
     _id: Types.ObjectId;
 
@@ -88,11 +89,18 @@ export class PostDto {
     @Expose()
     createdAt?: string;
 
+    @Expose()
+    isCoverLetterRequired: boolean;
+
     /** Reference to the company offering the internship */
     @Expose()
     @ValidateNested({ each: true })
     @Type(() => CompanyDto)
     company: CompanyDto;
+
+    @Expose()
+    @ValidateNested({ each: true })
+    applications?: Types.ObjectId[];
 
     constructor(partial?: Partial<Post>) {
         if (partial) {

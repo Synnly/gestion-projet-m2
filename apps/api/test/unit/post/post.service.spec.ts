@@ -6,6 +6,9 @@ import { Post } from '../../../src/post/post.schema';
 import { CreatePostDto } from '../../../src/post/dto/createPost.dto';
 import { PostType } from '../../../src/post/post.schema';
 import { PaginationService } from '../../../src/common/pagination/pagination.service';
+import { GeoService } from '../../../src/common/geography/geo.service';
+import { CompanyService } from '../../../src/company/company.service';
+import { CreationFailedError } from '../../../src/errors/creationFailedError';
 
 const basePost = {
     _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
@@ -41,11 +44,26 @@ describe('PostService', () => {
         create: jest.fn(),
         find: jest.fn(),
         findById: jest.fn(),
+        findOneAndUpdate: jest.fn(),
         constructor: jest.fn(),
     };
 
     const mockPaginationService = {
         paginate: jest.fn(),
+    };
+
+    const mockGeoService = {
+        geocodeAddress: jest.fn().mockResolvedValue([2.3522, 48.8566]),
+    };
+
+    const mockCompanyService = {
+        findOne: jest.fn().mockResolvedValue({
+            streetNumber: '10',
+            streetName: 'Rue de Test',
+            postalCode: '75001',
+            city: 'Paris',
+            country: 'France',
+        }),
     };
 
     beforeEach(async () => {
@@ -59,6 +77,14 @@ describe('PostService', () => {
                 {
                     provide: PaginationService,
                     useValue: mockPaginationService,
+                },
+                {
+                    provide: GeoService,
+                    useValue: mockGeoService,
+                },
+                {
+                    provide: CompanyService,
+                    useValue: mockCompanyService,
                 },
             ],
         }).compile();
@@ -101,7 +127,12 @@ describe('PostService', () => {
             const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
                 findById: jest.fn().mockReturnValue({ populate: populateMock }),
             });
-            const serviceWithMock = new PostService(mockModel as any);
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             const result = await serviceWithMock.create(validCreatePostDto, companyId);
 
@@ -129,7 +160,12 @@ describe('PostService', () => {
             const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
                 findById: jest.fn().mockReturnValue({ populate: populateMock }),
             });
-            const serviceWithMock = new PostService(mockModel as any);
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             const result = await serviceWithMock.create(minimalDto, companyId);
 
@@ -150,7 +186,12 @@ describe('PostService', () => {
             const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
                 findById: jest.fn().mockReturnValue({ populate: populateMock }),
             });
-            const serviceWithMock = new PostService(mockModel as any);
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             const result = await serviceWithMock.create(validCreatePostDto, companyId);
 
@@ -159,6 +200,29 @@ describe('PostService', () => {
             expect(result).toHaveProperty('startDate');
             expect(result).toHaveProperty('minSalary');
             expect(result).toHaveProperty('maxSalary');
+        });
+
+        it('should throw CreationFailedError when populated post cannot be retrieved after save', async () => {
+            const mockSave = jest.fn().mockResolvedValue(mockPost);
+            const postInstance = {
+                ...validCreatePostDto,
+                save: mockSave,
+            };
+
+            const execMock = jest.fn().mockResolvedValue(null);
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
+                findById: jest.fn().mockReturnValue({ populate: populateMock }),
+            });
+
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
+
+            await expect(serviceWithMock.create(validCreatePostDto, companyId)).rejects.toThrow(CreationFailedError);
         });
     });
 
@@ -273,6 +337,38 @@ describe('PostService', () => {
             expect(result?.maxSalary).toBe(3000);
             expect(result?.keySkills).toEqual(['JavaScript', 'TypeScript', 'React', 'Node.js']);
             expect(result?.type).toBe(PostType.Hybride);
+        });
+    });
+
+    describe('update', () => {
+        const companyId = '507f1f77bcf86cd799439099';
+        const postId = '507f1f77bcf86cd799439011';
+
+        it('should update and return the post when it belongs to the company', async () => {
+            const execMock = jest.fn().mockResolvedValue(createMockPost({ title: 'Updated Title' }));
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.findOneAndUpdate.mockReturnValue({ populate: populateMock });
+
+            const dto = { title: 'Updated Title' } as any;
+
+            const result = await service.update(dto, companyId, postId);
+
+            expect(result.title).toBe('Updated Title');
+            expect(mockPostModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
+
+            const calledFilter = mockPostModel.findOneAndUpdate.mock.calls[0][0];
+            expect(calledFilter._id).toBe(postId);
+            expect(String(calledFilter.company)).toBe(companyId);
+        });
+
+        it('should throw NotFoundException when update returns null', async () => {
+            const execMock = jest.fn().mockResolvedValue(null);
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.findOneAndUpdate.mockReturnValue({ populate: populateMock });
+
+            const dto = { title: 'No Update' } as any;
+
+            await expect(service.update(dto, companyId, postId)).rejects.toThrow();
         });
     });
 });

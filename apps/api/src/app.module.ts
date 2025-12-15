@@ -7,12 +7,17 @@ import { TokensMiddleware } from './common/middleware/tokens.middleware';
 import { S3Module } from './s3/s3.module';
 import { MailerModule } from './mailer/mailer.module';
 import { PostModule } from './post/post.module';
+import { MailerProviderType } from './mailer/constants';
+import { StudentModule } from './student/student.module';
+import { ApplicationModule } from './application/application.module';
+import { StorageProviderType } from './s3/s3.constants';
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
         }),
+        MailerModule.register(MailerProviderType.gmail),
         MongooseModule.forRootAsync({
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => ({
@@ -20,11 +25,13 @@ import { PostModule } from './post/post.module';
             }),
             inject: [ConfigService],
         }),
+        S3Module.register({ provider: StorageProviderType.MINIO }),
         AuthModule,
         CompanyModule,
-        S3Module,
         PostModule,
         MailerModule,
+        StudentModule,
+        ApplicationModule,
     ],
     controllers: [],
     providers: [],

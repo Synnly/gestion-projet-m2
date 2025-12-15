@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import request from 'supertest';
 import { MailerModule } from '../../../src/mailer/mailer.module';
+import { MailerProviderType } from '../../../src/mailer/constants';
 import { User, UserSchema } from '../../../src/user/user.schema';
 import { Model } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
@@ -34,7 +35,7 @@ describe('MailerController (Integration)', () => {
                 }),
                 MongooseModule.forRoot(mongoUri),
                 MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-                MailerModule,
+                MailerModule.register(MailerProviderType.gmail),
             ],
         })
             .overrideProvider(NestMailerService)
@@ -306,7 +307,7 @@ describe('MailerController (Integration)', () => {
 
         it('should reject password reset without OTP verification', async () => {
             const hashedPassword = await bcrypt.hash('Password123!', 10);
-            
+
             await userModel.create({
                 email: 'test@example.com',
                 password: hashedPassword,
@@ -330,7 +331,7 @@ describe('MailerController (Integration)', () => {
 
         it('should reject password reset if validation window expired', async () => {
             const hashedPassword = await bcrypt.hash('Password123!', 10);
-            
+
             await userModel.create({
                 email: 'test@example.com',
                 password: hashedPassword,

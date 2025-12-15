@@ -5,7 +5,6 @@ import { FormSubmit } from '../../../components/form/FormSubmit';
 import { CustomForm } from '../../../components/form/CustomForm';
 import { useLogin } from '../../../hooks/useLogin';
 import { NavLink } from 'react-router';
-
 export const LoginForm = () => {
     const {
         register,
@@ -53,7 +52,7 @@ export const LoginForm = () => {
                     error={error}
                     title="Se connecter"
                     pendingTitle="connexion..."
-                    className="bg-primary p-3 rounded-lg cursor-pointer w-full text-black"
+                    className="bg-primary rounded-lg cursor-pointer w-full text-black"
                 />
             </CustomForm>
             <div className="flex flex-row gap-5 w-full mt-2">

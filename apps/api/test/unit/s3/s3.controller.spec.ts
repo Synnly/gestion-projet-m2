@@ -192,7 +192,8 @@ describe('S3Controller', () => {
 
             const result = await controller.generateDownloadUrl(fileName, mockRequest);
 
-            expect(s3Service.generatePresignedDownloadUrl).toHaveBeenCalledWith(fileName, 'user123');
+            // signature now accepts optional postId as fourth parameter; expect undefined when not provided
+            expect(s3Service.generatePresignedDownloadUrl).toHaveBeenCalledWith(fileName, 'user123', undefined, undefined);
             expect(result).toEqual(mockResult);
         });
 
@@ -259,6 +260,29 @@ describe('S3Controller', () => {
 
             // Verify the controller passes correct params
             expect(s3Service.deleteFile).toHaveBeenCalledWith(fileName, 'user123');
+        });
+    });
+
+    describe('generatePublicDownloadUrl', () => {
+        it('should return public download url from service', async () => {
+            const fileName = 'logos/public-logo.png';
+            const mockResult = { downloadUrl: 'http://public-url' };
+
+            mockS3Service.generatePublicDownloadUrl = jest.fn().mockResolvedValue(mockResult);
+
+            const result = await controller.generatePublicDownloadUrl(fileName);
+
+            expect(s3Service.generatePublicDownloadUrl).toHaveBeenCalledWith(fileName);
+            expect(result).toEqual(mockResult);
+        });
+
+        it('should propagate BadRequestException from service for invalid path', async () => {
+            const fileName = '../../../etc/passwd';
+            mockS3Service.generatePublicDownloadUrl = jest
+                .fn()
+                .mockRejectedValue(new BadRequestException('Invalid file path'));
+
+            await expect(controller.generatePublicDownloadUrl(fileName)).rejects.toThrow(BadRequestException);
         });
     });
 });

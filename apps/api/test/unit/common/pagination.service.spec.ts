@@ -70,4 +70,17 @@ describe('PaginationService', () => {
         expect(result.data).toEqual(items);
         expect(typeof result.totalPages === 'number').toBe(true);
     });
+
+    it('applies sort when provided', async () => {
+        const items = [{ _id: '1' }];
+        const total = 1;
+        const { model, query } = makeMockModel(items, total);
+
+        const result = await service.paginate(model, {}, 1, 10, undefined, '-createdAt');
+
+        // Implementation may apply sort as an object or string depending on code.
+        // Ensure the paginate method invoked sort and returned expected data.
+        expect(query.sort).toHaveBeenCalled();
+        expect(result.data).toEqual(items);
+    });
 });

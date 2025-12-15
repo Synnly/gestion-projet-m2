@@ -5,12 +5,12 @@ Forum stages
 
 ## Équipe
 
-| Prénom Nom                   | Role                        |
+| Prénom Nom                   | Rôle                        |
 |------------------------------|-----------------------------|
 | Emanuel Fernandes dos Santos | Product owner / développeur |
 | Médéric Cuny                 | Scrum master / développeur  |
 | Meriem Ait El Achkar         | Développeur                 |
-| Nicolas Blachere             | Développeur                 |
+| Nicolas Blachère             | Développeur                 |
 | Alexis Chapusot              | Développeur                 |
 | Ioann Perez                  | Développeur                 |
 | Erwan Ortega                 | Développeur                 |
@@ -61,7 +61,7 @@ Forum stages
 - `test/integration/` : tests d'intégration des modules
 
 ### Client
-- `compoenents/` : composants réutilisables des pages
+- `components/` : composants réutilisables des pages
 - `hooks/` : hooks réutilisables des pages
 - `modules/` : modules de l'application (ex: auth, profile, forum, etc) contenant la logique métier
 - `pages/` : pages de l'application assemblant les composants et modules
@@ -79,9 +79,7 @@ main  feature2  dev  feature1
 ```
 
 ## Pull request
-Les fusions vers `dev` et `main` sont protégés. Pour mettre à jour les banches, il faut ouvrir un pull request en expliquant
-les modifications de la branche. La branche ne peut être fusionnée avec `dev` uniquement que si deux personnes non autrices
-des modifications les ont validées et que les conflits ont étés résolus. Idem pour la branche `main`.
+Les fusions vers `dev` et `main` sont protégées. Pour mettre à jour les branches, il faut ouvrir une pull request en expliquant les modifications de la branche. La branche ne peut être fusionnée avec `dev` uniquement que si deux personnes non autrices des modifications les ont validées et que les conflits ont étés résolus. Idem pour la branche `main`.
 
 ## Format des pull request
 ```

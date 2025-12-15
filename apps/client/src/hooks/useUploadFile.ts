@@ -1,9 +1,9 @@
 export function useUploadFile() {
     const upload = async (file: File, signedUrl: string) => {
-        await fetch(signedUrl, {
+        fetch(signedUrl, {
             method: 'PUT',
             body: file,
-        }).catch((error) => {});
+        }).catch((_) => {});
     };
     return upload;
 }

@@ -1,18 +1,26 @@
-import { CanActivate, ExecutionContext, Injectable, ForbiddenException, BadRequestException, OnModuleInit, InternalServerErrorException } from '@nestjs/common';
+import {
+    CanActivate,
+    ExecutionContext,
+    Injectable,
+    ForbiddenException,
+    BadRequestException,
+    OnModuleInit,
+    InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as Minio from 'minio';
 
 /**
  * OwnerGuard - MinIO-specific guard to verify file ownership via object metadata
- * 
+ *
  * This guard is specialized for MinIO/S3 files where ownership is stored in object metadata.
  * It reads the uploaderId from MinIO metadata and compares it to req.user._id.
- * 
- * 
+ *
+ *
  * Expects:
  * - `req.user` to contain user info (from AuthGuard)
  * - `req.params.fileName` to contain the file path
- * 
+ *
  * Checks:
  * - File exists in MinIO
  * - File metadata contains uploaderId that matches the requesting user
@@ -31,7 +39,7 @@ export class OwnerGuard implements CanActivate, OnModuleInit {
         const port = parseInt(this.configService.get<string>('MINIO_PORT') || '443');
         const useSSL = this.configService.get<string>('MINIO_USE_SSL') === 'true';
         const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY');
-        
+
         const secretKey = this.configService.get<string>('MINIO_SECRET_KEY');
 
         if (!endpoint || !accessKey || !secretKey) {

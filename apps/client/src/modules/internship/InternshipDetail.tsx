@@ -1,18 +1,24 @@
 import React, { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { NavLink } from 'react-router';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import type { Internship } from '../../types/internship.types';
-import { Bookmark, ArrowUpRight, Share2 } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
-
-const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) => {
+import { userStore } from '../../store/userStore';
+import { ApplicationStatusChecker } from '../../pages/internship/component/InternshipApplyChecker';
+const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }> = ({
+    internship,
+    applyable = true,
+}) => {
     const savedInternships = useInternshipStore((state) => state.savedInternships);
     const toggleSaveInternship = useInternshipStore((state) => state.toggleSaveInternship);
     const setDetailHeight = useInternshipStore((s) => s.setDetailHeight);
     const rootRef = useRef<HTMLDivElement | null>(null);
     const isSaved = savedInternships.includes(internship._id);
-
+    const access = userStore((state) => state.access);
+    const get = userStore((state) => state.get);
+    const payload = get(access);
     const formatSalary = (min?: number, max?: number) => {
         if (!min && !max) return null;
         if (min && max) return `${min}€ - ${max}€`;
@@ -42,14 +48,8 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
         return () => window.removeEventListener('resize', update);
     }, [setDetailHeight]);
 
-    const navigate = useNavigate();
-
-    const handleApply = () => {
-        navigate(`/internship/detail/${internship._id}`);
-    };
-
     return (
-        <div className="col-span-12 lg:col-span-7">
+        <div className="flex flex-col flex-1">
             <div ref={rootRef}>
                 <div className="card bg-base-100 rounded-xl">
                     <div className="card-body p-6">
@@ -68,38 +68,34 @@ const InternshipDetail: React.FC<{ internship: Internship }> = ({ internship }) 
                                         </div>
                                     )}
                                 </div>
+
                                 <div>
-                                    <h3 className="text-xl font-bold text-base-content">{internship.title}</h3>
+                                    <NavLink to={`/internship/detail/${internship._id}`}>
+                                        <h3 className="text-xl font-bold text-base-content">{internship.title}</h3>
+                                    </NavLink>
                                     <p className="mt-1 text-base-content">
                                         {internship.company.name} • {internship.adress}
                                     </p>
                                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                                        <span className="badge badge-success text-base-content">{internship.type}</span>
+                                        <span className="badge badge-success text-content-primary">
+                                            {internship.type}
+                                        </span>
                                         {internship.sector && <span className="badge">{internship.sector}</span>}
                                         {internship.duration && <span className="badge">{internship.duration}</span>}
                                         {salary && <span className="badge badge-accent">{salary}</span>}
                                     </div>
                                 </div>
                             </div>
-                            <button className="text-primary" onClick={() => toggleSaveInternship(internship._id)}>
-                                <Bookmark size={20} fill={isSaved ? 'currentColor' : 'none'} />
-                            </button>
+                            {applyable && (
+                                <button className="text-primary" onClick={() => toggleSaveInternship(internship._id)}>
+                                    <Bookmark size={20} fill={isSaved ? 'currentColor' : 'none'} />
+                                </button>
+                            )}
                         </div>
 
-                        <div className="mt-6 flex flex-wrap gap-3">
-                            <button
-                                onClick={handleApply}
-                                className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2"
-                            >
-                                <ArrowUpRight size={20} />
-                                <span>Candidater</span>
-                            </button>
-                            <button className="btn btn-ghost flex h-11 items-center justify-center gap-2">
-                                <Share2 size={20} />
-                                <span>Partager</span>
-                            </button>
-                        </div>
-
+                        {applyable && ((payload && payload.role === 'STUDENT') || !payload) && (
+                            <ApplicationStatusChecker studentId={payload?.id} adId={internship._id} />
+                        )}
                         <div className="mt-8 border-t border-base-300! pt-6">
                             <h4 className="text-lg font-bold">Description du stage</h4>
                             <div className="mt-4 space-y-4 text-sm text-base-content">

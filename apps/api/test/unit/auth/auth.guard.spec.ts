@@ -54,7 +54,10 @@ describe('AuthGuard', () => {
         expect(guard).toBeDefined();
     });
 
-    const setupValidToken = (token: string = 'valid-refresh-token', decodedToken: any = { sub: 'user-id', email: 'test@example.com', role: 'COMPANY' }) => {
+    const setupValidToken = (
+        token: string = 'valid-refresh-token',
+        decodedToken: any = { sub: 'user-id', email: 'test@example.com', role: 'COMPANY' },
+    ) => {
         mockConfigService.get.mockReturnValue('test-secret');
         mockJwtService.verifyAsync.mockResolvedValue(decodedToken);
         return { token, decodedToken };

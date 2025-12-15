@@ -14,7 +14,6 @@ import { Type } from 'class-transformer';
 import { PostType } from '../post.schema';
 
 export class UpdatePostDto {
-   
     /**
      * Post's title
      * Is required for the update
@@ -100,6 +99,10 @@ export class UpdatePostDto {
     @IsOptional()
     @IsBoolean()
     isVisible?: boolean;
+
+    @IsBoolean()
+    @Type(() => Boolean)
+    isCoverLetterRequired: boolean;
 
     constructor(partial?: Partial<UpdatePostDto>) {
         if (partial) {

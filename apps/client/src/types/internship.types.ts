@@ -35,6 +35,8 @@ export interface Internship {
     isVisible?: boolean;
     company: CompanyInInternship;
     createdAt: string;
+    isCoverLetterRequired: boolean;
+    applications: String[];
 }
 
 export interface PaginationResult<T> {
@@ -55,4 +57,10 @@ export interface InternshipFilters {
     minSalary?: number;
     maxSalary?: number;
     searchQuery?: string;
+    duration?: string;
+    startDate?: string;
+    city?: string;
+    radiusKm?: number;
+    keySkills?: string | string[];
+    sort?: string;
 }

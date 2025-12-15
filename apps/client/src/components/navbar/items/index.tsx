@@ -10,7 +10,13 @@ export interface ItemLinkProps {
 }
 
 export const ItemLink: React.FC<ItemLinkProps> = ({ item, className }) => (
-    <NavLink to={item.to ?? '#'} className={className ?? item.className ?? 'hover:text-primary transition-colors'}>
+    <NavLink
+        to={item.to ?? '#'}
+        className={({ isActive }) => {
+            const baseClasses = className ?? item.className ?? 'btn btn-ghost transition-colors';
+            return isActive && item.to !== '/' ? `${baseClasses}` : `${baseClasses}`;
+        }}
+    >
         {item.title}
     </NavLink>
 );

@@ -1,19 +1,35 @@
-import { Injectable, NotFoundException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
-import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
+import {
+    Injectable,
+    NotFoundException,
+    BadRequestException,
+    HttpException,
+    HttpStatus,
+    Inject,
+    Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { UserDocument, User } from '../user/user.schema';
+import type { IMailerProvider } from './interfaces/IMailerProvider';
+import { MAILER_PROVIDER } from './constants';
 
+/**
+ * Application-level mailer service implementing OTP workflows and other
+ * mail-related business logic. This service depends on an `IMailerProvider`
+ * adapter to perform the actual email delivery, so the transport can be
+ * swapped without affecting business code.
+ */
 @Injectable()
 export class MailerService {
-    // Maximum failed verification attempts before blocking
+    private readonly logger = new Logger(MailerService.name);
     private readonly MAX_VERIFICATION_ATTEMPTS = 5;
 
     constructor(
-        private readonly mailer: NestMailerService,
+        @Inject(MAILER_PROVIDER)
+        private readonly mailerProvider: IMailerProvider,
         private readonly configService: ConfigService,
         @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     ) {}
@@ -111,15 +127,12 @@ export class MailerService {
 
         const { from, name } = this.getFromAddress();
 
-        await this.mailer.sendMail({
+        await this.mailerProvider.sendMail({
             to: normalized,
             subject: 'Confirm your account',
             template: 'signupConfirmation',
             from,
-            context: {
-                otp,
-                fromName: name,
-            },
+            context: { otp, fromName: name },
         });
 
         return true;
@@ -144,23 +157,20 @@ export class MailerService {
         const now = new Date();
 
         user.passwordResetCode = hashedOtp;
-        user.passwordResetExpires = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes
-        user.passwordResetAttempts = 0; // Reset attempts counter when new OTP is generated
+        user.passwordResetExpires = new Date(now.getTime() + 5 * 60 * 1000);
+        user.passwordResetAttempts = 0;
         user.otpRequestCount = (user.otpRequestCount || 0) + 1;
         user.lastOtpRequestAt = now;
         await user.save();
 
         const { from, name } = this.getFromAddress();
 
-        await this.mailer.sendMail({
+        await this.mailerProvider.sendMail({
             to: normalized,
             subject: 'Password reset request',
             template: 'resetPassword',
             from,
-            context: {
-                otp,
-                fromName: name,
-            },
+            context: { otp, fromName: name },
         });
 
         return true;
@@ -177,16 +187,12 @@ export class MailerService {
         const normalized = email.toLowerCase();
         const { from, name } = this.getFromAddress();
 
-        await this.mailer.sendMail({
+        await this.mailerProvider.sendMail({
             to: normalized,
             subject: title,
             template: 'infoMessage',
             from,
-            context: {
-                title,
-                message,
-                fromName: name,
-            },
+            context: { title, message, fromName: name },
         });
 
         return true;
@@ -203,12 +209,39 @@ export class MailerService {
         const normalized = email.toLowerCase();
         const { from, name } = this.getFromAddress();
 
-        await this.mailer.sendMail({
+        await this.mailerProvider.sendMail({
             to: normalized,
             subject: `Notification from ${name}`,
             template: templateName,
             from,
+            context: { fromName: name },
+        });
+
+        return true;
+    }
+
+    /**
+     * Send account creation email with credentials
+     * @param email Recipient email
+     * @param rawPassword The plain text password generated
+     * @param firstName Optional first name for personalization
+     * @param customMessage Optional custom welcome message
+     */
+    async sendAccountCreationEmail(email: string, rawPassword: string, firstName: string = 'Étudiant', lastName: string = "", customMessage: string = '') {
+        const normalized = email.toLowerCase();
+        const { from, name } = this.getFromAddress();
+
+        await this.mailerProvider.sendMail({
+            to: normalized,
+            subject: 'Vos identifiants de connexion',
+            template: 'accountCreation',
+            from,
             context: {
+                email: normalized,
+                password: rawPassword,
+                firstName: firstName,
+                lastName: lastName,
+                customMessage: customMessage,
                 fromName: name,
             },
         });

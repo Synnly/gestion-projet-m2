@@ -16,10 +16,21 @@ import { SendCustomTemplateDto } from './dto/sendCustomTemplate.dto';
 import { AuthGuard } from '../auth/auth.guard';
 
 /**
- * Controller handling email operations: password reset, account verification, and custom templates
+ * HTTP controller exposing mail-related endpoints.
+ *
+ * Routes:
+ * - `POST /api/mailer/password/forgot` : Request password reset code
+ * - `POST /api/mailer/password/reset/verify-otp` : Verify reset OTP
+ * - `POST /api/mailer/password/reset` : Reset password after OTP validation
+ * - `POST /api/mailer/auth/send-verification` : Send account verification code (authenticated)
+ * - `POST /api/mailer/auth/verify` : Verify account using OTP (authenticated)
+ * - `POST /api/mailer/send-template` : Send a custom template email (authenticated)
  */
 @Controller('/api/mailer')
 export class MailerController {
+    /**
+     * @param mailerService Application-level mailer service that implements business flows
+     */
     constructor(private readonly mailerService: MailerService) {}
 
     /**

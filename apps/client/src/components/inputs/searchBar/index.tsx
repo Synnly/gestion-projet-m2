@@ -7,7 +7,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuer
     const inputRef = useRef<HTMLInputElement | null>(null);
 
     return (
-        <div className="bg-base-100/80 pt-4 pb-6 backdrop-blur-sm">
+        <div className="bg-base-100/80 backdrop-blur-sm">
             <div className="flex flex-col gap-4">
                 <label className="input input-bordered w-full">
                     <Search size={16} className="opacity-50 mr-2" />

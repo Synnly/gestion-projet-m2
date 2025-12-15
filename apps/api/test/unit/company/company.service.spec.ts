@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { CompanyService } from '../../../src/company/company.service';
 import { PaginationService } from '../../../src/common/pagination/pagination.service';
 import { Company, CompanyDocument, StructureType, LegalStatus } from '../../../src/company/company.schema';
@@ -91,14 +91,10 @@ describe('CompanyService', () => {
 
             expect(result).toEqual([]);
         });
-
-
-
-
     });
 
     describe('findOne', () => {
-    it('should return a company by id when findOne is called with an existing id', async () => {
+        it('should return a company by id when findOne is called with an existing id', async () => {
             const company = {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'test@example.com',
@@ -120,7 +116,7 @@ describe('CompanyService', () => {
             expect(mockExec).toHaveBeenCalledTimes(1);
         });
 
-    it('should return null when findOne is called with a non-existent id', async () => {
+        it('should return null when findOne is called with a non-existent id', async () => {
             mockExec.mockResolvedValue(null);
             setupFindOnePopulate();
 
@@ -133,7 +129,7 @@ describe('CompanyService', () => {
             });
         });
 
-    it('should return null when findOne is called for a deleted company', async () => {
+        it('should return null when findOne is called for a deleted company', async () => {
             mockExec.mockResolvedValue(null);
             setupFindOnePopulate();
 
@@ -146,7 +142,7 @@ describe('CompanyService', () => {
             });
         });
 
-    it('should return company with all optional fields when findOne finds a full document', async () => {
+        it('should return company with all optional fields when findOne finds a full document', async () => {
             const company = {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'test@example.com',
@@ -173,7 +169,7 @@ describe('CompanyService', () => {
             expect(result?.structureType).toBe(StructureType.PrivateCompany);
         });
 
-    it('should return company with minimal fields when findOne finds a minimal document', async () => {
+        it('should return company with minimal fields when findOne finds a minimal document', async () => {
             const company = {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'test@example.com',
@@ -188,10 +184,9 @@ describe('CompanyService', () => {
 
             expect(result).toEqual(company);
             expect(result?.siretNumber).toBeUndefined();
-
         });
 
-    it('should throw when findOne encounters a database error', async () => {
+        it('should throw when findOne encounters a database error', async () => {
             const error = new Error('Database error');
             mockExec.mockRejectedValue(error);
             setupFindOnePopulate();
@@ -200,7 +195,7 @@ describe('CompanyService', () => {
             expect(mockCompanyModel.findOne).toHaveBeenCalledTimes(1);
         });
 
-    it('should handle different id formats when findOne is called with various ids', async () => {
+        it('should handle different id formats when findOne is called with various ids', async () => {
             const ids = ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012', '507f1f77bcf86cd799439013'];
 
             for (const id of ids) {
@@ -218,7 +213,7 @@ describe('CompanyService', () => {
     });
 
     describe('create', () => {
-    it('should create a company when create is called with minimal required fields', async () => {
+        it('should create a company when create is called with minimal required fields', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
                 role: 'COMPANY' as any,
@@ -235,15 +230,17 @@ describe('CompanyService', () => {
 
             expect(mockCompanyModel.create).toHaveBeenCalledTimes(1);
             const createdArg = mockCompanyModel.create.mock.calls[0][0];
-            expect(createdArg).toEqual(expect.objectContaining({
-                email: createDto.email,
-                name: createDto.name,
-                }));
+            expect(createdArg).toEqual(
+                expect.objectContaining({
+                    email: createDto.email,
+                    name: createDto.name,
+                }),
+            );
             expect(typeof createdArg.password).toBe('string');
             // Password hashing is handled by User schema pre-save hook, not tested in unit tests with mocks
         });
 
-    it('should create a company when create is called with all fields provided', async () => {
+        it('should create a company when create is called with all fields provided', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
                 role: 'COMPANY' as any,
@@ -268,14 +265,16 @@ describe('CompanyService', () => {
             await service.create(createDto);
 
             const createdArg = mockCompanyModel.create.mock.calls[0][0];
-            expect(createdArg).toEqual(expect.objectContaining({
-                email: createDto.email,
-                name: createDto.name,
-                }));
+            expect(createdArg).toEqual(
+                expect.objectContaining({
+                    email: createDto.email,
+                    name: createDto.name,
+                }),
+            );
             // Password hashing is handled by User schema pre-save hook
         });
 
-    it('should return void after successful creation when create resolves', async () => {
+        it('should return void after successful creation when create resolves', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
                 role: 'COMPANY' as any,
@@ -295,7 +294,7 @@ describe('CompanyService', () => {
             // Password hashing is handled by User schema pre-save hook
         });
 
-    it('should create company with each StructureType when create is called for each enum value', async () => {
+        it('should create company with each StructureType when create is called for each enum value', async () => {
             for (const structureType of Object.values(StructureType)) {
                 const createDto = new CreateCompanyDto({
                     email: `test-${structureType}@example.com`,
@@ -317,7 +316,7 @@ describe('CompanyService', () => {
             }
         });
 
-    it('should create company with each LegalStatus when create is called for each enum value', async () => {
+        it('should create company with each LegalStatus when create is called for each enum value', async () => {
             for (const legalStatus of Object.values(LegalStatus)) {
                 const createDto = new CreateCompanyDto({
                     email: `test-${legalStatus}@example.com`,
@@ -339,7 +338,7 @@ describe('CompanyService', () => {
             }
         });
 
-it('should throw when create encounters a database error', async () => {
+        it('should throw when create encounters a database error', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
                 role: 'COMPANY' as any,
@@ -354,7 +353,7 @@ it('should throw when create encounters a database error', async () => {
             expect(mockCompanyModel.create).toHaveBeenCalledTimes(1);
         });
 
-    it('should throw when create encounters validation errors', async () => {
+        it('should throw when create encounters validation errors', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
                 role: 'COMPANY' as any,
@@ -368,7 +367,7 @@ it('should throw when create encounters a database error', async () => {
             await expect(service.create(createDto)).rejects.toThrow('Validation error');
         });
 
-    it('should create company when create is called with a partial address', async () => {
+        it('should create company when create is called with a partial address', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
                 role: 'COMPANY' as any,
@@ -390,7 +389,7 @@ it('should throw when create encounters a database error', async () => {
             // Password hashing is handled by User schema pre-save hook
         });
 
-    it('should create company when create is called with a complete address', async () => {
+        it('should create company when create is called with a complete address', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
                 role: 'COMPANY' as any,
@@ -411,19 +410,65 @@ it('should throw when create encounters a database error', async () => {
             await service.create(createDto);
 
             const createdArg = mockCompanyModel.create.mock.calls[0][0];
-            expect(createdArg).toEqual(expect.objectContaining({
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
-            }));
+            expect(createdArg).toEqual(
+                expect.objectContaining({
+                    streetNumber: '10',
+                    streetName: 'Rue de Test',
+                    postalCode: '75001',
+                    city: 'Paris',
+                    country: 'France',
+                }),
+            );
             // Password hashing is handled by User schema pre-save hook
         });
     });
 
     describe('update', () => {
-    it('should update a company when update is called with a single field', async () => {
+        it('should validate provided post ids and update when posts are valid', async () => {
+            const updateDto = new UpdateCompanyDto({
+                name: 'Updated Company',
+                posts: ['507f1f77bcf86cd799439100'],
+            });
+
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+
+            // postService.findOne resolves to a post -> validation passes
+            mockPostService.findOne.mockResolvedValue({ _id: '507f1f77bcf86cd799439100' } as any);
+
+            await service.update('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockPostService.findOne).toHaveBeenCalledTimes(1);
+            expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
+        });
+
+        it('should throw BadRequestException when postService.findOne throws for a post id', async () => {
+            const updateDto = new UpdateCompanyDto({ posts: ['invalid-id'] });
+
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+
+            mockPostService.findOne.mockImplementationOnce(() => {
+                throw new Error('Invalid post id');
+            });
+
+            await expect(service.update('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow(BadRequestException);
+        });
+
+        it('should throw NotFoundException when a provided post id does not exist', async () => {
+            const updateDto = new UpdateCompanyDto({ posts: ['507f1f77bcf86cd799439199'] });
+
+            const mockCompany = { save: jest.fn().mockResolvedValue(true) };
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+
+            mockPostService.findOne.mockResolvedValue(null);
+
+            await expect(service.update('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow(NotFoundException);
+        });
+        it('should update a company when update is called with a single field', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
             });
@@ -442,13 +487,14 @@ it('should throw when create encounters a database error', async () => {
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOne).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } }
-            );
+            expect(mockCompanyModel.findOne).toHaveBeenCalledWith({
+                _id: '507f1f77bcf86cd799439011',
+                deletedAt: { $exists: false },
+            });
             expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
         });
 
-    it('should update a company when update is called with multiple fields', async () => {
+        it('should update a company when update is called with multiple fields', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
                 city: 'Paris',
@@ -460,13 +506,14 @@ it('should throw when create encounters a database error', async () => {
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
-            expect(mockCompanyModel.findOne).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } }
-            );
+            expect(mockCompanyModel.findOne).toHaveBeenCalledWith({
+                _id: '507f1f77bcf86cd799439011',
+                deletedAt: { $exists: false },
+            });
             expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
         });
 
-    it('should return void after successful update when findOneAndUpdate resolves', async () => {
+        it('should return void after successful update when findOneAndUpdate resolves', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
             });
@@ -480,7 +527,7 @@ it('should throw when create encounters a database error', async () => {
             expect(result).toBeUndefined();
         });
 
-    it('should update company password when update is called with a new password', async () => {
+        it('should update company password when update is called with a new password', async () => {
             const updateDto = new UpdateCompanyDto({
                 password: 'NewPassword123!',
             });
@@ -495,7 +542,7 @@ it('should throw when create encounters a database error', async () => {
             // Password hashing is handled by User schema pre-save hook
         });
 
-    it('should update company structureType when update is called with a new structureType', async () => {
+        it('should update company structureType when update is called with a new structureType', async () => {
             const updateDto = new UpdateCompanyDto({
                 structureType: StructureType.Association,
             });
@@ -509,7 +556,7 @@ it('should throw when create encounters a database error', async () => {
             expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
         });
 
-    it('should update company legalStatus when update is called with a new legalStatus', async () => {
+        it('should update company legalStatus when update is called with a new legalStatus', async () => {
             const updateDto = new UpdateCompanyDto({
                 legalStatus: LegalStatus.SAS,
             });
@@ -523,7 +570,7 @@ it('should throw when create encounters a database error', async () => {
             expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
         });
 
-    it('should update company address fields when update is called with new address data', async () => {
+        it('should update company address fields when update is called with new address data', async () => {
             const updateDto = new UpdateCompanyDto({
                 streetNumber: '456',
                 streetName: 'New Street',
@@ -542,7 +589,7 @@ it('should throw when create encounters a database error', async () => {
             expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
         });
 
-    it('should update all company fields when update is called with full update data', async () => {
+        it('should update all company fields when update is called with full update data', async () => {
             const updateDto = new UpdateCompanyDto({
                 password: 'NewPassword123!',
                 name: 'Fully Updated Company',
@@ -566,7 +613,7 @@ it('should throw when create encounters a database error', async () => {
             // Service uses Object.assign + save(), User pre-save hook handles password hashing
         });
 
-    it('should include updatedAt timestamp when update is performed', async () => {
+        it('should include updatedAt timestamp when update is performed', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
             });
@@ -581,7 +628,7 @@ it('should throw when create encounters a database error', async () => {
             // updatedAt is set by Mongoose timestamps, not explicitly in service
         });
 
-    it('should create a new company when update is attempted on a non-existent id (upsert)', async () => {
+        it('should create a new company when update is attempted on a non-existent id (upsert)', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
             });
@@ -600,7 +647,7 @@ it('should throw when create encounters a database error', async () => {
             expect(createdArg).toEqual(expect.objectContaining({ name: updateDto.name }));
         });
 
-    it('should throw when update encounters a database error', async () => {
+        it('should throw when update encounters a database error', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
             });
@@ -612,7 +659,7 @@ it('should throw when create encounters a database error', async () => {
             await expect(service.update('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow('Database error');
         });
 
-    it('should handle empty update DTO when update is called with empty data', async () => {
+        it('should handle empty update DTO when update is called with empty data', async () => {
             const updateDto = new UpdateCompanyDto({});
 
             mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
@@ -625,7 +672,7 @@ it('should throw when create encounters a database error', async () => {
             expect(mockCompany.save).toHaveBeenCalled();
         });
 
-    it('should set new: true option when update is called', async () => {
+        it('should set new: true option when update is called', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
             });
@@ -642,7 +689,7 @@ it('should throw when create encounters a database error', async () => {
     });
 
     describe('remove', () => {
-    it('should soft-delete a company when remove is called with a valid id', async () => {
+        it('should soft-delete a company when remove is called with a valid id', async () => {
             mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011', deletedAt: new Date() });
             mockCompanyModel.findOneAndUpdate.mockReturnValue({
                 exec: mockExec,
@@ -658,7 +705,7 @@ it('should throw when create encounters a database error', async () => {
             expect(mockExec).toHaveBeenCalledTimes(1);
         });
 
-    it('should return void after successful soft-delete when remove resolves', async () => {
+        it('should return void after successful soft-delete when remove resolves', async () => {
             mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011', deletedAt: new Date() });
             mockCompanyModel.findOneAndUpdate.mockReturnValue({
                 exec: mockExec,
@@ -669,7 +716,7 @@ it('should throw when create encounters a database error', async () => {
             expect(result).toBeUndefined();
         });
 
-    it('should only soft-delete non-deleted companies when remove is called', async () => {
+        it('should only soft-delete non-deleted companies when remove is called', async () => {
             mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011', deletedAt: new Date() });
             mockCompanyModel.findOneAndUpdate.mockReturnValue({
                 exec: mockExec,
@@ -683,21 +730,19 @@ it('should throw when create encounters a database error', async () => {
             );
         });
 
-    it('should throw NotFoundException when removing non-existent company', async () => {
+        it('should throw NotFoundException when removing non-existent company', async () => {
             mockExec.mockResolvedValue(null);
             mockCompanyModel.findOneAndUpdate.mockReturnValue({
                 exec: mockExec,
             });
 
-            await expect(service.remove('507f1f77bcf86cd799439999')).rejects.toThrow(
-                NotFoundException,
-            );
+            await expect(service.remove('507f1f77bcf86cd799439999')).rejects.toThrow(NotFoundException);
             await expect(service.remove('507f1f77bcf86cd799439999')).rejects.toThrow(
                 'Company not found or already deleted',
             );
         });
 
-    it('should throw when remove encounters a database error', async () => {
+        it('should throw when remove encounters a database error', async () => {
             const error = new Error('Database error');
             mockExec.mockRejectedValue(error);
             mockCompanyModel.findOneAndUpdate.mockReturnValue({
@@ -708,7 +753,7 @@ it('should throw when create encounters a database error', async () => {
             expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
         });
 
-    it('should soft-delete companies with different ids when remove is called for each id', async () => {
+        it('should soft-delete companies with different ids when remove is called for each id', async () => {
             const ids = ['507f1f77bcf86cd799439011', '507f1f77bcf86cd799439012', '507f1f77bcf86cd799439013'];
 
             for (const id of ids) {
@@ -728,7 +773,7 @@ it('should throw when create encounters a database error', async () => {
     });
 
     describe('Integration scenarios', () => {
-    it('should create and then find the created company when create then findOne are called', async () => {
+        it('should create and then find the created company when create then findOne are called', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'integration@example.com',
                 role: 'COMPANY' as any,
@@ -751,7 +796,7 @@ it('should throw when create encounters a database error', async () => {
             expect(result).toEqual(createdCompany);
         });
 
-    it('should create, update, and verify the updated company when create and update are called sequentially', async () => {
+        it('should create, update, and verify the updated company when create and update are called sequentially', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'update-test@example.com',
                 role: 'COMPANY' as any,
@@ -782,7 +827,7 @@ it('should throw when create encounters a database error', async () => {
             expect(mockCompany.save).toHaveBeenCalled();
         });
 
-    it('should verify company is removed from findAll after deletion when remove is called', async () => {
+        it('should verify company is removed from findAll after deletion when remove is called', async () => {
             const companiesBeforeDelete = [
                 {
                     _id: '507f1f77bcf86cd799439011',
@@ -814,9 +859,7 @@ it('should throw when create encounters a database error', async () => {
                 exec: jest.fn().mockResolvedValue(companiesAfterDelete),
             };
 
-            mockCompanyModel.find
-                .mockReturnValueOnce(mockQueryBefore)
-                .mockReturnValueOnce(mockQueryAfter);
+            mockCompanyModel.find.mockReturnValueOnce(mockQueryBefore).mockReturnValueOnce(mockQueryAfter);
 
             mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
             mockCompanyModel.findOneAndDelete.mockReturnValue({
@@ -843,7 +886,7 @@ it('should throw when create encounters a database error', async () => {
             expect(result).toBeNull();
         });
 
-    it('should handle undefined values in update DTO when update is called with undefined fields', async () => {
+        it('should handle undefined values in update DTO when update is called with undefined fields', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: undefined,
                 password: undefined,
@@ -859,7 +902,7 @@ it('should throw when create encounters a database error', async () => {
             expect(mockCompany.save).toHaveBeenCalled();
         });
 
-    it('should handle special characters in fields when create is called with special characters', async () => {
+        it('should handle special characters in fields when create is called with special characters', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test+special@example.com',
                 role: 'COMPANY' as any,
@@ -875,14 +918,16 @@ it('should throw when create encounters a database error', async () => {
             await service.create(createDto);
 
             const createdArg = mockCompanyModel.create.mock.calls[0][0];
-            expect(createdArg).toEqual(expect.objectContaining({
-                email: createDto.email,
-                name: createDto.name,
-                }));
+            expect(createdArg).toEqual(
+                expect.objectContaining({
+                    email: createDto.email,
+                    name: createDto.name,
+                }),
+            );
             // Password hashing is handled by User schema pre-save hook
         });
 
-    it('should handle concurrent operations when multiple create calls are executed concurrently', async () => {
+        it('should handle concurrent operations when multiple create calls are executed concurrently', async () => {
             const createDto1 = new CreateCompanyDto({
                 email: 'test1@example.com',
                 role: 'COMPANY' as any,
