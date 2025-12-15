@@ -49,7 +49,7 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
     }, [setDetailHeight]);
 
     return (
-        <div className="col-span-12 lg:col-span-7">
+        <div className="flex flex-col flex-1">
             <div ref={rootRef}>
                 <div className="card bg-base-100 rounded-xl">
                     <div className="card-body p-6">

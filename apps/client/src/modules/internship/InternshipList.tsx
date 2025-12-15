@@ -9,7 +9,6 @@ const InternshipList: React.FC = () => {
     const { isLoading, isError, error } = useFetchInternships();
     const internships = useInternshipStore((state) => state.internships);
     const selectedInternshipId = useInternshipStore((state) => state.selectedInternshipId);
-    const detailHeight = useInternshipStore((state) => state.detailHeight);
     const resetFilters = useInternshipStore((state) => state.resetFilters);
     useEffect(() => {
         resetFilters();
@@ -52,25 +51,23 @@ const InternshipList: React.FC = () => {
         );
     }
 
-    const innerStyle: React.CSSProperties | undefined =
-        typeof detailHeight === 'number' ? { maxHeight: `${detailHeight}px`, overflowY: 'auto' } : undefined;
-
     return (
-        <ListContainer>
-            <div style={innerStyle} className={detailHeight ? 'pr-6 space-y-3 p-3' : 'space-y-3 p-3'}>
-                {internships.map((internship) => (
-                    <InternshipCard
-                        key={internship._id}
-                        internship={internship}
-                        isSelected={internship._id === selectedInternshipId}
-                    />
-                ))}
-
-                <div className="mt-2">
-                    <InternshipPagination />
+        <>
+            <ListContainer>
+                <div className={'space-y-3 p-3 h-full overflow-y-auto'}>
+                    {internships.map((internship) => (
+                        <InternshipCard
+                            key={internship._id}
+                            internship={internship}
+                            isSelected={internship._id === selectedInternshipId}
+                        />
+                    ))}
                 </div>
+            </ListContainer>
+            <div className="mt-2">
+                <InternshipPagination />
             </div>
-        </ListContainer>
+        </>
     );
 };
 
