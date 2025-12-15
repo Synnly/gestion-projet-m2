@@ -110,6 +110,7 @@ export class ApplicationService {
                 `${objectname}.${dto.lmExtension}`,
                 'lm',
                 studentId.toString(),
+                postId.toString(),
             );
         }
 

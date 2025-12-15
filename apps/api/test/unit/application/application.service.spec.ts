@@ -214,6 +214,7 @@ describe('ApplicationService', () => {
                 `${studentId.toString()}.docx`,
                 'lm',
                 studentId.toString(),
+                post._id.toString(),
             );
             expect(mockApplicationModel).toHaveBeenCalledWith({
                 student,

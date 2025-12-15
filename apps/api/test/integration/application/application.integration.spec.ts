@@ -310,6 +310,7 @@ describe('Application Integration Tests', () => {
                 `${student._id}.docx`,
                 'lm',
                 student._id.toString(),
+                post._id.toString(),
             );
         });
 
