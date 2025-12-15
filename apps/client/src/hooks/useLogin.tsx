@@ -44,7 +44,7 @@ export const useLogin = () => {
             setAccess(accessToken);
             const user = getAccess(accessToken);
             if (!user) throw new Error('Erreur lors de la récupération des informations utilisateur.');
-            const redirectTo = lastLocationRoute || `/${user.role.toLowerCase()}/dashboard`;
+            const redirectTo = lastLocationRoute || '/';
             navigate(redirectTo);
         }
     };

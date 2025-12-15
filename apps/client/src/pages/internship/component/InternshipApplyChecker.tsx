@@ -65,7 +65,7 @@ export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: stri
                 <div className="flex flex-col">
                     <ApplicationStatus status={application.status} />
                     <Link
-                        to={`/candidatures/${application._id}`}
+                        to={`/student/dashboard/${application._id}`}
                         className="btn btn-primary flex py-2 h-11 flex-1 items-center justify-center gap-2"
                     >
                         Voir le statut
