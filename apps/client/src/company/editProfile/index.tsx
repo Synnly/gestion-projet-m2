@@ -315,7 +315,7 @@ export function EditCompanyProfile() {
                             <button
                                 type="button"
                                 onClick={() => navigate('/company/profile')}
-                                className="btn btn-secondary"
+                                className="btn btn-base"
                             >
                                 Annuler
                             </button>
