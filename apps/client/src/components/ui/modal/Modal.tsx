@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useState, type ReactNode, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useState, type ReactNode, useRef } from 'react';
 
 // Définition de l'interface des méthodes que le parent peut appeler
 export interface ModalHandle {
@@ -7,7 +7,7 @@ export interface ModalHandle {
 
 interface ModalProps {}
 
-export const Modal = forwardRef<ModalHandle, ModalProps>((props, ref) => {
+export const Modal = forwardRef<ModalHandle, ModalProps>((_, ref) => {
     // États internes pour gérer le contenu dynamique
     const [title, setTitle] = useState('');
     const [content, setContent] = useState<ReactNode>(null);

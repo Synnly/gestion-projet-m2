@@ -6,13 +6,19 @@ interface RouteMeta {
 }
 
 export function MainLayout() {
-    const matches = useMatches() as Array<UIMatch<RouteMeta>>;
+    const matches = useMatches() as Array<UIMatch<unknown, RouteMeta>>;
 
     useEffect(() => {
-        const match = matches.find((m) => m.handle?.title);
+        const match = matches.reverse().find((m) => {
+            const handle = m.handle as RouteMeta | undefined;
+            return handle?.title !== undefined;
+        });
 
-        if (match?.handle?.title) {
-            document.title = match.handle.title;
+        if (match) {
+            const handle = match.handle as RouteMeta;
+            if (handle.title) {
+                document.title = handle.title;
+            }
         }
     }, [matches]);
 

@@ -60,10 +60,10 @@ export default function SalaryRangeSelector({
     const maxPercent = ((range.max - minAllowed) / (maxAllowed - minAllowed)) * 100;
 
     return (
-        <div className="form-control w-80 ml-24">
+        <div className="form-control w-80 pl-24">
            
             <div className="relative pt-2 pb-6">
-                 <div className="badge badge-sm badge-primary absolute -left-20 top-1/2 -translate-y-1/2">
+                <div className="badge badge-sm badge-primary absolute -left-20 top-1/2 -translate-y-1/2">
                     <span className="text-xs">Min {range.min}€</span>
                 </div>
 

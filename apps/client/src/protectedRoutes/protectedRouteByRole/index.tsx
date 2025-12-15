@@ -1,4 +1,4 @@
-import { Navigate, Outlet, useLocation, useOutletContext } from 'react-router-dom';
+import { Navigate, Outlet, useOutletContext } from 'react-router-dom';
 import type { userContext } from '../type';
 import { toast } from 'react-toastify';
 type ProtectedRouteByRoleProps = {

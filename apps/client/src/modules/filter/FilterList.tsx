@@ -86,10 +86,10 @@ export function FilterList() {
                             </button>
                         </div>
                         <div
-                            className={`flex flex-row gap-x-6 items-center transition-all duration-200 ${
+                            className={`flex flex-row gap-x-6 items-center transition-all duration-300 ease-in-out ${
                                 minimal
-                                    ? 'max-h-0 overflow-hidden opacity-0 pointer-events-none'
-                                    : 'max-h-[260px] opacity-100 ml-6 pl-4 border-l border-base-200'
+                                    ? 'opacity-0 pointer-events-none'
+                                    : 'opacity-100 ml-6 pl-4 border-l border-base-200'
                             }`}
                             aria-hidden={minimal}
                         >
