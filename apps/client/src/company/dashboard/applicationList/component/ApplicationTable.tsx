@@ -11,7 +11,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import type { PaginationResult } from '../../../../types/internship.types.ts';
 import { useParams } from 'react-router';
-import { fetchApplicationsByPost, useFetchFileSignedUrl } from '../../../../hooks/useFetchApplications.ts';
+import { fetchApplicationsByPost } from '../../../../hooks/useFetchApplications.ts';
 import { formatDate } from '../../intershipList/component/tableRow.tsx';
 
 const API_URL = import.meta.env.VITE_APIURL;
@@ -24,7 +24,6 @@ interface Props {
 }
 
 export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Props) => {
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedApplication, setSelectedApplication] = useState<{ id: string; type: 'cv' | 'lm' } | null>(null);
     const [filters, setFilters] = useState<ApplicationFilters>({ page: 1, limit: 5, status });
@@ -41,11 +40,6 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
         refetchOnWindowFocus: false,
         retry: 2,
     });
-
-    const { data: signedUrl, isError: pubUrlIsError } = useFetchFileSignedUrl(
-        selectedApplication?.id,
-        selectedApplication?.type,
-    );
 
     function handlePageChange(newPage: number) {
         const maxPage = applicationsData?.totalPages ?? newPage;
@@ -83,14 +77,6 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
             }
         })();
     }
-
-    useEffect(() => {
-        if (signedUrl && selectedApplication) {
-            setPreviewUrl(signedUrl);
-        } else if (pubUrlIsError && selectedApplication) {
-            console.error("Erreur lors de la récupération de l'URL signée:", selectedApplication);
-        }
-    }, [signedUrl, selectedApplication, pubUrlIsError]);
 
     useEffect(() => {
         if (applicationsData) setPaginationShown(applicationsData);
@@ -202,7 +188,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
 
                 {modalOpen && (
                     <PdfModal
-                        url={previewUrl}
+                        selectedApplication={selectedApplication}
                         onClose={() => {
                             setModalOpen(false);
                         }}

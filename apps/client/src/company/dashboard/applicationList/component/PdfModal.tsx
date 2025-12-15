@@ -1,11 +1,14 @@
 import { X } from 'lucide-react';
+import { useFetchFileSignedUrl } from '../../../../hooks/useFetchApplications.ts';
 
 interface PdfModalProps {
-    url: string | null;
+    selectedApplication: { id: string; type: 'cv' | 'lm' } | null;
     onClose: () => void;
 }
 
-export const PdfModal = ({ url, onClose }: PdfModalProps) => {
+export const PdfModal = ({ selectedApplication, onClose }: PdfModalProps) => {
+    const { data: url } = useFetchFileSignedUrl(selectedApplication?.id, selectedApplication?.type);
+
     return (
         <div className="modal modal-open" onClick={onClose}>
             <div
