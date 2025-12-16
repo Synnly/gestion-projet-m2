@@ -3,7 +3,7 @@ import type { NavItem } from './types';
 export const centerNavItems: NavItem[] = [
     {
         key: 'home-company',
-        title: 'TABLEAU DE BORD',
+        title: 'MES OFFRES DE STAGE',
         to: '/company/dashboard',
         type: 'link',
         role: ['COMPANY'],

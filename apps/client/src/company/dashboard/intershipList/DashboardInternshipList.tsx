@@ -98,8 +98,8 @@ export function DashboardInternshipList() {
                 <thead className="bg-base-200">
                     <tr>
                         <th className="px-4 py-3  text-sm  text-center font-bold">Titre de l'annonce</th>
-                        <th className="px-4 py-3  text-sm  text-center font-bold">Candidats</th>
-                        <th className="px-4 py-3  text-sm  text-center font-bold">Date de l'annonce</th>
+                        <th className="px-4 py-3  text-sm  text-center font-bold">Candidatures</th>
+                        <th className="px-4 py-3  text-sm  text-center font-bold">Date de publication</th>
                         <th className="px-4 py-3  text-sm  text-center font-bold">Visibilité</th>
                         <th className="px-4 py-3  text-sm  text-center font-bold">Actions</th>
                     </tr>

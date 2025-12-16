@@ -7,7 +7,7 @@ export function CompanyDashboard() {
             <Navbar />
             <div className="flex-1 p-8 bg-base-100 overflow-hidden">
                 <div className="flex flex-col h-full">
-                    <h1 className="text-3xl font-bold mb-6">Mon tableau de bord</h1>
+                    <h1 className="text-3xl font-bold mb-6">Mes offres de stage</h1>
 
                     <div className="flex-1 bg-base-100 rounded-lg shadow-xl shadow-base-300 overflow-auto min-h-0 p-1">
                         <Outlet />

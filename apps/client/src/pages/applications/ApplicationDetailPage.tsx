@@ -15,9 +15,9 @@ const statusStyles: Record<ApplicationStatus | string, string> = {
 
 const statusLabels: Record<ApplicationStatus, string> = {
     Pending: 'En attente',
-    Read: 'Lu',
-    Accepted: 'Accepté',
-    Rejected: 'Refusé',
+    Read: 'Lue',
+    Accepted: 'Acceptée',
+    Rejected: 'Refusée',
 };
 
 export default function ApplicationDetailPage() {
