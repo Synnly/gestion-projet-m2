@@ -2,6 +2,13 @@ import type { NavItem } from './types';
 
 export const centerNavItems: NavItem[] = [
     {
+        key: 'info-company',
+        title: 'MA PAGE',
+        to: '/company/my-page',
+        type: 'link',
+        role: ['COMPANY'],
+    },
+    {
         key: 'home-company',
         title: 'MES OFFRES DE STAGE',
         to: '/company/dashboard',
