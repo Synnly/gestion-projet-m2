@@ -246,10 +246,10 @@ export class StudentService {
         if ((conflictedEmailsInFile.length > 0 || conflictedNumbersInFile.length > 0) && !skipExistingRecords) {
             let message: string[] = ['Import failed. Some data already exists in the database:'];
             if (conflictedEmailsInFile.length > 0) {
-                message.push(`=> Existing emails: ${[...new Set(conflictedEmailsInFile)].join(', ')}`);
+                message.push(` existing ${conflictedEmailsInFile.length > 1 ? 'emails' : 'email'} : ${[...new Set(conflictedEmailsInFile)].join(', ')}`);
             }
             if (conflictedNumbersInFile.length > 0) {
-                message.push(`=> Existing student numbers: ${[...new Set(conflictedNumbersInFile)].join(', ')}`);
+                message.push(` existing ${conflictedNumbersInFile.length > 1 ? 'student numbers' : 'student number'}: ${[...new Set(conflictedNumbersInFile)].join(', ')}`);
             }
             throw new ConflictException(message);
         }

@@ -33,7 +33,7 @@ export function TableRow({ internship }: { internship: Internship }) {
                     className="text-color-accent hover:underline text-center"
                     to={`/company/dashboard/post/${internship._id}/applications`}
                 >
-                    {internship.applications?.length || 0} candidatures
+                    {internship.applications?.length ? `${internship.applications.length} candidature${internship.applications.length > 1 ? 's' : ''}` : 'Aucune candidature'}
                 </NavLink>
             </td>
 

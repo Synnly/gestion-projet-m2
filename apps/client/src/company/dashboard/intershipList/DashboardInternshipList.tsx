@@ -94,7 +94,7 @@ export function DashboardInternshipList() {
     return (
         <>
             <SearchBar searchQuery={filters.searchQuery || ''} setSearchQuery={handleSearchChange} selects={selects} />
-            <table className="w-full text-left">
+            <table className="w-full text-left mt-4">
                 <thead className="bg-base-200">
                     <tr>
                         <th className="px-4 py-3  text-sm  text-center font-bold">Titre de l'annonce</th>

@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Share2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApplicationStatus } from './ApplicationStatus';
+import { toast } from 'react-toastify';
+
 export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: string; adId: string }) => {
     const { data: application, isLoading } = useQuery({
         queryKey: ['application', studentId, adId],
@@ -37,6 +39,18 @@ export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: stri
         navigate(`/internship/apply/${adId}`);
     };
 
+    const share = async () => {
+        try {
+            const internshipUrl = `${window.location.origin}/internship/detail/${adId}`;;
+            await navigator.clipboard.writeText(internshipUrl);
+            
+            toast.success('Lien copié !', { toastId: 'post-success' });
+        } catch (err) {
+            console.error('Erreur lors de la copie du lien:', err);
+            alert("Impossible de copier le lien (votre navigateur n'est pas supporté).");
+        }
+    };
+
     if (isLoading) {
         return (
             <button className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2">
@@ -56,7 +70,9 @@ export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: stri
                         <ArrowUpRight size={20} />
                         <span>Candidater</span>
                     </button>
-                    <button className="btn btn-ghost flex h-11 items-center justify-center gap-2">
+                    <button
+                        onClick={share}
+                        className="btn btn-ghost flex h-11 items-center justify-center gap-2">
                         <Share2 size={20} />
                         <span>Partager</span>
                     </button>

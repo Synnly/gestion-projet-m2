@@ -67,11 +67,11 @@ export default function ApplicationPage() {
                                 value={statusInput}
                                 onChange={(e) => setStatusInput(e.target.value)}
                             >
-                                <option value="">Statut : Tous</option>
+                                <option value="">Candidatures : Toutes</option>
                                 <option value="Pending">En attente</option>
-                                <option value="Read">Lu</option>
-                                <option value="Accepted">Accepté</option>
-                                <option value="Rejected">Refusé</option>
+                                <option value="Read">Lue</option>
+                                <option value="Accepted">Acceptée</option>
+                                <option value="Rejected">Refusée</option>
                             </select>
                         </div>
                         <div className="flex justify-end">
@@ -113,7 +113,7 @@ export default function ApplicationPage() {
                         </div>
 
                         <div className="flex items-center justify-between px-4 py-3 text-sm text-base-content/70">
-                            <span>{pagination?.total ?? 0} résultats</span>
+                            <span>{pagination?.total ?? 0} {(pagination?.total ?? 0) > 1 ? 'résultats' : 'résultat'}</span>
                             {totalPages > 0 && (
                                 <div className="flex items-center gap-3">
                                     <span className="text-xs text-base-content/60">

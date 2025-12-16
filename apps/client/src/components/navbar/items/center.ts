@@ -10,7 +10,14 @@ export const centerNavItems: NavItem[] = [
     },
     {
         key: 'home-student',
-        title: 'TABLEAU DE BORD',
+        title: 'OFFRES DE STAGE',
+        to: '/',
+        type: 'link',
+        role: ['STUDENT'],
+    },
+    {
+        key: 'dashboard-student',
+        title: 'MES CANDIDATURES',
         to: '/student/dashboard',
         type: 'link',
         role: ['STUDENT'],

@@ -23,7 +23,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuer
                     />
                 </label>
 
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-4 ml-1">
                     {selects.map((select) => (
                         <FilterInput key={select.label} label={select.label} options={select.options} />
                     ))}

@@ -45,7 +45,7 @@ const InternshipList: React.FC = () => {
         return (
             <ListContainer>
                 <div className="flex min-h-[200px] items-center justify-center">
-                    <p className="text-sm text-base-content/60">Aucun stage trouvé</p>
+                    <p className="text-sm text-base-content/60">Aucune offre de stage trouvée</p>
                 </div>
             </ListContainer>
         );
