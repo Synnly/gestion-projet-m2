@@ -5,9 +5,16 @@ import { User, UserSchema } from './user.schema';
 import { Company, CompanySchema } from '../company/company.schema';
 import { Student, StudentSchema } from '../student/student.schema';
 import { Role } from '../common/roles/roles.enum';
+import { UserController } from './user.controller';
+import { UserService } from './user.service';
+import { MailerModule } from '../mailer/mailer.module';
 
 @Module({
-    imports: [MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])],
+    imports: [
+        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+        MailerModule.register(),
+    ],
+    controllers: [UserController],
     providers: [
         {
             provide: getModelToken(Company.name),
@@ -38,7 +45,8 @@ import { Role } from '../common/roles/roles.enum';
             },
             inject: [getConnectionToken()],
         },
+        UserService,
     ],
-    exports: [MongooseModule, getModelToken(Company.name), getModelToken(Student.name)],
+    exports: [MongooseModule, getModelToken(Company.name), getModelToken(Student.name), UserService],
 })
 export class UsersModule {}
