@@ -4,8 +4,6 @@ import { Types } from 'mongoose';
 
 describe('CompanyDto', () => {
     describe('constructor', () => {
-
-
         it('should create instance successfully when constructor is called with all fields', () => {
             const data: any = {
                 _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
@@ -40,7 +38,7 @@ describe('CompanyDto', () => {
             expect(dto.isValid).toBe(true);
         });
 
-    it('should create instance successfully when constructor is called with minimal fields', () => {
+        it('should create instance successfully when constructor is called with minimal fields', () => {
             const data: any = {
                 _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
@@ -64,7 +62,7 @@ describe('CompanyDto', () => {
             expect(dto.isValid).toBeUndefined();
         });
 
-    it('should create instance successfully when constructor is called without data', () => {
+        it('should create instance successfully when constructor is called without data', () => {
             const dto = new CompanyDto();
 
             expect(dto).toBeDefined();
@@ -73,7 +71,7 @@ describe('CompanyDto', () => {
             expect(dto.name).toBeUndefined();
         });
 
-    it('should create instance successfully when constructor is called with undefined', () => {
+        it('should create instance successfully when constructor is called with undefined', () => {
             const dto = new CompanyDto(undefined);
 
             expect(dto).toBeDefined();
@@ -82,7 +80,7 @@ describe('CompanyDto', () => {
             expect(dto.name).toBeUndefined();
         });
 
-    it('should create instance successfully when constructor is called with null values', () => {
+        it('should create instance successfully when constructor is called with null values', () => {
             const data: any = {
                 _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
@@ -116,7 +114,7 @@ describe('CompanyDto', () => {
             expect(dto.isValid).toBeNull();
         });
 
-    it('should create instance successfully when constructor is called with empty strings', () => {
+        it('should create instance successfully when constructor is called with empty strings', () => {
             const data: any = {
                 _id: '',
                 email: '',
@@ -144,7 +142,7 @@ describe('CompanyDto', () => {
             expect(dto.country).toBe('');
         });
 
-    it('should create instance successfully when constructor is called with each StructureType value', () => {
+        it('should create instance successfully when constructor is called with each StructureType value', () => {
             Object.values(StructureType).forEach((structureType) => {
                 const data: any = {
                     _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
@@ -159,7 +157,7 @@ describe('CompanyDto', () => {
             });
         });
 
-    it('should create instance successfully when constructor is called with each LegalStatus value', () => {
+        it('should create instance successfully when constructor is called with each LegalStatus value', () => {
             Object.values(LegalStatus).forEach((legalStatus) => {
                 const data: any = {
                     _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
@@ -174,7 +172,7 @@ describe('CompanyDto', () => {
             });
         });
 
-    it('should create instance successfully when constructor is called with isValid false', () => {
+        it('should create instance successfully when constructor is called with isValid false', () => {
             const data: any = {
                 _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
@@ -187,7 +185,7 @@ describe('CompanyDto', () => {
             expect(dto.isValid).toBe(false);
         });
 
-    it('should create instance successfully when constructor is called with isValid true', () => {
+        it('should create instance successfully when constructor is called with isValid true', () => {
             const data: any = {
                 _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
@@ -200,7 +198,7 @@ describe('CompanyDto', () => {
             expect(dto.isValid).toBe(true);
         });
 
-    it('should create instance successfully when constructor is called with partial address data', () => {
+        it('should create instance successfully when constructor is called with partial address data', () => {
             const data: any = {
                 _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
@@ -218,7 +216,7 @@ describe('CompanyDto', () => {
             expect(dto.postalCode).toBeUndefined();
         });
 
-    it('should create instance successfully when constructor is called with extra properties', () => {
+        it('should create instance successfully when constructor is called with extra properties', () => {
             const data: any = {
                 _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
@@ -236,7 +234,7 @@ describe('CompanyDto', () => {
             expect((dto as any).anotherExtra).toBe(123);
         });
 
-    it('should create instance successfully when constructor is passed a Company entity object', () => {
+        it('should create instance successfully when constructor is passed a Company entity object', () => {
             const company: any = {
                 _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
@@ -254,7 +252,7 @@ describe('CompanyDto', () => {
             expect((dto as any).password).toBe('hashedPassword');
         });
 
-    it('should create multiple instances independently when constructor is called repeatedly', () => {
+        it('should create multiple instances independently when constructor is called repeatedly', () => {
             const data1: any = {
                 _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test1@example.com',
@@ -276,7 +274,7 @@ describe('CompanyDto', () => {
             expect(dto2.email).toBe('test2@example.com');
         });
 
-    it('should create instance successfully when constructor is called with nested objects', () => {
+        it('should create instance successfully when constructor is called with nested objects', () => {
             const data: any = {
                 _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',
@@ -292,7 +290,7 @@ describe('CompanyDto', () => {
             expect((dto as any).nestedObject).toEqual({ key: 'value' });
         });
 
-    it('should create instance successfully when constructor is called with array properties', () => {
+        it('should create instance successfully when constructor is called with array properties', () => {
             const data = {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'test@example.com',
@@ -308,8 +306,6 @@ describe('CompanyDto', () => {
     });
 
     describe('property access', () => {
-
-
         it('should allow property modification when properties are modified after construction', () => {
             const dto = new CompanyDto({
                 _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
@@ -324,7 +320,7 @@ describe('CompanyDto', () => {
             expect(dto.email).toBe('modified@example.com');
         });
 
-    it('should allow adding optional properties successfully when properties are set after creation', () => {
+        it('should allow adding optional properties successfully when properties are set after creation', () => {
             const dto = new CompanyDto({
                 _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 email: 'test@example.com',

@@ -1,110 +1,91 @@
 name: Notify Discord on PR open
 
 on:
-  pull_request:
-    types: [opened, reopened, ready_for_review]
-    branches: [dev]
+    pull_request:
+        types: [opened, reopened, ready_for_review]
+        branches: [dev]
 
 jobs:
-  notify:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Post PR info to Discord
-        env:
-          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          PR_BODY: ${{ github.event.pull_request.body }}
-          REPO: ${{ github.repository }}
-          BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
-          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          import json, os, sys, urllib.request, urllib.error, urllib.parse
+    notify:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Post PR info to Discord
+              env:
+                  WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+                  PR_NUMBER: ${{ github.event.pull_request.number }}
+                  PR_TITLE: ${{ github.event.pull_request.title }}
+                  PR_URL: ${{ github.event.pull_request.html_url }}
+                  PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+                  PR_BODY: ${{ github.event.pull_request.body }}
+                  REPO: ${{ github.repository }}
+                  BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+                  HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+              shell: bash
+              run: |
+                  python3 - <<'PY'
+                  import json, os, sys, time, urllib.request
 
-          webhook = os.environ.get("WEBHOOK_URL", "").strip()
-          if not webhook:
-              print("Missing secret DISCORD_WEBHOOK")
-              sys.exit(1)
+                  webhook = os.environ["WEBHOOK_URL"]
+                  author = os.environ.get("PR_AUTHOR","")
+                  pr_number = os.environ.get("PR_NUMBER","")
+                  pr_title = os.environ.get("PR_TITLE","")
+                  pr_url = os.environ.get("PR_URL","")
+                  repo = os.environ.get("REPO","")
+                  head = os.environ.get("HEAD_BRANCH","")
+                  base = os.environ.get("BASE_BRANCH","")
+                  body = os.environ.get("PR_BODY") or ""
 
-          def with_wait(url: str) -> str:
-              p = urllib.parse.urlparse(url)
-              qs = urllib.parse.parse_qsl(p.query, keep_blank_values=True)
-              if not any(k == "wait" for k, _ in qs):
-                  qs.append(("wait", "true"))
-              return urllib.parse.urlunparse(p._replace(query=urllib.parse.urlencode(qs)))
+                  # Secure truncations (Discord limits)
+                  if len(pr_title) > 250:
+                      pr_title = pr_title[:250] + "…"
+                  body = body.strip()
+                  if len(body) > 4000:
+                      body = body[:4000] + "…"
+                  content = f"**{author}** a ouvert une pull request"
+                  if len(content) > 1900:
+                      content = content[:1900] + "…"
 
-          headers = {
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-              "User-Agent": "curl/8.5.0 GitHubActions (+https://github.com/)"
-          }
+                  # Create Discord embed
+                  embed = {
+                      "title": f"PR #{pr_number}: {pr_title}",
+                      "url": pr_url,
+                      "description": body or "_(aucune description)_",
+                      "fields": [
+                          {"name": "Auteur", "value": author or "—", "inline": True},
+                          {"name": "Repo", "value": repo or "—", "inline": True},
+                          {"name": "Branches", "value": f"`{head}` → `{base}`", "inline": False},
+                      ],
+                  }
 
-          def post(payload):
-              data = json.dumps(payload).encode("utf-8")
-              req = urllib.request.Request(with_wait(webhook), data=data, headers=headers, method="POST")
-              try:
-                  with urllib.request.urlopen(req, timeout=15) as resp:
-                      body = resp.read().decode("utf-8", "ignore")
-                      return resp.getcode(), body
-              except urllib.error.HTTPError as e:
-                  return e.code, e.read().decode("utf-8", "ignore")
-              except Exception as e:
-                  return None, str(e)
+                  payload = {
+                      "content": content,
+                      "allowed_mentions": {"parse": []},
+                      "embeds": [embed],
+                  }
 
-          # Données PR
-          author = os.environ.get("PR_AUTHOR","")
-          pr_number = os.environ.get("PR_NUMBER","")
-          pr_title = os.environ.get("PR_TITLE","") or ""
-          pr_url = os.environ.get("PR_URL","")
-          repo = os.environ.get("REPO","")
-          head = os.environ.get("HEAD_BRANCH","")
-          base = os.environ.get("BASE_BRANCH","")
-          body = (os.environ.get("PR_BODY") or "").strip()
+                  data = json.dumps(payload).encode("utf-8")
+                  req = urllib.request.Request(
+                      webhook,
+                      data=data,
+                      headers={
+                        "Content-Type": "application/json",
+                        "User-Agent": "Mozilla/5.0 (compatible; GitHubActions/1.0; +https://github.com)"
+                      },
+                      method="POST",
+                  )
 
-          # Troncatures (limites Discord)
-          if len(pr_title) > 250: pr_title = pr_title[:250] + "…"
-          if len(body) > 4000: body = body[:4000] + "…"
-          content = f"**{author}** a ouvert une pull request"
-          if len(content) > 1900: content = content[:1900] + "…"
-
-          embed = {
-              "title": f"PR #{pr_number}: {pr_title}",
-              "url": pr_url,
-              "description": body or "_(aucune description)_",
-              "fields": [
-                  {"name": "Auteur", "value": author or "—", "inline": True},
-                  {"name": "Repo", "value": repo or "—", "inline": True},
-                  {"name": "Branches", "value": f"`{head}` → `{base}`", "inline": False},
-              ],
-          }
-
-          # 1) Tente avec embed
-          status, resp = post({"content": content, "allowed_mentions": {"parse": []}, "embeds": [embed]})
-          try:
-              j = json.loads(resp) if resp else {}
-          except Exception:
-              j = {}
-
-          if status and 200 <= status < 300 and isinstance(j, dict) and "id" in j:
-              print(f"Discord OK • message_id={j.get('id')} • channel_id={j.get('channel_id')}")
-              sys.exit(0)
-
-          # 2) Fallback si embeds interdits (403/50013) → content seul
-          if (status == 403) or (isinstance(j, dict) and j.get("code") == 50013):
-              status2, resp2 = post({"content": content, "allowed_mentions": {"parse": []}})
-              try:
-                  j2 = json.loads(resp2) if resp2 else {}
-              except Exception:
-                  j2 = {}
-              if status2 and 200 <= status2 < 300 and "id" in j2:
-                  print(f"Discord OK (sans embed) • message_id={j2.get('id')} • channel_id={j2.get('channel_id')}")
-                  sys.exit(0)
-
-          # 3) Échec net (on garde le statut lisible)
-          print(f"Discord error • status={status} • body={resp[:300] if resp else ''}")
-          sys.exit(1)
-          PY
+                  # Send with exponential retry
+                  for attempt in range(5):
+                      try:
+                          with urllib.request.urlopen(req, timeout=10) as resp:
+                              status = resp.getcode()
+                              if 200 <= status < 300:
+                                  print(f"Discord notification sent ({status})")
+                                  sys.exit(0)
+                              else:
+                                  print(f"Discord HTTP {status}")
+                      except Exception as e:
+                          print(f"Attempt {attempt+1}/5 failed: {e}")
+                      time.sleep(min(2 ** attempt, 10))
+                  sys.exit(1)
+                  PY

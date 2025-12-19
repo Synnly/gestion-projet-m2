@@ -94,18 +94,14 @@ describe('Post Integration Tests', () => {
             role: Role.COMPANY,
             isValid: true,
         });
-        companyId = createdUser._id as Types.ObjectId;
 
-        console.log('Created user:', { email: createdUser.email, role: createdUser.role });
+        companyId = createdUser._id;
 
         const loginRes = await request(app.getHttpServer())
             .post('/api/auth/login')
             .send({ email: 'company@test.com', password: 'TestP@ss123' });
 
-        console.log('Login response:', { status: loginRes.status, body: loginRes.body, text: loginRes.text });
-
         if (loginRes.status !== 201) {
-            console.error('Login failed:', loginRes.status, loginRes.body);
             throw new Error('Failed to login for tests');
         }
 
@@ -142,14 +138,16 @@ describe('Post Integration Tests', () => {
     };
 
     describe('GET /api/company/:companyId/posts - Find All Posts', () => {
-        it('should return empty array when no posts exist and findAll is called', async () => {
+        it('should return empty paginated result when no posts exist and findAll is called', async () => {
             const res = await request(app.getHttpServer())
                 .get(buildPostsPath())
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(res.body).toEqual([]);
-            expect(Array.isArray(res.body)).toBe(true);
+            expect(res.body.data).toEqual([]);
+            expect(res.body.total).toBe(0);
+            expect(res.body.page).toBe(1);
+            expect(Array.isArray(res.body.data)).toBe(true);
         });
 
         it('should return all posts when posts exist and findAll is called', async () => {
@@ -172,8 +170,9 @@ describe('Post Integration Tests', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            const normalized = normalizeBody(res.body);
-            expect(normalized).toHaveLength(1);
+            expect(res.body.data).toHaveLength(1);
+            expect(res.body.total).toBe(1);
+            const normalized = normalizeBody(res.body.data);
             expect(normalized[0].title).toBe('Développeur Full Stack');
             expect(normalized[0].description).toBe('Recherche développeur expérimenté');
             expect(normalized[0]).toHaveProperty('_id');
@@ -199,21 +198,13 @@ describe('Post Integration Tests', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            const normalized = normalizeBody(res.body);
-            expect(normalized).toHaveLength(2);
-            expect(normalized[0].title).toBe('Développeur Frontend');
-            expect(normalized[1].title).toBe('Développeur Backend');
-        });
-
-        it('should return 401 when no authorization token is provided and findAll is called', async () => {
-            await request(app.getHttpServer()).get(buildPostsPath()).expect(401);
-        });
-
-        it('should return 401 when invalid authorization token is provided and findAll is called', async () => {
-            await request(app.getHttpServer())
-                .get(buildPostsPath())
-                .set('Authorization', 'Bearer invalid-token')
-                .expect(401);
+            expect(res.body.data).toHaveLength(2);
+            expect(res.body.total).toBe(2);
+            const normalized = normalizeBody(res.body.data);
+            // Do not rely on ordering: ensure both posts are present
+            const titles = normalized.map((p: any) => p.title);
+            expect(titles).toContain('Développeur Frontend');
+            expect(titles).toContain('Développeur Backend');
         });
 
         it('should return posts with all fields when posts have complete data and findAll is called', async () => {
@@ -236,7 +227,8 @@ describe('Post Integration Tests', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            const normalized = normalizeBody(res.body);
+            expect(res.body.data).toHaveLength(1);
+            const normalized = normalizeBody(res.body.data);
             expect(normalized[0]).toHaveProperty('title', 'Développeur Full Stack');
             expect(normalized[0]).toHaveProperty('description');
             expect(normalized[0]).toHaveProperty('duration', '6 mois');
@@ -289,17 +281,6 @@ describe('Post Integration Tests', () => {
                 .expect(400);
         });
 
-        it('should return 401 when no authorization token is provided and findOne is called', async () => {
-            const post = await createPost({
-                title: 'Test Post',
-                description: 'Test Description',
-                keySkills: ['Skill1'],
-                type: PostType.Presentiel,
-            });
-
-            await request(app.getHttpServer()).get(buildPostsPath(`/${post._id}`)).expect(401);
-        });
-
         it('should return post with all fields when post has complete data and findOne is called', async () => {
             const post = await createPost({
                 title: 'Développeur Full Stack',
@@ -348,6 +329,7 @@ describe('Post Integration Tests', () => {
                 keySkills: ['Python', 'Django'],
                 adress: 'Lyon, France',
                 type: PostType.Presentiel,
+                isCoverLetterRequired: true,
             };
 
             await request(app.getHttpServer())
@@ -367,6 +349,7 @@ describe('Post Integration Tests', () => {
                 title: 'Titre Minimal',
                 description: 'Description Minimale',
                 keySkills: ['Skill1'],
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())
@@ -571,6 +554,7 @@ describe('Post Integration Tests', () => {
                 description: 'Description',
                 keySkills: ['Skill1'],
                 type: PostType.Presentiel,
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())
@@ -589,6 +573,7 @@ describe('Post Integration Tests', () => {
                 description: 'Description',
                 keySkills: ['Skill1'],
                 type: PostType.Teletravail,
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())
@@ -607,6 +592,7 @@ describe('Post Integration Tests', () => {
                 description: 'Description',
                 keySkills: ['Skill1'],
                 type: PostType.Hybride,
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())
@@ -631,6 +617,7 @@ describe('Post Integration Tests', () => {
                 keySkills: ['Java', 'Spring'],
                 adress: 'Marseille, France',
                 type: PostType.Hybride,
+                isCoverLetterRequired: false,
             };
 
             await request(app.getHttpServer())

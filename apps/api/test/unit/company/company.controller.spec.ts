@@ -86,11 +86,9 @@ describe('CompanyController', () => {
         jest.clearAllMocks();
     });
 
-
     it('should be defined when controller is instantiated', () => {
         expect(controller).toBeDefined();
     });
-
 
     describe('findAll', () => {
         it('should return an array of 2 CompanyDto when findAll is called with 2 existing companies in database', async () => {
@@ -121,6 +119,24 @@ describe('CompanyController', () => {
             expect(service.findAll).toHaveBeenCalledTimes(1);
         });
 
+        it('should return CompanyDto[] when called and map data', async () => {
+            const companies = [
+                {
+                    _id: '507f1f77bcf86cd799439011',
+                    email: 'test@example.com',
+                    name: 'Test Company',
+                    posts: [{ _id: 'p1', title: 'Post 1' }],
+                },
+            ];
+
+            mockCompanyService.findAll.mockResolvedValue(companies);
+
+            const result = await controller.findAll();
+
+            expect(result).toHaveLength(1);
+            expect(result[0]).toBeInstanceOf(CompanyDto);
+            expect(result[0].posts).toBeDefined();
+        });
 
         it('should return an empty array when findAll is called with no companies existing in database', async () => {
             mockCompanyService.findAll.mockResolvedValue([]);
@@ -130,7 +146,6 @@ describe('CompanyController', () => {
             expect(result).toEqual([]);
             expect(service.findAll).toHaveBeenCalledTimes(1);
         });
-
 
         it('should return company with all optional fields when findAll is called with company containing all optional fields in database', async () => {
             const companies = [
@@ -168,7 +183,6 @@ describe('CompanyController', () => {
             expect(result[0].isValid).toBe(true);
         });
 
-
         it('should return all companies when findAll is called with existing companies', async () => {
             const mockCompanies = [{ id: '1', name: 'TestCo' }];
             mockCompanyService.findAll.mockResolvedValue(mockCompanies);
@@ -178,7 +192,6 @@ describe('CompanyController', () => {
             expect(result).toHaveLength(1);
             expect(result[0]).toBeInstanceOf(CompanyDto);
         });
-
 
         it('should return company with only required fields when findAll is called with company containing minimal fields in database', async () => {
             const companies = [
@@ -203,7 +216,6 @@ describe('CompanyController', () => {
         });
     });
 
-
     describe('findOne', () => {
         it('should return a CompanyDto when findOne is called with valid existing company id', async () => {
             const company = {
@@ -223,7 +235,6 @@ describe('CompanyController', () => {
             expect(service.findOne).toHaveBeenCalledTimes(1);
         });
 
-
         it('should return a company when findOne is called with existing company id', async () => {
             const mockCompany = { id: '1', name: 'TestCo' };
             mockCompanyService.findOne.mockResolvedValue(mockCompany);
@@ -233,13 +244,11 @@ describe('CompanyController', () => {
             expect(result).toBeInstanceOf(CompanyDto);
         });
 
-
         it('should throw NotFoundException when findOne is called with non-existing company id', async () => {
             mockCompanyService.findOne.mockResolvedValue(null);
 
             await expect(controller.findOne('1')).rejects.toThrow(NotFoundException);
         });
-
 
         it('should throw NotFoundException with message when findOne is called with non-existing company id', async () => {
             mockCompanyService.findOne.mockResolvedValue(null);
@@ -250,7 +259,6 @@ describe('CompanyController', () => {
             );
             expect(service.findOne).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
         });
-
 
         it('should return company with all optional fields when findOne is called with company containing all fields', async () => {
             const company = {
@@ -280,7 +288,6 @@ describe('CompanyController', () => {
             expect(result.isValid).toBe(true);
         });
 
-
         it('should return company with only required fields when findOne is called with company containing minimal fields', async () => {
             const company = {
                 _id: '507f1f77bcf86cd799439011',
@@ -300,14 +307,12 @@ describe('CompanyController', () => {
             expect(result.isValid).toBe(false);
         });
 
-
         it('should throw NotFoundException when findOne is called with id returning undefined from service', async () => {
             mockCompanyService.findOne.mockResolvedValue(undefined);
 
             await expect(controller.findOne('507f1f77bcf86cd799439011')).rejects.toThrow(NotFoundException);
         });
     });
-
 
     describe('create', () => {
         it('should create company successfully when create is called with minimal required fields', async () => {
@@ -325,7 +330,6 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
             expect(service.create).toHaveBeenCalledTimes(1);
         });
-
 
         it('should create company successfully when create is called with all fields populated', async () => {
             const createDto = new CreateCompanyDto({
@@ -352,7 +356,6 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledTimes(1);
         });
 
-
         it('should create company successfully when create is called with structureType Administration', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'admin@example.com',
@@ -368,7 +371,6 @@ describe('CompanyController', () => {
 
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
-
 
         it('should create company successfully when create is called with structureType Association', async () => {
             const createDto = new CreateCompanyDto({
@@ -386,7 +388,6 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-
         it('should create company successfully when create is called with structureType PublicCompanyOrSEM', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'public@example.com',
@@ -402,7 +403,6 @@ describe('CompanyController', () => {
 
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
-
 
         it('should create company successfully when create is called with structureType MutualCooperative', async () => {
             const createDto = new CreateCompanyDto({
@@ -420,7 +420,6 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-
         it('should create company successfully when create is called with structureType NGO', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'ngo@example.com',
@@ -436,7 +435,6 @@ describe('CompanyController', () => {
 
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
-
 
         it('should create company successfully when create is called with legalStatus EURL', async () => {
             const createDto = new CreateCompanyDto({
@@ -454,7 +452,6 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-
         it('should create company successfully when create is called with legalStatus SA', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'sa@example.com',
@@ -470,7 +467,6 @@ describe('CompanyController', () => {
 
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
-
 
         it('should create company successfully when create is called with legalStatus SAS', async () => {
             const createDto = new CreateCompanyDto({
@@ -488,7 +484,6 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-
         it('should create company successfully when create is called with legalStatus SNC', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'snc@example.com',
@@ -504,7 +499,6 @@ describe('CompanyController', () => {
 
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
-
 
         it('should create company successfully when create is called with legalStatus SCP', async () => {
             const createDto = new CreateCompanyDto({
@@ -522,7 +516,6 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-
         it('should create company successfully when create is called with legalStatus SASU', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'sasu@example.com',
@@ -538,7 +531,6 @@ describe('CompanyController', () => {
 
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
-
 
         it('should create company successfully when create is called with legalStatus OTHER', async () => {
             const createDto = new CreateCompanyDto({
@@ -556,7 +548,6 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-
         it('should create company successfully when create is called with isValid set to true', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'valid@example.com',
@@ -571,7 +562,6 @@ describe('CompanyController', () => {
 
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
-
 
         it('should create company successfully when create is called with optional address fields', async () => {
             const createDto = new CreateCompanyDto({
@@ -593,7 +583,6 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-
         it('should create company successfully when create is called with partial address fields', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'partial@example.com',
@@ -611,10 +600,7 @@ describe('CompanyController', () => {
         });
     });
 
-
     describe('update', () => {
-
-
         it('should update company successfully when update is called with single field', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
@@ -627,7 +613,6 @@ describe('CompanyController', () => {
             expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
             expect(service.update).toHaveBeenCalledTimes(1);
         });
-
 
         it('should update company successfully when update is called with multiple fields', async () => {
             const updateDto = new UpdateCompanyDto({
@@ -644,7 +629,6 @@ describe('CompanyController', () => {
             expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
         });
 
-
         it('should update company email successfully when update is called with new email', async () => {
             const updateDto = new UpdateCompanyDto({
                 email: 'newemail@example.com',
@@ -656,7 +640,6 @@ describe('CompanyController', () => {
 
             expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
         });
-
 
         it('should update company password successfully when update is called with new password', async () => {
             const updateDto = new UpdateCompanyDto({
@@ -670,7 +653,6 @@ describe('CompanyController', () => {
             expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
         });
 
-
         it('should update company structureType successfully when update is called with new structureType', async () => {
             const updateDto = new UpdateCompanyDto({
                 structureType: StructureType.Association,
@@ -682,7 +664,6 @@ describe('CompanyController', () => {
 
             expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
         });
-
 
         it('should update company legalStatus successfully when update is called with new legalStatus', async () => {
             const updateDto = new UpdateCompanyDto({
@@ -696,7 +677,6 @@ describe('CompanyController', () => {
             expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
         });
 
-
         it('should update company isValid status successfully when update is called with new isValid value', async () => {
             const updateDto = new UpdateCompanyDto({
                 isValid: true,
@@ -708,7 +688,6 @@ describe('CompanyController', () => {
 
             expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
         });
-
 
         it('should update company address fields successfully when update is called with new address fields', async () => {
             const updateDto = new UpdateCompanyDto({
@@ -726,7 +705,6 @@ describe('CompanyController', () => {
             expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
         });
 
-
         it('should update company siretNumber successfully when update is called with new siretNumber', async () => {
             const updateDto = new UpdateCompanyDto({
                 siretNumber: '11111111111111',
@@ -739,7 +717,6 @@ describe('CompanyController', () => {
             expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
         });
 
-
         it('should update company nafCode successfully when update is called with new nafCode', async () => {
             const updateDto = new UpdateCompanyDto({
                 nafCode: '1234Z',
@@ -751,7 +728,6 @@ describe('CompanyController', () => {
 
             expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
         });
-
 
         it('should update all company fields successfully when update is called with complete update data', async () => {
             const updateDto = new UpdateCompanyDto({
@@ -778,10 +754,7 @@ describe('CompanyController', () => {
         });
     });
 
-
     describe('remove', () => {
-
-
         it('should delete company successfully when remove is called with valid id', async () => {
             mockCompanyService.remove.mockResolvedValue(undefined);
 
@@ -790,7 +763,6 @@ describe('CompanyController', () => {
             expect(service.remove).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
             expect(service.remove).toHaveBeenCalledTimes(1);
         });
-
 
         it('should delete company successfully when remove is called with different id', async () => {
             mockCompanyService.remove.mockResolvedValue(undefined);
@@ -801,13 +773,8 @@ describe('CompanyController', () => {
         });
     });
 
-
     describe('RolesGuard integration', () => {
-
-
         describe('findAll - no role required', () => {
-
-
             it('should allow access successfully when canActivate is called without authentication', () => {
                 mockReflector.getAllAndOverride.mockReturnValue(undefined);
 
@@ -816,7 +783,6 @@ describe('CompanyController', () => {
 
                 expect(result).toBe(true);
             });
-
 
             it('should allow access successfully when canActivate is called with USER role', () => {
                 mockReflector.getAllAndOverride.mockReturnValue(undefined);
@@ -827,7 +793,6 @@ describe('CompanyController', () => {
                 expect(result).toBe(true);
             });
 
-
             it('should allow access successfully when canActivate is called with COMPANY role', () => {
                 mockReflector.getAllAndOverride.mockReturnValue(undefined);
 
@@ -836,7 +801,6 @@ describe('CompanyController', () => {
 
                 expect(result).toBe(true);
             });
-
 
             it('should allow access successfully when canActivate is called with ADMIN role', () => {
                 mockReflector.getAllAndOverride.mockReturnValue(undefined);
@@ -848,10 +812,7 @@ describe('CompanyController', () => {
             });
         });
 
-
         describe('findOne - no role required', () => {
-
-
             it('should allow access successfully when canActivate is called without specific role', () => {
                 mockReflector.getAllAndOverride.mockReturnValue(undefined);
 
@@ -873,10 +834,7 @@ describe('CompanyController', () => {
             });
         });
 
-
         describe('update - requires COMPANY or ADMIN role', () => {
-
-
             it('should allow COMPANY role to update successfully when canActivate is called with COMPANY role', () => {
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
@@ -886,7 +844,6 @@ describe('CompanyController', () => {
                 expect(result).toBe(true);
             });
 
-
             it('should allow ADMIN role to update successfully when canActivate is called with ADMIN role', () => {
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
@@ -895,7 +852,6 @@ describe('CompanyController', () => {
 
                 expect(result).toBe(true);
             });
-
 
             it('should deny USER role when canActivate is called with USER role for update', () => {
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
@@ -915,7 +871,6 @@ describe('CompanyController', () => {
                 expect(() => rolesGuard.canActivate(context)).toThrow('User role not found');
             });
 
-
             it('should deny access when canActivate is called and user is not authenticated', () => {
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
@@ -926,10 +881,7 @@ describe('CompanyController', () => {
             });
         });
 
-
         describe('remove - requires COMPANY or ADMIN role', () => {
-
-
             it('should allow COMPANY role to delete successfully when canActivate is called with COMPANY role', () => {
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
@@ -939,7 +891,6 @@ describe('CompanyController', () => {
                 expect(result).toBe(true);
             });
 
-
             it('should allow ADMIN role to delete successfully when canActivate is called with ADMIN role', () => {
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
@@ -948,7 +899,6 @@ describe('CompanyController', () => {
 
                 expect(result).toBe(true);
             });
-
 
             it('should deny USER role when canActivate is called with USER role for delete', () => {
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
@@ -968,7 +918,6 @@ describe('CompanyController', () => {
                 expect(() => rolesGuard.canActivate(context)).toThrow('User role not found');
             });
 
-
             it('should deny access when canActivate is called and user is null for delete', () => {
                 mockReflector.getAllAndOverride.mockReturnValue([Role.COMPANY, Role.ADMIN]);
 
@@ -980,13 +929,8 @@ describe('CompanyController', () => {
         });
     });
 
-
     describe('Edge cases and error scenarios', () => {
-
-
         describe('findOne edge cases', () => {
-
-
             it('should throw error when findOne is called and service throws database error', async () => {
                 mockCompanyService.findOne.mockRejectedValue(new Error('Database error'));
 
@@ -994,10 +938,7 @@ describe('CompanyController', () => {
             });
         });
 
-
         describe('create edge cases', () => {
-
-
             it('should throw error when create is called and service throws creation error', async () => {
                 const createDto = new CreateCompanyDto({
                     email: 'test@example.com',
@@ -1011,6 +952,21 @@ describe('CompanyController', () => {
                 await expect(controller.create(createDto)).rejects.toThrow('Creation failed');
             });
 
+            it('should throw ConflictException when create fails with duplicate key error (code 11000)', async () => {
+                const createDto = new CreateCompanyDto({
+                    email: 'dup@example.com',
+                    password: 'Password123!',
+                    name: 'Dup Company',
+                });
+
+                const dupErr: any = new Error('Duplicate');
+                dupErr.code = 11000;
+                mockCompanyService.create.mockRejectedValue(dupErr);
+
+                await expect(controller.create(createDto)).rejects.toThrow(
+                    'Company with email dup@example.com already exists',
+                );
+            });
 
             it('should create company successfully when create is called with empty optional strings', async () => {
                 const createDto = new CreateCompanyDto({
@@ -1035,10 +991,7 @@ describe('CompanyController', () => {
             });
         });
 
-
         describe('update edge cases', () => {
-
-
             it('should throw error when update is called and service throws update error', async () => {
                 const updateDto = new UpdateCompanyDto({
                     name: 'Updated Company',
@@ -1049,7 +1002,6 @@ describe('CompanyController', () => {
                 await expect(controller.update('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow('Update failed');
             });
 
-
             it('should update successfully when update is called with empty object', async () => {
                 const updateDto = new UpdateCompanyDto({});
 
@@ -1059,7 +1011,6 @@ describe('CompanyController', () => {
 
                 expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
             });
-
 
             it('should update company isValid to false successfully when update is called with isValid false', async () => {
                 const updateDto = new UpdateCompanyDto({
@@ -1074,10 +1025,7 @@ describe('CompanyController', () => {
             });
         });
 
-
         describe('remove edge cases', () => {
-
-
             it('should throw error when remove is called and service throws deletion error', async () => {
                 mockCompanyService.remove.mockRejectedValue(new Error('Deletion failed'));
 
@@ -1085,16 +1033,12 @@ describe('CompanyController', () => {
             });
         });
 
-
         describe('findAll edge cases', () => {
-
-
             it('should throw error when findAll is called and service throws database error', async () => {
                 mockCompanyService.findAll.mockRejectedValue(new Error('Database error'));
 
                 await expect(controller.findAll()).rejects.toThrow('Database error');
             });
-
 
             it('should return companies successfully when findAll is called with undefined optional fields', async () => {
                 const companies = [
@@ -1126,10 +1070,7 @@ describe('CompanyController', () => {
         });
     });
 
-
     describe('Integration scenarios', () => {
-
-
         it('should create and find company successfully when performing create then findOne operations', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'integration@example.com',
@@ -1154,7 +1095,6 @@ describe('CompanyController', () => {
             expect(result._id).toBe('507f1f77bcf86cd799439011');
             expect(result.email).toBe('integration@example.com');
         });
-
 
         it('should create update and verify company successfully when performing create update findOne operations', async () => {
             const createDto = new CreateCompanyDto({
@@ -1187,7 +1127,6 @@ describe('CompanyController', () => {
             expect(result.name).toBe('Updated Test Company');
             expect(result.isValid).toBe(true);
         });
-
 
         it('should verify company is not in list successfully when performing findAll remove findAll operations', async () => {
             const companiesBeforeDelete = [
@@ -1228,7 +1167,6 @@ describe('CompanyController', () => {
             expect(afterDelete[0]._id).toBe('507f1f77bcf86cd799439012');
         });
 
-
         it('should handle deletion successfully when remove is called with non-existent company id', async () => {
             mockCompanyService.remove.mockResolvedValue(undefined);
 
@@ -1238,10 +1176,7 @@ describe('CompanyController', () => {
         });
     });
 
-
     describe('DTO validation scenarios', () => {
-
-
         it('should accept all StructureType enum values successfully when create is called with each enum value', async () => {
             for (const structureType of Object.values(StructureType)) {
                 const createDto = new CreateCompanyDto({
@@ -1259,7 +1194,6 @@ describe('CompanyController', () => {
                 expect(service.create).toHaveBeenCalledWith(expect.objectContaining({ structureType }));
             }
         });
-
 
         it('should accept all LegalStatus enum values successfully when create is called with each enum value', async () => {
             for (const legalStatus of Object.values(LegalStatus)) {
@@ -1280,10 +1214,7 @@ describe('CompanyController', () => {
         });
     });
 
-
     describe('Response transformation', () => {
-
-
         it('should transform company entities to DTOs successfully when findAll is called', async () => {
             const companies = [
                 {
@@ -1310,7 +1241,6 @@ describe('CompanyController', () => {
             expect(result).toHaveLength(2);
         });
 
-
         it('should transform company entity to DTO successfully when findOne is called', async () => {
             const company = {
                 _id: '507f1f77bcf86cd799439011',
@@ -1325,6 +1255,22 @@ describe('CompanyController', () => {
             const result = await controller.findOne('507f1f77bcf86cd799439011');
 
             expect(result).toBeInstanceOf(CompanyDto);
+        });
+
+        it('mapToDto should map posts to PostDto when called directly', () => {
+            const company: any = {
+                _id: '507f1f77bcf86cd799439011',
+                email: 'test@example.com',
+                name: 'Test Company',
+                posts: [{ _id: 'p1', title: 'Post 1', description: 'd' }],
+            };
+
+            // Call private method via bracket access
+            const dto = (controller as any).mapToDto(company);
+
+            expect(dto).toBeInstanceOf(CompanyDto);
+            expect(dto.posts).toBeDefined();
+            expect(dto.posts[0]).toBeDefined();
         });
     });
 });

@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
+import { Request } from 'express';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -25,10 +26,6 @@ export class AuthGuard implements CanActivate {
 
         const secret = this.configService.get<string>('ACCESS_TOKEN_SECRET');
         if (!secret) throw new InvalidConfigurationException('Access token secret not configured');
-
-        request['user'] = await this.jwtService.verifyAsync(accessToken, { secret }).catch(() => {
-            throw new UnauthorizedException('Invalid access token');
-        });
 
         return true;
     }

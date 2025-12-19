@@ -1,13 +1,13 @@
 /**
  * S3 Module Constants
- * 
+ *
  * Centralizes all configuration values for MinIO/S3 operations
  * All values should be loaded from environment variables when possible
  */
 
 /** Presigned URL expiry times (in seconds) */
 export const URL_EXPIRY = {
-    UPLOAD: 600,    // 10 minutes for PUT operations
+    UPLOAD: 600, // 10 minutes for PUT operations
     DOWNLOAD: 3600, // 1 hour for GET operations
 } as const;
 
@@ -58,3 +58,10 @@ export const RATE_LIMIT = {
     DOWNLOAD: { limit: 400, ttl: 60000 }, // 200 downloads per minute
     DELETE: { limit: 10, ttl: 60000 }, // 10 deletes per minute
 } as const;
+
+export const STORAGE_PROVIDER = Symbol('STORAGE_PROVIDER');
+
+export enum StorageProviderType {
+    MINIO = 'minio',
+    AWS = 'aws',
+}

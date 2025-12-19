@@ -1,240 +1,60 @@
-import { Injectable, OnModuleInit, NotFoundException, ForbiddenException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as Minio from 'minio';
-import { BUCKET_PREFIXES, URL_EXPIRY, PATH_REGEX } from './s3.constants';
-import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
-
-export interface PresignedUploadResult {
-    fileName: string;
-    uploadUrl: string;
-}
-
-export interface PresignedDownloadResult {
-    downloadUrl: string;
-}
-
-export interface FileMetadata {
-    filename: string;
-    contentType: string;
-    size: number;
-    uploadedAt: string;
-    uploaderId: string;
-}
+import { Injectable, Inject } from '@nestjs/common';
+import { STORAGE_PROVIDER } from './s3.constants';
+import type { IStorageProvider } from './interfaces/IStorageProvider';
 
 /**
- * S3Service - Simplified version for presigned URLs only
- * 
- * Handles:
- * - Generating presigned PUT URLs for uploads (logos & CVs)
- * - Generating presigned GET URLs for downloads
- * - File deletion with ownership verification
+ * High-level S3 service used by application controllers and other services.
+ *
+ * This service acts as a thin façade that delegates storage operations to the
+ * configured `IStorageProvider` implementation (MinIO, AWS, ...). Keeping the
+ * service small simplifies testing and allows swapping providers without
+ * changing business logic.
  */
 @Injectable()
-export class S3Service implements OnModuleInit {
-    private minioClient: Minio.Client;
-    private bucket: string;
-
-    constructor(private readonly configService: ConfigService) {}
+export class S3Service {
+    constructor(@Inject(STORAGE_PROVIDER) private readonly provider: IStorageProvider) {}
 
     /**
-     * Initialize MinIO client and ensure bucket exists
+     * Return a presigned upload URL and the calculated storage filename.
+     * Delegates to the configured storage provider.
      */
-    async onModuleInit(): Promise<void> {
-        await this.initializeMinioClient();
-        await this.ensureBucketExists();
-    }
-
-    /**
-     * Initialize MinIO client from environment variables
-     */
-    private async initializeMinioClient(): Promise<void> {
-        const endpoint = this.configService.get<string>('MINIO_ENDPOINT');
-        const port = parseInt(this.configService.get<string>('MINIO_PORT') || '443');
-        const useSSL = this.configService.get<string>('MINIO_USE_SSL') === 'true';
-        const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY');
-        const secretKey = this.configService.get<string>('MINIO_SECRET_KEY');
-
-        if (!endpoint || !accessKey || !secretKey) {
-            throw new InvalidConfigurationException('MinIO configuration incomplete. Check MINIO_ENDPOINT, MINIO_ACCESS_KEY, and MINIO_SECRET_KEY');
-        }
-
-        this.bucket = this.configService.get<string>('MINIO_BUCKET') || 'uploads';
-
-        this.minioClient = new Minio.Client({
-            endPoint: endpoint,
-            port,
-            useSSL,
-            accessKey,
-            secretKey,
-        });
-    }
-
-    /**
-     * Ensure the bucket exists, create if needed
-     */
-    private async ensureBucketExists(): Promise<void> {
-        try {
-            const exists = await this.minioClient.bucketExists(this.bucket);
-
-            if (!exists) {
-                await this.minioClient.makeBucket(this.bucket, '');
-            } 
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    /**
-     * Generate a presigned PUT URL for file upload
-     * @param originalFilename Original filename from client
-     * @param fileType 'logo' or 'cv'
-     * @param userId ID of the user uploading (for ownership tracking)
-     * @returns Object containing the generated fileName and uploadUrl
-     */
-    async generatePresignedUploadUrl(
+    generatePresignedUploadUrl(
         originalFilename: string,
-        fileType: 'logo' | 'cv',
+        fileType: 'logo' | 'cv' | 'lm',
         userId: string,
-    ): Promise<PresignedUploadResult> {
-        // Extract extension from original filename
-        const extension = originalFilename.split('.').pop()?.toLowerCase() || '';
-        
-        // Generate filename: userId_logo.ext or userId_cv.ext (no folder prefix)
-        const fileName = `${userId}_${fileType}.${extension}`;
-
-        // Validate path
-        if (!PATH_REGEX.SAFE_PATH.test(fileName)) {
-            throw new BadRequestException('Invalid file path generated');
-        }
-
-        // Check if file already exists and delete it (overwrite old version)
-        const exists = await this.fileExists(fileName);
-        if (exists) {
-            try {
-                await this.minioClient.removeObject(this.bucket, fileName);
-            } catch (error) {
-                // Continue even if deletion fails
-            }
-        }
-
-        try {
-            // Generate presigned PUT URL with metadata
-            const uploadUrl = await this.minioClient.presignedPutObject(
-                this.bucket,
-                fileName,
-                URL_EXPIRY.UPLOAD,
-            );
-
-            return {
-                fileName,
-                uploadUrl,
-            };
-        } catch (error) {
-            throw new InternalServerErrorException('Failed to generate upload URL');
-        }
+        postId?: string,
+    ) {
+        return this.provider.generatePresignedUploadUrl(originalFilename, fileType, userId, postId);
     }
 
     /**
-     * Generate a presigned GET URL for file download
-     * @param fileName Full path of the file in the bucket
-     * @param userId ID of the user requesting download (for ownership verification)
-     * @returns Object containing the downloadUrl
+     * Return a presigned download URL for a private file. Delegates to the
+     * configured storage provider which may perform access checks and throw
+     * appropriate exceptions (e.g. NotFound, Forbidden).
      */
-    async generatePresignedDownloadUrl(fileName: string, userId: string): Promise<PresignedDownloadResult> {
-        // Validate path to prevent traversal
-        if (!PATH_REGEX.SAFE_PATH.test(fileName)) {
-            throw new BadRequestException('Invalid file path');
-        }
-
-        // Check if file exists
-        const exists = await this.fileExists(fileName);
-        if (!exists) {
-            throw new NotFoundException(`File not found: ${fileName}`);
-        }
-
-        // TODO: Verify ownership - check if userId matches file metadata
-        // For now, we'll implement basic verification
-        await this.verifyOwnership(fileName, userId);
-
-        try {
-            const downloadUrl = await this.minioClient.presignedGetObject(
-                this.bucket,
-                fileName,
-                URL_EXPIRY.DOWNLOAD,
-            );
-
-
-            return { downloadUrl };
-        } catch (error) {
-            throw new InternalServerErrorException('Failed to generate download URL');
-        }
+    generatePresignedDownloadUrl(fileName: string, userId: string, userRole?: string, postId?: string) {
+        return this.provider.generatePresignedDownloadUrl(fileName, userId, userRole, postId);
     }
 
     /**
-     * Delete a file from storage
-     * @param fileName Full path of the file in the bucket
-     * @param userId ID of the user requesting deletion (for ownership verification)
+     * Return a presigned download URL for a public file (no ownership checks).
      */
-    async deleteFile(fileName: string, userId: string): Promise<void> {
-        // Validate path
-        if (!PATH_REGEX.SAFE_PATH.test(fileName)) {
-            throw new BadRequestException('Invalid file path');
-        }
-
-        // Check if file exists
-        const exists = await this.fileExists(fileName);
-        if (!exists) {
-            throw new NotFoundException(`File not found: ${fileName}`);
-        }
-
-        // Verify ownership before deletion
-        await this.verifyOwnership(fileName, userId);
-
-        try {
-            await this.minioClient.removeObject(this.bucket, fileName);
-        } catch (error) {
-            throw new InternalServerErrorException('Failed to delete file');
-        }
+    generatePublicDownloadUrl(fileName: string) {
+        return this.provider.generatePublicDownloadUrl(fileName);
     }
 
     /**
-     * Check if a file exists in the bucket
-     * @param fileName Full path of the file
-     * @returns True if file exists, false otherwise
+     * Delete a file via the storage provider. The provider may validate path
+     * safety and ownership and throw if deletion is not permitted.
      */
-    async fileExists(fileName: string): Promise<boolean> {
-        try {
-            await this.minioClient.statObject(this.bucket, fileName);
-            return true;
-        } catch {
-            return false;
-        }
+    deleteFile(fileName: string, userId: string) {
+        return this.provider.deleteFile(fileName, userId);
     }
 
     /**
-     * Verify that the user owns the file
-     * This is a placeholder - in production, you should store metadata separately
-     * or use MinIO's metadata to track ownership
-     * @param fileName Full path of the file
-     * @param userId ID of the user
-     * @throws ForbiddenException if user doesn't own the file
+     * Check whether a file exists in storage. Delegates to the provider.
      */
-    private async verifyOwnership(fileName: string, userId: string): Promise<void> {
-        try {
-            const stat = await this.minioClient.statObject(this.bucket, fileName);
-            const metadata = stat.metaData || {};
-            
-            // Check if uploaderId metadata exists and matches
-            const uploaderId = metadata['uploaderid'] || metadata['uploaderId'];
-            
-            if (uploaderId && uploaderId !== userId) {
-                throw new ForbiddenException('You do not have permission to access this file');
-            }
-
-        } catch (error) {
-            if (error instanceof ForbiddenException) {
-                throw error;
-            }
-        }
+    fileExists(fileName: string) {
+        return this.provider.fileExists(fileName);
     }
 }

@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import request from 'supertest';
 import { MailerModule } from '../../../src/mailer/mailer.module';
+import { MailerProviderType } from '../../../src/mailer/constants';
 import { User, UserSchema } from '../../../src/user/user.schema';
 import { Model } from 'mongoose';
 import { getModelToken } from '@nestjs/mongoose';
@@ -34,7 +35,7 @@ describe('MailerController (Integration)', () => {
                 }),
                 MongooseModule.forRoot(mongoUri),
                 MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-                MailerModule,
+                MailerModule.register(MailerProviderType.gmail),
             ],
         })
             .overrideProvider(NestMailerService)
@@ -158,11 +159,16 @@ describe('MailerController (Integration)', () => {
                 passwordResetAttempts: 0,
             });
 
+            // First verify OTP
+            await request(app.getHttpServer())
+                .post('/api/mailer/password/reset/verify-otp')
+                .send({ email: 'test@example.com', otp: '123456' })
+                .expect(200);
+
             const response = await request(app.getHttpServer())
                 .post('/api/mailer/password/reset')
                 .send({
                     email: 'test@example.com',
-                    otp: '123456',
                     newPassword: 'NewPassword123!',
                 })
                 .expect(200);
@@ -199,12 +205,8 @@ describe('MailerController (Integration)', () => {
             });
 
             const response = await request(app.getHttpServer())
-                .post('/api/mailer/password/reset')
-                .send({
-                    email: 'test@example.com',
-                    otp: '123456',
-                    newPassword: 'NewPassword123!',
-                })
+                .post('/api/mailer/password/reset/verify-otp')
+                .send({ email: 'test@example.com', otp: '123456' })
                 .expect(400);
 
             expect(response.body.message).toContain('expired');
@@ -228,12 +230,8 @@ describe('MailerController (Integration)', () => {
             });
 
             const response = await request(app.getHttpServer())
-                .post('/api/mailer/password/reset')
-                .send({
-                    email: 'test@example.com',
-                    otp: '999999', // Wrong OTP
-                    newPassword: 'NewPassword123!',
-                })
+                .post('/api/mailer/password/reset/verify-otp')
+                .send({ email: 'test@example.com', otp: '999999' })
                 .expect(400);
 
             expect(response.body.message).toContain('Invalid');
@@ -256,11 +254,16 @@ describe('MailerController (Integration)', () => {
                 passwordResetAttempts: 0,
             });
 
+            // Verify OTP first
+            await request(app.getHttpServer())
+                .post('/api/mailer/password/reset/verify-otp')
+                .send({ email: 'test@example.com', otp: '123456' })
+                .expect(200);
+
             const response = await request(app.getHttpServer())
                 .post('/api/mailer/password/reset')
                 .send({
                     email: 'test@example.com',
-                    otp: '123456',
                     newPassword: 'weak', // Too weak
                 })
                 .expect(400);
@@ -285,29 +288,71 @@ describe('MailerController (Integration)', () => {
                 passwordResetAttempts: 0,
             });
 
-            // 5 failed attempts
+            // 5 failed attempts (verify endpoint)
             for (let i = 0; i < 5; i++) {
                 await request(app.getHttpServer())
-                    .post('/api/mailer/password/reset')
-                    .send({
-                        email: 'test@example.com',
-                        otp: '999999',
-                        newPassword: 'NewPassword123!',
-                    })
+                    .post('/api/mailer/password/reset/verify-otp')
+                    .send({ email: 'test@example.com', otp: '999999' })
                     .expect(400);
             }
 
-            // Should be blocked now
+            // Should be blocked now even if correct OTP
+            const response = await request(app.getHttpServer())
+                .post('/api/mailer/password/reset/verify-otp')
+                .send({ email: 'test@example.com', otp: '123456' })
+                .expect(400);
+
+            expect(response.body.message).toContain('Too many verification attempts');
+        });
+
+        it('should reject password reset without OTP verification', async () => {
+            const hashedPassword = await bcrypt.hash('Password123!', 10);
+
+            await userModel.create({
+                email: 'test@example.com',
+                password: hashedPassword,
+                firstName: 'Test',
+                lastName: 'User',
+                isVerified: true,
+                role: Role.STUDENT,
+            });
+
+            // Try to reset password without verifying OTP first
             const response = await request(app.getHttpServer())
                 .post('/api/mailer/password/reset')
                 .send({
                     email: 'test@example.com',
-                    otp: '123456', // Even correct OTP should fail
                     newPassword: 'NewPassword123!',
                 })
                 .expect(400);
 
-            expect(response.body.message).toContain('Too many verification attempts');
+            expect(response.body.message).toContain('Password reset not verified');
+        });
+
+        it('should reject password reset if validation window expired', async () => {
+            const hashedPassword = await bcrypt.hash('Password123!', 10);
+
+            await userModel.create({
+                email: 'test@example.com',
+                password: hashedPassword,
+                firstName: 'Test',
+                lastName: 'User',
+                isVerified: true,
+                role: Role.STUDENT,
+                passwordResetValidatedAt: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes ago
+                passwordResetValidatedExpires: new Date(Date.now() - 5 * 60 * 1000), // Expired 5 minutes ago
+            });
+
+            // Try to reset password after validation expired
+            const response = await request(app.getHttpServer())
+                .post('/api/mailer/password/reset')
+                .send({
+                    email: 'test@example.com',
+                    newPassword: 'NewPassword123!',
+                })
+                .expect(400);
+
+            expect(response.body.message).toContain('Password reset validation expired');
         });
     });
 

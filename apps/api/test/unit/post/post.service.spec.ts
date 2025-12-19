@@ -5,6 +5,10 @@ import { PostService } from '../../../src/post/post.service';
 import { Post } from '../../../src/post/post.schema';
 import { CreatePostDto } from '../../../src/post/dto/createPost.dto';
 import { PostType } from '../../../src/post/post.schema';
+import { PaginationService } from '../../../src/common/pagination/pagination.service';
+import { GeoService } from '../../../src/common/geography/geo.service';
+import { CompanyService } from '../../../src/company/company.service';
+import { CreationFailedError } from '../../../src/errors/creationFailedError';
 
 const basePost = {
     _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
@@ -40,7 +44,26 @@ describe('PostService', () => {
         create: jest.fn(),
         find: jest.fn(),
         findById: jest.fn(),
+        findOneAndUpdate: jest.fn(),
         constructor: jest.fn(),
+    };
+
+    const mockPaginationService = {
+        paginate: jest.fn(),
+    };
+
+    const mockGeoService = {
+        geocodeAddress: jest.fn().mockResolvedValue([2.3522, 48.8566]),
+    };
+
+    const mockCompanyService = {
+        findOne: jest.fn().mockResolvedValue({
+            streetNumber: '10',
+            streetName: 'Rue de Test',
+            postalCode: '75001',
+            city: 'Paris',
+            country: 'France',
+        }),
     };
 
     beforeEach(async () => {
@@ -50,6 +73,18 @@ describe('PostService', () => {
                 {
                     provide: getModelToken(Post.name),
                     useValue: mockPostModel,
+                },
+                {
+                    provide: PaginationService,
+                    useValue: mockPaginationService,
+                },
+                {
+                    provide: GeoService,
+                    useValue: mockGeoService,
+                },
+                {
+                    provide: CompanyService,
+                    useValue: mockCompanyService,
                 },
             ],
         }).compile();
@@ -81,24 +116,30 @@ describe('PostService', () => {
         };
 
         it('should create a new post when valid dto is provided and create is called', async () => {
-            const savedPost = { ...mockPost, save: jest.fn().mockResolvedValue(mockPost) };
-            jest.spyOn(model, 'constructor' as any).mockReturnValue(savedPost);
-
-            // Mock the constructor using Object.setPrototypeOf
+            const execMock = jest.fn().mockResolvedValue(createMockPost());
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
             const mockSave = jest.fn().mockResolvedValue(mockPost);
             const postInstance = {
                 ...validCreatePostDto,
                 save: mockSave,
             };
 
-            // We need to mock the model instantiation
-            (model as any) = jest.fn().mockReturnValue(postInstance);
-            const serviceWithMock = new PostService(model);
+            const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
+                findById: jest.fn().mockReturnValue({ populate: populateMock }),
+            });
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             const result = await serviceWithMock.create(validCreatePostDto, companyId);
 
             expect(mockSave).toHaveBeenCalledTimes(1);
-            expect(result).toEqual(mockPost);
+            expect(result._id?.toString()).toBe(mockPost._id.toString());
+            expect(result.title).toBe(mockPost.title);
+            expect(result.description).toBe(mockPost.description);
         });
 
         it('should create a post with minimal required fields when create is called', async () => {
@@ -114,8 +155,17 @@ describe('PostService', () => {
                 save: mockSave,
             };
 
-            (model as any) = jest.fn().mockReturnValue(postInstance);
-            const serviceWithMock = new PostService(model);
+            const execMock = jest.fn().mockResolvedValue(createMockPost({ ...minimalDto }));
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
+                findById: jest.fn().mockReturnValue({ populate: populateMock }),
+            });
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             const result = await serviceWithMock.create(minimalDto, companyId);
 
@@ -131,8 +181,17 @@ describe('PostService', () => {
                 save: mockSave,
             };
 
-            (model as any) = jest.fn().mockReturnValue(postInstance);
-            const serviceWithMock = new PostService(model);
+            const execMock = jest.fn().mockResolvedValue(createMockPost());
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
+                findById: jest.fn().mockReturnValue({ populate: populateMock }),
+            });
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
 
             const result = await serviceWithMock.create(validCreatePostDto, companyId);
 
@@ -142,51 +201,94 @@ describe('PostService', () => {
             expect(result).toHaveProperty('minSalary');
             expect(result).toHaveProperty('maxSalary');
         });
+
+        it('should throw CreationFailedError when populated post cannot be retrieved after save', async () => {
+            const mockSave = jest.fn().mockResolvedValue(mockPost);
+            const postInstance = {
+                ...validCreatePostDto,
+                save: mockSave,
+            };
+
+            const execMock = jest.fn().mockResolvedValue(null);
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            const mockModel = Object.assign(jest.fn().mockReturnValue(postInstance), {
+                findById: jest.fn().mockReturnValue({ populate: populateMock }),
+            });
+
+            const serviceWithMock = new PostService(
+                mockModel as any,
+                mockPaginationService as any,
+                mockGeoService as any,
+                mockCompanyService as any,
+            );
+
+            await expect(serviceWithMock.create(validCreatePostDto, companyId)).rejects.toThrow(CreationFailedError);
+        });
     });
 
     describe('findAll', () => {
-        it('should return an array of posts when findAll is called', async () => {
+        it('should return paginated posts when findAll is called', async () => {
             const mockPosts = [createMockPost()];
-            const execMock = jest.fn().mockResolvedValue(mockPosts);
-            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
-            mockPostModel.find.mockReturnValue({ populate: populateMock });
+            const paginationResult = {
+                data: mockPosts,
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
 
-            const result = await service.findAll();
+            const result = await service.findAll({ page: 1, limit: 10 } as any);
 
-            expect(result).toHaveLength(1);
-            expect(result[0].title).toBe('Développeur Full Stack');
-            expect(mockPostModel.find).toHaveBeenCalledTimes(1);
-            expect(populateMock).toHaveBeenCalledWith('company');
-            expect(execMock).toHaveBeenCalledTimes(1);
+            // Service returns a paginated result: assert on `data`
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0].title).toBe('Développeur Full Stack');
+            expect(mockPaginationService.paginate).toHaveBeenCalledTimes(1);
         });
 
-        it('should return an empty array when no posts exist and findAll is called', async () => {
-            const execMock = jest.fn().mockResolvedValue([]);
-            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
-            mockPostModel.find.mockReturnValue({ populate: populateMock });
+        it('should return empty paginated result when no posts exist and findAll is called', async () => {
+            const paginationResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
 
-            const result = await service.findAll();
+            const result = await service.findAll({ page: 1, limit: 10 } as any);
 
-            expect(result).toHaveLength(0);
-            expect(mockPostModel.find).toHaveBeenCalledTimes(1);
+            expect(result.data).toHaveLength(0);
+            expect(result.total).toBe(0);
         });
 
-        it('should return multiple posts when multiple posts exist and findAll is called', async () => {
+        it('should return multiple posts in paginated result when multiple posts exist and findAll is called', async () => {
             const mockPosts = [
                 createMockPost(),
                 createMockPost({ _id: new Types.ObjectId('507f1f77bcf86cd799439012'), title: 'Développeur Backend' }),
                 createMockPost({ _id: new Types.ObjectId('507f1f77bcf86cd799439013'), title: 'Développeur Frontend' }),
             ];
-            const execMock = jest.fn().mockResolvedValue(mockPosts);
-            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
-            mockPostModel.find.mockReturnValue({ populate: populateMock });
+            const paginationResult = {
+                data: mockPosts,
+                total: 3,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
 
-            const result = await service.findAll();
+            const result = await service.findAll({ page: 1, limit: 10 } as any);
 
-            expect(result).toHaveLength(3);
-            expect(result[0].title).toBe('Développeur Full Stack');
-            expect(result[1].title).toBe('Développeur Backend');
-            expect(result[2].title).toBe('Développeur Frontend');
+            expect(result.data).toHaveLength(3);
+            expect(result.data[0].title).toBe('Développeur Full Stack');
+            expect(result.data[1].title).toBe('Développeur Backend');
+            expect(result.data[2].title).toBe('Développeur Frontend');
         });
     });
 
@@ -203,7 +305,10 @@ describe('PostService', () => {
             expect(result).toBeDefined();
             expect(result?.title).toBe('Développeur Full Stack');
             expect(mockPostModel.findById).toHaveBeenCalledWith(validObjectId);
-            expect(populateMock).toHaveBeenCalledWith('company');
+            expect(populateMock).toHaveBeenCalledWith({
+                path: 'company',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            });
             expect(execMock).toHaveBeenCalledTimes(1);
         });
 
@@ -232,6 +337,38 @@ describe('PostService', () => {
             expect(result?.maxSalary).toBe(3000);
             expect(result?.keySkills).toEqual(['JavaScript', 'TypeScript', 'React', 'Node.js']);
             expect(result?.type).toBe(PostType.Hybride);
+        });
+    });
+
+    describe('update', () => {
+        const companyId = '507f1f77bcf86cd799439099';
+        const postId = '507f1f77bcf86cd799439011';
+
+        it('should update and return the post when it belongs to the company', async () => {
+            const execMock = jest.fn().mockResolvedValue(createMockPost({ title: 'Updated Title' }));
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.findOneAndUpdate.mockReturnValue({ populate: populateMock });
+
+            const dto = { title: 'Updated Title' } as any;
+
+            const result = await service.update(dto, companyId, postId);
+
+            expect(result.title).toBe('Updated Title');
+            expect(mockPostModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
+
+            const calledFilter = mockPostModel.findOneAndUpdate.mock.calls[0][0];
+            expect(calledFilter._id).toBe(postId);
+            expect(String(calledFilter.company)).toBe(companyId);
+        });
+
+        it('should throw NotFoundException when update returns null', async () => {
+            const execMock = jest.fn().mockResolvedValue(null);
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.findOneAndUpdate.mockReturnValue({ populate: populateMock });
+
+            const dto = { title: 'No Update' } as any;
+
+            await expect(service.update(dto, companyId, postId)).rejects.toThrow();
         });
     });
 });

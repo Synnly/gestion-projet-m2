@@ -25,6 +25,10 @@ export type AccessTokenPayload = {
     email: string;
     /** The refresh token ID associated with this access token */
     rti: Types.ObjectId;
+    /** Whether the user's email is verified */
+    isValid: boolean;
+    /** Whether the user's account is valid */
+    isVerified: boolean;
     /** Expiration time as a Unix timestamp (in milliseconds) */
     expiresAt?: number;
 };

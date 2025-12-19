@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateCompanyDto } from './dto/createCompany.dto';
@@ -32,9 +32,9 @@ export class CompanyService {
      */
     constructor(
         @InjectModel(Company.name) private readonly companyModel: Model<CompanyUserDocument>,
-        private readonly postService: PostService,
+        @Inject(forwardRef(() => PostService)) private readonly postService: PostService,
     ) {}
-
+    populateField = '_id title description duration startDate minSalary maxSalary sector keySkills adress type';
     /**
      * Retrieves all active (non-deleted) companies
      *
@@ -51,7 +51,10 @@ export class CompanyService {
     async findAll(): Promise<Company[]> {
         return this.companyModel
             .find({ deletedAt: { $exists: false } })
-            .populate('posts')
+            .populate({
+                path: 'posts',
+                select: this.populateField,
+            })
             .exec();
     }
 
@@ -74,7 +77,10 @@ export class CompanyService {
     async findOne(id: string): Promise<Company | null> {
         return this.companyModel
             .findOne({ _id: id, deletedAt: { $exists: false } })
-            .populate('posts')
+            .populate({
+                path: 'posts',
+                select: this.populateField,
+            })
             .exec();
     }
 

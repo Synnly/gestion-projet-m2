@@ -1,6 +1,5 @@
 import {
     ArrayMaxSize,
-    ArrayMinSize,
     ArrayUnique,
     IsArray,
     IsBoolean,
@@ -11,10 +10,10 @@ import {
     Min,
     IsEnum,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { PostType } from '../post.schema';
 
 export class CreatePostDto {
-   
     /**
      * Post's title
      * Is required for the creation
@@ -47,6 +46,7 @@ export class CreatePostDto {
      * Minimum wage of the internship
      */
     @IsOptional()
+    @Type(() => Number)
     @IsNumber()
     @Min(0)
     minSalary?: number;
@@ -55,6 +55,7 @@ export class CreatePostDto {
      * Maximum wage of the internship
      */
     @IsOptional()
+    @Type(() => Number)
     @IsNumber()
     @Min(0)
     maxSalary?: number;
@@ -98,6 +99,10 @@ export class CreatePostDto {
     @IsOptional()
     @IsBoolean()
     isVisible?: boolean;
+
+    @IsBoolean()
+    @Type(() => Boolean)
+    isCoverLetterRequired: boolean;
 
     constructor(partial?: Partial<CreatePostDto>) {
         if (partial) {

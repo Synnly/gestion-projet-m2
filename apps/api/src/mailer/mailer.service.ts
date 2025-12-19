@@ -1,19 +1,35 @@
-import { Injectable, NotFoundException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
-import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
+import {
+    Injectable,
+    NotFoundException,
+    BadRequestException,
+    HttpException,
+    HttpStatus,
+    Inject,
+    Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { UserDocument, User } from '../user/user.schema';
+import type { IMailerProvider } from './interfaces/IMailerProvider';
+import { MAILER_PROVIDER } from './constants';
 
+/**
+ * Application-level mailer service implementing OTP workflows and other
+ * mail-related business logic. This service depends on an `IMailerProvider`
+ * adapter to perform the actual email delivery, so the transport can be
+ * swapped without affecting business code.
+ */
 @Injectable()
 export class MailerService {
-    // Maximum failed verification attempts before blocking
+    private readonly logger = new Logger(MailerService.name);
     private readonly MAX_VERIFICATION_ATTEMPTS = 5;
 
     constructor(
-        private readonly mailer: NestMailerService,
+        @Inject(MAILER_PROVIDER)
+        private readonly mailerProvider: IMailerProvider,
         private readonly configService: ConfigService,
         @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     ) {}
@@ -25,8 +41,6 @@ export class MailerService {
     private generateOtp(): string {
         return crypto.randomInt(0, 1000000).toString().padStart(6, '0');
     }
-
-
 
     /**
      * Get the configured "from" email address and name from environment variables
@@ -42,8 +56,6 @@ export class MailerService {
         };
     }
 
-
-
     /**
      * Hash OTP using bcrypt with salt before storing in database
      * @param otp Plain text OTP to hash
@@ -54,8 +66,6 @@ export class MailerService {
         return bcrypt.hash(otp, salt);
     }
 
-
-
     /**
      * Verify plain OTP against hashed value using constant-time comparison
      * @param plainOtp Plain text OTP to verify
@@ -65,7 +75,6 @@ export class MailerService {
     private async verifyOtp(plainOtp: string, hashedOtp: string): Promise<boolean> {
         return bcrypt.compare(plainOtp, hashedOtp);
     }
-
 
     /**
      * Enforce rate limiting for OTP requests to prevent spam
@@ -87,14 +96,9 @@ export class MailerService {
         }
 
         if (user.otpRequestCount >= 5) {
-            throw new HttpException(
-                'OTP rate limit exceeded. Try again later.',
-                HttpStatus.TOO_MANY_REQUESTS,
-            );
+            throw new HttpException('OTP rate limit exceeded. Try again later.', HttpStatus.TOO_MANY_REQUESTS);
         }
     }
-
-
 
     /**
      * Send account verification OTP email to user
@@ -113,7 +117,7 @@ export class MailerService {
         const otp = providedOtp ?? this.generateOtp();
         const hashedOtp = await this.hashOtp(otp);
         const now = new Date();
-        
+
         user.emailVerificationCode = hashedOtp;
         user.emailVerificationExpires = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
         user.emailVerificationAttempts = 0; // Reset attempts counter when new OTP is generated
@@ -123,21 +127,16 @@ export class MailerService {
 
         const { from, name } = this.getFromAddress();
 
-        await this.mailer.sendMail({
+        await this.mailerProvider.sendMail({
             to: normalized,
             subject: 'Confirm your account',
             template: 'signupConfirmation',
             from,
-            context: {
-                otp,
-                fromName: name,
-            },
+            context: { otp, fromName: name },
         });
 
         return true;
     }
-
-
 
     /**
      * Send password reset OTP email to user
@@ -156,31 +155,26 @@ export class MailerService {
         const otp = providedOtp ?? this.generateOtp();
         const hashedOtp = await this.hashOtp(otp);
         const now = new Date();
-        
+
         user.passwordResetCode = hashedOtp;
-        user.passwordResetExpires = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes
-        user.passwordResetAttempts = 0; // Reset attempts counter when new OTP is generated
+        user.passwordResetExpires = new Date(now.getTime() + 5 * 60 * 1000);
+        user.passwordResetAttempts = 0;
         user.otpRequestCount = (user.otpRequestCount || 0) + 1;
         user.lastOtpRequestAt = now;
         await user.save();
 
         const { from, name } = this.getFromAddress();
 
-        await this.mailer.sendMail({
+        await this.mailerProvider.sendMail({
             to: normalized,
             subject: 'Password reset request',
             template: 'resetPassword',
             from,
-            context: {
-                otp,
-                fromName: name,
-            },
+            context: { otp, fromName: name },
         });
 
         return true;
     }
-
-
 
     /**
      * Send a simple information email using the info-message template
@@ -193,22 +187,16 @@ export class MailerService {
         const normalized = email.toLowerCase();
         const { from, name } = this.getFromAddress();
 
-        await this.mailer.sendMail({
+        await this.mailerProvider.sendMail({
             to: normalized,
             subject: title,
             template: 'infoMessage',
             from,
-            context: {
-                title,
-                message,
-                fromName: name,
-            },
+            context: { title, message, fromName: name },
         });
 
         return true;
     }
-
-
 
     /**
      * Send a custom template email to a user
@@ -220,13 +208,40 @@ export class MailerService {
     async sendCustomTemplateEmail(email: string, templateName: string) {
         const normalized = email.toLowerCase();
         const { from, name } = this.getFromAddress();
-        
-        await this.mailer.sendMail({
+
+        await this.mailerProvider.sendMail({
             to: normalized,
             subject: `Notification from ${name}`,
             template: templateName,
             from,
+            context: { fromName: name },
+        });
+
+        return true;
+    }
+
+    /**
+     * Send account creation email with credentials
+     * @param email Recipient email
+     * @param rawPassword The plain text password generated
+     * @param firstName Optional first name for personalization
+     * @param customMessage Optional custom welcome message
+     */
+    async sendAccountCreationEmail(email: string, rawPassword: string, firstName: string = 'Étudiant', lastName: string = "", customMessage: string = '') {
+        const normalized = email.toLowerCase();
+        const { from, name } = this.getFromAddress();
+
+        await this.mailerProvider.sendMail({
+            to: normalized,
+            subject: 'Vos identifiants de connexion',
+            template: 'accountCreation',
+            from,
             context: {
+                email: normalized,
+                password: rawPassword,
+                firstName: firstName,
+                lastName: lastName,
+                customMessage: customMessage,
                 fromName: name,
             },
         });
@@ -234,26 +249,46 @@ export class MailerService {
         return true;
     }
 
-
-
     /**
      * Update user password after successful OTP verification
      * @param email Email address of the user
      * @param newPassword New password to set for the user
      * @returns True if password was updated successfully
-     * @throws {Error} If user is not found
+     * @throws {Error} If user is not found, OTP not verified, or validation expired
      */
     async updatePassword(email: string, newPassword: string): Promise<boolean> {
         const normalized = email.toLowerCase();
         const user = await this.userModel.findOne({ email: normalized });
         if (!user) throw new NotFoundException('User not found');
 
+        // Verify that OTP was successfully validated
+        if (!user.passwordResetValidatedAt || !user.passwordResetValidatedExpires) {
+            throw new BadRequestException('Password reset not verified. Please verify OTP first.');
+        }
+
+        // Check if validation window has expired
+        const now = new Date();
+        if (now.getTime() > user.passwordResetValidatedExpires.getTime()) {
+            // Clear expired validation
+            user.passwordResetCode = null;
+            user.passwordResetExpires = null;
+            user.passwordResetAttempts = 0;
+            user.passwordResetValidatedAt = null;
+            user.passwordResetValidatedExpires = null;
+            await user.save();
+            throw new BadRequestException('Password reset validation expired. Please verify OTP again.');
+        }
+
+        // Update password and clear all password reset related fields (single-use)
         user.password = newPassword;
+        user.passwordResetCode = null;
+        user.passwordResetExpires = null;
+        user.passwordResetAttempts = 0;
+        user.passwordResetValidatedAt = null;
+        user.passwordResetValidatedExpires = null;
         await user.save();
         return true;
     }
-
-
 
     /**
      * Verify a previously issued signup OTP with brute-force protection
@@ -294,7 +329,7 @@ export class MailerService {
 
         // Verify OTP using constant-time comparison
         const isValid = await this.verifyOtp(otp, user.emailVerificationCode);
-        
+
         if (!isValid) {
             // Increment failed attempts counter
             user.emailVerificationAttempts = (user.emailVerificationAttempts || 0) + 1;
@@ -310,8 +345,6 @@ export class MailerService {
         await user.save();
         return true;
     }
-
-
 
     /**
      * Verify a password reset OTP with brute-force protection
@@ -355,7 +388,7 @@ export class MailerService {
 
         // Verify OTP using constant-time comparison
         const isValid = await this.verifyOtp(otp, user.passwordResetCode);
-        
+
         if (!isValid) {
             // Increment failed attempts counter
             user.passwordResetAttempts = (user.passwordResetAttempts || 0) + 1;
@@ -363,10 +396,11 @@ export class MailerService {
             throw new BadRequestException('Invalid OTP');
         }
 
-        // Success: Clear OTP (single-use) but keep user object for password update
-        user.passwordResetCode = null;
-        user.passwordResetExpires = null;
-        user.passwordResetAttempts = 0;
+        // Success: Mark OTP as validated with a short expiration window (5 minutes)
+        // This allows the user to call resetPassword endpoint within this window
+        const validationWindow = 5 * 60 * 1000; // 5 minutes
+        user.passwordResetValidatedAt = new Date();
+        user.passwordResetValidatedExpires = new Date(now.getTime() + validationWindow);
         await user.save();
 
         return user;

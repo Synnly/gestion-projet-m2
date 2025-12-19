@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException, HttpException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
+import { MAILER_PROVIDER } from '../../../src/mailer/constants';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { MailerService } from '../../../src/mailer/mailer.service';
@@ -40,7 +41,7 @@ describe('MailerService', () => {
             providers: [
                 MailerService,
                 {
-                    provide: NestMailerService,
+                    provide: MAILER_PROVIDER,
                     useValue: mockNestMailerService,
                 },
                 {
@@ -55,7 +56,7 @@ describe('MailerService', () => {
         }).compile();
 
         service = module.get<MailerService>(MailerService);
-        nestMailerService = module.get<NestMailerService>(NestMailerService);
+        nestMailerService = module.get<any>(MAILER_PROVIDER) as NestMailerService;
         userModel = module.get<Model<UserDocument>>(getModelToken(User.name));
         configService = module.get<ConfigService>(ConfigService);
 
@@ -322,16 +323,17 @@ describe('MailerService', () => {
             mockUser.passwordResetCode = hashedOtp;
         });
 
-        it('should verify valid OTP and return user', async () => {
+        it('should verify valid OTP and mark validation timestamp', async () => {
             mockUserModel.findOne.mockResolvedValue(mockUser);
             mockUser.save.mockResolvedValue(mockUser);
 
             const result = await service.verifyPasswordResetOtp('user@example.com', '123456');
 
             expect(result).toBe(mockUser);
-            expect(mockUser.passwordResetCode).toBeNull();
-            expect(mockUser.passwordResetExpires).toBeNull();
-            expect(mockUser.passwordResetAttempts).toBe(0);
+            // Verify that validation timestamp is set (not cleaned)
+            expect(mockUser['passwordResetValidatedAt']).toBeDefined();
+            expect(mockUser['passwordResetValidatedExpires']).toBeDefined();
+            expect(mockUser.save).toHaveBeenCalled();
         });
 
         it('should throw error when OTP is expired', async () => {
@@ -419,10 +421,15 @@ describe('MailerService', () => {
             _id: '507f1f77bcf86cd799439011',
             email: 'user@example.com',
             password: 'oldHashedPassword',
+            passwordResetCode: null,
+            passwordResetExpires: null,
+            passwordResetAttempts: 0,
+            passwordResetValidatedAt: new Date(),
+            passwordResetValidatedExpires: new Date(Date.now() + 5 * 60 * 1000),
             save: jest.fn(),
         };
 
-        it('should update user password', async () => {
+        it('should update user password when OTP was verified', async () => {
             mockUserModel.findOne.mockResolvedValue(mockUser);
             mockUser.save.mockResolvedValue(mockUser);
 
@@ -430,6 +437,11 @@ describe('MailerService', () => {
 
             expect(mockUserModel.findOne).toHaveBeenCalledWith({ email: 'user@example.com' });
             expect(mockUser.password).toBe('NewSecurePassword123!');
+            expect(mockUser.passwordResetCode).toBeNull();
+            expect(mockUser.passwordResetExpires).toBeNull();
+            expect(mockUser.passwordResetAttempts).toBe(0);
+            expect(mockUser.passwordResetValidatedAt).toBeNull();
+            expect(mockUser.passwordResetValidatedExpires).toBeNull();
             expect(mockUser.save).toHaveBeenCalled();
         });
 
@@ -439,6 +451,37 @@ describe('MailerService', () => {
             await expect(service.updatePassword('nonexistent@example.com', 'NewPassword123!')).rejects.toBeInstanceOf(
                 NotFoundException,
             );
+        });
+
+        it('should throw error when OTP was not verified', async () => {
+            const unverifiedUser = {
+                ...mockUser,
+                passwordResetValidatedAt: null,
+                passwordResetValidatedExpires: null,
+            };
+            mockUserModel.findOne.mockResolvedValue(unverifiedUser);
+
+            await expect(service.updatePassword('user@example.com', 'NewPassword123!')).rejects.toThrow(
+                'Password reset not verified. Please verify OTP first.',
+            );
+        });
+
+        it('should throw error when validation window expired', async () => {
+            const expiredValidationUser = {
+                ...mockUser,
+                passwordResetValidatedAt: new Date(Date.now() - 10 * 60 * 1000),
+                passwordResetValidatedExpires: new Date(Date.now() - 5 * 60 * 1000),
+            };
+            mockUserModel.findOne.mockResolvedValue(expiredValidationUser);
+            expiredValidationUser.save.mockResolvedValue(expiredValidationUser);
+
+            await expect(service.updatePassword('user@example.com', 'NewPassword123!')).rejects.toThrow(
+                'Password reset validation expired. Please verify OTP again.',
+            );
+
+            // Verify that expired fields were cleared
+            expect(expiredValidationUser.passwordResetValidatedAt).toBeNull();
+            expect(expiredValidationUser.passwordResetValidatedExpires).toBeNull();
         });
     });
 

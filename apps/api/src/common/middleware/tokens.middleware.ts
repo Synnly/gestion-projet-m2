@@ -3,8 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { NextFunction, Request, Response } from 'express';
 import { InvalidConfigurationException } from '../exceptions/invalidConfiguration.exception';
 import { ConfigService } from '@nestjs/config';
-import { AccessTokenPayload, RefreshTokenPayload } from '../../auth/refreshToken.schema';
-import { AuthService } from '../../auth/auth.service';
+import { AccessTokenPayload } from '../../auth/refreshToken.schema';
 
 @Injectable()
 export class TokensMiddleware implements NestMiddleware {

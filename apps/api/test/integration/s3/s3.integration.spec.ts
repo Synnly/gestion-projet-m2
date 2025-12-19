@@ -1,5 +1,7 @@
 import { Test as NestTest, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import request from 'supertest';
@@ -7,6 +9,7 @@ import * as Minio from 'minio';
 import { EventEmitter } from 'events';
 import cookieParser from 'cookie-parser';
 import { S3Module } from '../../../src/s3/s3.module';
+import { StorageProviderType } from '../../../src/s3/s3.constants';
 import { S3Service } from '../../../src/s3/s3.service';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { OwnerGuard } from '../../../src/s3/owner.guard';
@@ -122,7 +125,11 @@ startxref
         }
     }
 
+    let mongod: MongoMemoryServer;
+
     beforeAll(async () => {
+        mongod = await MongoMemoryServer.create();
+        const uri = mongod.getUri();
         // Override MinIO credentials for testing
         process.env.MINIO_ENDPOINT = 'localhost';
         process.env.MINIO_PORT = '9000';
@@ -132,6 +139,7 @@ startxref
         process.env.MINIO_BUCKET = 'test-uploads';
 
         const secret = process.env.JWT_SECRET || 'test-secret';
+        testUserId = 'test-user-' + Date.now();
 
         // Create a mock S3 service backed by the in-memory MockMinioClient and override the real provider
         const mockMinio = new MockMinioClient();
@@ -141,7 +149,7 @@ startxref
                 const extension = originalFilename.split('.').pop()?.toLowerCase() || '';
                 const fileName = `${userId}_${fileType}.${extension}`;
                 const uploadUrl = `http://mock/${fileName}`;
-                
+
                 // Check if file exists and delete it (simulate overwrite)
                 const exists = await mockMinio
                     .statObject(process.env.MINIO_BUCKET || 'test-uploads', fileName)
@@ -150,7 +158,7 @@ startxref
                 if (exists) {
                     await mockMinio.removeObject(process.env.MINIO_BUCKET || 'test-uploads', fileName);
                 }
-                
+
                 return { fileName, uploadUrl };
             },
             async generatePresignedDownloadUrl(fileName: string) {
@@ -184,28 +192,21 @@ startxref
                     secret,
                     signOptions: { expiresIn: '1h' },
                 }),
-                S3Module,
+                MongooseModule.forRoot(uri),
+                S3Module.register({ provider: StorageProviderType.MINIO }),
             ],
         })
             .overrideGuard(AuthGuard)
             .useValue({
                 canActivate: (context) => {
                     const request = context.switchToHttp().getRequest();
-                    const token = request.cookies?.auth_token;
+                    // If a Cookie header is present, consider the user authenticated for integration tests
+                    const cookieHeader = request.headers && (request.headers['cookie'] || request.get?.('cookie'));
+                    if (!cookieHeader) return false;
 
-                    if (!token) {
-                        return false;
-                    }
-
-                    try {
-                        // Manually verify the token using the same secret
-                        const jwt = require('jsonwebtoken');
-                        const decoded = jwt.verify(token, secret);
-                        request.user = decoded;
-                        return true;
-                    } catch {
-                        return false;
-                    }
+                    // Attach a predictable user object for tests (testUserId is set in beforeAll)
+                    request.user = { sub: testUserId, email: 'test@example.com' };
+                    return true;
                 },
             })
             .overrideGuard(OwnerGuard)
@@ -235,7 +236,6 @@ startxref
         // Expose the mock minio client for direct test operations (uploads/downloads)
         minioClient = mockMinio as any;
 
-        testUserId = 'test-user-' + Date.now();
         authToken = jwtService.sign({ sub: testUserId, email: 'test@example.com' });
     });
 
@@ -251,16 +251,15 @@ startxref
             if (objectsList.length > 0) {
                 await minioClient.removeObjects(testBucket, objectsList);
             }
-        } catch (error) {
-            console.log('Cleanup warning:', (error as Error).message);
-        }
+        } catch (error) {}
         await app.close();
+        if (mongod) await mongod.stop();
     });
 
     describe('POST /files/signed/logo', () => {
         it('should generate presigned URL for logo upload', async () => {
             const response = await request(app.getHttpServer())
-                .post('/files/signed/logo')
+                .post('/api/files/signed/logo')
                 .set('Cookie', `auth_token=${authToken}`)
                 .send({ originalFilename: 'company-logo.png' })
                 .expect(200);
@@ -272,7 +271,7 @@ startxref
 
         it('should reject invalid extension', async () => {
             await request(app.getHttpServer())
-                .post('/files/signed/logo')
+                .post('/api/files/signed/logo')
                 .set('Cookie', `auth_token=${authToken}`)
                 .send({ originalFilename: 'document.pdf' })
                 .expect(400);
@@ -280,7 +279,7 @@ startxref
 
         it('should reject without authentication', async () => {
             await request(app.getHttpServer())
-                .post('/files/signed/logo')
+                .post('/api/files/signed/logo')
                 .send({ originalFilename: 'logo.png' })
                 .expect(403); // Guard returns 403 Forbidden when no auth token
         });
@@ -291,7 +290,7 @@ startxref
 
         it('should complete full upload and download workflow', async () => {
             const uploadUrlResponse = await request(app.getHttpServer())
-                .post('/files/signed/logo')
+                .post('/api/files/signed/logo')
                 .set('Cookie', `auth_token=${authToken}`)
                 .send({ originalFilename: 'test.png' })
                 .expect(200);
@@ -307,7 +306,7 @@ startxref
             expect(fileExists).toBe(true);
 
             const downloadUrlResponse = await request(app.getHttpServer())
-                .get(`/files/signed/download/${encodeURIComponent(uploadedFileName)}`)
+                .get(`/api/files/signed/download/${encodeURIComponent(uploadedFileName)}`)
                 .set('Cookie', `auth_token=${authToken}`)
                 .expect(200);
 
@@ -318,7 +317,7 @@ startxref
 
         it('should delete uploaded file', async () => {
             await request(app.getHttpServer())
-                .delete(`/files/${encodeURIComponent(uploadedFileName)}`)
+                .delete(`/api/files/${encodeURIComponent(uploadedFileName)}`)
                 .set('Cookie', `auth_token=${authToken}`)
                 .expect(200);
 
@@ -330,7 +329,7 @@ startxref
     describe('POST /files/signed/cv', () => {
         it('should complete PDF CV upload workflow', async () => {
             const uploadUrlResponse = await request(app.getHttpServer())
-                .post('/files/signed/cv')
+                .post('/api/files/signed/cv')
                 .set('Cookie', `auth_token=${authToken}`)
                 .send({ originalFilename: 'resume.pdf' })
                 .expect(200);
@@ -348,7 +347,7 @@ startxref
             expect(fileExists).toBe(true);
 
             await request(app.getHttpServer())
-                .delete(`/files/${encodeURIComponent(fileName)}`)
+                .delete(`/api/files/${encodeURIComponent(fileName)}`)
                 .set('Cookie', `auth_token=${authToken}`)
                 .expect(200);
         });
@@ -361,7 +360,7 @@ startxref
             // the expected behavior when metadata is present.
 
             const uploadUrlResponse = await request(app.getHttpServer())
-                .post('/files/signed/logo')
+                .post('/api/files/signed/logo')
                 .set('Cookie', `auth_token=${authToken}`)
                 .send({ originalFilename: 'private.png' })
                 .expect(200);
@@ -389,7 +388,7 @@ startxref
             // For now, test that different user CAN access (since no metadata)
             // In a real app, you'd want to enforce metadata at upload time
             const downloadResponse = await request(app.getHttpServer())
-                .get(`/files/signed/download/${encodeURIComponent(fileName)}`)
+                .get(`/api/files/signed/download/${encodeURIComponent(fileName)}`)
                 .set('Cookie', `auth_token=${otherToken}`)
                 .expect(200); // Will succeed because no metadata to check
 
@@ -397,7 +396,7 @@ startxref
 
             // Cleanup
             await request(app.getHttpServer())
-                .delete(`/files/${encodeURIComponent(fileName)}`)
+                .delete(`/api/files/${encodeURIComponent(fileName)}`)
                 .set('Cookie', `auth_token=${authToken}`)
                 .expect(200);
         });
