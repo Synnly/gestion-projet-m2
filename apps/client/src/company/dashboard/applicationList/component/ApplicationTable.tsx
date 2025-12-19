@@ -13,6 +13,7 @@ import type { PaginationResult } from '../../../../types/internship.types.ts';
 import { useParams } from 'react-router';
 import { fetchApplicationsByPost } from '../../../../hooks/useFetchApplications.ts';
 import { formatDate } from '../../intershipList/component/tableRow.tsx';
+import { UseAuthFetch } from '../../../../hooks/useAuthFetch.tsx';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
@@ -30,7 +31,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
     const [paginationShown, setPaginationShown] = useState<PaginationResult<Application> | undefined>();
 
     const postId = useParams().postId as string;
-
+    const authFetch = UseAuthFetch();
     const { data: applicationsData, isLoading } = useQuery<PaginationResult<Application>, Error>({
         queryKey: ['applications', postId, filters],
         queryFn: async () => {
@@ -61,11 +62,10 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
             try {
                 if (status !== ApplicationStatusEnum.PENDING) return;
 
-                const res = await fetch(`${API_URL}/api/application/${id}`, {
+                const res = await authFetch(`${API_URL}/api/application/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ status: 'Read' }),
+                    data: JSON.stringify({ status: 'Read' }),
                 });
 
                 if (!res.ok) {

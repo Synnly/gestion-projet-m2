@@ -1,6 +1,7 @@
 import { redirect } from 'react-router';
 import { userStore } from '../store/userStore';
 import type { WorkMode } from '../store/CreatePostStore';
+import { UseAuthFetch } from '../hooks/useAuthFetch';
 
 export type LoaderPost = {
     _id: string;
@@ -35,10 +36,8 @@ export async function updatePostLoader({ params }: { params: { postId?: string }
     if (!postId) {
         throw redirect('/company/dashboard');
     }
-
-    const res = await fetch(`${API_URL}/api/company/${companyId}/posts/${postId}`, {
-        credentials: 'include',
-    });
+    const authFetch = UseAuthFetch();
+    const res = await authFetch(`${API_URL}/api/company/${companyId}/posts/${postId}`);
 
     if (!res.ok) {
         throw redirect('/company/dashboard');

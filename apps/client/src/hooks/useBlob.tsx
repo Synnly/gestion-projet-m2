@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { userStore } from '../store/userStore';
+import { UseAuthFetch } from './useAuthFetch';
 
+const authFetch = UseAuthFetch();
 /**
  * Fetch signed download URL from backend
  */
@@ -8,19 +10,10 @@ const fetchSignedUrl = async (fileName: string): Promise<string | null> => {
     if (!fileName) return null;
 
     const url = `${import.meta.env.VITE_APIURL}/api/files/signed/download/${encodeURIComponent(fileName)}`;
-
     try {
-        // Add timeout to prevent hanging forever
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
-        const res = await fetch(url, {
+        const res = await authFetch(url, {
             method: 'GET',
-            credentials: 'include',
-            signal: controller.signal,
         });
-
-        clearTimeout(timeoutId);
 
         if (!res.ok) {
             return null;
@@ -29,7 +22,9 @@ const fetchSignedUrl = async (fileName: string): Promise<string | null> => {
         return data.downloadUrl || null;
     } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
+            console.log('Fetch aborted');
         } else {
+            console.error('Error fetching signed URL:', error);
         }
         return null;
     }
@@ -56,12 +51,8 @@ export const fetchPublicSignedUrl = async (fileName: string): Promise<string | n
     const url = `${import.meta.env.VITE_APIURL}/api/files/signed/public/${fileName}`;
 
     try {
-        const controller = new AbortController();
-
-        const res = await fetch(url, {
+        const res = await authFetch(url, {
             method: 'GET',
-            credentials: 'include',
-            signal: controller.signal,
         });
 
         const data = await res.json();
