@@ -1,4 +1,4 @@
-import { redirect, useNavigate } from 'react-router-dom';
+import { redirect } from 'react-router-dom';
 import { userStore } from '../store/userStore'; // ton zustand store
 
 interface FetchOptions<TData = unknown> {
@@ -51,7 +51,7 @@ export const UseAuthFetch = () => {
                     });
 
                     if (!refreshRes.ok) {
-                        navigate('/signin');
+                        redirect('/signin');
                         throw new Error('Redirection vers signin');
                     }
 
