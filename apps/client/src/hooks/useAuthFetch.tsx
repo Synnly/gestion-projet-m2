@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { redirect, useNavigate } from 'react-router-dom';
 import { userStore } from '../store/userStore'; // ton zustand store
 
 interface FetchOptions<TData = unknown> {
@@ -8,9 +8,8 @@ interface FetchOptions<TData = unknown> {
 }
 
 export const UseAuthFetch = () => {
-    const navigate = useNavigate();
-    const accessToken = userStore((state) => state.access);
-    const setUserToken = userStore((state) => state.set);
+    const accessToken = userStore.getState().access;
+    const setUserToken = userStore.getState().set;
 
     const authFetch = async <TData = unknown,>(url: string, options?: FetchOptions<TData>): Promise<Response> => {
         const doFetch = async (): Promise<Response> => {
@@ -63,7 +62,7 @@ export const UseAuthFetch = () => {
                     // Retente la requête initiale avec le nouveau token
                     return await doFetch();
                 } catch (refreshErr) {
-                    navigate('/signin');
+                    redirect('/signin');
                     throw refreshErr;
                 }
             }
