@@ -2,13 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { userStore } from '../store/userStore';
 import { UseAuthFetch } from './useAuthFetch';
 
-const authFetch = UseAuthFetch();
+
 /**
  * Fetch signed download URL from backend
  */
 const fetchSignedUrl = async (fileName: string): Promise<string | null> => {
     if (!fileName) return null;
-
+    const authFetch = UseAuthFetch();
     const url = `${import.meta.env.VITE_APIURL}/api/files/signed/download/${encodeURIComponent(fileName)}`;
     try {
         const res = await authFetch(url, {
@@ -49,6 +49,7 @@ export const fetchFileFromSignedUrl = async (signedUrl: string): Promise<Blob | 
 export const fetchPublicSignedUrl = async (fileName: string): Promise<string | null> => {
     if (!fileName) return null;
     const url = `${import.meta.env.VITE_APIURL}/api/files/signed/public/${fileName}`;
+    const authFetch = UseAuthFetch();
 
     try {
         const res = await authFetch(url, {
