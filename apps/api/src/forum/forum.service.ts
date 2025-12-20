@@ -12,7 +12,7 @@ import { GeoService } from '../common/geography/geo.service';
 @Injectable()
 export class ForumService {
     constructor(
-        @InjectModel('Forum') private readonly forumModel: Model<Forum>,
+        @InjectModel(Forum.name) private readonly forumModel: Model<Forum>,
         private readonly paginationService: PaginationService,
         private readonly geoService: GeoService,
     ) {}
