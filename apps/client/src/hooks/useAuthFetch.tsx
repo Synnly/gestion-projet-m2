@@ -21,7 +21,7 @@ export const UseAuthFetch = () => {
                         ...(options?.headers || {}),
                         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
                     },
-                    body: options?.data ? JSON.stringify(options.data) : undefined,
+                    body: options?.data ? options.data : undefined,
                     credentials: 'include',
                 });
 
