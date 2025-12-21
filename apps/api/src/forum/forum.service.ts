@@ -34,7 +34,7 @@ export class ForumService {
         // Company forum
         if (companyId) {
             const company = await this.companyService.findOne(companyId.toString());
-            if (!company) throw new BadRequestException(`Company ${companyId} does not exists.`);
+            if (!company) throw new BadRequestException(`Company ${companyId} does not exist.`);
 
             const forum = new this.forumModel({
                 company: companyId,
@@ -57,7 +57,7 @@ export class ForumService {
      * @param companyId The company id to search for.
      * @returns The forum if found, otherwise null.
      */
-    async findOneByCompanyId(companyId?: Types.ObjectId): Promise<Forum | null> {
+    async findOneByCompanyId(companyId?: string): Promise<Forum | null> {
         return (
             this.forumModel
                 .findOne({ company: companyId })

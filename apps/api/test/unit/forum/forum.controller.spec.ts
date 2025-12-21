@@ -12,6 +12,7 @@ describe('ForumController', () => {
 
     const mockForumService = {
         findAll: jest.fn(),
+        findOneByCompanyId: jest.fn(),
     };
 
     const mockForum = {
@@ -19,6 +20,9 @@ describe('ForumController', () => {
         company: new Types.ObjectId('507f1f77bcf86cd799439022'),
         createdAt: new Date(),
         updatedAt: new Date(),
+        toJSON: function () {
+            return this;
+        },
     };
 
     beforeEach(async () => {
@@ -118,6 +122,52 @@ describe('ForumController', () => {
             expect(result.total).toBe(2);
             expect(service.findAll).toHaveBeenCalledWith(query);
             expect(service.findAll).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('getGeneralForum', () => {
+        it('should return the general forum when it exists', async () => {
+            const generalForum = { ...mockForum, company: undefined };
+            mockForumService.findOneByCompanyId.mockResolvedValue(generalForum);
+
+            const result = await controller.getGeneralForum();
+
+            expect(result).toBeInstanceOf(ForumDto);
+            expect(result?._id).toEqual(generalForum._id);
+            expect(result?.company).toBeUndefined();
+            expect(service.findOneByCompanyId).toHaveBeenCalledWith();
+        });
+
+        it('should return null when general forum does not exist', async () => {
+            mockForumService.findOneByCompanyId.mockResolvedValue(null);
+
+            const result = await controller.getGeneralForum();
+
+            expect(result).toBeNull();
+            expect(service.findOneByCompanyId).toHaveBeenCalledWith();
+        });
+    });
+
+    describe('findOneByCompanyId', () => {
+        it('should return the forum for the given companyId', async () => {
+            const companyId = new Types.ObjectId().toString();
+            mockForumService.findOneByCompanyId.mockResolvedValue(mockForum);
+
+            const result = await controller.findOneByCompanyId(companyId);
+
+            expect(result).toBeInstanceOf(ForumDto);
+            expect(result?._id).toEqual(mockForum._id);
+            expect(service.findOneByCompanyId).toHaveBeenCalledWith(companyId);
+        });
+
+        it('should return null if no forum exists for the companyId', async () => {
+            const companyId = new Types.ObjectId().toString();
+            mockForumService.findOneByCompanyId.mockResolvedValue(null);
+
+            const result = await controller.findOneByCompanyId(companyId);
+
+            expect(result).toBeNull();
+            expect(service.findOneByCompanyId).toHaveBeenCalledWith(companyId);
         });
     });
 });

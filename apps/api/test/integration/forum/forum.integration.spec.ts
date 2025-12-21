@@ -11,6 +11,7 @@ import { ForumModule } from '../../../src/forum/forum.module';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { Forum, ForumDocument } from '../../../src/forum/forum.schema';
 import { CompanyModule } from '../../../src/company/company.module';
+
 describe('Forum Integration Tests', () => {
     let app: INestApplication;
     let mongod: MongoMemoryServer;
@@ -165,6 +166,80 @@ describe('Forum Integration Tests', () => {
                 .expect(400);
 
             expect(res.body.message).toBeDefined();
+        });
+    });
+
+    describe('GET /api/forum/general - Get General Forum', () => {
+        it('should return the general forum if it exists', async () => {
+            const forum = await createForum({
+                // no company
+            });
+
+            const res = await request(app.getHttpServer())
+                .get('/api/forum/general')
+                .set('Authorization', 'Bearer ' + accessToken)
+                .expect(200);
+
+            expect(res.body._id).toBe(forum._id.toString());
+            expect(res.body.company).toBeUndefined();
+        });
+
+        it('should return empty/null if general forum does not exist', async () => {
+            const res = await request(app.getHttpServer())
+                .get('/api/forum/general')
+                .set('Authorization', 'Bearer ' + accessToken)
+                .expect(200);
+
+            // Expecting empty object or empty string depending on NestJS behavior for null
+            // Usually empty body or empty JSON
+            if (Object.keys(res.body).length > 0) {
+                expect(res.body).toEqual({});
+            } else {
+                expect(res.text).toBe('');
+            }
+        });
+    });
+
+    describe('GET /api/forum/by-id/:companyId - Get Forum by Company ID', () => {
+        it('should return the forum for the specific company', async () => {
+            const specificCompanyId = new Types.ObjectId();
+            const forum = await createForum({
+                company: specificCompanyId,
+            });
+
+            const res = await request(app.getHttpServer())
+                .get(`/api/forum/by-id/${specificCompanyId}`)
+                .set('Authorization', 'Bearer ' + accessToken)
+                .expect(200);
+
+            expect(res.body._id).toBe(forum._id.toString());
+            // Since not populated in findOneByCompanyId, checking if company ID is present
+            if (res.body.company && typeof res.body.company === 'object') {
+                expect(res.body.company._id).toBe(specificCompanyId.toString());
+            } else {
+                expect(res.body.company).toBe(specificCompanyId.toString());
+            }
+        });
+
+        it('should return empty/null if forum for company does not exist', async () => {
+            const specificCompanyId = new Types.ObjectId();
+            const res = await request(app.getHttpServer())
+                .get(`/api/forum/by-id/${specificCompanyId}`)
+                .set('Authorization', 'Bearer ' + accessToken)
+                .expect(200);
+
+            if (Object.keys(res.body).length > 0) {
+                expect(res.body).toEqual({});
+            } else {
+                expect(res.text).toBe('');
+            }
+        });
+
+        it('should return 400 if companyId is invalid mongo id', async () => {
+            await request(app.getHttpServer())
+                .get(`/api/forum/by-id/invalid-id`)
+                .set('Authorization', 'Bearer ' + accessToken)
+                .expect(400);
         });
     });
 });

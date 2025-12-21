@@ -138,7 +138,7 @@ describe('ForumService', () => {
 
     describe('findOneByCompanyId', () => {
         it('should return a forum when found', async () => {
-            const companyId = new Types.ObjectId();
+            const companyId = new Types.ObjectId().toString();
             const mockForum = { _id: 'forumId', company: companyId };
             const mockExec = jest.fn().mockResolvedValue(mockForum);
             mockForumModel.findOne.mockReturnValue({ exec: mockExec });
@@ -151,7 +151,7 @@ describe('ForumService', () => {
         });
 
         it('should return null when not found', async () => {
-            const companyId = new Types.ObjectId();
+            const companyId = new Types.ObjectId().toString();
             const mockExec = jest.fn().mockResolvedValue(null);
             mockForumModel.findOne.mockReturnValue({ exec: mockExec });
 
