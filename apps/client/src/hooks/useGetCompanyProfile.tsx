@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { userStore } from '../store/userStore';
 import type { companyProfile } from '../types';
+import { UseAuthFetch } from './useAuthFetch';
 
 /**
  * Hook pour récupérer le profil complet d'une company depuis l'API
@@ -9,17 +10,16 @@ import type { companyProfile } from '../types';
 export const useGetCompanyProfile = (companyId: string) => {
     const API_URL = import.meta.env.VITE_APIURL;
     const access = userStore((state) => state.access);
-
+    const authFetch = UseAuthFetch();
     return useQuery({
         queryKey: ['company-profile', companyId],
         queryFn: async (): Promise<companyProfile> => {
-            const response = await fetch(`${API_URL}/api/companies/${companyId}`, {
+            const response = await authFetch(`${API_URL}/api/companies/${companyId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${access}`,
                 },
-                credentials: 'include',
             });
 
             if (!response.ok) {
