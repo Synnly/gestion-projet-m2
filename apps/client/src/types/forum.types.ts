@@ -41,4 +41,5 @@ export interface ForumFilters {
     limit: number;
     sector?: string;
     company?: string;
+    companyName?: string;
 }

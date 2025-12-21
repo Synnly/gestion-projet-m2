@@ -2,8 +2,8 @@ import { Navbar } from '../../components/navbar/Navbar.tsx';
 import Spinner from '../../components/Spinner/Spinner.tsx';
 import { useNavigation } from 'react-router-dom';
 import type { Forum } from '../../types/forum.types.ts';
-import { ForumHeader } from '../../components/forum/ForumHeader.tsx';
-import { TopicHeader } from '../../components/forum/TopicHeader.tsx';
+import { ForumCard } from '../../components/forum/ForumCard.tsx';
+import { TopicRow } from '../../components/forum/TopicRow.tsx';
 import { SearchBar } from '../../components/inputs/searchBar';
 import { formatNumber } from '../../utils/format.ts';
 import { forumStore } from '../../store/forumStore.ts';
@@ -20,7 +20,7 @@ export function MainForumPage() {
     const generalForum: Forum = forumStore((state) => state.generalForum)!;
 
     const handleSearchChange = (query: string) => {
-        setFilters({ company: query || undefined, page: 1, limit: 12 });
+        setFilters({ companyName: query || undefined, page: 1, limit: 12 });
     };
 
     return (
@@ -36,34 +36,36 @@ export function MainForumPage() {
                 {!isErrorGeneral && generalForum && (
                     <div>
                         <div className="card bg-base-100 shadow-sm shadow-base-300 hover:shadow-md hover:bg-base-200 transition-all duration-100 ease-out cursor-pointer">
-                            <div className="card-body flex flex-row justify-between items-center">
-                                <div className="flex flex-row items-center gap-4">
-                                    <div className="flex flex-col">
-                                        <div className="text-xl font-bold">Forum général</div>
+                            <a href="/forums/general">
+                                <div className="card-body flex flex-row justify-between items-center">
+                                    <div className="flex flex-row items-center gap-4">
+                                        <div className="flex flex-col">
+                                            <div className="text-xl font-bold">Forum général</div>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="flex flex-row items-center gap-8">
-                                    <div className="flex flex-row gap-2 items-center">
-                                        <div className="text-lg font-bold">
-                                            {formatNumber(generalForum.nbTopics ?? 0)}
+                                    <div className="flex flex-row items-center gap-8">
+                                        <div className="flex flex-row gap-2 items-center">
+                                            <div className="text-lg font-bold">
+                                                {formatNumber(generalForum.nbTopics ?? 0)}
+                                            </div>
+                                            <div>sujets</div>
                                         </div>
-                                        <div>sujets</div>
-                                    </div>
-                                    <div className="flex flex-row gap-2 items-center">
-                                        <div className="text-lg font-bold">
-                                            {formatNumber(generalForum.nbMessages ?? 0)}
+                                        <div className="flex flex-row gap-2 items-center">
+                                            <div className="text-lg font-bold">
+                                                {formatNumber(generalForum.nbMessages ?? 0)}
+                                            </div>
+                                            <div>messages</div>
                                         </div>
-                                        <div>messages</div>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
 
                         <table className="table max-w-full">
                             <tbody>
                                 {generalForum?.topics?.map((topic) => (
-                                    <TopicHeader topic={topic} key={topic._id} />
+                                    <TopicRow topic={topic} key={topic._id} />
                                 ))}
                             </tbody>
                         </table>
@@ -73,7 +75,7 @@ export function MainForumPage() {
                 {!isErrorForums && (
                     <div className="w-full flex flex-col gap-2 justify-center">
                         <SearchBar
-                            searchQuery={filters.company || ''}
+                            searchQuery={filters.companyName || ''}
                             setSearchQuery={handleSearchChange}
                             selects={[]}
                             placeholder="Rechercher par entreprise ..."
@@ -81,7 +83,7 @@ export function MainForumPage() {
 
                         <ul className="w-full space-y-2 flex flex-wrap justify-between">
                             {forums.map((f) => (
-                                <ForumHeader forum={f} key={f._id} />
+                                <ForumCard forum={f} key={f._id} />
                             ))}
                         </ul>
                     </div>

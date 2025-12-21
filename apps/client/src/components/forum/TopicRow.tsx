@@ -5,7 +5,7 @@ type Props = {
     topic: Topic;
 };
 
-export const TopicHeader = ({ topic }: Props) => {
+export const TopicRow = ({ topic }: Props) => {
     return (
         <>
             <tr className="list-row hover:bg-base-200 transition-color duration-200 ease-out cursor-pointer">

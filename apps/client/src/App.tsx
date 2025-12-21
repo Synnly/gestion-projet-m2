@@ -44,6 +44,7 @@ import { StudentDashboard } from './student/dashboard';
 import { ApplicationList } from './company/dashboard/applicationList/ApplicationList.tsx';
 import ImportStudent from './admin/importStudent.tsx';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
+import { ForumPage } from './pages/forums/ForumPage.tsx';
 
 function App() {
     userStore.persist.rehydrate();
@@ -203,7 +204,11 @@ function App() {
                         },
                         {
                             path: 'forums',
-                            children: [{ index: true, element: <MainForumPage /> }],
+                            children: [
+                                { index: true, element: <MainForumPage /> },
+                                { path: 'general', element: <ForumPage isGeneral={true} /> },
+                                { path: ':companyId', element: <ForumPage /> },
+                            ],
                         },
                     ],
                 },

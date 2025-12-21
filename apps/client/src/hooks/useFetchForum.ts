@@ -18,7 +18,7 @@ export function buildQueryParams(filters: ForumFilters) {
         Object.entries({
             page: filters.page ?? 1,
             limit: filters.limit ?? 12,
-            searchQuery: filters.company,
+            searchQuery: filters.companyName,
         })
             .filter(([, v]) => v !== undefined && v !== null && v !== '')
             .map(([k, v]) => [k, String(v)]),
@@ -46,12 +46,28 @@ export async function fetchForum(params: URLSearchParams) {
     return res.json();
 }
 
+export async function fetchForumByCompanyId(companyId: string) {
+    const res = await fetch(`${API_URL}/api/forum/by-company-id/${companyId}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+    });
+
+    if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || 'Erreur lors de la récupération du forum');
+    }
+
+    return res.json();
+}
+
 /**
  * Custom hook to fetch forums using React Query and synchronize with the forum store
  * @returns The React Query result object
  */
 export function useFetchForums() {
     const filters = forumStore((state) => state.filters);
+    console.debug('filters', filters);
     const setForums = forumStore((state) => state.setForums);
     const query = useQuery<PaginationResult<Forum>, Error>({
         queryKey: ['forums', filters],
@@ -143,4 +159,26 @@ export function useFetchGeneralForum() {
     }, [query.data, setGeneralForum]);
 
     return query;
+}
+
+/**
+ * Custom hook to fetch a forum by company ID using React Query
+ * @param companyId - The company ID
+ * @returns The React Query result object
+ */
+export function useFetchForumByCompanyId(companyId: string) {
+    return useQuery({
+        queryKey: ['forum', companyId],
+        queryFn: async () => {
+            const forum: Forum | null = await fetchForumByCompanyId(companyId);
+            if (forum?.company?.logo) {
+                const presignedUrl = await fetchPublicSignedUrl(forum.company.logo);
+                if (presignedUrl) forum.company.logo = presignedUrl;
+            }
+            return forum;
+        },
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        retry: 2,
+    });
 }
