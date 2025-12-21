@@ -17,6 +17,7 @@ describe('Forum Integration Tests', () => {
     let jwtService: JwtService;
     let forumModel: Model<ForumDocument>;
     let companyId: Types.ObjectId;
+    let accessToken: string;
 
     const JWT_SECRET = 'test-secret-key';
 
@@ -61,6 +62,11 @@ describe('Forum Integration Tests', () => {
         forumModel = moduleFixture.get<Model<ForumDocument>>(getModelToken(Forum.name));
 
         companyId = new Types.ObjectId();
+        accessToken = jwtService.sign({
+            sub: new Types.ObjectId().toString(),
+            email: 'test@example.com',
+            role: 'Student',
+        });
     });
 
     afterEach(async () => {
@@ -78,7 +84,10 @@ describe('Forum Integration Tests', () => {
 
     describe('GET /api/forum/all - Find All Forums', () => {
         it('should return empty paginated result when no forums exist and findAll is called', async () => {
-            const res = await request(app.getHttpServer()).get('/api/forum/all').expect(200);
+            const res = await request(app.getHttpServer())
+                .get('/api/forum/all')
+                .set('Authorization', 'Bearer ' + accessToken)
+                .expect(200);
 
             expect(res.body.data).toEqual([]);
             expect(res.body.total).toBe(0);
@@ -91,7 +100,10 @@ describe('Forum Integration Tests', () => {
                 company: companyId,
             });
 
-            const res = await request(app.getHttpServer()).get('/api/forum/all').expect(200);
+            const res = await request(app.getHttpServer())
+                .get('/api/forum/all')
+                .set('Authorization', 'Bearer ' + accessToken)
+                .expect(200);
 
             expect(res.body).toHaveProperty('data');
             expect(res.body).toHaveProperty('total');
@@ -101,7 +113,10 @@ describe('Forum Integration Tests', () => {
         });
 
         it('should handle pagination parameters when provided', async () => {
-            const res = await request(app.getHttpServer()).get('/api/forum/all?page=1&limit=10').expect(200);
+            const res = await request(app.getHttpServer())
+                .get('/api/forum/all?page=1&limit=10')
+                .set('Authorization', 'Bearer ' + accessToken)
+                .expect(200);
 
             expect(res.body.page).toBe(1);
             expect(res.body.limit).toBe(10);
@@ -116,7 +131,10 @@ describe('Forum Integration Tests', () => {
                 company: companyId,
             });
 
-            const res = await request(app.getHttpServer()).get('/api/forum/all').expect(200);
+            const res = await request(app.getHttpServer())
+                .get('/api/forum/all')
+                .set('Authorization', 'Bearer ' + accessToken)
+                .expect(200);
 
             expect(res.body).toHaveProperty('page');
             expect(res.body).toHaveProperty('limit');
@@ -127,16 +145,23 @@ describe('Forum Integration Tests', () => {
         });
 
         it('should return 400 when invalid page number is provided', async () => {
-            await request(app.getHttpServer()).get('/api/forum/all?page=-1').expect(400);
+            await request(app.getHttpServer())
+                .get('/api/forum/all?page=-1')
+                .set('Authorization', 'Bearer ' + accessToken)
+                .expect(400);
         });
 
         it('should return 400 when invalid limit is provided', async () => {
-            await request(app.getHttpServer()).get('/api/forum/all?limit=0').expect(400);
+            await request(app.getHttpServer())
+                .get('/api/forum/all?limit=0')
+                .set('Authorization', 'Bearer ' + accessToken)
+                .expect(400);
         });
 
         it('should filter out extraneous query parameters when they are provided', async () => {
             const res = await request(app.getHttpServer())
                 .get('/api/forum/all?page=1&limit=10&extraParam=value')
+                .set('Authorization', 'Bearer ' + accessToken)
                 .expect(400);
 
             expect(res.body.message).toBeDefined();

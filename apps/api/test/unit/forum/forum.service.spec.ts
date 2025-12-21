@@ -7,6 +7,7 @@ import { Forum } from '../../../src/forum/forum.schema';
 import { PaginationService } from '../../../src/common/pagination/pagination.service';
 import { GeoService } from '../../../src/common/geography/geo.service';
 import { PaginationDto } from '../../../src/common/pagination/dto/pagination.dto';
+import { CompanyService } from '../../../src/company/company.service';
 
 // Mock QueryBuilder
 jest.mock('../../../src/common/pagination/query.builder', () => {
@@ -23,6 +24,7 @@ jest.mock('../../../src/common/pagination/query.builder', () => {
 describe('ForumService', () => {
     let service: ForumService;
     let paginationService: PaginationService;
+    let companyService: CompanyService;
 
     const mockForumModel = {
         findOne: jest.fn(),
@@ -42,6 +44,10 @@ describe('ForumService', () => {
 
     const mockGeoService = {};
 
+    const mockCompanyService = {
+        findOne: jest.fn(),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -58,11 +64,16 @@ describe('ForumService', () => {
                     provide: GeoService,
                     useValue: mockGeoService,
                 },
+                {
+                    provide: CompanyService,
+                    useValue: mockCompanyService,
+                },
             ],
         }).compile();
 
         service = module.get<ForumService>(ForumService);
         paginationService = module.get<PaginationService>(PaginationService);
+        companyService = module.get<CompanyService>(CompanyService);
 
         // Attach static methods to the constructor mock
         (mockForumConstructor as any).findOne = mockForumModel.findOne;
@@ -79,12 +90,15 @@ describe('ForumService', () => {
     describe('create', () => {
         it('should create a forum for a company when it does not exist', async () => {
             const companyId = new Types.ObjectId();
+            const companyName = 'Test Company';
             mockForumModel.findOne.mockResolvedValue(null);
+            mockCompanyService.findOne.mockResolvedValue({ name: companyName });
 
             const result = await service.create(companyId);
 
             expect(mockForumModel.findOne).toHaveBeenCalledWith({ company: companyId });
-            expect(result).toEqual({ company: companyId });
+            expect(mockCompanyService.findOne).toHaveBeenCalledWith(companyId.toString());
+            expect(result).toEqual({ company: companyId, companyName });
         });
 
         it('should create a general forum when it does not exist', async () => {
@@ -109,6 +123,16 @@ describe('ForumService', () => {
 
             await expect(service.create()).rejects.toThrow(BadRequestException);
             expect(mockForumModel.findOne).toHaveBeenCalledWith({ company: undefined });
+        });
+
+        it('should throw BadRequestException when company does not exist', async () => {
+            const companyId = new Types.ObjectId();
+            mockForumModel.findOne.mockResolvedValue(null);
+            mockCompanyService.findOne.mockResolvedValue(null);
+
+            await expect(service.create(companyId)).rejects.toThrow(BadRequestException);
+            expect(mockForumModel.findOne).toHaveBeenCalledWith({ company: companyId });
+            expect(mockCompanyService.findOne).toHaveBeenCalledWith(companyId.toString());
         });
     });
 

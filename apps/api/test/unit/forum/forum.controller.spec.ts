@@ -4,6 +4,7 @@ import { ForumService } from '../../../src/forum/forum.service';
 import { PaginationDto } from '../../../src/common/pagination/dto/pagination.dto';
 import { ForumDto } from '../../../src/forum/dto/forum.dto';
 import { Types } from 'mongoose';
+import { AuthGuard } from '../../../src/auth/auth.guard';
 
 describe('ForumController', () => {
     let controller: ForumController;
@@ -29,7 +30,10 @@ describe('ForumController', () => {
                     useValue: mockForumService,
                 },
             ],
-        }).compile();
+        })
+            .overrideGuard(AuthGuard)
+            .useValue({ canActivate: () => true })
+            .compile();
 
         controller = module.get<ForumController>(ForumController);
         service = module.get<ForumService>(ForumService);

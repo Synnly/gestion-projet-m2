@@ -1,10 +1,12 @@
-import { Controller, Get, HttpCode, HttpStatus, Query, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Query, UseGuards, ValidationPipe } from '@nestjs/common';
 import { ForumService } from './forum.service';
 import { PaginationDto } from '../common/pagination/dto/pagination.dto';
 import { PaginationResult } from '../common/pagination/dto/paginationResult';
 import { ForumDto } from './dto/forum.dto';
 import { plainToInstance } from 'class-transformer';
+import { AuthGuard } from '../auth/auth.guard';
 
+@UseGuards(AuthGuard)
 @Controller('/api/forum')
 export class ForumController {
     constructor(private readonly forumService: ForumService) {}
