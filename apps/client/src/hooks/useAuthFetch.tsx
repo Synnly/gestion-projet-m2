@@ -6,7 +6,18 @@ interface FetchOptions<TData = unknown> {
     data?: TData;
     headers?: Record<string, string>;
 }
-
+/**
+ * example of usage:
+ * const authFetch = UseAuthFetch();
+ * const response = await authFetch('/api/some-endpoint', {
+ *     method: 'POST',
+ *     data: JSON.stringify({ key: 'value' }),
+ *     headers: {
+ *         'Custom-Header': 'CustomValue'
+ *     }
+ * });
+ *not need to set Authorization header and credentials, it's handled automatically
+ */
 export const UseAuthFetch = () => {
     const accessToken = userStore.getState().access;
     const setUserToken = userStore.getState().set;
