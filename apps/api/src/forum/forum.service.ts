@@ -19,7 +19,7 @@ export class ForumService {
         @Inject(forwardRef(() => CompanyService)) private readonly companyService: CompanyService,
     ) {}
 
-    companyFields =
+    private readonly companyFields =
         '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo';
 
     /**
