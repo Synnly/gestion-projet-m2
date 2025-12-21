@@ -45,8 +45,9 @@ export const ForumHeader = ({ forum }: Props) => {
                             <div>messages</div>
                         </div>
                         <div>
+                            {/*TODO: Implémenter la modale et l'ouverte de celle-ci*/}
                             <button className="btn btn-primary">
-                                <Pencil />
+                                <Pencil size={16} />
                                 Nouveau sujet
                             </button>
                         </div>
