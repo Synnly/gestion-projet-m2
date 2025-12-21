@@ -25,6 +25,12 @@ export class Forum {
     @Prop({ type: Types.ObjectId, ref: 'Topic' })
     topics: Topic[];
      */
+
+    @Prop({ default: 0 })
+    nbTopics: number;
+
+    @Prop({ default: 0 })
+    nbMessages: number;
 }
 
 export type ForumDocument = Forum & Document;

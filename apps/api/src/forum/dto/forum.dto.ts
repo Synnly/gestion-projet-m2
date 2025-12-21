@@ -24,4 +24,10 @@ export class ForumDto {
     // @ValidateNested({ each: true })
     // @Type(() => TopicDto)
     // topics: TopicDto[];
+
+    @Expose()
+    nbTopics: number;
+
+    @Expose()
+    nbMessages: number;
 }
