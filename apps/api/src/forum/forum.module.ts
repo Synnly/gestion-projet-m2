@@ -12,7 +12,7 @@ import { CompanyModule } from '../company/company.module';
 @Module({
     imports: [MongooseModule.forFeature([{ name: Forum.name, schema: ForumSchema }]), forwardRef(() => CompanyModule)],
     controllers: [ForumController],
-    providers: [ForumService, TopicService, MessageService, PaginationService, GeoService],
-    exports: [ForumService],
+    providers: [ForumService, TopicService, MessageService, PaginationService, GeoService, MessageService],
+    exports: [ForumService, MessageService],
 })
 export class ForumModule {}

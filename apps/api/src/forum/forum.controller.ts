@@ -1,4 +1,15 @@
-import { Controller, Get, HttpCode, HttpStatus, Param, Query, UseGuards, ValidationPipe } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    Post,
+    Query,
+    UseGuards,
+    ValidationPipe,
+} from '@nestjs/common';
 import { ForumService } from './forum.service';
 import { PaginationDto } from '../common/pagination/dto/pagination.dto';
 import { PaginationResult } from '../common/pagination/dto/paginationResult';
@@ -6,11 +17,17 @@ import { ForumDto } from './dto/forum.dto';
 import { plainToInstance } from 'class-transformer';
 import { AuthGuard } from '../auth/auth.guard';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
+import { MessageDto } from './message/dto/messageDto';
+import { CreateMessageDto } from './message/dto/createMessageDto';
+import { MessageService } from './message/message.service';
 
 @UseGuards(AuthGuard)
 @Controller('/api/forum')
 export class ForumController {
-    constructor(private readonly forumService: ForumService) {}
+    constructor(
+        private readonly forumService: ForumService,
+        private readonly messageService: MessageService,
+    ) {}
 
     /**
      * Return a paginated list of forums. Query parameters `page` and `limit`
@@ -51,5 +68,14 @@ export class ForumController {
     @HttpCode(HttpStatus.OK)
     async findOneByCompanyId(@Param('companyId', ParseObjectIdPipe) companyId?: string): Promise<ForumDto | null> {
         return plainToInstance(ForumDto, await this.forumService.findOneByCompanyId(companyId));
+    }
+
+    @Post('/topic/:topicId/message/create')
+    @HttpCode(HttpStatus.OK)
+    async sendMessage(
+        @Param('topicId', ParseObjectIdPipe) topicId: string,
+        @Body() messageDto: CreateMessageDto,
+    ): Promise<MessageDto> {
+        return plainToInstance(MessageDto, await this.messageService.sendMessage(topicId, messageDto));
     }
 }
