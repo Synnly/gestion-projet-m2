@@ -8,7 +8,6 @@ interface FetchOptions<TData = unknown> {
 }
 
 export const UseAuthFetch = () => {
-    userStore.persist.rehydrate();
     const accessToken = userStore.getState().access;
     const setUserToken = userStore.getState().set;
 
