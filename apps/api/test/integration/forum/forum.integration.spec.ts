@@ -227,7 +227,7 @@ describe('Forum Integration Tests', () => {
             } else if (res.body.company && typeof res.body.company === 'string') {
                 expect(res.body.company).toBe(specificCompanyId.toString());
             } else {
-                // fallback : s'assurer que le forum créé contient bien le company attendu
+                // Fallback: ensure that the created forum still contains the expected company
                 expect(forum.company?.toString()).toBe(specificCompanyId.toString());
             }
         });
