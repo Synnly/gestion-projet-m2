@@ -79,7 +79,6 @@ describe('Forum Integration Tests', () => {
         if (mongod) await mongod.stop();
     });
 
-    // Typage strict plutôt que `any`
     const createForum = async (data: Partial<Forum> | Partial<ForumDocument>): Promise<ForumDocument> => {
         return await forumModel.create(data);
     };
