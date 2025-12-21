@@ -83,7 +83,7 @@ export function useFetchForums() {
             const validForums = paginationResult.data.filter((p: any) => p.company && typeof p.company === 'object');
             const removedCount = originalLength - validForums.length;
 
-            // Genral forum has no company, so allow one missing
+            // General forum has no company, so allow one missing
             if (removedCount > 1) {
                 try {
                     toast.error(`Impossible d'afficher ${removedCount} forum(s)`, {
