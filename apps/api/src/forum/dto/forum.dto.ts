@@ -25,9 +25,15 @@ export class ForumDto {
     // @Type(() => TopicDto)
     // topics: TopicDto[];
 
+    /**
+     * Number of topics in the forum
+     */
     @Expose()
     nbTopics: number;
 
+    /**
+     * Number of messages in the forum
+     */
     @Expose()
     nbMessages: number;
 }

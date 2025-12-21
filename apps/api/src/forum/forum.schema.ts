@@ -26,9 +26,15 @@ export class Forum {
     topics: Topic[];
      */
 
+    /**
+     * Number of topics in the forum
+     */
     @Prop({ default: 0 })
     nbTopics: number;
 
+    /**
+     * Number of messages in the forum across all topics
+     */
     @Prop({ default: 0 })
     nbMessages: number;
 }
