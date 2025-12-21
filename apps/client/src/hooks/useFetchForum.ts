@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { useEffect } from 'react';
 import { forumStore } from '../store/forumStore.ts';
 import { fetchPublicSignedUrl } from './useBlob.tsx';
+import { UseAuthFetch } from './useAuthFetch.tsx';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
@@ -32,10 +33,10 @@ export function buildQueryParams(filters: ForumFilters) {
  * @returns A promise resolving to the pagination result of forums
  */
 export async function fetchForum(params: URLSearchParams) {
-    const res = await fetch(`${API_URL}/api/forum/all?${params}`, {
+    const authFetch = UseAuthFetch();
+    const res = await authFetch(`${API_URL}/api/forum/all?${params}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
     });
 
     if (!res.ok) {
@@ -47,10 +48,10 @@ export async function fetchForum(params: URLSearchParams) {
 }
 
 export async function fetchForumByCompanyId(companyId: string) {
-    const res = await fetch(`${API_URL}/api/forum/by-company-id/${companyId}`, {
+    const authFetch = UseAuthFetch();
+    const res = await authFetch(`${API_URL}/api/forum/by-company-id/${companyId}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
     });
 
     if (!res.ok) {
@@ -67,7 +68,7 @@ export async function fetchForumByCompanyId(companyId: string) {
  */
 export function useFetchForums() {
     const filters = forumStore((state) => state.filters);
-    console.debug('filters', filters);
+
     const setForums = forumStore((state) => state.setForums);
     const query = useQuery<PaginationResult<Forum>, Error>({
         queryKey: ['forums', filters],
@@ -132,10 +133,10 @@ export function useFetchGeneralForum() {
         queryKey: ['general-forum'],
 
         queryFn: async () => {
-            const res = await fetch(`${API_URL}/api/forum/general`, {
+            const authFetch = UseAuthFetch();
+            const res = await authFetch(`${API_URL}/api/forum/general`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
             });
 
             if (!res.ok) {
