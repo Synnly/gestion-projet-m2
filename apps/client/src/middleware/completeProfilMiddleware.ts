@@ -3,6 +3,7 @@ import { profileStore, type companyProfileStoreType } from '../store/profileStor
 import { userStore } from '../store/userStore';
 import { completeProfilFormCheck } from '../company/completeProfil/type';
 import type { companyProfile } from '../types';
+import { UseAuthFetch } from '../hooks/useAuthFetch';
 
 /** @description use zod schema to check if required fields of priofil are complete
  * @returns a boolean which indicates if the profil is complete
@@ -21,8 +22,9 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
     const { access, get } = userStore.getState();
     if (!access) return;
     const payload = get(access);
-    if(!payload) return
-    const pathname = new URL(request.url).pathname; 
+    if (!payload) return;
+    const authFetch = UseAuthFetch();
+    const pathname = new URL(request.url).pathname;
     const { setProfil, profile } = profileStore.getState();
     if (!payload.isVerified && pathname === '/verify') {
         return;
@@ -36,10 +38,9 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
     if (!payload.isVerified && pathname !== '/verify') {
         throw redirect('/verify');
     }
-    if(payload.role === "COMPANY"){ 
+    if (payload.role === 'COMPANY') {
         if (!profile) {
-            const profileRes = await fetch(`${API_URL}/api/companies/${payload.id}`, {
-                credentials: 'include',
+            const profileRes = await authFetch(`${API_URL}/api/companies/${payload.id}`, {
                 headers: {
                     Authorization: `Bearer ${access}`,
                 },

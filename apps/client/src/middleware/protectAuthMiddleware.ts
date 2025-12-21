@@ -1,3 +1,4 @@
+import { UseAuthFetch } from '../hooks/useAuthFetch';
 import { userStore } from '../store/userStore';
 
 /**
@@ -9,14 +10,13 @@ import { userStore } from '../store/userStore';
 export async function protectedMiddleware(): Promise<string | void> {
     const API_URL = import.meta.env.VITE_APIURL;
     const { access, set: setAccess, logout } = userStore.getState();
-
+    const authFetch = UseAuthFetch();
     if (!access) {
         return;
     }
 
-    const refreshRes = await fetch(`${API_URL}/api/auth/refresh`, {
+    const refreshRes = await authFetch(`${API_URL}/api/auth/refresh`, {
         method: 'POST',
-        credentials: 'include',
         headers: { Authorization: `Bearer ${access}` },
     });
 

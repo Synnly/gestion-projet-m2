@@ -2,6 +2,7 @@ import { useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApplicationStore, type ApplicationResponse } from '../store/useApplicationStore';
 import { userStore } from '../store/userStore';
+import { UseAuthFetch } from './useAuthFetch';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
@@ -27,9 +28,9 @@ async function fetchApplicationsByStudent(
     access?: string | null,
 ): Promise<ApplicationResponse> {
     const qs = buildQueryParams(filters);
-    const res = await fetch(`${API_URL}/api/application/student/${studentId}?${qs}`, {
+    const authFetch = UseAuthFetch();
+    const res = await authFetch(`${API_URL}/api/application/student/${studentId}?${qs}`, {
         method: 'GET',
-        credentials: 'include',
         headers: access ? { Authorization: `Bearer ${access}` } : undefined,
     });
 
@@ -52,10 +53,10 @@ export async function fetchApplicationsByPost(
 ) {
     const access = userStore.getState().access;
     const params = buildQueryParams(filters);
-    const res = await fetch(`${API_URL}/api/application/post/${postId}?${params}`, {
+    const authFetch = UseAuthFetch();
+    const res = await authFetch(`${API_URL}/api/application/post/${postId}?${params}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${access}` },
-        credentials: 'include',
     });
 
     if (!res.ok) {
@@ -100,11 +101,10 @@ export function useFetchApplications() {
 export const fetchFileSignedUrl = async (applicationId: string, type: 'cv' | 'lm'): Promise<string | null> => {
     const url = `${import.meta.env.VITE_APIURL}/api/application/${applicationId}/file/${type}`;
     const access = userStore.getState().access;
-
+    const authFetch = UseAuthFetch();
     try {
-        const res = await fetch(url, {
+        const res = await authFetch(url, {
             method: 'GET',
-            credentials: 'include',
             headers: { Authorization: `Bearer ${access}` },
         });
 
