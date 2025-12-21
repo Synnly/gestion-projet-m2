@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useEffect } from 'react';
 import { forumStore } from '../store/forumStore.ts';
+import { fetchPublicSignedUrl } from './useBlob.tsx';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
@@ -62,8 +63,8 @@ export function useFetchForums() {
 
             // Filter out posts with missing company to avoid rendering invalid items
             const originalLength = paginationResult.data.length;
-            const validPosts = paginationResult.data.filter((p: any) => p.company && typeof p.company === 'object');
-            const removedCount = originalLength - validPosts.length;
+            const validForums = paginationResult.data.filter((p: any) => p.company && typeof p.company === 'object');
+            const removedCount = originalLength - validForums.length;
 
             // Genral forum has no company, so allow one missing
             if (removedCount > 1) {
@@ -75,7 +76,17 @@ export function useFetchForums() {
                     // ignore if toast not available
                 }
             }
-            paginationResult.data = validPosts;
+
+            await Promise.all(
+                validForums.map(async (forum: Forum) => {
+                    if (forum.company?.logo) {
+                        const presignedUrl = await fetchPublicSignedUrl(forum.company.logo);
+                        if (presignedUrl) forum.company.logo = presignedUrl;
+                    }
+                }),
+            );
+
+            paginationResult.data = validForums;
 
             return paginationResult;
         },
