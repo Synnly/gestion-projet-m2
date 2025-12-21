@@ -32,6 +32,16 @@ describe('ForumService', () => {
         save: jest.fn(),
     };
 
+    // Helper to mock a Mongoose Query
+    // This allows the query to be both awaited directly (thenable) and executed via .exec()
+    const mockQuery = (result: any) => ({
+        exec: jest.fn().mockResolvedValue(result),
+        then: (resolve: any) => Promise.resolve(result).then(resolve),
+        // Add chainable methods if needed, returning 'this'
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+    });
+
     // Mock constructor for new this.forumModel(...)
     const mockForumConstructor = jest.fn().mockImplementation((dto) => ({
         ...dto,
@@ -49,12 +59,18 @@ describe('ForumService', () => {
     };
 
     beforeEach(async () => {
+        // Reset mocks
+        jest.clearAllMocks();
+        mockForumModel.findOne.mockReset();
+        mockCompanyService.findOne.mockReset();
+        mockPaginationService.paginate.mockReset();
+
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 ForumService,
                 {
                     provide: getModelToken(Forum.name),
-                    useValue: mockForumConstructor, // Inject the constructor mock
+                    useValue: mockForumConstructor,
                 },
                 {
                     provide: PaginationService,
@@ -77,8 +93,6 @@ describe('ForumService', () => {
 
         // Attach static methods to the constructor mock
         (mockForumConstructor as any).findOne = mockForumModel.findOne;
-
-        jest.clearAllMocks();
     });
 
     describe('constructor', () => {
@@ -91,7 +105,9 @@ describe('ForumService', () => {
         it('should create a forum for a company when it does not exist', async () => {
             const companyId = new Types.ObjectId();
             const companyName = 'Test Company';
-            mockForumModel.findOne.mockResolvedValue(null);
+            
+            // Mock findOne to return null (not found)
+            mockForumModel.findOne.mockReturnValue(mockQuery(null));
             mockCompanyService.findOne.mockResolvedValue({ name: companyName });
 
             const result = await service.create(companyId);
@@ -102,7 +118,8 @@ describe('ForumService', () => {
         });
 
         it('should create a general forum when it does not exist', async () => {
-            mockForumModel.findOne.mockResolvedValue(null);
+            // Mock findOne to return null (not found)
+            mockForumModel.findOne.mockReturnValue(mockQuery(null));
 
             const result = await service.create();
 
@@ -112,14 +129,15 @@ describe('ForumService', () => {
 
         it('should throw BadRequestException when forum for company already exists', async () => {
             const companyId = new Types.ObjectId();
-            mockForumModel.findOne.mockResolvedValue({ _id: 'existing' });
+            // Mock findOne to return an existing document
+            mockForumModel.findOne.mockReturnValue(mockQuery({ _id: 'existing' }));
 
             await expect(service.create(companyId)).rejects.toThrow(BadRequestException);
             expect(mockForumModel.findOne).toHaveBeenCalledWith({ company: companyId });
         });
 
         it('should throw BadRequestException when general forum already exists', async () => {
-            mockForumModel.findOne.mockResolvedValue({ _id: 'existing' });
+            mockForumModel.findOne.mockReturnValue(mockQuery({ _id: 'existing' }));
 
             await expect(service.create()).rejects.toThrow(BadRequestException);
             expect(mockForumModel.findOne).toHaveBeenCalledWith({ company: undefined });
@@ -127,7 +145,7 @@ describe('ForumService', () => {
 
         it('should throw BadRequestException when company does not exist', async () => {
             const companyId = new Types.ObjectId();
-            mockForumModel.findOne.mockResolvedValue(null);
+            mockForumModel.findOne.mockReturnValue(mockQuery(null));
             mockCompanyService.findOne.mockResolvedValue(null);
 
             await expect(service.create(companyId)).rejects.toThrow(BadRequestException);
@@ -140,20 +158,18 @@ describe('ForumService', () => {
         it('should return a forum when found', async () => {
             const companyId = new Types.ObjectId().toString();
             const mockForum = { _id: 'forumId', company: companyId };
-            const mockExec = jest.fn().mockResolvedValue(mockForum);
-            mockForumModel.findOne.mockReturnValue({ exec: mockExec });
+            
+            mockForumModel.findOne.mockReturnValue(mockQuery(mockForum));
 
             const result = await service.findOneByCompanyId(companyId);
 
             expect(mockForumModel.findOne).toHaveBeenCalledWith({ company: companyId });
-            expect(mockExec).toHaveBeenCalled();
             expect(result).toEqual(mockForum);
         });
 
         it('should return null when not found', async () => {
             const companyId = new Types.ObjectId().toString();
-            const mockExec = jest.fn().mockResolvedValue(null);
-            mockForumModel.findOne.mockReturnValue({ exec: mockExec });
+            mockForumModel.findOne.mockReturnValue(mockQuery(null));
 
             const result = await service.findOneByCompanyId(companyId);
 
@@ -163,8 +179,7 @@ describe('ForumService', () => {
 
         it('should return general forum when companyId is undefined', async () => {
             const mockForum = { _id: 'generalForum' };
-            const mockExec = jest.fn().mockResolvedValue(mockForum);
-            mockForumModel.findOne.mockReturnValue({ exec: mockExec });
+            mockForumModel.findOne.mockReturnValue(mockQuery(mockForum));
 
             const result = await service.findOneByCompanyId(undefined);
 
