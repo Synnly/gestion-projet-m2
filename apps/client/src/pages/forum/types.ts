@@ -6,8 +6,6 @@ export const createTopicSchema = z.object({
         .min(1, { message: 'Le titre est requis' })
         .max(200, { message: 'Le titre ne peut pas dépasser 200 caractères' }),
     description: z.string().optional(),
-    forumId: z.string().min(1, { message: 'Le forum est requis' }),
-    author: z.string().min(1, { message: "L'auteur est requis" }),
 });
 
 export type CreateTopicForm = z.infer<typeof createTopicSchema>;
@@ -17,8 +15,6 @@ export type CreateTopicPayload = {
     data: {
         title: string;
         description?: string;
-        author: string;
-        forumId: string;
     };
 };
 
@@ -53,7 +49,6 @@ export type Topic = {
 
 export type CreateTopicModalProps = {
     forumId: string;
-    authorId: string;
     isOpen: boolean;
     onClose: () => void;
 };

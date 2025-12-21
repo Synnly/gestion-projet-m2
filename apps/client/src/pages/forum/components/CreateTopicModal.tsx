@@ -10,7 +10,7 @@ import { FormSubmit } from '../../../components/form/FormSubmit';
 import { CustomForm } from '../../../components/form/CustomForm';
 import { Cross } from 'lucide-react';
 
-export function CreateTopicModal({ forumId, authorId, isOpen, onClose }: CreateTopicModalProps) {
+export function CreateTopicModal({ forumId, isOpen, onClose }: CreateTopicModalProps) {
     const queryClient = useQueryClient();
 
     const {
@@ -22,8 +22,6 @@ export function CreateTopicModal({ forumId, authorId, isOpen, onClose }: CreateT
         resolver: zodResolver(createTopicSchema) as Resolver<CreateTopicForm>,
         mode: 'onSubmit',
         defaultValues: {
-            forumId,
-            author: authorId,
             title: '',
             description: '',
         },
@@ -48,8 +46,6 @@ export function CreateTopicModal({ forumId, authorId, isOpen, onClose }: CreateT
             data: {
                 title: data.title,
                 description: data.description,
-                author: data.author,
-                forumId: data.forumId,
             },
         });
     };

@@ -14,9 +14,6 @@ export class CreateTopicDto {
     @IsMongoId({ each: true })
     messages?: string[];
 
-    @IsMongoId()
-    author: string;
-
-    @IsMongoId()
-    forumId: string;
+    author?: string;
+    forumId?: string;
 }
