@@ -8,6 +8,7 @@ interface FetchOptions<TData = unknown> {
 }
 
 export const UseAuthFetch = () => {
+    userStore.persist.rehydrate();
     const accessToken = userStore.getState().access;
     const setUserToken = userStore.getState().set;
 
@@ -21,7 +22,7 @@ export const UseAuthFetch = () => {
                         ...(options?.headers || {}),
                         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
                     },
-                    body: options?.data ? options.data : undefined,
+                    body: options?.data,
                     credentials: 'include',
                 });
 
@@ -43,9 +44,10 @@ export const UseAuthFetch = () => {
             return await doFetch();
         } catch (err) {
             if (err instanceof Error && err.message === 'UNAUTHORIZED') {
+                const apiUrl = import.meta.env.VITE_APIURL || 'http://localhost:3000';
                 // Refresh token
                 try {
-                    const refreshRes = await fetch('/api/auth/refresh', {
+                    const refreshRes = await fetch(`${apiUrl}/api/auth/refresh`, {
                         method: 'POST',
                         credentials: 'include',
                     });
