@@ -16,4 +16,7 @@ export class CreateTopicDto {
 
     @IsMongoId()
     author: string;
+
+    @IsMongoId()
+    forumId: string;
 }

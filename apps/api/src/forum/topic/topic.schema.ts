@@ -23,6 +23,10 @@ export class Topic {
     // Author ID of the topic creator
     @Prop({ required: true })
     author: Types.ObjectId;
+
+    // Forum ID that this topic belongs to
+    @Prop({ required: true })
+    forumId: Types.ObjectId;
 }
 
 export const TopicSchema = SchemaFactory.createForClass(Topic);

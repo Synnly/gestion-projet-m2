@@ -43,6 +43,7 @@ import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
 import { StudentDashboard } from './student/dashboard';
 import { ApplicationList } from './company/dashboard/applicationList/ApplicationList.tsx';
 import ImportStudent from './admin/importStudent.tsx';
+import TopicDetailPage from './pages/forum/TopicDetailPage';
 
 function App() {
     userStore.persist.rehydrate();
@@ -71,6 +72,7 @@ function App() {
                 { path: 'privacy', element: <PrivacyPolicy /> },
                 { path: 'cookies', element: <CookiePolicy /> },
                 { path: 'safety', element: <SafetyCompliance /> },
+                { path: 'forum/:forumId/topic/:topicId', element: <TopicDetailPage />, handle: { title: 'Discussion' } },
                 { index: true, element: <InternshipPage />, handle: { title: 'Accueil' } },
                 {
                     loader: notAuthMiddleWare,
