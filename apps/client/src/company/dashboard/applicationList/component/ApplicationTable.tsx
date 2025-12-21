@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react';
 import { ChevronUp, Eye } from 'lucide-react';
-import { PdfModal } from './PdfModal.tsx';
-import { ApplicationPagination } from './ApplicationPagination.tsx';
+import { PdfModal } from './PdfModal';
+import { ApplicationPagination } from './ApplicationPagination';
 import {
     type Application,
     type ApplicationFilters,
     type ApplicationStatus,
     ApplicationStatusEnum,
-} from '../../../../types/application.types.ts';
+} from '../../../../types/application.types';
 import { useQuery } from '@tanstack/react-query';
-import type { PaginationResult } from '../../../../types/internship.types.ts';
+import type { PaginationResult } from '../../../../types/internship.types';
 import { useParams } from 'react-router';
-import { fetchApplicationsByPost } from '../../../../hooks/useFetchApplications.ts';
-import { formatDate } from '../../intershipList/component/tableRow.tsx';
-import { UseAuthFetch } from '../../../../hooks/useAuthFetch.tsx';
+import { fetchApplicationsByPost } from '../../../../hooks/useFetchApplications';
+import { formatDate } from '../../intershipList/component/tableRow';
+import { UseAuthFetch } from '../../../../hooks/useAuthFetch';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
