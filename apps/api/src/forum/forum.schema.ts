@@ -43,4 +43,5 @@ export type ForumDocument = Forum & Document;
 
 export const ForumSchema = SchemaFactory.createForClass(Forum);
 
+ForumSchema.index({ company: 1 }, { name: 'forum_company_id' });
 ForumSchema.index({ companyName: 'text' }, { name: 'forum_text_search' });

@@ -47,7 +47,7 @@ export class ForumController {
      * @param companyId - The company id to search for. If not provided, searches for the general forum.
      * @returns The forum if found, otherwise null.
      */
-    @Get('by-id/:companyId')
+    @Get('by-company-id/:companyId')
     @HttpCode(HttpStatus.OK)
     async findOneByCompanyId(@Param('companyId', ParseObjectIdPipe) companyId?: string): Promise<ForumDto | null> {
         return plainToInstance(ForumDto, await this.forumService.findOneByCompanyId(companyId));

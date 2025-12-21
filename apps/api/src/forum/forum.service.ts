@@ -19,6 +19,9 @@ export class ForumService {
         @Inject(forwardRef(() => CompanyService)) private readonly companyService: CompanyService,
     ) {}
 
+    companyFields =
+        '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo';
+
     /**
      * Create a new forum.
      * @param companyId The company id for which to create the forum. If not provided, creates the general forum.
@@ -65,6 +68,10 @@ export class ForumService {
                 //     path: 'topics',
                 //     select: '_id author title description',
                 // })
+                .populate({
+                    path: 'company',
+                    select: this.companyFields,
+                })
                 .exec()
         );
     }

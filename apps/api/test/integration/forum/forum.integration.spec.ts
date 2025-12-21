@@ -200,7 +200,7 @@ describe('Forum Integration Tests', () => {
         });
     });
 
-    describe('GET /api/forum/by-id/:companyId - Get Forum by Company ID', () => {
+    describe('GET /api/forum/by-company-id/:companyId - Get Forum by Company ID', () => {
         it('should return the forum for the specific company', async () => {
             const specificCompanyId = new Types.ObjectId();
             const forum = await createForum({
@@ -208,7 +208,7 @@ describe('Forum Integration Tests', () => {
             });
 
             const res = await request(app.getHttpServer())
-                .get(`/api/forum/by-id/${specificCompanyId}`)
+                .get(`/api/forum/by-company-id/${specificCompanyId}`)
                 .set('Authorization', 'Bearer ' + accessToken)
                 .expect(200);
 
@@ -224,7 +224,7 @@ describe('Forum Integration Tests', () => {
         it('should return empty/null if forum for company does not exist', async () => {
             const specificCompanyId = new Types.ObjectId();
             const res = await request(app.getHttpServer())
-                .get(`/api/forum/by-id/${specificCompanyId}`)
+                .get(`/api/forum/by-company-id/${specificCompanyId}`)
                 .set('Authorization', 'Bearer ' + accessToken)
                 .expect(200);
 
@@ -237,7 +237,7 @@ describe('Forum Integration Tests', () => {
 
         it('should return 400 if companyId is invalid mongo id', async () => {
             await request(app.getHttpServer())
-                .get(`/api/forum/by-id/invalid-id`)
+                .get(`/api/forum/by-company-id/invalid-id`)
                 .set('Authorization', 'Bearer ' + accessToken)
                 .expect(400);
         });
