@@ -1,12 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Admin, AdminDocument } from './admin.schema';
+import { Admin } from './admin.schema';
 import { CreateAdminDto } from './dto/createAdminDto';
 import { Model } from 'mongoose';
+import { Role } from '../common/roles/roles.enum';
+import { AdminUserDocument } from '../user/user.schema';
 
 @Injectable()
 export class AdminService {
-    constructor(@InjectModel(Admin.name) private readonly adminModel: Model<AdminDocument>) {}
+    constructor(@InjectModel(Admin.name) private readonly adminModel: Model<AdminUserDocument>) {}
+
+    /**
+     * Count the total number of admin records in the database.
+     * @returns A promise that resolves to the count of admin documents.
+     */
+    async count(): Promise<number> {
+        return this.adminModel.countDocuments().exec();
+    }
 
     /**
      * Retrieve all admin records from the database.
@@ -31,7 +41,7 @@ export class AdminService {
      * @returns A promise that resolves when the admin is created.
      */
     async create(dto: CreateAdminDto): Promise<void> {
-        const createdAdmin = new this.adminModel(dto);
+        const createdAdmin = new this.adminModel({ role: Role.ADMIN, ...dto, isValid: true, isVerified: true });
         await createdAdmin.save();
     }
 }

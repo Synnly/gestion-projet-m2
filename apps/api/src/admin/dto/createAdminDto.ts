@@ -24,4 +24,8 @@ export class CreateAdminDto {
     @IsNotEmpty()
     @MinLength(32)
     password: string;
+
+    constructor(partial: Partial<CreateAdminDto>) {
+        Object.assign(this, partial);
+    }
 }
