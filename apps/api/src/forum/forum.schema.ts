@@ -15,6 +15,12 @@ export class Forum {
     @Prop({ type: Types.ObjectId, ref: 'Company' })
     company?: Company;
 
+    /**
+     * Name of the company (denormalized for text search)
+     */
+    @Prop()
+    companyName?: string;
+
     /*
     @Prop({ type: Types.ObjectId, ref: 'Topic' })
     topics: Topic[];
@@ -24,3 +30,5 @@ export class Forum {
 export type ForumDocument = Forum & Document;
 
 export const ForumSchema = SchemaFactory.createForClass(Forum);
+
+ForumSchema.index({ companyName: 'text' }, { name: 'forum_text_search' });
