@@ -49,7 +49,7 @@ export async function fetchForum(params: URLSearchParams) {
  * Custom hook to fetch forums using React Query and synchronize with the forum store
  * @returns The React Query result object
  */
-export function useFetchForum() {
+export function useFetchForums() {
     const filters = forumStore((state) => state.filters);
     const setForums = forumStore((state) => state.setForums);
     const query = useQuery<PaginationResult<Forum>, Error>({
@@ -64,7 +64,9 @@ export function useFetchForum() {
             const originalLength = paginationResult.data.length;
             const validPosts = paginationResult.data.filter((p: any) => p.company && typeof p.company === 'object');
             const removedCount = originalLength - validPosts.length;
-            if (removedCount > 0) {
+
+            // Genral forum has no company, so allow one missing
+            if (removedCount > 1) {
                 try {
                     toast.error(`Impossible d'afficher ${removedCount} forum(s)`, {
                         toastId: 'fetch-forum',
@@ -72,8 +74,8 @@ export function useFetchForum() {
                 } catch (e) {
                     // ignore if toast not available
                 }
-                paginationResult.data = validPosts;
             }
+            paginationResult.data = validPosts;
 
             return paginationResult;
         },
@@ -89,6 +91,45 @@ export function useFetchForum() {
             setForums(query.data);
         }
     }, [query.data, setForums]);
+
+    return query;
+}
+
+/**
+ * Custom hook to fetch the general forum using React Query and synchronize with the forum store
+ * @returns The React Query result object
+ */
+export function useFetchGeneralForum() {
+    const setGeneralForum = forumStore((state) => state.setGeneralForum);
+    const query = useQuery<Forum, Error>({
+        queryKey: ['general-forum'],
+
+        queryFn: async () => {
+            const res = await fetch(`${API_URL}/api/forum/general`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+            });
+
+            if (!res.ok) {
+                const error = await res.json().catch(() => ({ message: res.statusText }));
+                throw new Error(error.message || 'Erreur lors de la récupération du forum général');
+            }
+
+            return res.json();
+        },
+
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+        retry: 2,
+    });
+
+    // Synchronize the store with the data returned by React Query (including cache)
+    useEffect(() => {
+        if (query.data && typeof setGeneralForum === 'function') {
+            setGeneralForum(query.data);
+        }
+    }, [query.data, setGeneralForum]);
 
     return query;
 }

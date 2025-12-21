@@ -4,6 +4,7 @@ import type { PaginationResult } from '../types/internship.types.ts';
 
 export interface ForumStore {
     forums: Forum[];
+    generalForum: Forum | null;
     filters: ForumFilters;
     setFilters: (filters: Partial<ForumFilters>) => void;
     pagination: Omit<PaginationResult<Forum>, 'data'> | null;
@@ -11,6 +12,7 @@ export interface ForumStore {
     addForum: (forum: Forum) => void;
     updateForum: (id: string, forum: Partial<Forum>) => void;
     deleteForum: (id: string) => void;
+    setGeneralForum: (forum: Forum) => void;
 }
 
 const DEFAULT_FILTERS: ForumFilters = {
@@ -20,6 +22,7 @@ const DEFAULT_FILTERS: ForumFilters = {
 
 export const forumStore = create<ForumStore>((set) => ({
     forums: [],
+    generalForum: null,
     pagination: null,
     filters: DEFAULT_FILTERS,
     setForums: (data) =>
@@ -43,6 +46,7 @@ export const forumStore = create<ForumStore>((set) => ({
         set((state) => ({
             forums: state.forums.filter((forum) => forum._id !== id),
         })),
+    setGeneralForum: (forum: Forum) => set({ generalForum: forum }),
     setFilters: (newFilters) =>
         set((state) => ({
             filters: { ...state.filters, ...newFilters },

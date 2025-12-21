@@ -1,5 +1,6 @@
 import type { Forum } from '../../types/forum.types.ts';
 import { formatNumber } from '../../utils/format.ts';
+import logoPlaceholder from '../../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg';
 
 type Props = {
     forum: Forum;
@@ -12,7 +13,7 @@ export function ForumHeader({ forum }: Props) {
                 <div className="flex flex-row items-center gap-4">
                     <div className="avatar">
                         <div className="w-10 rounded">
-                            <img src={forum.company?.logo} alt={forum.company?.name} />
+                            <img src={forum.company?.logo ?? logoPlaceholder} alt={forum.company?.name} />
                         </div>
                     </div>
                     <div className="flex flex-col">
