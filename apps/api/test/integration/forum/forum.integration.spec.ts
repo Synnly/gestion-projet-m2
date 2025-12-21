@@ -79,7 +79,6 @@ describe('Forum Integration Tests', () => {
         if (mongod) await mongod.stop();
     });
 
-    // Typage strict plutôt que `any`
     const createForum = async (data: Partial<Forum> | Partial<ForumDocument>): Promise<ForumDocument> => {
         return await forumModel.create(data);
     };
@@ -213,21 +212,21 @@ describe('Forum Integration Tests', () => {
                 .set('Authorization', 'Bearer ' + accessToken)
                 .expect(200);
 
-            // Vérifications assouplies et typées :
+            // Relaxed and typed checks:
             expect(res.body).toBeDefined();
 
-            // Si l'api renvoie un _id (string), vérifier son type
+            // If api returns an _id (string), check its type
             if (res.body._id !== undefined && res.body._id !== null) {
                 expect(typeof res.body._id).toBe('string');
             }
 
-            // Vérifier la présence / correspondance du company id, qu'il soit renvoyé comme string ou comme objet peuplé
+            // Check presence / match of company id, whether returned as string or populated object
             if (res.body.company && typeof res.body.company === 'object' && res.body.company._id) {
                 expect(res.body.company._id).toBe(specificCompanyId.toString());
             } else if (res.body.company && typeof res.body.company === 'string') {
                 expect(res.body.company).toBe(specificCompanyId.toString());
             } else {
-                // fallback : s'assurer que le forum créé contient bien le company attendu
+                // fallback: ensure created forum contains expected company
                 expect(forum.company?.toString()).toBe(specificCompanyId.toString());
             }
         });

@@ -2,13 +2,12 @@ import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/com
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Forum } from './forum.schema';
-import { PaginationResult } from 'client/src/types/internship.types';
 import { PaginationDto } from '../common/pagination/dto/pagination.dto';
 import { QueryBuilder } from '../common/pagination/query.builder';
-import { Post } from '../post/post.schema';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { GeoService } from '../common/geography/geo.service';
 import { CompanyService } from '../company/company.service';
+import { PaginationResult } from '../common/pagination/dto/paginationResult';
 
 @Injectable()
 export class ForumService {
@@ -49,7 +48,6 @@ export class ForumService {
 
         // General forum
         const forum = new this.forumModel({
-            company: companyId,
             // topics: [],
         });
         return forum.save();
@@ -89,13 +87,13 @@ export class ForumService {
      */
     async findAll(query: PaginationDto): Promise<PaginationResult<Forum>> {
         const { page, limit, sort, ...filters } = query;
-        const qb = new QueryBuilder<Post>(filters as any, this.geoService);
+        const qb = new QueryBuilder<Forum>(filters as any, this.geoService);
         const filter = await qb.build(true);
         const sortQuery = qb.buildSort(sort);
 
         const companyPopulate = {
             path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
         };
 
         return this.paginationService.paginate(this.forumModel, filter, page, limit, [companyPopulate], sortQuery);

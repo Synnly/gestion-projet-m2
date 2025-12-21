@@ -105,7 +105,7 @@ describe('ForumService', () => {
         it('should create a forum for a company when it does not exist', async () => {
             const companyId = new Types.ObjectId();
             const companyName = 'Test Company';
-            
+
             // Mock findOne to return null (not found)
             mockForumModel.findOne.mockReturnValue(mockQuery(null));
             mockCompanyService.findOne.mockResolvedValue({ name: companyName });
@@ -158,7 +158,7 @@ describe('ForumService', () => {
         it('should return a forum when found', async () => {
             const companyId = new Types.ObjectId().toString();
             const mockForum = { _id: 'forumId', company: companyId };
-            
+
             mockForumModel.findOne.mockReturnValue(mockQuery(mockForum));
 
             const result = await service.findOneByCompanyId(companyId);
@@ -192,7 +192,7 @@ describe('ForumService', () => {
         const expectedPopulate = [
             {
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
             },
         ];
 
