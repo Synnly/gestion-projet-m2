@@ -1,19 +1,24 @@
 import { Navbar } from '../../components/navbar/Navbar.tsx';
 import Spinner from '../../components/Spinner/Spinner.tsx';
 import { useNavigation } from 'react-router-dom';
-import type { Forum, ForumFilters } from '../../types/forum.types.ts';
+import type { Forum } from '../../types/forum.types.ts';
 import { ForumHeader } from '../../components/forum/ForumHeader.tsx';
 import { TopicHeader } from '../../components/forum/TopicHeader.tsx';
-import { useState } from 'react';
 import { SearchBar } from '../../components/inputs/searchBar';
 import { formatNumber } from '../../utils/format.ts';
+import { forumStore } from '../../store/forumStore.ts';
+import { useFetchForum } from '../../hooks/useFetchForum.ts';
+import { useEffect } from 'react';
 
 export function MainForumPage() {
     const navigation = useNavigation();
-    const [filters, setFilters] = useState<ForumFilters>({ page: 1, limit: 12 });
+    const filters = forumStore((state) => state.filters);
+    const setFilters = forumStore((state) => state.setFilters);
     const handleSearchChange = (query: string) => {
+        console.debug('handleSearchChange', query);
         setFilters({ company: query || undefined, page: 1, limit: 12 });
     };
+    const { isLoading, isError } = useFetchForum();
 
     function createMockForums(count: number): Forum[] {
         const topCompanies = [
@@ -78,7 +83,12 @@ export function MainForumPage() {
         });
     }
 
-    const forums: Forum[] = createMockForums(12);
+    // const forums: Forum[] = createMockForums(12);
+    const forums: Forum[] = forumStore((state) => state.forums);
+
+    useEffect(() => {
+        console.log('Forums loaded:', forums);
+    }, [forums]);
 
     const generalForum: Forum = {
         _id: 'forum-general',
@@ -90,61 +100,65 @@ export function MainForumPage() {
     return (
         <div className="flex flex-col h-screen">
             <Navbar minimal={false} />
-            <Spinner show={navigation.state === 'loading'} />
-            <div className="flex flex-col justify-center gap-8 p-8">
-                <div className="flex flex-col items-center">
-                    <div className="flex w-fit text-4xl font-bold">Forums</div>
-                    <div className="flex w-fit">Échangez, posez vos questions et partagez vos expériences.</div>
-                </div>
+            <Spinner show={navigation.state === 'loading' || isLoading} />
+            {!isLoading && !isError && (
+                <div className="flex flex-col justify-center gap-8 p-8">
+                    <div className="flex flex-col items-center">
+                        <div className="flex w-fit text-4xl font-bold">Forums</div>
+                        <div className="flex w-fit">Échangez, posez vos questions et partagez vos expériences.</div>
+                    </div>
 
-                <div>
-                    <div className="card bg-base-100 shadow-sm shadow-base-300 hover:shadow-md hover:bg-base-200 transition-all duration-100 ease-out cursor-pointer">
-                        <div className="card-body flex flex-row justify-between items-center">
-                            <div className="flex flex-row items-center gap-4">
-                                <div className="flex flex-col">
-                                    <div className="text-xl font-bold">Forum général</div>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-row items-center gap-8">
-                                <div className="flex flex-row gap-2 items-center">
-                                    <div className="text-lg font-bold">{formatNumber(generalForum.nbTopics ?? 0)}</div>
-                                    <div>sujets</div>
-                                </div>
-                                <div className="flex flex-row gap-2 items-center">
-                                    <div className="text-lg font-bold">
-                                        {formatNumber(generalForum.nbMessages ?? 0)}
+                    <div>
+                        <div className="card bg-base-100 shadow-sm shadow-base-300 hover:shadow-md hover:bg-base-200 transition-all duration-100 ease-out cursor-pointer">
+                            <div className="card-body flex flex-row justify-between items-center">
+                                <div className="flex flex-row items-center gap-4">
+                                    <div className="flex flex-col">
+                                        <div className="text-xl font-bold">Forum général</div>
                                     </div>
-                                    <div>messages</div>
+                                </div>
+
+                                <div className="flex flex-row items-center gap-8">
+                                    <div className="flex flex-row gap-2 items-center">
+                                        <div className="text-lg font-bold">
+                                            {formatNumber(generalForum.nbTopics ?? 0)}
+                                        </div>
+                                        <div>sujets</div>
+                                    </div>
+                                    <div className="flex flex-row gap-2 items-center">
+                                        <div className="text-lg font-bold">
+                                            {formatNumber(generalForum.nbMessages ?? 0)}
+                                        </div>
+                                        <div>messages</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        <table className="table max-w-full">
+                            <tbody>
+                                {generalForum.topics?.map((topic) => (
+                                    <TopicHeader topic={topic} key={topic._id} />
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
 
-                    <div className="table max-w-full">
-                        <tbody>
-                            {generalForum.topics?.map((topic) => (
-                                <TopicHeader topic={topic} />
+                    <div className="w-full flex flex-col gap-2 justify-center">
+                        <SearchBar
+                            searchQuery={filters.company || ''}
+                            setSearchQuery={handleSearchChange}
+                            selects={[]}
+                            placeholder="Rechercher par entreprise ..."
+                        />
+
+                        <ul className="w-full space-y-2 flex flex-wrap justify-between">
+                            {forums.map((f) => (
+                                <ForumHeader forum={f} key={f._id} />
                             ))}
-                        </tbody>
+                        </ul>
                     </div>
                 </div>
-
-                <div className="w-full flex flex-col gap-2 justify-center">
-                    <SearchBar
-                        searchQuery={filters.company || ''}
-                        setSearchQuery={handleSearchChange}
-                        selects={[]}
-                        placeholder="Rechercher par entreprise ..."
-                    />
-
-                    <ul className="w-full space-y-2 columns-3">
-                        {forums.map((f) => (
-                            <ForumHeader forum={f} key={f._id} />
-                        ))}
-                    </ul>
-                </div>
-            </div>
+            )}
         </div>
     );
 }

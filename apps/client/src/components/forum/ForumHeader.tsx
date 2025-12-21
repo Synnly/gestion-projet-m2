@@ -7,7 +7,7 @@ type Props = {
 
 export function ForumHeader({ forum }: Props) {
     return (
-        <div className="card bg-base-100 shadow-sm shadow-base-300 hover:shadow-md hover:bg-base-200 transition-all duration-100 ease-out cursor-pointer">
+        <div className="w-99/300 h-fit card bg-base-100 shadow-sm shadow-base-300 hover:shadow-md hover:bg-base-200 transition-all duration-100 ease-out cursor-pointer">
             <div className="card-body flex flex-row justify-between items-center">
                 <div className="flex flex-row items-center gap-4">
                     <div className="avatar">
