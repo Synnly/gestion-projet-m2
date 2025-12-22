@@ -1,7 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Topic, TopicDocument } from './topic.schema';
+import { Forum, ForumDocument } from '../forum.schema';
 import { MessageService } from '../message/message.service';
 // import { Message } from '../message/message.schema';
 import { CreateTopicDto } from './dto/createTopic.dto';
@@ -14,6 +15,7 @@ import { PaginationResult } from '../../common/pagination/dto/paginationResult';
 export class TopicService {
     constructor(
         @InjectModel(Topic.name) private readonly topicModel: Model<TopicDocument>,
+        @InjectModel(Forum.name) private readonly forumModel: Model<ForumDocument>,
         @Inject() private readonly messageService: MessageService,
         private readonly paginationService: PaginationService,
         private readonly populateField: string = 'content author createdAt updatedAt',
@@ -31,8 +33,16 @@ export class TopicService {
     }
 
     async create(forumId: string, dto: CreateTopicDto): Promise<void> {
-        await this.topicModel.create({ ...dto, forumId });
-        return;
+        const topic = await this.topicModel.create({ ...dto, forumId });
+        
+        await this.forumModel.findByIdAndUpdate(
+            forumId,
+            { 
+                $inc: { nbTopics: 1 },
+                $push: { topics: topic._id }
+            },
+            { new: true }
+        );
     }
 
     async update(forumId: string, id: string, dto: UpdateTopicDto | CreateTopicDto): Promise<void> {

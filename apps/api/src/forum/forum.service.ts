@@ -41,14 +41,14 @@ export class ForumService {
             const forum = new this.forumModel({
                 company: companyId,
                 companyName: company.name,
-                // topics: [],
+                topics: [],
             });
             return forum.save();
         }
 
         // General forum
         const forum = new this.forumModel({
-            // topics: [],
+            topics: [],
         });
         return forum.save();
     }
@@ -59,19 +59,17 @@ export class ForumService {
      * @returns The forum if found, otherwise null.
      */
     async findOneByCompanyId(companyId?: string): Promise<Forum | null> {
-        return (
-            this.forumModel
-                .findOne({ company: companyId })
-                // .populate({
-                //     path: 'topics',
-                //     select: '_id author title description',
-                // })
-                .populate({
-                    path: 'company',
-                    select: this.companyFields,
-                })
-                .exec()
-        );
+        return this.forumModel
+            .findOne({ company: companyId })
+            .populate({
+                path: 'topics',
+                select: '_id author title description',
+            })
+            .populate({
+                path: 'company',
+                select: this.companyFields,
+            })
+            .exec();
     }
 
     /**
