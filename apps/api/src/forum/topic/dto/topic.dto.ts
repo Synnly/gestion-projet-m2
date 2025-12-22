@@ -12,7 +12,7 @@ export class TopicDto {
     @Expose()
     description?: string;
         
-    @Transform(({ value }) => value.map((item) => item.obj._id))
+    @Transform(({ value }) => value?.map((item) => item.obj._id) || [])
     @Expose()
     messages: string[];
 

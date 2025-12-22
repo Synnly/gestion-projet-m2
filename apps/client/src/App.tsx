@@ -210,6 +210,7 @@ function App() {
                                 { index: true, element: <MainForumPage /> },
                                 { path: 'general', element: <ForumPage isGeneral={true} /> },
                                 { path: ':companyId', element: <ForumPage /> },
+                                { path: ':companyId/topics/:forumId/:topicId', element: <TopicDetailPage /> }
                             ],
                         },
                     ],

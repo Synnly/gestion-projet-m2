@@ -16,6 +16,7 @@ type Props = {
 
 export function ForumPage({ isGeneral = false }: Props) {
     const navigation = useNavigation();
+   
     const companyId = useParams().companyId!;
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -71,7 +72,7 @@ export function ForumPage({ isGeneral = false }: Props) {
                                 </thead>
                                 <tbody>
                                     {forum?.topics?.map((topic) => (
-                                        <TopicRow topic={topic} key={topic._id} />
+                                            <TopicRow topic={topic} key={topic._id} companyId={companyId} forumId={forum._id} />
                                     ))}
                                 </tbody>
                             </table>

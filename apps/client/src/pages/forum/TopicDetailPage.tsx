@@ -132,7 +132,9 @@ export default function TopicDetailPage() {
                                                     <img src={topic.author.avatar} alt={topic.author.name} />
                                                 ) : (
                                                     <span className="text-xs">
-                                                        {topic.author.name.charAt(0).toUpperCase()}
+                                                        {topic.author && topic.author.name && (
+                                                            topic.author.name.charAt(0).toUpperCase()
+                                                        )}
                                                     </span>
                                                 )}
                                             </div>

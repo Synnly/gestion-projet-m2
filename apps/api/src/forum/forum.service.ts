@@ -94,6 +94,11 @@ export class ForumService {
             select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
         };
 
-        return this.paginationService.paginate(this.forumModel, filter, page, limit, [companyPopulate], sortQuery);
+        const topicsPopulate = {
+            path: 'topics',
+            select: '_id author title description',
+        }
+
+        return this.paginationService.paginate(this.forumModel, filter, page, limit, [companyPopulate, topicsPopulate], sortQuery);
     }
 }
