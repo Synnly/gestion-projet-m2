@@ -21,7 +21,7 @@ export class Topic {
     messages: Types.ObjectId[];
 
     // Author ID of the topic creator
-    @Prop({ required: true })
+    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
     author: Types.ObjectId;
 
     // Forum ID that this topic belongs to

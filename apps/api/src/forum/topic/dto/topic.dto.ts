@@ -16,9 +16,17 @@ export class TopicDto {
     @Expose()
     messages: string[];
 
-    @Transform((params) => params.obj._id)
     @Expose()
-    author: string;
+    author: {
+        _id: string;
+        firstName?: string;
+        lastName?: string;
+        name?: string;
+        email: string;
+    };
+
+    @Expose()
+    nbMessages: number;
 
     @Expose()
     createdAt?: Date;

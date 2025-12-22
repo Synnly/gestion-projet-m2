@@ -14,6 +14,10 @@ import { PaginationResult } from '../../common/pagination/dto/paginationResult';
 @Injectable()
 export class TopicService {
     private readonly populateField: string = 'content author createdAt updatedAt';
+    private readonly populate = [
+            { path: 'messages', select: this.populateField },
+            { path: 'author', select: '_id firstName lastName name email' },
+        ];
 
     constructor(
         @InjectModel(Topic.name) private readonly topicModel: Model<TopicDocument>,
@@ -22,26 +26,37 @@ export class TopicService {
     ) {}
 
     async findAll(forumId: string, pagination: PaginationDto): Promise<PaginationResult<Topic>> {
-        const { page = 1, limit = 10, sort } = pagination;
-        const populate = [{ path: 'messages', select: this.populateField }];
-        const filter = { forumId };
-        return this.paginationService.paginate(this.topicModel, filter, page, limit, populate, sort);
+        const { page = 1, limit = 10, sort, searchQuery } = pagination;
+        const filter: any = { forumId };
+        
+        // Add search by title or description
+        if (searchQuery) {
+            filter.$or = [
+                { title: { $regex: searchQuery, $options: 'i' } },
+                { description: { $regex: searchQuery, $options: 'i' } }
+            ];
+        }
+        
+        return this.paginationService.paginate(this.topicModel, filter, page, limit, this.populate, sort);
     }
 
     async findOne(forumId: string, id: string): Promise<Topic | null> {
-        return this.topicModel.findOne({ _id: id, forumId }).populate({ path: 'messages', select: this.populateField }).exec();
+        return this.topicModel
+            .findOne({ _id: id, forumId })
+            .populate(this.populate)
+            .exec();
     }
 
     async create(forumId: string, dto: CreateTopicDto): Promise<void> {
         const topic = await this.topicModel.create({ ...dto, forumId });
-        
+
         await this.forumModel.findByIdAndUpdate(
             forumId,
-            { 
+            {
                 $inc: { nbTopics: 1 },
-                $push: { topics: topic._id }
+                $push: { topics: topic._id },
             },
-            { new: true }
+            { new: true },
         );
     }
 

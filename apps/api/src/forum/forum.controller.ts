@@ -53,7 +53,6 @@ export class ForumController {
         query: PaginationDto,
     ): Promise<PaginationResult<ForumDto>> {
         const forums = await this.forumService.findAll(query);
-
         return {
             ...forums,
             data: forums.data.map((forum) => plainToInstance(ForumDto, forum)),

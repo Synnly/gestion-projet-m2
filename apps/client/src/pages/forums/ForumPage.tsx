@@ -4,11 +4,13 @@ import { useParams } from 'react-router';
 import { Navbar } from '../../components/navbar/Navbar.tsx';
 import Spinner from '../../components/Spinner/Spinner.tsx';
 import { useFetchForumByCompanyId, useFetchGeneralForum } from '../../hooks/useFetchForum.ts';
+import { useFetchTopics } from '../../hooks/useFetchTopics.ts';
 import { ForumHeader } from '../../components/forum/ForumHeader.tsx';
 import { TopicRow } from '../../components/forum/TopicRow.tsx';
 import Pagination from '../../components/ui/pagination/Pagination.tsx';
 import { SearchBar } from '../../components/inputs/searchBar';
 import { CreateTopicModal } from '../forum/components/CreateTopicModal.tsx';
+import type { Topic } from '../../types/forum.types.ts';
 
 type Props = {
     isGeneral?: boolean;
@@ -16,22 +18,41 @@ type Props = {
 
 export function ForumPage({ isGeneral = false }: Props) {
     const navigation = useNavigation();
-   
     const companyId = useParams().companyId!;
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
 
     let forum;
-    let isLoading: boolean;
+    let isLoadingForum: boolean;
 
     if (isGeneral) {
         let { data, isLoading: isLoadingTmp } = useFetchGeneralForum();
         forum = data;
-        isLoading = isLoadingTmp;
+        isLoadingForum = isLoadingTmp;
     } else {
         let { data, isLoading: isLoadingTmp } = useFetchForumByCompanyId(companyId);
         forum = data;
-        isLoading = isLoadingTmp;
+        isLoadingForum = isLoadingTmp;
     }
+
+    const { data: topicsData, isLoading: isLoadingTopics } = useFetchTopics({
+        forumId: forum?._id || '',
+        page: currentPage,
+        limit: 10,
+        searchQuery: searchQuery || undefined,
+    });
+
+    const handleSearchChange = (query: string) => {
+        setSearchQuery(query);
+        setCurrentPage(1);
+    };
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
+
+    const isLoading = isLoadingForum || isLoadingTopics;
     return (
         <div className="flex flex-col h-screen">
             <Navbar minimal={false} />
@@ -52,8 +73,8 @@ export function ForumPage({ isGeneral = false }: Props) {
                         <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
                                 <SearchBar
-                                    searchQuery={''}
-                                    setSearchQuery={(_: string) => null}
+                                    searchQuery={searchQuery}
+                                    setSearchQuery={handleSearchChange}
                                     selects={[]}
                                     placeholder={'Rechercher par sujet ...'}
                                 />
@@ -71,14 +92,23 @@ export function ForumPage({ isGeneral = false }: Props) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {forum?.topics?.map((topic) => (
-                                            <TopicRow topic={topic} key={topic._id} companyId={companyId} forumId={forum._id} />
+                                    {topicsData?.data?.map((topic: Topic) => (
+                                        <TopicRow
+                                            topic={topic}
+                                            key={topic._id}
+                                            companyId={companyId}
+                                            forumId={forum?._id || ''}
+                                        />
                                     ))}
                                 </tbody>
                             </table>
                         </div>
 
-                        <Pagination page={1} totalPages={2} onPageChange={(_: number) => null} />
+                        <Pagination
+                            page={topicsData?.page || 1}
+                            totalPages={topicsData?.totalPages || 1}
+                            onPageChange={handlePageChange}
+                        />
                     </div>
                 </div>
             )}

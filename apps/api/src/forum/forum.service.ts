@@ -59,16 +59,22 @@ export class ForumService {
      * @returns The forum if found, otherwise null.
      */
     async findOneByCompanyId(companyId?: string): Promise<Forum | null> {
-        return this.forumModel
+        return await this.forumModel
             .findOne({ company: companyId })
             .populate({
                 path: 'topics',
-                select: '_id author title description',
+                select: '_id author title description nbMessages',
+                populate: {
+                    path: 'author',
+                    select: 'firstName lastName name email',
+                    options: { strictPopulate: false }
+                }
             })
             .populate({
                 path: 'company',
                 select: this.companyFields,
             })
+            .lean()
             .exec();
     }
 

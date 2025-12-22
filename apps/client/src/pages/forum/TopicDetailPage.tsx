@@ -129,17 +129,20 @@ export default function TopicDetailPage() {
                                         <div className="avatar placeholder">
                                             <div className="bg-neutral text-neutral-content rounded-full w-8 h-8">
                                                 {topic.author.avatar ? (
-                                                    <img src={topic.author.avatar} alt={topic.author.name} />
+                                                    <img 
+                                                        src={topic.author.avatar} 
+                                                        alt={`${topic.author.firstName} ${topic.author.lastName}`} 
+                                                    />
                                                 ) : (
                                                     <span className="text-xs">
-                                                        {topic.author && topic.author.name && (
-                                                            topic.author.name.charAt(0).toUpperCase()
-                                                        )}
+                                                        {topic.author.firstName?.charAt(0).toUpperCase()}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
-                                        <span className="font-medium text-base-content">{topic.author.name}</span>
+                                        <span className="font-medium text-base-content">
+                                            {topic.author.firstName} {topic.author.lastName}
+                                        </span>
                                     </div>
                                     <span>•</span>
                                     <span>
