@@ -1,6 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { ForumDocument } from '../forum.schema';
 
 @Injectable()
 export class ForumAccessGuard implements CanActivate {
@@ -25,11 +26,11 @@ export class ForumAccessGuard implements CanActivate {
                 throw new NotFoundException('Forum not found');
             }
 
-            if (!forum.companyId) {
+            if (!forum.company?._id) {
                 return true;
             }
 
-            if (forum.companyId.toString() === user.companyId?.toString()) {
+            if (forum.company?._id.toString() === user.companyId?.toString()) {
                 return true;
             }
 
