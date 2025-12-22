@@ -52,12 +52,11 @@ export function ForumPage({ isGeneral = false }: Props) {
         setCurrentPage(page);
     };
 
-    const isLoading = isLoadingForum || isLoadingTopics;
     return (
         <div className="flex flex-col h-screen">
             <Navbar minimal={false} />
             <Spinner show={navigation.state === 'loading'} />
-            {!isLoading && (
+            {!isLoadingForum && (
                 <div className="flex flex-col justify-center p-8 px-80">
                     <div className="breadcrumbs text-sm">
                         <ul>
@@ -92,14 +91,22 @@ export function ForumPage({ isGeneral = false }: Props) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {topicsData?.data?.map((topic: Topic) => (
-                                        <TopicRow
-                                            topic={topic}
-                                            key={topic._id}
-                                            companyId={companyId}
-                                            forumId={forum?._id || ''}
-                                        />
-                                    ))}
+                                    {isLoadingTopics ? (
+                                        <tr>
+                                            <td colSpan={4} className="text-center py-8">
+                                                <span className="loading loading-spinner loading-md"></span>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        topicsData?.data?.map((topic: Topic) => (
+                                            <TopicRow
+                                                topic={topic}
+                                                key={topic._id}
+                                                companyId={companyId}
+                                                forumId={forum?._id || ''}
+                                            />
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
