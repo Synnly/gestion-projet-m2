@@ -9,6 +9,7 @@ import { CreateCompanyDto } from '../../../src/company/dto/createCompany.dto';
 import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
 import { NafCode } from '../../../src/company/nafCodes.enum';
 import { PostService } from '../../../src/post/post.service';
+import { ForumService } from '../../../src/forum/forum.service';
 
 describe('CompanyService', () => {
     let service: CompanyService;
@@ -29,6 +30,11 @@ describe('CompanyService', () => {
     const mockPaginationService = {
         paginate: jest.fn(),
     };
+
+    const mockForumService = {
+        create: jest.fn(),
+    };
+
     const setupFindOnePopulate = () => {
         const populate = jest.fn().mockReturnValue({ exec: mockExec });
         mockCompanyModel.findOne.mockReturnValue({ populate });
@@ -50,6 +56,10 @@ describe('CompanyService', () => {
                 {
                     provide: PaginationService,
                     useValue: mockPaginationService,
+                },
+                {
+                    provide: ForumService,
+                    useValue: mockForumService,
                 },
             ],
         }).compile();

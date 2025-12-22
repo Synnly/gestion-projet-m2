@@ -22,6 +22,7 @@ import { useBlob } from '../../hooks/useBlob';
 import type { userContext } from '../../protectedRoutes/type';
 import { useUploadFile } from '../../hooks/useUploadFile';
 import { useEffect, useState } from 'react';
+import { UseAuthFetch } from '../../hooks/useAuthFetch';
 export const CompleteProfil = () => {
     const formInputStyle = 'p-3';
     const navigate = useNavigate();
@@ -33,6 +34,7 @@ export const CompleteProfil = () => {
     const logoBlob = useBlob(profil?.logo ?? '');
     const logoFile = useFile(logoBlob, profil?.logo);
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const authFetch = UseAuthFetch();
     useEffect(() => {
         if (!logoBlob) {
             setLogoUrl(null);
@@ -72,14 +74,13 @@ export const CompleteProfil = () => {
     const { isPending, isError, error, mutateAsync } = useMutation({
         mutationFn: async (data: Omit<completeProfilFormType, 'logo'> & { logo?: string }) => {
             try {
-                const res = await fetch(`${API_URL}/api/companies/${payload.id}`, {
+                const res = await authFetch(`${API_URL}/api/companies/${payload.id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${user.accessToken}`,
                     },
-                    credentials: 'include',
-                    body: JSON.stringify(data),
+                    data: JSON.stringify(data),
                 });
                 return res;
             } catch (err) {
@@ -114,11 +115,10 @@ export const CompleteProfil = () => {
         if (fileLogo instanceof FileList && fileLogo.length > 0) {
             const file = fileLogo[0];
 
-            const response = await fetch(`${API_URL}/api/files/signed/logo`, {
+            const response = await authFetch(`${API_URL}/api/files/signed/logo`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ originalFilename: file.name }),
+                data: JSON.stringify({ originalFilename: file.name }),
             });
 
             if (!response.ok) {

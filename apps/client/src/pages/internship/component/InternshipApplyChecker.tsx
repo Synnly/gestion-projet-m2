@@ -2,17 +2,18 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Share2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApplicationStatus } from './ApplicationStatus';
+import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: string; adId: string }) => {
+    const authFetch = UseAuthFetch();
     const { data: application, isLoading } = useQuery({
         queryKey: ['application', studentId, adId],
 
         queryFn: async () => {
             const url = `${import.meta.env.VITE_APIURL}/api/application/check?studentId=${studentId}&postId=${adId}`;
 
-            const res = await fetch(url, {
+            const res = await authFetch(url, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
             });
 
             if (res.ok) {
@@ -23,7 +24,7 @@ export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: stri
                     return null;
                 }
             }
-            let errorMessage = `Erreur HTTP ${res.status}`;
+            const errorMessage = `Erreur HTTP ${res.status}`;
             throw new Error(errorMessage);
         },
 
