@@ -66,7 +66,7 @@ export class ForumService {
                 select: '_id author title description nbMessages',
                 populate: {
                     path: 'author',
-                    select: 'firstName lastName name email',
+                    select: 'firstName lastName name email logo',
                     options: { strictPopulate: false }
                 }
             })

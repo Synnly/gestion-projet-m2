@@ -1,5 +1,5 @@
 import { UseAuthFetch } from '../hooks/useAuthFetch';
-import type { Topic } from '../types/forum.types';
+import { fetchPublicSignedUrl } from '../hooks/useBlob';
 import type { Topic as TopicDetail } from '../pages/forum/types';
 
 const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
@@ -36,10 +36,19 @@ export async function fetchTopicById(forumId: string, topicId: string): Promise<
         throw new Error(message);
     }
 
-    return await response.json();
+    const topic = await response.json();
+    
+    // Fetch signed URL for author logo if exists
+    console.log('topic.author', topic);
+    if (topic?.author?.logo) {
+        const presignedUrl = await fetchPublicSignedUrl(topic.author.logo);
+        if (presignedUrl) topic.author.logo = presignedUrl;
+    }
+
+    return topic;
 }
 
-export async function fetchTopics({ forumId, page = 1, limit = 10, searchQuery }: FetchTopicsParams): Promise<PaginationResult<Topic>> {
+export async function fetchTopics({ forumId, page = 1, limit = 10, searchQuery }: FetchTopicsParams): Promise<PaginationResult<TopicDetail>> {
     const authFetch = UseAuthFetch();
     
     const params = new URLSearchParams({
@@ -63,5 +72,18 @@ export async function fetchTopics({ forumId, page = 1, limit = 10, searchQuery }
         throw new Error(message);
     }
 
-    return await response.json();
+    const paginationResult = await response.json();
+
+    // Fetch signed URLs for author logos
+    await Promise.all(
+        paginationResult.data.map(async (topic: TopicDetail) => {
+            console.log('topic.author', topic);
+            if (topic.author?.logo) {
+                const presignedUrl = await fetchPublicSignedUrl(topic.author.logo);
+                if (presignedUrl) topic.author.logo = presignedUrl;
+            }
+        })
+    );
+
+    return paginationResult;
 }

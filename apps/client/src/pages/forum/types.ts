@@ -42,7 +42,7 @@ export type Topic = {
         firstName?: string;
         lastName?: string;
         email?: string;
-        avatar?: string;
+        logo?: string;
     };
     forumId: string;
     createdAt?: string;

@@ -16,7 +16,7 @@ export class TopicService {
     private readonly populateField: string = 'content author createdAt updatedAt';
     private readonly populate = [
             { path: 'messages', select: this.populateField },
-            { path: 'author', select: '_id firstName lastName name email' },
+            { path: 'author', select: '_id firstName lastName name email logo' },
         ];
 
     constructor(

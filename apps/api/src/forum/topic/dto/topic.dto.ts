@@ -23,6 +23,7 @@ export class TopicDto {
         lastName?: string;
         name?: string;
         email: string;
+        logo?: string;
     };
 
     @Expose()

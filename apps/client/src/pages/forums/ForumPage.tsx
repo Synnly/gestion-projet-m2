@@ -11,6 +11,7 @@ import Pagination from '../../components/ui/pagination/Pagination.tsx';
 import { SearchBar } from '../../components/inputs/searchBar';
 import { CreateTopicModal } from '../forum/components/CreateTopicModal.tsx';
 import type { Topic } from '../../types/forum.types.ts';
+import type { PaginationResult } from '../../api/fetch_topic.ts';
 
 type Props = {
     isGeneral?: boolean;
@@ -36,12 +37,12 @@ export function ForumPage({ isGeneral = false }: Props) {
         isLoadingForum = isLoadingTmp;
     }
 
-    const { data: topicsData, isLoading: isLoadingTopics } = useFetchTopics({
+    const { data: topicsResult, isLoading: isLoadingTopics } = useFetchTopics({
         forumId: forum?._id || '',
         page: currentPage,
         limit: 10,
         searchQuery: searchQuery || undefined,
-    });
+    }) as { data: PaginationResult<Topic> | undefined; isLoading: boolean };
 
     const handleSearchChange = (query: string) => {
         setSearchQuery(query);
@@ -98,7 +99,7 @@ export function ForumPage({ isGeneral = false }: Props) {
                                             </td>
                                         </tr>
                                     ) : (
-                                        topicsData?.data?.map((topic: Topic) => (
+                                        topicsResult?.data?.map((topic: Topic) => (
                                             <TopicRow
                                                 topic={topic}
                                                 key={topic._id}
@@ -112,8 +113,8 @@ export function ForumPage({ isGeneral = false }: Props) {
                         </div>
 
                         <Pagination
-                            page={topicsData?.page || 1}
-                            totalPages={topicsData?.totalPages || 1}
+                            page={topicsResult?.page || 1}
+                            totalPages={topicsResult?.totalPages || 1}
                             onPageChange={handlePageChange}
                         />
                     </div>

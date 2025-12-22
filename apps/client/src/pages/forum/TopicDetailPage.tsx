@@ -10,7 +10,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 export default function TopicDetailPage() {
-    const { forumId, topicId } = useParams<{ forumId: string; topicId: string }>();
+    const { forumId, topicId, companyId } = useParams<{ forumId: string; topicId: string, companyId: string }>();
 
     const {
         data: topic,
@@ -68,7 +68,7 @@ export default function TopicDetailPage() {
                                 <Link to="/">Accueil</Link>
                             </li>
                             <li>
-                                <Link to="/">Forum</Link>
+                                <Link to={`/forums/${companyId}`}>Forum</Link>
                             </li>
                             <li className="text-base-content/60">Sujet</li>
                         </ul>
@@ -127,21 +127,23 @@ export default function TopicDetailPage() {
                                 <div className="flex items-center gap-3 text-sm text-base-content/70 mb-4">
                                     <div className="flex items-center gap-2">
                                         <div className="avatar placeholder">
-                                            <div className="bg-neutral text-neutral-content rounded-full w-8 h-8">
-                                                {topic.author.avatar ? (
-                                                    <img 
-                                                        src={topic.author.avatar} 
-                                                        alt={`${topic.author.firstName} ${topic.author.lastName}`} 
+                                            <div className="text-neutral-content rounded-full w-10 h-10">
+                                                {topic.author.logo ? (
+                                                    <img
+                                                        src={topic.author.logo}
+                                                        alt={topic.author.name || `${topic.author.firstName} ${topic.author.lastName}`}
                                                     />
                                                 ) : (
                                                     <span className="text-xs">
-                                                        {topic.author.firstName?.charAt(0).toUpperCase()}
+                                                        {(topic.author.name?.charAt(0) || topic.author.firstName?.charAt(0))?.toUpperCase()}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
                                         <span className="font-medium text-base-content">
-                                            {topic.author.firstName} {topic.author.lastName}
+                                            {topic.author.firstName && topic.author.lastName
+                                                ? topic.author.firstName + ' ' + topic.author.lastName
+                                                : topic.author.name}{' '}
                                         </span>
                                     </div>
                                     <span>•</span>
