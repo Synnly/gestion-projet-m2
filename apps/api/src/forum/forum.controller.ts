@@ -20,6 +20,7 @@ import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { MessageDto } from './message/dto/messageDto';
 import { CreateMessageDto } from './message/dto/createMessageDto';
 import { MessageService } from './message/message.service';
+import { MessagePaginationDto } from 'src/common/pagination/dto/messagePagination.dto';
 
 @UseGuards(AuthGuard)
 @Controller('/api/forum')
@@ -70,12 +71,26 @@ export class ForumController {
         return plainToInstance(ForumDto, await this.forumService.findOneByCompanyId(companyId));
     }
 
-    @Post('/topic/:topicId/message/create')
+    @Post('/topic/:topicId/message/')
     @HttpCode(HttpStatus.OK)
+    @UseGuards(AuthGuard)
     async sendMessage(
         @Param('topicId', ParseObjectIdPipe) topicId: string,
         @Body() messageDto: CreateMessageDto,
     ): Promise<MessageDto> {
         return plainToInstance(MessageDto, await this.messageService.sendMessage(topicId, messageDto));
+    }
+
+    @Get('/topic/message')
+    @UseGuards(AuthGuard)
+    async getMessages(
+        @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        query: MessagePaginationDto,
+    ): Promise<PaginationResult<MessageDto>> {
+        const messages = await this.messageService.findAll(query);
+        return {
+            ...messages,
+            data: messages.data.map((message) => plainToInstance(MessageDto, message)),
+        };
     }
 }

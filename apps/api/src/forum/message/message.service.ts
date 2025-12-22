@@ -6,6 +6,8 @@ import { PaginationService } from 'src/common/pagination/pagination.service';
 import { Model } from 'mongoose';
 import { CreateMessageDto } from './dto/createMessageDto';
 import { PaginationResult } from 'client/src/types/internship.types';
+import { QueryBuilder } from 'src/common/pagination/query.builder';
+import { MessagePaginationDto } from 'src/common/pagination/dto/messagePagination.dto';
 @Injectable()
 export class MessageService {
     constructor(
@@ -13,6 +15,12 @@ export class MessageService {
         private readonly paginationService: PaginationService,
     ) {}
 
+    /**
+     * Send a message in a topic.
+     * @param topicId - The ID of the topic where the message will be sent.
+     * @param createMessageDto - The data transfer object containing message details.
+     * @returns The created message.
+     */
     async sendMessage(topicId: string, createMessageDto: CreateMessageDto): Promise<Message> {
         const message = new this.messageModel({
             topicId,
@@ -22,19 +30,16 @@ export class MessageService {
         return message;
     }
 
-    async findMessagesByTopicId(
-        topicId: string,
-        query: { page: number; limit: number },
-    ): Promise<PaginationResult<Message>> {
-        const { page, limit } = query;
-        const filter = { topicId };
-        const populate = [{ path: 'author' }, { path: 'parentMessage' }];
-        return this.paginationService.paginate(this.messageModel, filter, page, limit, populate);
-    }
-
-    async findAll(topicId: string, query: PaginationDto): Promise<PaginationResult<Message>> {
-        const { page, limit } = query;
-        const filter = { topicId };
+    /**
+     * Find all messages for a given topic with pagination.
+     * @param topicId - The ID of the topic to find messages for.
+     * @param query - Pagination parameters (page, limit).
+     * @returns A paginated result containing messages.
+     */
+    async findAll(query: MessagePaginationDto): Promise<PaginationResult<Message>> {
+        const { page, limit, ...rest } = query;
+        const queryBuilder = new QueryBuilder<Message>(rest);
+        const filter = queryBuilder.buildMessageFilter();
         const populate = [{ path: 'author' }, { path: 'parentMessage' }];
         return this.paginationService.paginate(this.messageModel, filter, page, limit, populate);
     }

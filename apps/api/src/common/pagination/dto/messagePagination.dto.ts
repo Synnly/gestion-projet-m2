@@ -1,9 +1,7 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsInt, IsMongoId, IsOptional, Max, Min } from 'class-validator';
 
 export class MessagePaginationDto {
-    /** Requested page number (1-based). Must be an integer >= 1. */
-
     /** Requested page number (1-based). Must be an integer >= 1. */
     @IsOptional()
     @Type(() => Number)
@@ -18,4 +16,9 @@ export class MessagePaginationDto {
     @Min(1)
     @Max(100)
     limit = 10;
+
+    @IsOptional()
+    @Type(() => String)
+    @IsMongoId()
+    topicId?: string;
 }

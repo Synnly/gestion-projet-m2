@@ -21,7 +21,7 @@ export class QueryBuilder<T> {
      */
     constructor(
         private readonly params: Partial<Record<keyof T | string, any>>,
-        private readonly geoService: GeoService,
+        private readonly geoService?: GeoService,
     ) {}
 
     /**
@@ -136,7 +136,13 @@ export class QueryBuilder<T> {
 
         return mutableFilter as FilterQuery<T>;
     }
-
+    buildMessageFilter(): FilterQuery<T> {
+        const mutableFilter: Record<string, unknown> = {};
+        if (this.params.topicId) {
+            mutableFilter.topicId = new Types.ObjectId(this.params.topicId);
+        }
+        return mutableFilter as FilterQuery<T>;
+    }
     buildSort(sortParam: string | undefined): string {
         // return string acceptable by Mongoose `sort()`
         switch (sortParam) {

@@ -27,6 +27,6 @@ export class Message {
     parentMessage: Types.ObjectId;
 }
 
-export type ForumDocument = Message & Document;
+export type MessageDocument = Message & Document;
 
-export const ForumSchema = SchemaFactory.createForClass(Message);
+export const MessageSchema = SchemaFactory.createForClass(Message);
