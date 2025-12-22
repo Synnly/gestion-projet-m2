@@ -1,4 +1,5 @@
 import { IsString, IsOptional, IsArray, ArrayUnique, IsMongoId } from 'class-validator';
+import { Types } from 'mongoose';
 
 export class CreateTopicDto {
     @IsString()
@@ -12,8 +13,7 @@ export class CreateTopicDto {
     @IsArray()
     @ArrayUnique()
     @IsMongoId({ each: true })
-    messages?: string[];
+    messages?: Types.ObjectId[];
 
-    author?: string;
-    forumId?: string;
+    author?: Types.ObjectId;
 }

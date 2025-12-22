@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Topic, TopicDocument } from './topic.schema';
@@ -13,12 +13,12 @@ import { PaginationResult } from '../../common/pagination/dto/paginationResult';
 
 @Injectable()
 export class TopicService {
+    private readonly populateField: string = 'content author createdAt updatedAt';
+
     constructor(
         @InjectModel(Topic.name) private readonly topicModel: Model<TopicDocument>,
         @InjectModel(Forum.name) private readonly forumModel: Model<ForumDocument>,
-        @Inject() private readonly messageService: MessageService,
         private readonly paginationService: PaginationService,
-        private readonly populateField: string = 'content author createdAt updatedAt',
     ) {}
 
     async findAll(forumId: string, pagination: PaginationDto): Promise<PaginationResult<Topic>> {

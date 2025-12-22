@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigation } from 'react-router-dom';
 import { useParams } from 'react-router';
 import { Navbar } from '../../components/navbar/Navbar.tsx';
@@ -7,6 +8,7 @@ import { ForumHeader } from '../../components/forum/ForumHeader.tsx';
 import { TopicRow } from '../../components/forum/TopicRow.tsx';
 import Pagination from '../../components/ui/pagination/Pagination.tsx';
 import { SearchBar } from '../../components/inputs/searchBar';
+import { CreateTopicModal } from '../forum/components/CreateTopicModal.tsx';
 
 type Props = {
     isGeneral?: boolean;
@@ -15,6 +17,8 @@ type Props = {
 export function ForumPage({ isGeneral = false }: Props) {
     const navigation = useNavigation();
     const companyId = useParams().companyId!;
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     let forum;
     let isLoading: boolean;
 
@@ -27,7 +31,6 @@ export function ForumPage({ isGeneral = false }: Props) {
         forum = data;
         isLoading = isLoadingTmp;
     }
-
     return (
         <div className="flex flex-col h-screen">
             <Navbar minimal={false} />
@@ -43,15 +46,20 @@ export function ForumPage({ isGeneral = false }: Props) {
                         </ul>
                     </div>
                     <div className="flex flex-col gap-8">
-                        {forum && <ForumHeader forum={forum} />}
+                        {forum && <ForumHeader forum={forum} onCreateTopic={() => setIsModalOpen(true)} />}
+
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                                <SearchBar
+                                    searchQuery={''}
+                                    setSearchQuery={(_: string) => null}
+                                    selects={[]}
+                                    placeholder={'Rechercher par sujet ...'}
+                                />
+                            </div>
+                        </div>
+
                         <div>
-                            {/*TODO: Implémenter la recherche*/}
-                            <SearchBar
-                                searchQuery={''}
-                                setSearchQuery={(_: string) => null}
-                                selects={[]}
-                                placeholder={'Rechercher par sujet ...'}
-                            />
                             <table className="table table-zebra overflow-x-auto rounded-box border border-base-content/5 bg-base-100 max-w-full">
                                 <thead>
                                     <tr>
@@ -69,11 +77,12 @@ export function ForumPage({ isGeneral = false }: Props) {
                             </table>
                         </div>
 
-                        {/*TODO : Implémenter la pagination*/}
                         <Pagination page={1} totalPages={2} onPageChange={(_: number) => null} />
                     </div>
                 </div>
             )}
+
+            <CreateTopicModal forumId={forum?._id || ''} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </div>
     );
 }

@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import type { Request } from 'express';
+import { Types } from 'mongoose';
 
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../common/roles/roles.guard';
@@ -112,10 +113,11 @@ export class ForumController {
      * @param req - The request object containing user information
      */
     @Post(':forumId/topics')
+    @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(RolesGuard, ForumAccessGuard)
     @Roles(Role.STUDENT, Role.COMPANY, Role.ADMIN)
     async create(@Param('forumId') forumId: string, @Body() dto: CreateTopicDto, @Req() req: Request): Promise<void> {
-        const userId = req['user']?.id;
+        const userId = new Types.ObjectId(req.user?.sub);
         await this.topicService.create(forumId, { ...dto, author: userId });
     }
 

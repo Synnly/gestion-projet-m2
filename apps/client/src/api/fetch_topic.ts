@@ -1,14 +1,15 @@
+import { UseAuthFetch } from '../hooks/useAuthFetch';
 import type { Topic } from '../pages/forum/types';
 
 const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
 
 export async function fetchTopicById(forumId: string, topicId: string): Promise<Topic | null> {
-    const response = await fetch(`${API_URL}/api/forum/${forumId}/topics/${topicId}`, {
+    const authFetch = UseAuthFetch();
+    const response = await authFetch(`${API_URL}/api/forum/${forumId}/topics/${topicId}`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
         },
-        credentials: 'include',
     });
 
     if (!response.ok) {

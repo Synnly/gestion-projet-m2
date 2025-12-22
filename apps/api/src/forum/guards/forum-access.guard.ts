@@ -29,8 +29,7 @@ export class ForumAccessGuard implements CanActivate {
             if (!forum.company?._id) {
                 return true;
             }
-
-            if (forum.company?._id.toString() === user.companyId?.toString()) {
+            if (forum.company?._id.toString() === user.sub?.toString()) {
                 return true;
             }
 

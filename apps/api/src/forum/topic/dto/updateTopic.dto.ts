@@ -1,9 +1,9 @@
-import { IsArray, ArrayNotEmpty, ArrayUnique, IsMongoId } from 'class-validator';
+import { IsArray, ArrayUnique, IsMongoId } from 'class-validator';
+import { Types } from 'mongoose';
 
 export class UpdateTopicDto {
     @IsArray()
-    @ArrayNotEmpty()
     @ArrayUnique()
     @IsMongoId({ each: true })
-    messages: string[];
+    messages: Types.ObjectId[];
 }
