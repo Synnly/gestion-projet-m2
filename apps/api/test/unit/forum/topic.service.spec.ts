@@ -116,7 +116,10 @@ describe('TopicService', () => {
                 { forumId: mockForumId.toString() },
                 1,
                 10,
-                [{ path: 'messages', select: 'content author createdAt updatedAt' }],
+                [
+                    { path: 'messages', select: 'content author createdAt updatedAt' },
+                    { path: 'author', select: '_id firstName lastName name email logo' },
+                ],
                 undefined,
             );
         });
@@ -142,7 +145,10 @@ describe('TopicService', () => {
                 { forumId: mockForumId.toString() },
                 1,
                 10,
-                [{ path: 'messages', select: 'content author createdAt updatedAt' }],
+                [
+                    { path: 'messages', select: 'content author createdAt updatedAt' },
+                    { path: 'author', select: '_id firstName lastName name email logo' },
+                ],
                 '-createdAt',
             );
         });
@@ -160,10 +166,10 @@ describe('TopicService', () => {
                 _id: mockTopicId.toString(),
                 forumId: mockForumId.toString(),
             });
-            expect(query.populate).toHaveBeenCalledWith({
-                path: 'messages',
-                select: 'content author createdAt updatedAt',
-            });
+            expect(query.populate).toHaveBeenCalledWith([
+                { path: 'messages', select: 'content author createdAt updatedAt' },
+                { path: 'author', select: '_id firstName lastName name email logo' },
+            ]);
         });
 
         it('should return null if topic is not found', async () => {

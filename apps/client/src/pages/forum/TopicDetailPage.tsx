@@ -10,7 +10,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 export default function TopicDetailPage() {
-    const { forumId, topicId, companyId } = useParams<{ forumId: string; topicId: string, companyId: string }>();
+    const { forumId, topicId, companyId } = useParams<{ forumId: string; topicId: string; companyId: string }>();
 
     const {
         data: topic,
@@ -131,11 +131,17 @@ export default function TopicDetailPage() {
                                                 {topic.author.logo ? (
                                                     <img
                                                         src={topic.author.logo}
-                                                        alt={topic.author.name || `${topic.author.firstName} ${topic.author.lastName}`}
+                                                        alt={
+                                                            topic.author.name ||
+                                                            `${topic.author.firstName} ${topic.author.lastName}`
+                                                        }
                                                     />
                                                 ) : (
                                                     <span className="text-xs">
-                                                        {(topic.author.name?.charAt(0) || topic.author.firstName?.charAt(0))?.toUpperCase()}
+                                                        {(
+                                                            topic.author.name?.charAt(0) ||
+                                                            topic.author.firstName?.charAt(0)
+                                                        )?.toUpperCase()}
                                                     </span>
                                                 )}
                                             </div>
