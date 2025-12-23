@@ -121,7 +121,7 @@ export class QueryBuilder<T> {
         const radiusKm = this.params.radiusKm as number | undefined;
 
         if (this.params.city && radiusKm && radiusKm > 0) {
-            const coo = await this.geoService.geocodeAddress(this.params.city);
+            const coo = await this.geoService?.geocodeAddress(this.params.city);
             if (coo) {
                 mutableFilter.location = {
                     $geoWithin: {

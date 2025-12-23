@@ -1,9 +1,11 @@
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, ValidateNested } from 'class-validator';
 import { CompanyDto } from 'src/company/dto/company.dto';
 import { StudentDto } from 'src/student/dto/student.dto';
 import { Types } from 'mongoose';
-import { MessageDocument } from '../message.schema';
+import { Message, MessageDocument } from '../message.schema';
+import { User } from 'src/user/user.schema';
+import { Role } from 'src/common/roles/roles.enum';
 @Exclude()
 export class MessageDto {
     /**
@@ -18,6 +20,13 @@ export class MessageDto {
      * ID of the author of the message
      */
     @Expose()
+    @Type((opts) => {
+        const obj = opts?.newObject as User;
+        if (obj.role === Role.STUDENT) return StudentDto;
+        if (obj.role === Role.COMPANY) return CompanyDto;
+        return Object; // Fallback
+    })
+    @ValidateNested()
     author: StudentDto | CompanyDto;
 
     /**
@@ -34,5 +43,8 @@ export class MessageDto {
     @IsString()
     @Type(() => MessageDto)
     parentMessage?: MessageDto;
-}
 
+    @Expose()
+    @Transform(({ obj }: { obj: Message }) => obj.createdAt)
+    createdAt: Date;
+}

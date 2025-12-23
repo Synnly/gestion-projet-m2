@@ -71,7 +71,7 @@ export class ForumController {
         return plainToInstance(ForumDto, await this.forumService.findOneByCompanyId(companyId));
     }
 
-    @Post('/topic/:topicId/message/')
+    @Post('/topic/:topicId/message')
     @HttpCode(HttpStatus.OK)
     @UseGuards(AuthGuard)
     async sendMessage(
@@ -81,13 +81,14 @@ export class ForumController {
         return plainToInstance(MessageDto, await this.messageService.sendMessage(topicId, messageDto));
     }
 
-    @Get('/topic/message')
+    @Get('/topic/:topicId/message')
     @UseGuards(AuthGuard)
     async getMessages(
         @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
         query: MessagePaginationDto,
+        @Param('topicId', ParseObjectIdPipe) topicId: string,
     ): Promise<PaginationResult<MessageDto>> {
-        const messages = await this.messageService.findAll(query);
+        const messages = await this.messageService.findAll(topicId, query);
         return {
             ...messages,
             data: messages.data.map((message) => plainToInstance(MessageDto, message)),

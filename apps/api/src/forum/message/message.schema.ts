@@ -25,6 +25,8 @@ export class Message {
      */
     @Prop({ type: Types.ObjectId, ref: 'Message' })
     parentMessage: Types.ObjectId;
+
+    createdAt: Date;
 }
 
 export type MessageDocument = Message & Document;

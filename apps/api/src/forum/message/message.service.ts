@@ -36,11 +36,11 @@ export class MessageService {
      * @param query - Pagination parameters (page, limit).
      * @returns A paginated result containing messages.
      */
-    async findAll(query: MessagePaginationDto): Promise<PaginationResult<Message>> {
+    async findAll(topicId: string, query: MessagePaginationDto): Promise<PaginationResult<Message>> {
         const { page, limit, ...rest } = query;
-        const queryBuilder = new QueryBuilder<Message>(rest);
+        const queryBuilder = new QueryBuilder<Message>({ ...rest, topicId });
         const filter = queryBuilder.buildMessageFilter();
-        const populate = [{ path: 'author' }, { path: 'parentMessage' }];
+        const populate = [{ path: 'author', select: 'firstName lastName name logo' }, { path: 'parentMessage' }];
         return this.paginationService.paginate(this.messageModel, filter, page, limit, populate);
     }
 }
