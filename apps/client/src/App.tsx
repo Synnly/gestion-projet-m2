@@ -17,6 +17,7 @@ import { ForgotPassword } from './user/ForgotPassword';
 import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
 import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
+import { CompanyForumRoute } from './protectedRoutes/companyForumRoute';
 import { InternshipPage } from './pages/internship/InternshipPage';
 import InternshipDetailPage from './pages/internship/InternshipDetailPage';
 import CreatePostPage from './pages/posts/CreatePostPage';
@@ -74,7 +75,11 @@ function App() {
                 { path: 'privacy', element: <PrivacyPolicy /> },
                 { path: 'cookies', element: <CookiePolicy /> },
                 { path: 'safety', element: <SafetyCompliance /> },
-                { path: 'forum/:forumId/topic/:topicId', element: <TopicDetailPage />, handle: { title: 'Discussion' } },
+                {
+                    path: 'forum/:forumId/topic/:topicId',
+                    element: <TopicDetailPage />,
+                    handle: { title: 'Discussion' },
+                },
                 { index: true, element: <InternshipPage />, handle: { title: 'Accueil' } },
                 {
                     loader: notAuthMiddleWare,
@@ -209,8 +214,14 @@ function App() {
                             children: [
                                 { index: true, element: <MainForumPage /> },
                                 { path: 'general', element: <ForumPage isGeneral={true} /> },
-                                { path: ':companyId', element: <ForumPage /> },
-                                { path: ':companyId/topics/:forumId/:topicId', element: <TopicDetailPage /> }
+                                {
+                                    path: ':companyId',
+                                    element: <CompanyForumRoute />,
+                                    children: [
+                                        { index: true, element: <ForumPage /> },
+                                        { path: 'topics/:forumId/:topicId', element: <TopicDetailPage /> },
+                                    ],
+                                },
                             ],
                         },
                     ],
