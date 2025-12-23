@@ -41,8 +41,8 @@ import { AdminDashboard } from './admin/dashboard';
 import ApplicationPage from './pages/applications/ApplicationPage';
 import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
 import { StudentDashboard } from './student/dashboard';
-import { ApplicationList } from './company/dashboard/applicationList/ApplicationList.tsx';
-import ImportStudent from './admin/importStudent.tsx';
+import { ApplicationList } from './company/dashboard/applicationList/ApplicationList';
+import ImportStudent from './admin/importStudent';
 
 function App() {
     userStore.persist.rehydrate();

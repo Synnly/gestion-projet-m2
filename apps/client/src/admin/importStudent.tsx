@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { UseAuthFetch } from '../hooks/useAuthFetch';
 
 interface ImportError {
     row?: number;
@@ -19,6 +20,7 @@ export default function ImportStudent() {
     const [skipExisting, setSkipExisting] = useState(false);
     const [importResult, setImportResult] = useState<ImportResult | null>(null);
     const [duplicatesDetected, setDuplicatesDetected] = useState(false);
+    const authFetch = UseAuthFetch();
     const API_URL = import.meta.env.VITE_APIURL;
 
     // Allowed extensions + MIME types (match backend pipes)
@@ -77,13 +79,12 @@ export default function ImportStudent() {
 
             const url = `${API_URL}/api/students/import${skipExisting ? '?skipExistingRecords=true' : ''}`;
 
-            const response = await fetch(url, {
+            const response = await authFetch(url, {
                 method: 'POST',
-                credentials: 'include',
                 headers: token
                     ? { Authorization: `Bearer ${token}`, Accept: 'application/json' }
                     : { Accept: 'application/json' },
-                body: formData,
+                data: formData,
             });
 
             if (!response.ok) {
