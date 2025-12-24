@@ -3,7 +3,7 @@ import { FilterInput } from '../selectInput';
 import type { SearchBarProps } from './type';
 import { Search } from 'lucide-react';
 
-export const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuery, selects }) => {
+export const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuery, selects, placeholder }) => {
     const inputRef = useRef<HTMLInputElement | null>(null);
 
     return (
@@ -16,7 +16,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuer
                         type="search"
                         required
                         className="w-full bg-transparent text-base text-base-content placeholder:text-base-content/60"
-                        placeholder="Rechercher par titre, entreprise ou mot-clés..."
+                        placeholder={placeholder ?? 'Rechercher par titre, entreprise ou mot-clés...'}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         aria-label="Search internships"
