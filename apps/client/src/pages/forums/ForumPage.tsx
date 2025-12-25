@@ -11,7 +11,7 @@ import Pagination from '../../components/ui/pagination/Pagination.tsx';
 import { SearchBar } from '../../components/inputs/searchBar';
 import { CreateTopicModal } from '../forum/components/CreateTopicModal.tsx';
 import type { Topic } from '../../types/forum.types.ts';
-import type { PaginationResult } from '../../api/fetch_topic.ts';
+import type { PaginationResult } from '../../types/internship.types.ts';
 
 type Props = {
     isGeneral?: boolean;

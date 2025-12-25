@@ -1,9 +1,9 @@
 import MDEditor from '@uiw/react-md-editor';
-import type { MessageType, Role } from './messageTopicPage';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
 import { userStore } from '../../../store/userStore';
 import { cn } from '../../../utils/cn';
+import type { MessageType, Role } from '../TopicDetailPage';
 export const MessageItem = ({
     message,
     onReply,
@@ -11,9 +11,11 @@ export const MessageItem = ({
     message: MessageType;
     onReply?: (id: string, name: string) => void;
 }) => {
-    const { author } = message;
+    const { authorId } = message;
     const displayName =
-        'firstName' in author ? { firstName: author.firstName, lastName: author.lastName } : { name: author.name };
+        'firstName' in authorId
+            ? { firstName: authorId.firstName, lastName: authorId.lastName }
+            : { name: authorId.name };
 
     const variant: Record<Role, { tag: string; style: string }> = {
         ADMIN: { tag: 'Administatrateur', style: 'bg-accent' },
@@ -21,7 +23,7 @@ export const MessageItem = ({
         COMPANY: { tag: 'Entreprise', style: 'bg-secondary' },
     };
     return (
-        <div className="bg-base-100 border border-slate-200 rounded-xl p-4 mb-2 shadow-lg w-full flex-1 ">
+        <div className="bg-base-100 border border-slate-200 rounded-xl p-4 mb-2 shadow-lg w-full ">
             <div className="flex items-center gap-3 h-full">
                 <div className="h-10 w-10 rounded-full bg-slate-200 flex-shrink-0 overflow-hidden">
                     {displayName.name ? (
@@ -52,13 +54,21 @@ export const MessageItem = ({
                         </span>
                     </div>
 
-                    <div className="py-2 pl-1 border border-black ">
-                        <MDEditor.Markdown
-                            source={message.content}
-                            className="!bg-transparent !text-base-content !text-sm leading-relaxed"
-                            style={{ fontFamily: 'inherit' }}
-                        />
-                    </div>
+                    {message.parentMessageId && (
+                        <div className="p-2  border border-black ">
+                            <MDEditor.Markdown
+                                source={message.parentMessageId.content}
+                                className="!bg-transparent !text-base-content !text-sm leading-relaxed"
+                                style={{ fontFamily: 'inherit' }}
+                            />
+                        </div>
+                    )}
+
+                    <MDEditor.Markdown
+                        source={message.content}
+                        className="!bg-transparent !text-base-content !text-sm leading-relaxed"
+                        style={{ fontFamily: 'inherit' }}
+                    />
                     <div className="flex flex-row gap-2 p-2 justify-between items-center">
                         <button
                             className="flex items-center gap-1 px-3 py-1 border border-slate-200 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
@@ -73,8 +83,8 @@ export const MessageItem = ({
                         >
                             <span className="text-lg leading-none mt-1">“</span> Citer
                         </button>
-                        <span className={cn('badge', variant[`${message.author.role}`].style)}>
-                            {variant[`${message.author.role}`].tag}
+                        <span className={cn('badge', variant[`${message.authorId.role}`].style)}>
+                            {variant[`${message.authorId.role}`].tag}
                         </span>
                     </div>
                 </div>

@@ -16,7 +16,7 @@ export class ForumService {
         private readonly paginationService: PaginationService,
         private readonly geoService: GeoService,
         @Inject(forwardRef(() => CompanyService)) private readonly companyService: CompanyService,
-    ) {}
+    ) { }
 
     private readonly companyFields =
         '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo';
@@ -63,12 +63,12 @@ export class ForumService {
             .findOne({ company: companyId })
             .populate({
                 path: 'topics',
-                select: '_id author title description nbMessages',
+                select: '_id author title description messages',
                 populate: {
                     path: 'author',
                     select: 'firstName lastName name email logo',
-                    options: { strictPopulate: false }
-                }
+                    options: { strictPopulate: false },
+                },
             })
             .populate({
                 path: 'company',
@@ -103,8 +103,15 @@ export class ForumService {
         const topicsPopulate = {
             path: 'topics',
             select: '_id author title description',
-        }
+        };
 
-        return this.paginationService.paginate(this.forumModel, filter, page, limit, [companyPopulate, topicsPopulate], sortQuery);
+        return this.paginationService.paginate(
+            this.forumModel,
+            filter,
+            page,
+            limit,
+            [companyPopulate, topicsPopulate],
+            sortQuery,
+        );
     }
 }

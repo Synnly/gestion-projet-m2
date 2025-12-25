@@ -10,6 +10,7 @@ type Props = {
 
 export const TopicRow = ({ topic, companyId, forumId }: Props) => {
     const nav = useNavigate();
+    console.log(topic);
     const navigateToTopic = () => {
         const link = `/forums/${companyId || 'general'}/topics/${forumId}/${topic._id}`;
         console.log(link);

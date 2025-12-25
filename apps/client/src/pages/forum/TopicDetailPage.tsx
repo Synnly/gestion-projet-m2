@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { MessageSquare, RefreshCw } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { fetchTopicById } from '../../api/fetch_topic';
@@ -8,12 +8,61 @@ import { TopicHeaderSkeleton } from './components/Skeleton';
 import type { Topic } from './types';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import type { companyProfile } from '../../types';
 import { useState } from 'react';
 import { cn } from '../../utils/cn';
-
+import { MessageSender } from './components//MessageSender';
+import { MessageContainer } from './components//MessageContainer';
+import { MessageItem } from './components//MessageItem.tsx';
+import { DataPagination } from '../../components/ui/pagination/DataPagination.tsx';
+import { UseAuthFetch } from '../../hooks/UseAuthFetch.tsx';
+import { buildQueryParams } from '../../hooks/useFetchInternships.ts';
+import type { PaginationResult } from '../../types/internship.types.ts';
+export type Role = 'ADMIN' | 'STUDENT' | 'COMPANY';
+export type MessageType = {
+    _id: string;
+    topicId: string;
+    authorId: { logo: string; role: Role } & ({ firstName: string; lastName: string } | { name: string });
+    parentMessageId?: MessageType;
+    content: string;
+    createdAt: Date;
+};
+const apiUrl = import.meta.env.VITE_APIURL;
 export default function TopicDetailPage() {
+    const authFetch = UseAuthFetch();
     const { forumId, topicId, companyId } = useParams<{ forumId: string; topicId: string; companyId: string }>();
+
+    const [filter, setFilter] = useState({
+        page: 1,
+        limit: 10,
+    });
+    const {
+        data,
+        isLoading: messageIsLoading,
+        isError: messageIsError,
+        isPlaceholderData,
+        refetch: messageRefetch,
+    }: {
+        data: PaginationResult<MessageType> | undefined;
+        isError: boolean;
+        isLoading: boolean;
+        isPlaceholderData: boolean;
+        refetch: any;
+    } = useQuery({
+        queryKey: ['topicMessages', topicId, filter],
+        queryFn: async () => {
+            const param = buildQueryParams(filter);
+            const response = await authFetch(`${apiUrl}/api/forum/topic/${topicId}/message?${param}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            if (!response.ok) {
+                throw new Error('Failed to fetch messages');
+            }
+            return response.json();
+        },
+        placeholderData: keepPreviousData,
+    });
+
     const {
         data: topic,
         isLoading,
@@ -26,15 +75,9 @@ export default function TopicDetailPage() {
         queryFn: () => fetchTopicById(forumId!, topicId!),
         enabled: !!forumId && !!topicId,
         staleTime: 30 * 1000,
-        refetchInterval: 60 * 1000,
-        refetchOnWindowFocus: true,
     });
-
     const [shown, setShown] = useState(false);
-    const [filter, setFilter] = useState({
-        page: 1,
-        limit: 10,
-    });
+
     const [reply, setReply] = useState<{ id: string; name: string } | null>(null);
     const toggleSender = () => setShown(!shown);
     const onCancel = () => {
@@ -54,17 +97,23 @@ export default function TopicDetailPage() {
     const handleRefresh = async () => {
         try {
             await refetch();
+            await messageRefetch();
             toast.success('Messages actualisés', { autoClose: 2000 });
         } catch (err) {
             toast.error("Erreur lors de l'actualisation");
         }
     };
-
+    const afterSend = async () => {
+        await refetch();
+        await messageRefetch();
+        toggleSender();
+        setReply;
+    };
     if (!forumId || !topicId) {
         return (
-            <div className="min-h-screen flex flex-col">
+            <div className="h-screen flex flex-col">
                 <Navbar />
-                <main className="flex-1 flex items-center justify-center p-8">
+                <main className="flex-1 w-full flex flex-col mx-auto max-w-5xl px-4 py-6 overflow-hidden">
                     <div className="text-center">
                         <h2 className="text-2xl font-bold text-base-content mb-2">Paramètres manquants</h2>
                         <p className="text-base-content/70 mb-6">
@@ -79,10 +128,10 @@ export default function TopicDetailPage() {
         );
     }
     return (
-        <div className="min-h-screen flex flex-col bg-base-100">
-            <Navbar />
+        <div className="flex flex-col h-screen">
+            <Navbar minimal={false} />
 
-            <main className="flex-1 w-full mx-auto max-w-5xl px-4 py-6">
+            <div className="flex flex-col flex-1 overflow-hidden duration-500 w-full max-w-5xl mx-auto p-4 gap-2 ">
                 <div className="mb-6 flex items-center justify-between">
                     <div className="text-sm breadcrumbs">
                         <ul>
@@ -103,8 +152,7 @@ export default function TopicDetailPage() {
                         Actualiser
                     </button>
                 </div>
-
-                {isLoading ? (
+                {isLoading && (
                     <div className="card bg-base-200 shadow-lg">
                         <div className="card-body">
                             <TopicHeaderSkeleton />
@@ -116,7 +164,8 @@ export default function TopicDetailPage() {
                             </div>
                         </div>
                     </div>
-                ) : isError ? (
+                )}
+                {isError && (
                     <div className="card bg-error/10 border border-error/20 shadow-lg">
                         <div className="card-body text-center">
                             <h2 className="card-title text-error justify-center">Erreur lors du chargement</h2>
@@ -133,7 +182,8 @@ export default function TopicDetailPage() {
                             </div>
                         </div>
                     </div>
-                ) : !topic ? (
+                )}
+                {!topic ? (
                     <div className="card bg-base-200 shadow-lg">
                         <div className="card-body text-center">
                             <h2 className="card-title justify-center">Topic introuvable</h2>
@@ -146,105 +196,115 @@ export default function TopicDetailPage() {
                         </div>
                     </div>
                 ) : (
-                    <div className="space-y-6">
-                        <div className="card bg-base-100 shadow-lg">
-                            <div className="card-body">
-                                <div className="flex items-center gap-3 text-sm text-base-content/70 mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <div className="avatar placeholder">
-                                            <div className="text-neutral-content bg-black flex justify-center items-center rounded-full w-10 h-10">
-                                                {topic.author.logo ? (
-                                                    <img
-                                                        src={topic.author.logo}
-                                                        alt={
-                                                            topic.author.name ||
-                                                            `${topic.author.firstName} ${topic.author.lastName}`
-                                                        }
-                                                    />
-                                                ) : (
-                                                    <span className="text-lg font-bold">
-                                                        {(
-                                                            topic.author.name?.charAt(0) ||
-                                                            topic.author.firstName?.charAt(0)
-                                                        )?.toUpperCase()}
-                                                    </span>
-                                                )}
-                                            </div>
+                    <div className="card bg-base-100 shadow-lg mb-2 flex flex-col gap-2 ">
+                        <div className="card-body">
+                            <div className="flex items-center gap-3 text-sm text-base-content/70 mb-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="avatar placeholder">
+                                        <div className="text-neutral-content bg-black flex justify-center items-center rounded-full w-10 h-10">
+                                            {topic.author.logo ? (
+                                                <img
+                                                    src={topic.author.logo}
+                                                    alt={
+                                                        topic.author.name ||
+                                                        `${topic.author.firstName} ${topic.author.lastName}`
+                                                    }
+                                                />
+                                            ) : (
+                                                <span className="text-lg font-bold">
+                                                    {(
+                                                        topic.author.name?.charAt(0) ||
+                                                        topic.author.firstName?.charAt(0)
+                                                    )?.toUpperCase()}
+                                                </span>
+                                            )}
                                         </div>
-                                        <span className="font-medium text-base-content">
-                                            {topic.author.firstName && topic.author.lastName
-                                                ? topic.author.firstName + ' ' + topic.author.lastName
-                                                : topic.author.name}{' '}
-                                        </span>
                                     </div>
-                                    <span>•</span>
-                                    <span>
-                                        {topic.createdAt &&
-                                            formatDistanceToNow(new Date(topic.createdAt), {
-                                                addSuffix: true,
-                                                locale: fr,
-                                            })}
-                                    </span>
-                                    <span>•</span>
-                                    <span className="flex items-center gap-1">
-                                        <MessageSquare size={14} />
-                                        {topic.messages?.length || 0} message
-                                        {(topic.messages?.length || 0) > 1 ? 's' : ''}
+                                    <span className="font-medium text-base-content">
+                                        {topic.author.firstName && topic.author.lastName
+                                            ? topic.author.firstName + ' ' + topic.author.lastName
+                                            : topic.author.name}{' '}
                                     </span>
                                 </div>
-
-                                <h1 className="text-3xl font-bold text-base-content mb-4">{topic.title}</h1>
-
-                                {topic.description && (
-                                    <div className="prose max-w-none">
-                                        <p className="text-base-content/90 whitespace-pre-wrap">{topic.description}</p>
-                                    </div>
-                                )}
+                                <span>•</span>
+                                <span>
+                                    {topic.createdAt &&
+                                        formatDistanceToNow(new Date(topic.createdAt), {
+                                            addSuffix: true,
+                                            locale: fr,
+                                        })}
+                                </span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                    <MessageSquare size={14} />
+                                    {topic.messages?.length || 0} message
+                                    {(topic.messages?.length || 0) > 1 ? 's' : ''}
+                                </span>
                             </div>
-                        </div>
-                        <div className="flex justify-center pb-2">
-                            <button
-                                onClick={toggleSender}
-                                className={cn(
-                                    'btn btn-primary btn-outline gap-2 rounded-full px-8 shadow-sm transition-all duration-400 ease-in-out',
-                                    !shown ? 'btn-active' : 'opacity-0',
-                                )}
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M12 4v16m8-8H4"
-                                    />
-                                </svg>
-                                Répondre au sujet
-                            </button>
-                        </div>
-                        <div className="card bg-base-100 shadow-lg">
-                            <div className="card-body">
-                                {!topic.messages || topic.messages.length === 0 ? (
-                                    <div className="text-center py-12 text-base-content/60">
-                                        <MessageSquare size={48} className="mx-auto mb-4 opacity-50" />
-                                        <p className="text-lg font-medium">Aucun message pour le moment</p>
-                                        <p className="text-sm mt-2">
-                                            Soyez le premier à participer à cette discussion !
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2"></div>
-                                )}
-                            </div>
+
+                            <h1 className="text-3xl font-bold text-base-content mb-4">{topic.title}</h1>
+
+                            {topic.description && (
+                                <div className="prose max-w-none">
+                                    <p className="text-base-content/90 whitespace-pre-wrap">{topic.description}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
-            </main>
+
+                <div className="flex justify-center pb-2">
+                    <button
+                        onClick={toggleSender}
+                        className={cn(
+                            'btn btn-primary btn-outline gap-2 rounded-full px-8 shadow-sm transition-all duration-400 ease-in-out',
+                            !shown ? 'btn-active' : 'opacity-0',
+                        )}
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Répondre au sujet
+                    </button>
+                </div>
+
+                <div className=" card bg-base-100 shadow-lg flex flex-col overflow-hidden border border-slate-200 ">
+                    {!topic?.messages || topic?.messages.length === 0 ? (
+                        <div className="card text-center py-12 text-base-content/60">
+                            <MessageSquare size={48} className="mx-auto mb-4 opacity-50" />
+                            <p className="text-lg font-medium">Aucun message pour le moment</p>
+                            <p className="text-sm mt-2">Soyez le premier à participer à cette discussion !</p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="flex-1 overflow-y-auto w-full p-2 flex flex-col items-center ">
+                                <MessageContainer className="w-full">
+                                    {data &&
+                                        data.data.map((message: MessageType) => (
+                                            <MessageItem key={message._id} message={message} onReply={onReply} />
+                                        ))}
+                                </MessageContainer>
+                            </div>
+
+                            <DataPagination<MessageType> pagination={data} handlePageChange={handlePageChange} />
+                        </>
+                    )}
+                    <MessageSender
+                        topicId={topicId}
+                        reply={reply}
+                        shown={shown}
+                        afterSend={afterSend}
+                        onCancel={onCancel}
+                        cancelReply={onCancelReply}
+                    />
+                </div>
+            </div>
         </div>
     );
 }

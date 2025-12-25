@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Message } from './message.schema';
 import { Forum } from '../forum.schema';
 import { InjectModel } from '@nestjs/mongoose';
@@ -12,7 +12,7 @@ import { Topic } from '../topic/topic.schema';
 @Injectable()
 export class MessageService {
     constructor(
-        @InjectModel(Forum.name) private readonly messageModel: Model<Message>,
+        @InjectModel(Message.name) private readonly messageModel: Model<Message>,
         @InjectModel(Topic.name) private readonly topicModel: Model<Topic>,
         @InjectModel(Forum.name) private readonly forumModel: Model<Forum>,
         private readonly paginationService: PaginationService,
@@ -42,7 +42,7 @@ export class MessageService {
             },
             { new: true },
         );
-        return message;
+        return newMessages;
     }
 
     /**
@@ -55,7 +55,11 @@ export class MessageService {
         const { page, limit, ...rest } = query;
         const queryBuilder = new QueryBuilder<Message>({ ...rest, topicId });
         const filter = queryBuilder.buildMessageFilter();
-        const populate = [{ path: 'author', select: 'firstName lastName name logo' }, { path: 'parentMessage' }];
-        return this.paginationService.paginate(this.messageModel, filter, page, limit, populate);
+        const populate = [
+            { path: 'authorId', select: 'firstName lastName name logo role ' },
+            { path: 'parentMessageId' },
+        ];
+        const paginate = await this.paginationService.paginate(this.messageModel, filter, page, limit, populate);
+        return paginate;
     }
 }

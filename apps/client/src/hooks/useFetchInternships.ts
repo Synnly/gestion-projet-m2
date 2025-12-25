@@ -7,8 +7,12 @@ import { toast } from 'react-toastify';
 import { UseAuthFetch } from './useAuthFetch';
 
 const API_URL = import.meta.env.VITE_APIURL;
+export type BaseFilterProps = {
+    page: number;
+    limit: number;
+};
 
-export function buildQueryParams(filters: any) {
+export function buildQueryParams<T extends BaseFilterProps & Record<string,any>>(filters: T) {
     const params = new URLSearchParams();
 
     const setParam = (key: string, value: any) => {
@@ -19,11 +23,14 @@ export function buildQueryParams(filters: any) {
             params.set(key, String(value));
         }
     };
+    const {page,limit,...rest} = filters    
+    params.set('page', String(page ?? 1));
+    params.set('limit', String(limit ?? 10));
 
-    params.set('page', String(filters.page ?? 1));
-    params.set('limit', String(filters.limit ?? 10));
-
-    setParam('searchQuery', filters.searchQuery);
+    Object.keys(rest).forEach((key) => {
+        setParam(key,filters[key])
+    })
+    /* setParam('searchQuery', filters.searchQuery);
     setParam('title', filters.title);
     setParam('description', filters.description);
     setParam('duration', filters.duration);
@@ -35,7 +42,7 @@ export function buildQueryParams(filters: any) {
     setParam('city', filters.city);
     setParam('radiusKm', filters.radiusKm);
     setParam('sort', filters.sort);
-    setParam('company', filters.company);
+    setParam('company', filters.company); */
     return params;
 }
 

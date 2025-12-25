@@ -1,11 +1,11 @@
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { IsOptional, IsString, ValidateNested } from 'class-validator';
-import { CompanyDto } from 'src/company/dto/company.dto';
-import { StudentDto } from 'src/student/dto/student.dto';
+import { CompanyDto } from '../../../company/dto/company.dto';
+import { StudentDto } from '../../../student/dto/student.dto';
 import { Types } from 'mongoose';
 import { Message, MessageDocument } from '../message.schema';
-import { User } from 'src/user/user.schema';
-import { Role } from 'src/common/roles/roles.enum';
+import { User } from '../../../user/user.schema';
+import { Role } from '../../../common/roles/roles.enum';
 @Exclude()
 export class MessageDto {
     /**
@@ -27,7 +27,7 @@ export class MessageDto {
         return Object; // Fallback
     })
     @ValidateNested()
-    author: StudentDto | CompanyDto;
+    authorId: StudentDto | CompanyDto;
 
     /**
      * Content of the message
@@ -42,7 +42,7 @@ export class MessageDto {
     @IsOptional()
     @IsString()
     @Type(() => MessageDto)
-    parentMessage?: MessageDto;
+    parentMessageId?: MessageDto;
 
     @Expose()
     @Transform(({ obj }: { obj: Message }) => obj.createdAt)

@@ -17,32 +17,39 @@ type MessageSenderProps = {
 };
 export function MessageSender({ topicId, reply, shown, afterSend, onCancel, cancelReply }: MessageSenderProps) {
     const [content, setContent] = useState<string | undefined>('');
-    const apiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = import.meta.env.VITE_APIURL;
     const access = userStore((state) => state.access);
     const get = userStore((state) => state.get);
     const id = get(access)?.id;
     const authfetch = UseAuthFetch();
-    const { mutate, isPending } = useMutation({
+
+    const { mutateAsync, isPending } = useMutation({
         mutationFn: async () => {
             if (!content) return;
-            const response = await authfetch(`${apiUrl}/forum/topic/${topicId}/message`, {
+            const url = `${apiUrl}/api/forum/topic/${topicId}/message`;
+            const data = JSON.stringify({ authorId: id, content, parentMessageId: reply?.id || null });
+            const response = await authfetch(`${apiUrl}/api/forum/topic/${topicId}/message`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                data: { authorId: id, content, parentMessageId: reply?.id || null },
+                data: data,
             });
+
+            console.log("c'est arrivé");
             if (!response.ok) {
                 throw new Error('Failed to send message');
             }
             return response.json();
         },
         onSuccess: () => {
+            console.log('terminé bitchies!!!');
             setContent('');
             afterSend?.();
         },
     });
-    const onSubmit = (e: React.FormEvent) => {
+    const onSubmit = async (e: React.FormEvent) => {
+        console.log('toto');
         e.preventDefault();
-        mutate();
+        const message = await mutateAsync();
+        console.log(message);
     };
     return (
         <div

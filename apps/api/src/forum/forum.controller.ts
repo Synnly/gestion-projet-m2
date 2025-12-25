@@ -4,6 +4,7 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Logger,
     Param,
     Post,
     Query,
@@ -71,7 +72,9 @@ export class ForumController {
     @Get('general')
     @HttpCode(HttpStatus.OK)
     async getGeneralForum(): Promise<ForumDto | null> {
-        return plainToInstance(ForumDto, await this.forumService.findOneByCompanyId());
+        const general = await this.forumService.findOneByCompanyId();
+        Logger.log(general);
+        return plainToInstance(ForumDto, general);
     }
 
     /**
@@ -92,7 +95,8 @@ export class ForumController {
         @Param('topicId', ParseObjectIdPipe) topicId: string,
         @Body() messageDto: CreateMessageDto,
     ): Promise<MessageDto> {
-        return plainToInstance(MessageDto, await this.messageService.sendMessage(topicId, messageDto));
+        const message = await this.messageService.sendMessage(topicId, messageDto);
+        return plainToInstance(MessageDto, message);
     }
 
     @Get('/topic/:topicId/message')

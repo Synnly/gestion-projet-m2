@@ -6,7 +6,7 @@ export class Message {
      * sender of the message
      */
     @Prop({ type: Types.ObjectId, ref: 'User' })
-    author: Types.ObjectId;
+    authorId: Types.ObjectId;
 
     /**
      * Content of the message
@@ -24,7 +24,7 @@ export class Message {
      * Reply to another message in the same topic
      */
     @Prop({ type: Types.ObjectId, ref: 'Message' })
-    parentMessage: Types.ObjectId;
+    parentMessageId: Types.ObjectId;
 
     createdAt: Date;
 }
