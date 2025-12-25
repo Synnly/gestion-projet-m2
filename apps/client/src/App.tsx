@@ -208,7 +208,14 @@ function App() {
                             path: 'forums',
                             children: [
                                 { index: true, element: <MainForumPage /> },
-                                { path: 'general', element: <ForumPage isGeneral={true} /> },
+                                {
+                                    path: 'general',
+
+                                    children: [
+                                        { index: true, element: <ForumPage isGeneral={true} /> },
+                                        { path: 'topics/:forumId/:topicId/', element: <TopicDetailPage /> },
+                                    ],
+                                },
                                 {
                                     path: ':companyId',
                                     element: <CompanyForumRoute />,
