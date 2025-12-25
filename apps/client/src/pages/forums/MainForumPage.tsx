@@ -18,7 +18,6 @@ export function MainForumPage() {
 
     const forums: Forum[] = forumStore((state) => state.forums);
     const generalForum: Forum = forumStore((state) => state.generalForum)!;
-
     const handleSearchChange = (query: string) => {
         setFilters({ companyName: query || undefined, page: 1, limit: 12 });
     };
@@ -65,7 +64,7 @@ export function MainForumPage() {
                         <table className="table max-w-full">
                             <tbody>
                                 {generalForum?.topics?.map((topic) => (
-                                    <TopicRow topic={topic} key={topic._id} />
+                                    <TopicRow topic={topic} key={topic._id} forumId={generalForum._id} />
                                 ))}
                             </tbody>
                         </table>

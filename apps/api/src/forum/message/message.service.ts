@@ -1,19 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Message } from './message.schema';
 import { Forum } from '../forum.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import { PaginationService } from 'src/common/pagination/pagination.service';
+import { PaginationService } from '../../common/pagination/pagination.service';
 import { Model } from 'mongoose';
 import { CreateMessageDto } from './dto/createMessageDto';
 import { PaginationResult } from 'client/src/types/internship.types';
-import { QueryBuilder } from 'src/common/pagination/query.builder';
-import { MessagePaginationDto } from 'src/common/pagination/dto/messagePagination.dto';
+import { QueryBuilder } from '../../common/pagination/query.builder';
+import { MessagePaginationDto } from '../../common/pagination/dto/messagePagination.dto';
+import { Topic } from '../topic/topic.schema';
 @Injectable()
 export class MessageService {
     constructor(
         @InjectModel(Forum.name) private readonly messageModel: Model<Message>,
+        @InjectModel(Topic.name) private readonly topicModel: Model<Topic>,
+        @InjectModel(Forum.name) private readonly forumModel: Model<Forum>,
         private readonly paginationService: PaginationService,
-    ) {}
+    ) { }
 
     /**
      * Send a message in a topic.
@@ -26,7 +29,19 @@ export class MessageService {
             topicId,
             ...createMessageDto,
         });
-        await message.save();
+
+        const newMessages = await message.save();
+        const topic = await this.topicModel.findByIdAndUpdate(topicId, {
+            $push: { messages: newMessages._id },
+        });
+        if (!topic) throw new NotFoundException("topic doesn't exist ");
+        await this.forumModel.findByIdAndUpdate(
+            topic?.forumId,
+            {
+                $inc: { nbMessages: 1 },
+            },
+            { new: true },
+        );
         return message;
     }
 

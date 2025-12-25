@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { UseAuthFetch } from './useAuthFetch';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
@@ -29,10 +30,9 @@ export type ApplicationDetail = {
 
 async function fetchApplicationDetail(id?: string): Promise<ApplicationDetail> {
     if (!id) throw new Error('Missing application id');
-
-    const res = await fetch(`${API_URL}/api/application/${id}`, {
+    const authFetch = UseAuthFetch();
+    const res = await authFetch(`${API_URL}/api/application/${id}`, {
         method: 'GET',
-        credentials: 'include',
     });
 
     if (!res.ok) {

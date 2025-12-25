@@ -17,6 +17,7 @@ import { ForgotPassword } from './user/ForgotPassword';
 import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
 import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
+import { CompanyForumRoute } from './protectedRoutes/companyForumRoute';
 import { InternshipPage } from './pages/internship/InternshipPage';
 import InternshipDetailPage from './pages/internship/InternshipDetailPage';
 import CreatePostPage from './pages/posts/CreatePostPage';
@@ -43,9 +44,9 @@ import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
 import { StudentDashboard } from './student/dashboard';
 import { ApplicationList } from './company/dashboard/applicationList/ApplicationList.tsx';
 import ImportStudent from './admin/importStudent.tsx';
+import TopicDetailPage from './pages/forum/TopicDetailPage';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
 import { ForumPage } from './pages/forums/ForumPage.tsx';
-import { MessageTopicPage } from './pages/forums/topicsMessage/messageTopicPage.tsx';
 
 function App() {
     userStore.persist.rehydrate();
@@ -207,10 +208,22 @@ function App() {
                             path: 'forums',
                             children: [
                                 { index: true, element: <MainForumPage /> },
-                                { path: 'general', element: <ForumPage isGeneral={true} /> },
-                                { path: ':companyId', element: <ForumPage /> },
-                                { path: 'general/topic/:topicId/', element: <MessageTopicPage /> },
-                                { path: ':companyId/topic/:topicId/', element: <MessageTopicPage /> },
+                                {
+                                    path: 'general',
+
+                                    children: [
+                                        { index: true, element: <ForumPage isGeneral={true} /> },
+                                        { path: 'topics/:forumId/:topicId/', element: <TopicDetailPage /> },
+                                    ],
+                                },
+                                {
+                                    path: ':companyId',
+                                    element: <CompanyForumRoute />,
+                                    children: [
+                                        { index: true, element: <ForumPage /> },
+                                        { path: 'topics/:forumId/:topicId', element: <TopicDetailPage /> },
+                                    ],
+                                },
                             ],
                         },
                     ],

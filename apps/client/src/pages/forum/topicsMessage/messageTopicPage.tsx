@@ -27,7 +27,6 @@ export const MessageTopicPage = () => {
     const isGeneral = !companyId;
     const client = useQueryClient();
     const [shown, setShown] = useState(false);
-    /* TODO Mettre la paginaation */
     const [filter, setFilter] = useState({
         page: 1,
         limit: 10,

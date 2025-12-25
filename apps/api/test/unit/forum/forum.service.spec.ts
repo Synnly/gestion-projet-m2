@@ -40,6 +40,7 @@ describe('ForumService', () => {
         // Add chainable methods if needed, returning 'this'
         populate: jest.fn().mockReturnThis(),
         sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
     });
 
     // Mock constructor for new this.forumModel(...)
@@ -105,7 +106,7 @@ describe('ForumService', () => {
         it('should create a forum for a company when it does not exist', async () => {
             const companyId = new Types.ObjectId();
             const companyName = 'Test Company';
-            
+
             // Mock findOne to return null (not found)
             mockForumModel.findOne.mockReturnValue(mockQuery(null));
             mockCompanyService.findOne.mockResolvedValue({ name: companyName });
@@ -114,7 +115,7 @@ describe('ForumService', () => {
 
             expect(mockForumModel.findOne).toHaveBeenCalledWith({ company: companyId });
             expect(mockCompanyService.findOne).toHaveBeenCalledWith(companyId.toString());
-            expect(result).toEqual({ company: companyId, companyName });
+            expect(result).toEqual({ company: companyId, companyName, topics: [] });
         });
 
         it('should create a general forum when it does not exist', async () => {
@@ -124,7 +125,7 @@ describe('ForumService', () => {
             const result = await service.create();
 
             expect(mockForumModel.findOne).toHaveBeenCalledWith({ company: undefined });
-            expect(result).toEqual({ company: undefined });
+            expect(result).toEqual({ topics: [] });
         });
 
         it('should throw BadRequestException when forum for company already exists', async () => {
@@ -158,7 +159,7 @@ describe('ForumService', () => {
         it('should return a forum when found', async () => {
             const companyId = new Types.ObjectId().toString();
             const mockForum = { _id: 'forumId', company: companyId };
-            
+
             mockForumModel.findOne.mockReturnValue(mockQuery(mockForum));
 
             const result = await service.findOneByCompanyId(companyId);
@@ -192,7 +193,11 @@ describe('ForumService', () => {
         const expectedPopulate = [
             {
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            },
+            {
+                path: 'topics',
+                select: '_id author title description',
             },
         ];
 

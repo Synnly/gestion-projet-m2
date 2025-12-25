@@ -2,13 +2,12 @@ import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/com
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Forum } from './forum.schema';
-import { PaginationResult } from 'client/src/types/internship.types';
 import { PaginationDto } from '../common/pagination/dto/pagination.dto';
 import { QueryBuilder } from '../common/pagination/query.builder';
-import { Post } from '../post/post.schema';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { GeoService } from '../common/geography/geo.service';
 import { CompanyService } from '../company/company.service';
+import { PaginationResult } from '../common/pagination/dto/paginationResult';
 
 @Injectable()
 export class ForumService {
@@ -19,7 +18,7 @@ export class ForumService {
         @Inject(forwardRef(() => CompanyService)) private readonly companyService: CompanyService,
     ) {}
 
-    companyFields =
+    private readonly companyFields =
         '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo';
 
     /**
@@ -42,15 +41,14 @@ export class ForumService {
             const forum = new this.forumModel({
                 company: companyId,
                 companyName: company.name,
-                // topics: [],
+                topics: [],
             });
             return forum.save();
         }
 
         // General forum
         const forum = new this.forumModel({
-            company: companyId,
-            // topics: [],
+            topics: [],
         });
         return forum.save();
     }
@@ -61,19 +59,23 @@ export class ForumService {
      * @returns The forum if found, otherwise null.
      */
     async findOneByCompanyId(companyId?: string): Promise<Forum | null> {
-        return (
-            this.forumModel
-                .findOne({ company: companyId })
-                // .populate({
-                //     path: 'topics',
-                //     select: '_id author title description',
-                // })
-                .populate({
-                    path: 'company',
-                    select: this.companyFields,
-                })
-                .exec()
-        );
+        return await this.forumModel
+            .findOne({ company: companyId })
+            .populate({
+                path: 'topics',
+                select: '_id author title description nbMessages',
+                populate: {
+                    path: 'author',
+                    select: 'firstName lastName name email logo',
+                    options: { strictPopulate: false }
+                }
+            })
+            .populate({
+                path: 'company',
+                select: this.companyFields,
+            })
+            .lean()
+            .exec();
     }
 
     /**
@@ -89,15 +91,20 @@ export class ForumService {
      */
     async findAll(query: PaginationDto): Promise<PaginationResult<Forum>> {
         const { page, limit, sort, ...filters } = query;
-        const qb = new QueryBuilder<Post>(filters as any, this.geoService);
+        const qb = new QueryBuilder<Forum>(filters as any, this.geoService);
         const filter = await qb.build(true);
         const sortQuery = qb.buildSort(sort);
 
         const companyPopulate = {
             path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
         };
 
-        return this.paginationService.paginate(this.forumModel, filter, page, limit, [companyPopulate], sortQuery);
+        const topicsPopulate = {
+            path: 'topics',
+            select: '_id author title description',
+        }
+
+        return this.paginationService.paginate(this.forumModel, filter, page, limit, [companyPopulate, topicsPopulate], sortQuery);
     }
 }

@@ -1,12 +1,17 @@
+import { useState } from 'react';
 import { useNavigation } from 'react-router-dom';
 import { useParams } from 'react-router';
 import { Navbar } from '../../components/navbar/Navbar.tsx';
 import Spinner from '../../components/Spinner/Spinner.tsx';
 import { useFetchForumByCompanyId, useFetchGeneralForum } from '../../hooks/useFetchForum.ts';
+import { useFetchTopics } from '../../hooks/useFetchTopics.ts';
 import { ForumHeader } from '../../components/forum/ForumHeader.tsx';
 import { TopicRow } from '../../components/forum/TopicRow.tsx';
 import Pagination from '../../components/ui/pagination/Pagination.tsx';
 import { SearchBar } from '../../components/inputs/searchBar';
+import { CreateTopicModal } from '../forum/components/CreateTopicModal.tsx';
+import type { Topic } from '../../types/forum.types.ts';
+import type { PaginationResult } from '../../api/fetch_topic.ts';
 
 type Props = {
     isGeneral?: boolean;
@@ -15,99 +20,44 @@ type Props = {
 export function ForumPage({ isGeneral = false }: Props) {
     const navigation = useNavigation();
     const companyId = useParams().companyId!;
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+
     let forum;
-    let isLoading: boolean;
+    let isLoadingForum: boolean;
 
     if (isGeneral) {
         let { data, isLoading: isLoadingTmp } = useFetchGeneralForum();
         forum = data;
-        isLoading = isLoadingTmp;
+        isLoadingForum = isLoadingTmp;
     } else {
         let { data, isLoading: isLoadingTmp } = useFetchForumByCompanyId(companyId);
         forum = data;
-        isLoading = isLoadingTmp;
+        isLoadingForum = isLoadingTmp;
     }
 
-    const mockTopics = [
-        {
-            _id: '1',
-            title: 'Bienvenue sur le forum',
-            description: 'Présentez-vous ici',
-            author: { _id: '1', firstName: 'Admin', lastName: '', name: 'Admin' },
-            nbMessages: 42,
-        },
-        {
-            _id: '2',
-            title: 'Questions techniques',
-            description: 'Posez vos questions techniques',
-            author: { _id: '2', firstName: 'Jean', lastName: 'Dupont', name: 'Jean Dupont' },
-            nbMessages: 156,
-        },
-        {
-            _id: '3',
-            title: 'Annonces importantes',
-            description: 'Les dernières actualités',
-            author: { _id: '3', firstName: 'Modérateur', lastName: '', name: 'Modérateur' },
-            nbMessages: 23,
-        },
-        {
-            _id: '4',
-            title: "Suggestions d'amélioration",
-            description: 'Vos idées pour améliorer la plateforme',
-            author: { _id: '4', firstName: 'Marie', lastName: 'Martin', name: 'Marie Martin' },
-            nbMessages: 89,
-        },
-        {
-            _id: '5',
-            title: 'Bugs et problèmes',
-            description: 'Signalez les problèmes rencontrés',
-            author: { _id: '5', firstName: 'Pierre', lastName: 'Leroy', name: 'Pierre Leroy' },
-            nbMessages: 67,
-        },
-        {
-            _id: '6',
-            title: 'Tutoriels et guides',
-            description: 'Partagez vos connaissances',
-            author: { _id: '6', firstName: 'Sophie', lastName: 'Bernard', name: 'Sophie Bernard' },
-            nbMessages: 134,
-        },
-        {
-            _id: '7',
-            title: 'Événements à venir',
-            description: 'Calendrier des événements',
-            author: { _id: '7', firstName: 'Admin', lastName: '', name: 'Admin' },
-            nbMessages: 45,
-        },
-        {
-            _id: '8',
-            title: 'Discussions générales',
-            description: 'Pour tout et rien',
-            author: { _id: '8', firstName: 'Thomas', lastName: 'Petit', name: 'Thomas Petit' },
-            nbMessages: 203,
-        },
-        {
-            _id: '9',
-            title: 'Partenariats',
-            description: 'Opportunités de collaboration',
-            author: { _id: '9', firstName: 'Claire', lastName: 'Dubois', name: 'Claire Dubois' },
-            nbMessages: 78,
-        },
-        {
-            _id: '10',
-            title: 'Ressources utiles',
-            description: 'Liens et documents importants',
-            author: { _id: '10', firstName: 'Luc', lastName: 'Moreau', name: 'Luc Moreau' },
-            nbMessages: 91,
-        },
-    ];
+    const { data: topicsResult, isLoading: isLoadingTopics } = useFetchTopics({
+        forumId: forum?._id || '',
+        page: currentPage,
+        limit: 10,
+        searchQuery: searchQuery || undefined,
+    }) as { data: PaginationResult<Topic> | undefined; isLoading: boolean };
 
-    if (forum) forum!.topics = mockTopics;
+    const handleSearchChange = (query: string) => {
+        setSearchQuery(query);
+        setCurrentPage(1);
+    };
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
 
     return (
         <div className="flex flex-col h-screen">
             <Navbar minimal={false} />
             <Spinner show={navigation.state === 'loading'} />
-            {!isLoading && (
+            {!isLoadingForum && (
                 <div className="flex flex-col justify-center p-8 px-80">
                     <div className="breadcrumbs text-sm">
                         <ul>
@@ -118,15 +68,20 @@ export function ForumPage({ isGeneral = false }: Props) {
                         </ul>
                     </div>
                     <div className="flex flex-col gap-8">
-                        {forum && <ForumHeader forum={forum} />}
+                        {forum && <ForumHeader forum={forum} onCreateTopic={() => setIsModalOpen(true)} />}
+
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                                <SearchBar
+                                    searchQuery={searchQuery}
+                                    setSearchQuery={handleSearchChange}
+                                    selects={[]}
+                                    placeholder={'Rechercher par sujet ...'}
+                                />
+                            </div>
+                        </div>
+
                         <div>
-                            {/*TODO: Implémenter la recherche*/}
-                            <SearchBar
-                                searchQuery={''}
-                                setSearchQuery={(_: string) => null}
-                                selects={[]}
-                                placeholder={'Rechercher par sujet ...'}
-                            />
                             <table className="table table-zebra overflow-x-auto rounded-box border border-base-content/5 bg-base-100 max-w-full">
                                 <thead>
                                     <tr>
@@ -137,18 +92,36 @@ export function ForumPage({ isGeneral = false }: Props) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {forum?.topics?.map((topic) => (
-                                        <TopicRow topic={topic} key={topic._id} />
-                                    ))}
+                                    {isLoadingTopics ? (
+                                        <tr>
+                                            <td colSpan={4} className="text-center py-8">
+                                                <span className="loading loading-spinner loading-md"></span>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        topicsResult?.data?.map((topic: Topic) => (
+                                            <TopicRow
+                                                topic={topic}
+                                                key={topic._id}
+                                                companyId={companyId}
+                                                forumId={forum?._id || ''}
+                                            />
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
 
-                        {/*TODO : Implémenter la pagination*/}
-                        <Pagination page={1} totalPages={2} onPageChange={(_: number) => null} />
+                        <Pagination
+                            page={topicsResult?.page || 1}
+                            totalPages={topicsResult?.totalPages || 1}
+                            onPageChange={handlePageChange}
+                        />
                     </div>
                 </div>
             )}
+
+            <CreateTopicModal forumId={forum?._id || ''} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </div>
     );
 }

@@ -4,6 +4,7 @@ import type { PaginationResult, Internship } from '../types/internship.types';
 import { fetchPublicSignedUrl } from './useBlob';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
+import { UseAuthFetch } from './useAuthFetch';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
@@ -39,10 +40,10 @@ export function buildQueryParams(filters: any) {
 }
 
 export async function fetchPosts(API_URL: string, params: URLSearchParams) {
-    const res = await fetch(`${API_URL}/api/company/0/posts?${params}`, {
+    const authFetch = UseAuthFetch();
+    const res = await authFetch(`${API_URL}/api/company/0/posts?${params}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
     });
 
     if (!res.ok) {
@@ -54,12 +55,12 @@ export async function fetchPosts(API_URL: string, params: URLSearchParams) {
 }
 
 export async function fetchCompanyProfiles(companyIds: string[], API_URL: string) {
+    const authFetch = UseAuthFetch();
     return Promise.all(
         companyIds.map(async (id) => {
-            const res = await fetch(`${API_URL}/api/companies/${id}`, {
+            const res = await authFetch(`${API_URL}/api/companies/${id}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
             });
 
             if (!res.ok) return { companyId: id, logo: null };
@@ -175,11 +176,10 @@ export function useFetchInternships() {
  */
 export async function fetchInternshipById(id?: string): Promise<Internship | null> {
     if (!id) return null;
-
-    const res = await fetch(`${API_URL}/api/company/0/posts/${id}`, {
+    const authFetch = UseAuthFetch();
+    const res = await authFetch(`${API_URL}/api/company/0/posts/${id}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
     });
 
     if (!res.ok) {

@@ -9,18 +9,32 @@ import {
     Query,
     UseGuards,
     ValidationPipe,
+    Put,
+    Req,
 } from '@nestjs/common';
-import { ForumService } from './forum.service';
+import { plainToInstance } from 'class-transformer';
+import type { Request } from 'express';
+import { Types } from 'mongoose';
+
+import { AuthGuard } from '../auth/auth.guard';
+import { RolesGuard } from '../common/roles/roles.guard';
+import { Roles } from '../common/roles/roles.decorator';
+import { Role } from '../common/roles/roles.enum';
 import { PaginationDto } from '../common/pagination/dto/pagination.dto';
 import { PaginationResult } from '../common/pagination/dto/paginationResult';
-import { ForumDto } from './dto/forum.dto';
-import { plainToInstance } from 'class-transformer';
-import { AuthGuard } from '../auth/auth.guard';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { MessageDto } from './message/dto/messageDto';
 import { CreateMessageDto } from './message/dto/createMessageDto';
 import { MessageService } from './message/message.service';
-import { MessagePaginationDto } from 'src/common/pagination/dto/messagePagination.dto';
+import { MessagePaginationDto } from '../common/pagination/dto/messagePagination.dto';
+
+import { ForumService } from './forum.service';
+import { ForumDto } from './dto/forum.dto';
+import { ForumAccessGuard } from './guards/forum-access.guard';
+import { TopicService } from './topic/topic.service';
+import { Topic } from './topic/topic.schema';
+import { CreateTopicDto } from './topic/dto/createTopic.dto';
+import { UpdateTopicDto } from './topic/dto/updateTopic.dto';
 
 @UseGuards(AuthGuard)
 @Controller('/api/forum')
@@ -28,7 +42,8 @@ export class ForumController {
     constructor(
         private readonly forumService: ForumService,
         private readonly messageService: MessageService,
-    ) {}
+        private readonly topicService: TopicService,
+    ) { }
 
     /**
      * Return a paginated list of forums. Query parameters `page` and `limit`
@@ -43,7 +58,6 @@ export class ForumController {
         query: PaginationDto,
     ): Promise<PaginationResult<ForumDto>> {
         const forums = await this.forumService.findAll(query);
-
         return {
             ...forums,
             data: forums.data.map((forum) => plainToInstance(ForumDto, forum)),
@@ -93,5 +107,64 @@ export class ForumController {
             ...messages,
             data: messages.data.map((message) => plainToInstance(MessageDto, message)),
         };
+    }
+    /**
+     * Find all topics in a forum with pagination.
+     * @param forumId - The forum id
+     * @param pagination - Pagination parameters
+     * @returns A paginated result containing `Topic` instances
+     */
+    @Get(':forumId/topics')
+    async findAll(
+        @Param('forumId') forumId: string,
+        @Query() pagination: PaginationDto,
+    ): Promise<PaginationResult<Topic>> {
+        return this.topicService.findAll(forumId, pagination);
+    }
+
+    /**
+     * Find a specific topic in a forum.
+     * @param forumId - The forum id
+     * @param id - The topic id
+     * @returns The topic if found, otherwise null
+     */
+    @Get(':forumId/topics/:id')
+    async findOne(@Param('forumId') forumId: string, @Param('id') id: string): Promise<Topic | null> {
+        return this.topicService.findOne(forumId, id);
+    }
+
+    /**
+     * Create a new topic in a forum.
+     * @param forumId - The forum id
+     * @param dto - Data transfer object containing topic details
+     * @param req - The request object containing user information
+     */
+    @Post(':forumId/topics')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @UseGuards(RolesGuard, ForumAccessGuard)
+    @Roles(Role.STUDENT, Role.COMPANY, Role.ADMIN)
+    async create(@Param('forumId') forumId: string, @Body() dto: CreateTopicDto, @Req() req: Request): Promise<void> {
+        const userId = new Types.ObjectId(req.user?.sub);
+        await this.topicService.create(forumId, { ...dto, author: userId });
+    }
+
+    /**
+     * Update an existing topic in a forum.
+     * @param forumId - The forum id
+     * @param id - The topic id
+     * @param dto - Data transfer object containing updated topic details
+     * @param req - The request object containing user information
+     */
+    @Put(':forumId/topics/:id')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    @UseGuards(RolesGuard, ForumAccessGuard)
+    @Roles(Role.STUDENT, Role.COMPANY, Role.ADMIN)
+    async update(
+        @Param('forumId') forumId: string,
+        @Param('id') id: string,
+        @Body() dto: UpdateTopicDto | CreateTopicDto,
+        @Req() req: Request,
+    ): Promise<void> {
+        await this.topicService.update(forumId, id, dto);
     }
 }
