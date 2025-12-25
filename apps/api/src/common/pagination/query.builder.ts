@@ -26,10 +26,10 @@ export class QueryBuilder<T> {
 
     /**
      * Build a Mongoose filter object based on the provided params.
-     *
+     * @param isForum - Whether the query is for forums (affects visibility filter), defaults to false
      * @returns A `FilterQuery<T>` suitable for passing to `Model.find()`
      */
-    async build(): Promise<FilterQuery<T>> {
+    async build(isForum: boolean = false): Promise<FilterQuery<T>> {
         const mutableFilter: Record<string, unknown> = {};
 
         // Global search using MongoDB text index (optimized for performance)
@@ -132,7 +132,7 @@ export class QueryBuilder<T> {
         }
 
         // Only show visible posts
-        mutableFilter.isVisible = true;
+        if (!isForum) mutableFilter.isVisible = true;
 
         return mutableFilter as FilterQuery<T>;
     }
@@ -140,9 +140,9 @@ export class QueryBuilder<T> {
     buildSort(sortParam: string | undefined): string {
         // return string acceptable by Mongoose `sort()`
         switch (sortParam) {
-            case "dateAsc":
+            case 'dateAsc':
                 return '1';
-            case "dateDesc":
+            case 'dateDesc':
                 return '-1';
             default:
                 return '-1';

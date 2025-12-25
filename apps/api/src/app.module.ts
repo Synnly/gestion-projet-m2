@@ -13,6 +13,7 @@ import { ApplicationModule } from './application/application.module';
 import { StorageProviderType } from './s3/s3.constants';
 import { SeedModule } from './seed/seed.module';
 import { AdminModule } from './admin/admin.module';
+import { ForumModule } from './forum/forum.module';
 
 @Module({
     imports: [
@@ -35,6 +36,7 @@ import { AdminModule } from './admin/admin.module';
         StudentModule,
         AdminModule,
         SeedModule,
+        ForumModule,
         ApplicationModule,
     ],
     controllers: [],

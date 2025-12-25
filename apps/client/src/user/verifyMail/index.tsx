@@ -7,6 +7,7 @@ import { useMutation } from '@tanstack/react-query';
 import { userStore } from '../../store/userStore';
 import { CodeInput } from './components/code';
 import Logo from '../../components/icons/Logo.tsx';
+import { UseAuthFetch } from '../../hooks/useAuthFetch.tsx';
 
 export type VerifyEmailForm = {
     code1: string;
@@ -52,6 +53,7 @@ export function VerifyEmail() {
     const { access, set, logout } = userStore.getState();
     const API_URL = import.meta.env.VITE_APIURL;
     const accessToken = useOutletContext<userContext>();
+    const authFetch = UseAuthFetch();
     const email = accessToken.get(accessToken.accessToken).mail;
     /* Refs for input fields */
     const refsInputs = useRef<(HTMLInputElement | null)[]>([]);
@@ -63,14 +65,13 @@ export function VerifyEmail() {
     const sendMailMutation = useMutation({
         mutationFn: async () => {
             const body = { email: email };
-            const response = await fetch(`${API_URL}/api/mailer/auth/send-verification`, {
+            const response = await authFetch(`${API_URL}/api/mailer/auth/send-verification`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${accessToken}`,
                 },
-                credentials: 'include',
-                body: JSON.stringify(body),
+                data: JSON.stringify(body),
             });
 
             if (!response.ok) {
@@ -82,14 +83,13 @@ export function VerifyEmail() {
     const verifyCodeMutation = useMutation({
         mutationFn: async (code: string) => {
             const body = { otp: code, email: email };
-            const response = await fetch(`${API_URL}/api/mailer/auth/verify`, {
+            const response = await authFetch(`${API_URL}/api/mailer/auth/verify`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${accessToken}`,
                 },
-                credentials: 'include',
-                body: JSON.stringify(body),
+                data: JSON.stringify(body),
             });
 
             if (!response.ok) {
@@ -108,9 +108,8 @@ export function VerifyEmail() {
         }
         const res = await verifyCodeMutation.mutateAsync(code);
         if (res.ok) {
-            const refreshRes = await fetch(`${API_URL}/api/auth/refresh`, {
+            const refreshRes = await authFetch(`${API_URL}/api/auth/refresh`, {
                 method: 'POST',
-                credentials: 'include',
                 headers: { Authorization: `Bearer ${access}` },
             });
 

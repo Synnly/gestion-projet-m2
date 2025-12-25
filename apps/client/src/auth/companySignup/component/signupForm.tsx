@@ -8,6 +8,7 @@ import { companyFormSignUpSchema } from '../type';
 import { useNavigate } from 'react-router';
 import { FormInput } from '../../../components/form/FormInput';
 import { userStore } from '../../../store/userStore';
+import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 
 export const SignupForm = () => {
     const {
@@ -23,17 +24,15 @@ export const SignupForm = () => {
 
     const setAccess = userStore((state) => state.set);
     const navigate = useNavigate();
-
     const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
-
+    const authFetch = UseAuthFetch();
     const { mutateAsync, isPending, isError, error, reset } = useMutation({
         mutationFn: async ({ url, data }: registerForm) => {
             try {
-                const res = await fetch(url, {
+                const res = await authFetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
-                    credentials: 'include',
+                    data: JSON.stringify(data),
                 });
                 if (!res.ok) {
                     const message = await res.json();
