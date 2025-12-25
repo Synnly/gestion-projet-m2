@@ -112,7 +112,12 @@ export class TopicService {
             return;
         }
 
-        await this.topicModel.create({ ...(dto as CreateTopicDto), forumId });
+        const newTopic = await this.topicModel.create({ ...(dto as CreateTopicDto), forumId });
+        await this.forumModel.findByIdAndUpdate(
+            forumId,
+            { $inc: { nbTopics: 1 }, $push: { topics: newTopic._id } },
+            { new: true },
+        );
         return;
     }
 }

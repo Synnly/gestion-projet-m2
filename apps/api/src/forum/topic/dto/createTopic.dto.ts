@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsArray, ArrayUnique, IsMongoId, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsNotEmpty } from 'class-validator';
 import { Types } from 'mongoose';
 
 /**

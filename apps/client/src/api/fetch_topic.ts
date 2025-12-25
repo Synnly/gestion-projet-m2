@@ -38,8 +38,6 @@ export async function fetchTopicById(forumId: string, topicId: string): Promise<
 
     const topic = await response.json();
     
-    // Fetch signed URL for author logo if exists
-    console.log('topic.author', topic);
     if (topic?.author?.logo) {
         const presignedUrl = await fetchPublicSignedUrl(topic.author.logo);
         if (presignedUrl) topic.author.logo = presignedUrl;
@@ -74,10 +72,8 @@ export async function fetchTopics({ forumId, page = 1, limit = 10, searchQuery }
 
     const paginationResult = await response.json();
 
-    // Fetch signed URLs for author logos
     await Promise.all(
         paginationResult.data.map(async (topic: TopicDetail) => {
-            console.log('topic.author', topic);
             if (topic.author?.logo) {
                 const presignedUrl = await fetchPublicSignedUrl(topic.author.logo);
                 if (presignedUrl) topic.author.logo = presignedUrl;
