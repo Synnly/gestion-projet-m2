@@ -46,7 +46,7 @@ export class TopicService {
      */
     async findAll(forumId: string, pagination: PaginationDto): Promise<PaginationResult<Topic>> {
         const { page = 1, limit = 10, sort, searchQuery } = pagination;
-        const filter: any = { forumId };
+        const filter: Record<string, unknown> = { forumId };
 
         if (searchQuery) {
             filter.$or = [
