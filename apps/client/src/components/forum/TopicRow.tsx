@@ -31,7 +31,8 @@ export const TopicRow = ({ topic, companyId, forumId }: Props) => {
                 </td>
 
                 <td className="w-px whitespace-nowrap text-right">
-                    {formatNumber(topic.nbMessages) === 'undefined' ? 0 : formatNumber(topic.nbMessages)} messages
+                    {formatNumber(topic.messages.length) === 'undefined' ? 0 : formatNumber(topic.messages.length)}{' '}
+                    messages
                 </td>
             </tr>
         </>
