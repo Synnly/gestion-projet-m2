@@ -75,11 +75,6 @@ function App() {
                 { path: 'privacy', element: <PrivacyPolicy /> },
                 { path: 'cookies', element: <CookiePolicy /> },
                 { path: 'safety', element: <SafetyCompliance /> },
-                {
-                    path: 'forum/:forumId/topic/:topicId',
-                    element: <TopicDetailPage />,
-                    handle: { title: 'Discussion' },
-                },
                 { index: true, element: <InternshipPage />, handle: { title: 'Accueil' } },
                 {
                     loader: notAuthMiddleWare,
