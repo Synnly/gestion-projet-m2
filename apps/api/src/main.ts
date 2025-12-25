@@ -6,7 +6,11 @@ import { SeedService } from './seed/seed.service';
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     const seedService = app.get(SeedService);
-    await seedService.run();
+    try {
+        await seedService.run();
+    } catch (error) {
+        console.error('Seeding failed during bootstrap:', error);
+    }
 
     app.enableCors({
         origin: `${process.env.FRONTEND_URL || 'http://localhost:5173'}`,

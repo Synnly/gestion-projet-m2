@@ -6,5 +6,6 @@ import { ForumModule } from '../forum/forum.module';
 @Module({
     imports: [AdminModule, ForumModule],
     providers: [SeedService],
+    exports: [SeedService],
 })
 export class SeedModule {}
