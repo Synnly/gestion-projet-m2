@@ -4,15 +4,16 @@ import { formatNumber } from '../../utils/format.ts';
 
 type Props = {
     topic: Topic;
-    companyId: string;
+    companyId?: string;
     forumId: string;
 };
 
 export const TopicRow = ({ topic, companyId, forumId }: Props) => {
     const nav = useNavigate();
     const navigateToTopic = () => {
-        nav(`/forums/${companyId}/topics/${forumId}/${topic._id}`);
-    }
+        const link = `/forums/${companyId || 'general'}/topics/${forumId}/${topic._id}`;
+        nav(link);
+    };
     return (
         <>
             <tr

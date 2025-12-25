@@ -127,7 +127,7 @@ export default function TopicDetailPage() {
                                 <div className="flex items-center gap-3 text-sm text-base-content/70 mb-4">
                                     <div className="flex items-center gap-2">
                                         <div className="avatar placeholder">
-                                            <div className="text-neutral-content rounded-full w-10 h-10">
+                                            <div className="text-neutral-content rounded-full w-10 h-10 flex justify-center items-center bg-black">
                                                 {topic.author.logo ? (
                                                     <img
                                                         src={topic.author.logo}
@@ -137,7 +137,7 @@ export default function TopicDetailPage() {
                                                         }
                                                     />
                                                 ) : (
-                                                    <span className="text-xs">
+                                                    <span className="text-xs font-bold ">
                                                         {(
                                                             topic.author.name?.charAt(0) ||
                                                             topic.author.firstName?.charAt(0)
