@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
-import { TopicService } from '../../../src/forum/topic/topic.service';
-import { Topic } from '../../../src/forum/topic/topic.schema';
-import { Forum } from '../../../src/forum/forum.schema';
-import { MessageService } from '../../../src/forum/message/message.service';
-import { PaginationService } from '../../../src/common/pagination/pagination.service';
-import { CreateTopicDto } from '../../../src/forum/topic/dto/createTopic.dto';
-import { UpdateTopicDto } from '../../../src/forum/topic/dto/updateTopic.dto';
+import { TopicService } from '../../../../src/forum/topic/topic.service';
+import { Topic } from '../../../../src/forum/topic/topic.schema';
+import { Forum } from '../../../../src/forum/forum.schema';
+import { MessageService } from '../../../../src/forum/message/message.service';
+import { PaginationService } from '../../../../src/common/pagination/pagination.service';
+import { CreateTopicDto } from '../../../../src/forum/topic/dto/createTopic.dto';
+import { UpdateTopicDto } from '../../../../src/forum/topic/dto/updateTopic.dto';
 
 describe('TopicService', () => {
     let service: TopicService;
@@ -187,8 +187,6 @@ describe('TopicService', () => {
             const createDto: CreateTopicDto = {
                 title: 'New Topic',
                 description: 'New Description',
-                messages: [],
-                author: mockAuthorId,
             };
 
             const createdTopic = { ...mockTopic, ...createDto, _id: mockTopicId };
@@ -218,8 +216,6 @@ describe('TopicService', () => {
         it('should create topic without description', async () => {
             const createDto: CreateTopicDto = {
                 title: 'Topic without description',
-                messages: [],
-                author: mockAuthorId,
             };
 
             const createdTopic = { ...mockTopic, ...createDto, _id: mockTopicId };
@@ -262,8 +258,6 @@ describe('TopicService', () => {
             const createDto: CreateTopicDto = {
                 title: 'New Topic',
                 description: 'New Description',
-                messages: [],
-                author: mockAuthorId,
             };
 
             const query = mockQuery(null);

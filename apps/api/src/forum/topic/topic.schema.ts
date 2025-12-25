@@ -3,6 +3,9 @@ import { Document, Types } from 'mongoose';
 
 export type TopicDocument = Topic & Document;
 
+/**
+ * Schema representing a forum topic.
+ */
 @Schema({ timestamps: true })
 export class Topic {
     // Unique identifier for the topic
