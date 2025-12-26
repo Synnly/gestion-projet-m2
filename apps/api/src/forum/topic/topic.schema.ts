@@ -28,7 +28,7 @@ export class Topic {
     author: Types.ObjectId;
 
     // Forum ID that this topic belongs to
-    @Prop({ required: true })
+    @Prop({ type: Types.ObjectId, ref: 'Forum', required: true })
     forumId: Types.ObjectId;
 }
 
