@@ -8,10 +8,12 @@ import { TopicHeaderSkeleton } from './components/Skeleton';
 import type { Topic } from './types';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useFetchGeneralForum, useFetchForumByCompanyId } from '../../hooks/useFetchForum';
 
 export default function TopicDetailPage() {
     const { forumId, topicId, companyId } = useParams<{ forumId: string; topicId: string; companyId: string }>();
-
+    const isGeneral = !companyId || companyId === 'general';
+    const { data: forum } = isGeneral ? useFetchGeneralForum() : useFetchForumByCompanyId(companyId!);
     const {
         data: topic,
         isLoading,
@@ -65,12 +67,12 @@ export default function TopicDetailPage() {
                     <div className="text-sm breadcrumbs">
                         <ul>
                             <li>
-                                <Link to="/">Accueil</Link>
+                                <Link to={`/forums`}>Forums</Link>
                             </li>
                             <li>
-                                <Link to={`/forums/${companyId}`}>Forum</Link>
+                                <Link to={`/forums/${companyId}`}>{forum?.company?.name ?? 'Général'}</Link>
                             </li>
-                            <li className="text-base-content/60">Sujet</li>
+                            <li className="text-base-content/60">{topic?.title}</li>
                         </ul>
                     </div>
                     <button onClick={handleRefresh} disabled={isRefetching} className="btn btn-ghost btn-sm gap-2">
