@@ -14,7 +14,7 @@ import { MessageSender } from './components//MessageSender';
 import { MessageContainer } from './components//MessageContainer';
 import { MessageItem } from './components//MessageItem.tsx';
 import { DataPagination } from '../../components/ui/pagination/DataPagination.tsx';
-import { UseAuthFetch } from '../../hooks/UseAuthFetch.tsx';
+import { UseAuthFetch } from '../../hooks/useAuthFetch.tsx';
 import { buildQueryParams } from '../../hooks/useFetchInternships.ts';
 import type { PaginationResult } from '../../types/internship.types.ts';
 export type Role = 'ADMIN' | 'STUDENT' | 'COMPANY';
@@ -64,6 +64,22 @@ export default function TopicDetailPage() {
     });
 
     const {
+        data: companyData,
+        isLoading: isCompanyLoading,
+        isError: isCompanyError,
+    } = useQuery({
+        queryKey: ['companyTopic', companyId],
+        queryFn: async () => {
+            const companyInformation = await authFetch(`${apiUrl}/api/companies/${companyId}`, { method: 'GET' });
+            if (!companyInformation.ok) {
+                return null;
+            }
+            return await companyInformation.json();
+        },
+        enabled: !!companyId,
+    });
+    console.log(companyData);
+    const {
         data: topic,
         isLoading,
         isError,
@@ -79,21 +95,27 @@ export default function TopicDetailPage() {
     const [shown, setShown] = useState(false);
 
     const [reply, setReply] = useState<{ id: string; name: string } | null>(null);
+
     const toggleSender = () => setShown(!shown);
+
     const onCancel = () => {
         setShown(false);
         setReply(null);
     };
+
     const onReply = (id: string, name: string) => {
         setReply({ id, name });
         setShown(true);
     };
+
     const onCancelReply = () => {
         setReply(null);
     };
+
     const handlePageChange = (newPage: number) => {
         setFilter((prev) => ({ ...prev, page: newPage }));
     };
+
     const handleRefresh = async () => {
         try {
             await refetch();
@@ -103,6 +125,7 @@ export default function TopicDetailPage() {
             toast.error("Erreur lors de l'actualisation");
         }
     };
+
     const afterSend = async () => {
         await refetch();
         await messageRefetch();
@@ -142,9 +165,15 @@ export default function TopicDetailPage() {
                                 <Link to="/forums">Forums</Link>
                             </li>
                             <li>
-                                <Link to={`/forums/${companyId || 'general'}`}>Forum</Link>
+                                {(companyData || !companyId) && (
+                                    <Link to={`/forums/${companyId || 'general'}`}>
+                                        {companyId ? companyData.name : 'Generale'}
+                                    </Link>
+                                )}
                             </li>
-                            {!isLoading && <li className="text-base-content/60">{topic?.title}</li>}
+                            {!isLoading && (
+                                <li>{`${topic?.title.charAt(0).toUpperCase()}${topic?.title.substring(1)}`}</li>
+                            )}
                         </ul>
                     </div>
                     <button onClick={handleRefresh} disabled={isRefetching} className="btn btn-ghost btn-sm gap-2">
@@ -241,9 +270,7 @@ export default function TopicDetailPage() {
                                     {(topic.messages?.length || 0) > 1 ? 's' : ''}
                                 </span>
                             </div>
-
-                            <h1 className="text-3xl font-bold text-base-content mb-4">{topic.title}</h1>
-
+                            <h1 className="text-3xl font-bold text-base-content mb-4">{`${topic?.title.charAt(0).toUpperCase()}${topic?.title.substring(1)}`}</h1>
                             {topic.description && (
                                 <div className="prose max-w-none">
                                     <p className="text-base-content/90 whitespace-pre-wrap">{topic.description}</p>
@@ -252,7 +279,6 @@ export default function TopicDetailPage() {
                         </div>
                     </div>
                 )}
-
                 <div className="flex justify-center pb-2">
                     <button
                         onClick={toggleSender}
@@ -273,7 +299,6 @@ export default function TopicDetailPage() {
                         Répondre au sujet
                     </button>
                 </div>
-
                 <div className=" card bg-base-100 shadow-lg flex flex-col overflow-hidden border border-slate-200 ">
                     {!topic?.messages || topic?.messages.length === 0 ? (
                         <div className="card text-center py-12 text-base-content/60">

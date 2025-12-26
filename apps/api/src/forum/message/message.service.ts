@@ -57,7 +57,13 @@ export class MessageService {
         const filter = queryBuilder.buildMessageFilter();
         const populate = [
             { path: 'authorId', select: 'firstName lastName name logo role ' },
-            { path: 'parentMessageId' },
+            {
+                path: 'parentMessageId',
+                populate: {
+                    path: 'authorId',
+                    select: 'firstName lastName name',
+                },
+            },
         ];
         const paginate = await this.paginationService.paginate(this.messageModel, filter, page, limit, populate);
         return paginate;

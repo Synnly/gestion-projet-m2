@@ -85,7 +85,9 @@ export class ForumController {
     @Get('by-company-id/:companyId')
     @HttpCode(HttpStatus.OK)
     async findOneByCompanyId(@Param('companyId', ParseObjectIdPipe) companyId?: string): Promise<ForumDto | null> {
-        return plainToInstance(ForumDto, await this.forumService.findOneByCompanyId(companyId));
+        const forum = await this.forumService.findOneByCompanyId(companyId);
+        Logger.log(forum);
+        return plainToInstance(ForumDto, forum);
     }
 
     @Post('/topic/:topicId/message')

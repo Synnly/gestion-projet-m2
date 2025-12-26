@@ -4,9 +4,9 @@ import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
 import { useState } from 'react';
 import { cn } from '../../../utils/cn';
-import { UseAuthFetch } from '../../../hooks/UseAuthFetch';
 import { useMutation } from '@tanstack/react-query';
 import { userStore } from '../../../store/userStore';
+import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 type MessageSenderProps = {
     topicId?: string;
     reply?: { id: string; name: string } | null;
@@ -26,7 +26,6 @@ export function MessageSender({ topicId, reply, shown, afterSend, onCancel, canc
     const { mutateAsync, isPending } = useMutation({
         mutationFn: async () => {
             if (!content) return;
-            const url = `${apiUrl}/api/forum/topic/${topicId}/message`;
             const data = JSON.stringify({ authorId: id, content, parentMessageId: reply?.id || null });
             const response = await authfetch(`${apiUrl}/api/forum/topic/${topicId}/message`, {
                 method: 'POST',
@@ -104,6 +103,7 @@ export function MessageSender({ topicId, reply, shown, afterSend, onCancel, canc
                     height={150}
                     preview="edit"
                     extraCommands={[]}
+                    highlightEnable={false}
                     visibleDragbar={false}
                     commands={[
                         commands.bold,

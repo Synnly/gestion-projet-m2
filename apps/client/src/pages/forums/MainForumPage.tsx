@@ -8,20 +8,41 @@ import { SearchBar } from '../../components/inputs/searchBar';
 import { formatNumber } from '../../utils/format.ts';
 import { forumStore } from '../../store/forumStore.ts';
 import { useFetchForums, useFetchGeneralForum } from '../../hooks/useFetchForum.ts';
+import { userStore } from '../../store/userStore.ts';
+import { useQuery } from '@tanstack/react-query';
+import { UseAuthFetch } from '../../hooks/useAuthFetch.tsx';
 
 export function MainForumPage() {
+    const apiUrl = import.meta.env.VITE_APIURL;
     const navigation = useNavigation();
     const filters = forumStore((state) => state.filters);
     const setFilters = forumStore((state) => state.setFilters);
     const { isError: isErrorForums } = useFetchForums();
     const { isError: isErrorGeneral } = useFetchGeneralForum();
-
+    const access = userStore((state) => state.access);
+    const get = userStore((state) => state.get);
+    const { id, role } = get(access)!;
+    const authFetch = UseAuthFetch();
     const forums: Forum[] = forumStore((state) => state.forums);
     const generalForum: Forum = forumStore((state) => state.generalForum)!;
     const handleSearchChange = (query: string) => {
         setFilters({ companyName: query || undefined, page: 1, limit: 12 });
     };
-
+    console.log(apiUrl);
+    const { isLoading, data } = useQuery({
+        queryKey: ['companyId'],
+        queryFn: async () => {
+            const companyForum = await authFetch(`${apiUrl}/api/forum/by-company-id/${id}`);
+            if (!companyForum.ok) {
+                return null;
+            }
+            const forum = await companyForum.json();
+            console.log(forum);
+            return forum;
+        },
+        enabled: role === 'COMPANY',
+    });
+    console.log(data);
     return (
         <div className="flex flex-col h-screen">
             <Navbar minimal={false} />
@@ -71,7 +92,7 @@ export function MainForumPage() {
                     </div>
                 )}
 
-                {!isErrorForums && (
+                {!isErrorForums && role !== 'COMPANY' ? (
                     <div className="w-full flex flex-col gap-2 justify-center">
                         <SearchBar
                             searchQuery={filters.companyName || ''}
@@ -86,6 +107,10 @@ export function MainForumPage() {
                             ))}
                         </ul>
                     </div>
+                ) : (
+                    <ul className="w-full space-y-2 flex flex-wrap justify-between">
+                        {!isLoading && <ForumCard forum={data} key={data._id} />}
+                    </ul>
                 )}
             </div>
         </div>

@@ -1,9 +1,11 @@
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
-import { userStore } from '../../../store/userStore';
 import { cn } from '../../../utils/cn';
 import type { MessageType, Role } from '../TopicDetailPage';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { ReplyMessage } from './replyMessage';
 export const MessageItem = ({
     message,
     onReply,
@@ -24,10 +26,10 @@ export const MessageItem = ({
     };
     return (
         <div className="bg-base-100 border border-slate-200 rounded-xl p-4 mb-2 shadow-lg w-full ">
-            <div className="flex items-center gap-3 h-full">
+            <div className="flex items-start gap-3 h-full">
                 <div className="h-10 w-10 rounded-full bg-slate-200 flex-shrink-0 overflow-hidden">
                     {displayName.name ? (
-                        <div className="h-full w-full flex items-center justify-center  font-bold text-primary-content">
+                        <div className="h-full w-full flex items-center justify-center  font-bold text-primary-content ">
                             {displayName.name?.[0]}
                         </div>
                     ) : (
@@ -43,26 +45,15 @@ export const MessageItem = ({
                         <h4 className="font-bold text-primary text-sm">
                             {displayName.name ? displayName.name : `${displayName.firstName} ${displayName.lastName}`}
                         </h4>
-                        <span className="text-xs text-primary">
-                            {new Date(message.createdAt).toLocaleString('en-US', {
-                                month: 'long',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                            })}
+                        <span className="text-xs text-secondary">
+                            {formatDistanceToNow(new Date(message.createdAt), {
+                                addSuffix: true,
+                                locale: fr,
+                            })}{' '}
                         </span>
                     </div>
 
-                    {message.parentMessageId && (
-                        <div className="p-2  border border-black ">
-                            <MDEditor.Markdown
-                                source={message.parentMessageId.content}
-                                className="!bg-transparent !text-base-content !text-sm leading-relaxed"
-                                style={{ fontFamily: 'inherit' }}
-                            />
-                        </div>
-                    )}
+                    {message.parentMessageId && <ReplyMessage replyMessage={message.parentMessageId} />}
 
                     <MDEditor.Markdown
                         source={message.content}
