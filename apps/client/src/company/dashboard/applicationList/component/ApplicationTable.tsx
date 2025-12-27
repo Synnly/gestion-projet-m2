@@ -12,7 +12,6 @@ import { useQuery } from '@tanstack/react-query';
 import type { PaginationResult } from '../../../../types/internship.types';
 import { useParams } from 'react-router';
 import { fetchApplicationsByPost } from '../../../../hooks/useFetchApplications';
-import { formatDate } from '../../intershipList/component/tableRow';
 import { UseAuthFetch } from '../../../../hooks/useAuthFetch';
 
 const API_URL = import.meta.env.VITE_APIURL;
@@ -23,6 +22,15 @@ interface Props {
     activeTab: ApplicationStatus | null;
     setActiveTab: (tab: ApplicationStatus | null) => void;
 }
+
+export const formatDate = (timeStamp: string) => {
+    const date = new Date(timeStamp);
+    return date.toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+};
 
 export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Props) => {
     const [modalOpen, setModalOpen] = useState(false);

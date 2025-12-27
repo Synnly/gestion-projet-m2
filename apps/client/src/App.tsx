@@ -22,7 +22,6 @@ import InternshipDetailPage from './pages/internship/InternshipDetailPage';
 import CreatePostPage from './pages/posts/CreatePostPage';
 import UpdatePostPage from './pages/posts/UpdatePostPage';
 import { updatePostLoader } from './loaders/updatePostLoader';
-import { DashboardInternshipList } from './company/dashboard/intershipList/DashboardInternshipList';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { InternshipApply } from './pages/internship/InternshipApply';
@@ -107,13 +106,7 @@ function App() {
                                     path: 'dashboard',
                                     handle: { title: 'Tableau de bord entreprise' },
                                     element: <CompanyDashboard />,
-                                    children: [
-                                        {
-                                            index: true,
-                                            element: <DashboardInternshipList />,
-                                        },
-                                        { path: 'post/:postId/applications', element: <ApplicationList /> },
-                                    ],
+                                    children: [{ path: 'post/:postId/applications', element: <ApplicationList /> }],
                                 },
                                 {
                                     path: 'profile',
