@@ -13,6 +13,7 @@ export interface InternshipStore {
     detailHeight: number | null;
     // Callback pour refetch les données quand les filtres changent
     refetchCallback: (() => void) | null;
+    editionMode: boolean;
 
     // Actions
     setInternships: (data: PaginationResult<Internship>) => void;
@@ -24,6 +25,7 @@ export interface InternshipStore {
     removeInternshipsByIds: (ids: string[]) => void;
     setDetailHeight: (h: number | null) => void;
     setRefetchCallback: (callback: (() => void) | null) => void;
+    toggleEditionMode: () => void;
 }
 
 const DEFAULT_FILTERS: InternshipFilters = {
@@ -42,6 +44,7 @@ export const useInternshipStore = create<InternshipStore>()(
             savedInternships: [],
             detailHeight: null,
             refetchCallback: null,
+            editionMode: false,
 
             // Actions
             setInternships: (data) =>
@@ -99,6 +102,7 @@ export const useInternshipStore = create<InternshipStore>()(
                 })),
             setDetailHeight: (h: number | null) => set({ detailHeight: h }),
             setRefetchCallback: (callback: (() => void) | null) => set({ refetchCallback: callback }),
+            toggleEditionMode: () => set((state) => ({ editionMode: !state.editionMode })),
         }),
         {
             name: 'internship-storage',

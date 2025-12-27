@@ -64,7 +64,6 @@ function App() {
                     },
                 },
 
-                { index: true, element: <InternshipPage /> },
                 { path: 'about', element: <About /> },
                 { path: 'contact', element: <Contact /> },
                 { path: 'faq', element: <FAQ /> },

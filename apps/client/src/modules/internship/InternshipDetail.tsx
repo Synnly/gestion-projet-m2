@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import type { Internship } from '../../types/internship.types';
-import { Bookmark } from 'lucide-react';
+import { Eye, Pen } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import { userStore } from '../../store/userStore';
@@ -11,11 +11,8 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
     internship,
     applyable = true,
 }) => {
-    const savedInternships = useInternshipStore((state) => state.savedInternships);
-    const toggleSaveInternship = useInternshipStore((state) => state.toggleSaveInternship);
     const setDetailHeight = useInternshipStore((s) => s.setDetailHeight);
     const rootRef = useRef<HTMLDivElement | null>(null);
-    const isSaved = savedInternships.includes(internship._id);
     const access = userStore((state) => state.access);
     const get = userStore((state) => state.get);
     const payload = get(access);
@@ -86,17 +83,24 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                                     </div>
                                 </div>
                             </div>
-                            {applyable && (
-                                <button className="text-primary" onClick={() => toggleSaveInternship(internship._id)}>
-                                    <Bookmark size={20} fill={isSaved ? 'currentColor' : 'none'} />
-                                </button>
-                            )}
                         </div>
 
                         {applyable && ((payload && payload.role === 'STUDENT') || !payload) && (
                             <ApplicationStatusChecker studentId={payload?.id} adId={internship._id} />
                         )}
-                        <div className="mt-8 border-t border-base-300! pt-6">
+
+                        {get(access)?.role === 'COMPANY' && (
+                            <div className="flex justify-between gap-8 mt-4">
+                                <a className="btn grow 1" href={`/company/offers/${internship._id}/edit`}>
+                                    Modifier <Pen />
+                                </a>
+                                <a className="btn grow" href={`/company/dashboard/post/${internship._id}/applications`}>
+                                    Consulter les candidatures <Eye />
+                                </a>
+                            </div>
+                        )}
+
+                        <div className="mt-4 border-t border-base-300! pt-6">
                             <h4 className="text-lg font-bold">Description du stage</h4>
                             <div className="mt-4 space-y-4 text-sm text-base-content">
                                 <div className="prose max-w-none bg-transparent text-base-content shadow-none border-0">
