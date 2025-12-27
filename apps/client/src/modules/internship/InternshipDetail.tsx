@@ -7,10 +7,14 @@ import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import { userStore } from '../../store/userStore';
 import { ApplicationStatusChecker } from '../../pages/internship/component/InternshipApplyChecker';
+import { ApplicationStatus } from '../../pages/internship/component/ApplicationStatus.tsx';
+import { useQuery } from '@tanstack/react-query';
+import { UseAuthFetch } from '../../hooks/useAuthFetch.tsx';
 const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }> = ({
     internship,
     applyable = true,
 }) => {
+    const authFetch = UseAuthFetch();
     const setDetailHeight = useInternshipStore((s) => s.setDetailHeight);
     const rootRef = useRef<HTMLDivElement | null>(null);
     const access = userStore((state) => state.access);
@@ -44,6 +48,35 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
         window.addEventListener('resize', update);
         return () => window.removeEventListener('resize', update);
     }, [setDetailHeight]);
+
+    const studentId = payload?.id;
+
+    const { data: application, isLoading } = useQuery({
+        queryKey: ['application', studentId, internship._id],
+
+        queryFn: async () => {
+            const url = `${import.meta.env.VITE_APIURL}/api/application/check?studentId=${studentId}&postId=${internship._id}`;
+
+            const res = await authFetch(url, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (res.ok) {
+                try {
+                    const responseData = await res.json();
+                    return responseData;
+                } catch (e) {
+                    return null;
+                }
+            }
+            const errorMessage = `Erreur HTTP ${res.status}`;
+            throw new Error(errorMessage);
+        },
+
+        enabled: !!studentId && !!internship._id,
+        staleTime: 1 * 60 * 1000, // 1 minute
+    });
 
     return (
         <div className="flex flex-col flex-1">
@@ -83,10 +116,13 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                                     </div>
                                 </div>
                             </div>
+                            {applyable && ((payload && payload.role === 'STUDENT') || !payload) && (
+                                <ApplicationStatus application={application} />
+                            )}
                         </div>
 
                         {applyable && ((payload && payload.role === 'STUDENT') || !payload) && (
-                            <ApplicationStatusChecker studentId={payload?.id} adId={internship._id} />
+                            <ApplicationStatusChecker application={application} isLoading={isLoading} />
                         )}
 
                         {get(access)?.role === 'COMPANY' && (
