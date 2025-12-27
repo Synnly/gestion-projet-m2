@@ -13,7 +13,7 @@ export interface InternshipStore {
     detailHeight: number | null;
     // Callback pour refetch les données quand les filtres changent
     refetchCallback: (() => void) | null;
-    editionMode: boolean;
+    showMyApplicationsOnly: boolean;
 
     // Actions
     setInternships: (data: PaginationResult<Internship>) => void;
@@ -25,7 +25,7 @@ export interface InternshipStore {
     removeInternshipsByIds: (ids: string[]) => void;
     setDetailHeight: (h: number | null) => void;
     setRefetchCallback: (callback: (() => void) | null) => void;
-    toggleEditionMode: () => void;
+    toggleShowMyApplicationsOnly: () => void;
 }
 
 const DEFAULT_FILTERS: InternshipFilters = {
@@ -45,6 +45,7 @@ export const useInternshipStore = create<InternshipStore>()(
             detailHeight: null,
             refetchCallback: null,
             editionMode: false,
+            showMyApplicationsOnly: false,
 
             // Actions
             setInternships: (data) =>
@@ -65,6 +66,7 @@ export const useInternshipStore = create<InternshipStore>()(
                 set((state) => ({
                     filters: { ...state.filters, ...newFilters },
                 }));
+                console.log('Filters updated:', { ...get().filters, ...newFilters });
                 // Appel automatique du refetch si une callback est enregistrée
                 const callback = get().refetchCallback;
                 if (callback) {
@@ -102,7 +104,13 @@ export const useInternshipStore = create<InternshipStore>()(
                 })),
             setDetailHeight: (h: number | null) => set({ detailHeight: h }),
             setRefetchCallback: (callback: (() => void) | null) => set({ refetchCallback: callback }),
-            toggleEditionMode: () => set((state) => ({ editionMode: !state.editionMode })),
+            toggleShowMyApplicationsOnly: async () => {
+                await set({ showMyApplicationsOnly: !get().showMyApplicationsOnly });
+                const callback = get().refetchCallback;
+                if (callback) {
+                    callback();
+                }
+            },
         }),
         {
             name: 'internship-storage',

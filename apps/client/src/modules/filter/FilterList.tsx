@@ -6,10 +6,14 @@ import { useInternshipStore } from '../../store/useInternshipStore';
 import SortSelect from './SortSelect';
 import CityRadiusModal from '../../components/CityRadius/CityRadiusModal';
 import SalaryRangeSelector from '../../components/inputs/range/SalaryRangeSelector';
+import { userStore } from '../../store/userStore.ts';
 
 export function FilterList() {
     const filters = useInternshipStore((s) => s.filters);
     const setFilters = useInternshipStore((s) => s.setFilters);
+    const toggleShowMyApplicationsOnly = useInternshipStore((s) => s.toggleShowMyApplicationsOnly);
+    const access = userStore((state) => state.access);
+    const get = userStore((state) => state.get);
     const [minimal, setMinimal] = useState<boolean>(true);
     const [mapOpen, setMapOpen] = useState(false);
     const [_, setSalaryRange] = useState<{ min: number; max: number }>({
@@ -43,11 +47,17 @@ export function FilterList() {
                 <div className="card-body p-3">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
-                            <label className="swap btn">
-                                <input type="checkbox" />
-                                <div className="swap-on">Toutes les annonces</div>
-                                <div className="swap-off">Mes candidatures</div>
-                            </label>
+                            {get(access)?.role === 'STUDENT' && (
+                                <label className="swap btn">
+                                    <input type="checkbox" defaultChecked />
+                                    <div className="swap-off" onClick={toggleShowMyApplicationsOnly}>
+                                        Toutes les annonces
+                                    </div>
+                                    <div className="swap-on" onClick={toggleShowMyApplicationsOnly}>
+                                        Mes candidatures
+                                    </div>
+                                </label>
+                            )}
                             <button
                                 type="button"
                                 className="btn btn-xs btn-ghost flex items-center"

@@ -11,6 +11,7 @@ import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
 import { CreationFailedError } from '../errors/creationFailedError';
 import { CompanyService } from 'src/company/company.service';
 import { GeoService } from 'src/common/geography/geo.service';
+import { ApplicationService } from '../application/application.service';
 
 @Injectable()
 export class PostService {
@@ -20,6 +21,7 @@ export class PostService {
 
         private readonly geoService: GeoService,
         @Inject(forwardRef(() => CompanyService)) private readonly companyService: CompanyService,
+        @Inject(forwardRef(() => ApplicationService)) private readonly applicationService: ApplicationService,
     ) {}
 
     /**
@@ -112,6 +114,41 @@ export class PostService {
         };
 
         // Ensure sensible defaults if the DTO omitted values
+
+        return this.paginationService.paginate(
+            this.postModel,
+            filter,
+            page,
+            limit,
+            [companyPopulate], // populate with selected fields
+            sortQuery,
+        );
+    }
+
+    /**
+     * Retrieve posts applied to by a specific student using pagination and dynamic filters.
+     *
+     * This method first retrieves the list of post IDs that the student has applied to
+     * using the `ApplicationService`. It then builds a Mongoose `FilterQuery<Post>` that
+     * includes only those post IDs, along with any additional filters provided in the query.
+     * The pagination service executes the query with optional population and sorting.
+     * @param query - Pagination and filter parameters provided by the incoming HTTP request (`PaginationDto`).
+     * @param studentId - The ID of the student whose applied posts are to be retrieved.
+     * @returns A `PaginationResult<Post>` containing paginated posts and metadata (total, page, limit, etc.).
+     */
+    async findAllByStudent(query: PaginationDto, studentId: string): Promise<PaginationResult<Post>> {
+        const postIds = await this.applicationService.getPostIdsByStudent(studentId);
+
+        const { page, limit, sort, ...filters } = query;
+
+        const qb = new QueryBuilder<Post>({ ...filters, _id: { $in: postIds } }, this.geoService);
+        const filter = await qb.build();
+        const sortQuery = qb.buildSort(sort);
+
+        const companyPopulate = {
+            path: 'company',
+            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+        };
 
         return this.paginationService.paginate(
             this.postModel,

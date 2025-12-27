@@ -40,9 +40,13 @@ export function buildQueryParams(filters: any) {
     return params;
 }
 
-export async function fetchPosts(API_URL: string, params: URLSearchParams) {
+export async function fetchPosts(API_URL: string, params: URLSearchParams, byStudent = false) {
     const authFetch = UseAuthFetch();
-    const res = await authFetch(`${API_URL}/api/company/0/posts?${params}`, {
+    const url = byStudent
+        ? `${API_URL}/api/company/0/posts/by-student?${params}`
+        : `${API_URL}/api/company/0/posts?${params}`;
+
+    const res = await authFetch(url, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
     });
@@ -100,6 +104,7 @@ export function applyLogosToPosts(posts: any[], profiles: any[], signedMap: Map<
 export function useFetchInternships() {
     const filters = useInternshipStore((state) => state.filters);
     const setInternships = useInternshipStore((state) => state.setInternships);
+    const showMyApplicationsOnly = useInternshipStore((state) => state.showMyApplicationsOnly);
     const query = useQuery<PaginationResult<Internship>, Error>({
         queryKey: ['internships', filters],
 
@@ -112,7 +117,7 @@ export function useFetchInternships() {
             const params = buildQueryParams(filters);
 
             /** 2) Fetch base posts */
-            const paginationResult = await fetchPosts(API_URL, params);
+            const paginationResult = await fetchPosts(API_URL, params, showMyApplicationsOnly);
 
             // Filter out posts with missing company to avoid rendering invalid items
             const originalLength = paginationResult.data.length;
