@@ -12,6 +12,7 @@ import { StudentModule } from './student/student.module';
 import { ApplicationModule } from './application/application.module';
 import { StorageProviderType } from './s3/s3.constants';
 import { ForumModule } from './forum/forum.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
     imports: [
@@ -34,6 +35,7 @@ import { ForumModule } from './forum/forum.module';
         StudentModule,
         ForumModule,
         ApplicationModule,
+        NotificationModule,
     ],
     controllers: [],
     providers: [],
