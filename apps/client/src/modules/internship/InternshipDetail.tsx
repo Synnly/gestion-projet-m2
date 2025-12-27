@@ -74,7 +74,7 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                                         {internship.company.name} • {internship.adress}
                                     </p>
                                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                                        <span className="badge badge-success text-content-primary">
+                                        <span className="badge badge-primaryx text-content-primary">
                                             {internship.type}
                                         </span>
                                         {internship.sector && <span className="badge">{internship.sector}</span>}

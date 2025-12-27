@@ -1,24 +1,8 @@
 import { redirect } from 'react-router';
 import { userStore } from '../store/userStore';
-import type { WorkMode } from '../store/CreatePostStore';
 import { UseAuthFetch } from '../hooks/useAuthFetch';
-
-export type LoaderPost = {
-    _id: string;
-    title: string;
-    description: string;
-    duration?: string;
-    startDate?: string;
-    minSalary?: number;
-    maxSalary?: number;
-    sector?: string;
-    keySkills?: string[];
-    adress?: string;
-    type?: WorkMode | string;
-    isVisible?: boolean;
-    isCoverLetterRequired: boolean;
-    createdAt: string;
-};
+import type { Internship } from '../types/internship.types.ts';
+import { fetchPublicSignedUrl } from '../hooks/useBlob.tsx';
 
 const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
 
@@ -34,15 +18,19 @@ export async function updatePostLoader({ params }: { params: { postId?: string }
     const companyId = tokenPayload.id;
     const postId = params.postId;
     if (!postId) {
-        throw redirect('/company/dashboard');
+        throw redirect('/');
     }
     const authFetch = UseAuthFetch();
     const res = await authFetch(`${API_URL}/api/company/${companyId}/posts/${postId}`);
 
     if (!res.ok) {
-        throw redirect('/company/dashboard');
+        throw redirect('/');
+    }
+    const post: Internship = await res.json();
+
+    if (post.company.logoUrl) {
+        post.company.logoUrl = (await fetchPublicSignedUrl(post.company.logoUrl)) ?? post.company.logoUrl;
     }
 
-    const post: LoaderPost = await res.json();
     return { post, companyId, postId };
 }
