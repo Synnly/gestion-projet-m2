@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CompanySignup } from './auth/companySignup/index';
 import { Login } from './auth/Login/index';
 import { CompleteProfil } from './company/completeProfil/index';
-import { CompanyDashboard } from './company/dashboard/index';
 import { CompanyProfile } from './company/profile/index';
 import { EditCompanyProfile } from './company/editProfile/index';
 import { ChangePassword } from './company/editProfile/changePassword/index';
@@ -40,7 +39,7 @@ import { AdminDashboard } from './admin/dashboard';
 import ApplicationPage from './pages/applications/ApplicationPage';
 import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
 import { StudentDashboard } from './student/dashboard';
-import { ApplicationList } from './company/dashboard/applicationList/ApplicationList.tsx';
+import { ApplicationList } from './company/applicationList/ApplicationList.tsx';
 import ImportStudent from './admin/importStudent.tsx';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
 import { ForumPage } from './pages/forums/ForumPage.tsx';
@@ -103,12 +102,6 @@ function App() {
                             element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
                             children: [
                                 {
-                                    path: 'dashboard',
-                                    handle: { title: 'Tableau de bord entreprise' },
-                                    element: <CompanyDashboard />,
-                                    children: [{ path: 'post/:postId/applications', element: <ApplicationList /> }],
-                                },
-                                {
                                     path: 'profile',
                                     element: <CompanyProfile />,
                                     handle: { title: "Profil de l'entreprise" },
@@ -132,20 +125,14 @@ function App() {
                                     element: <CreatePostPage />,
                                     handle: { title: 'Créer une offre' },
                                 },
-                                {
-                                    path: 'offers/:postId/edit',
-                                    loader: updatePostLoader,
-                                    element: <UpdatePostPage />,
-                                    handle: { title: 'Modifier une offre' },
-                                },
                             ],
                         },
                         {
                             path: 'internship',
                             children: [
                                 {
+                                    index: true,
                                     element: <VerifiedRoutes redirectPath="/" />,
-                                    children: [],
                                 },
                                 {
                                     path: 'detail/:id',
@@ -161,6 +148,23 @@ function App() {
                                         },
                                     ],
                                     handle: { title: 'Postuler à un stage' },
+                                },
+                                {
+                                    path: ':id',
+                                    element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
+                                    children: [
+                                        {
+                                            index: true,
+                                            element: <VerifiedRoutes redirectPath="/" />,
+                                        },
+                                        { path: 'applications', element: <ApplicationList /> },
+                                        {
+                                            path: 'edit',
+                                            loader: updatePostLoader,
+                                            element: <UpdatePostPage />,
+                                            handle: { title: 'Modifier une offre' },
+                                        },
+                                    ],
                                 },
                             ],
                         },

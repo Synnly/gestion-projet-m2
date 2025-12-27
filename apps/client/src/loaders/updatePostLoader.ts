@@ -6,7 +6,8 @@ import { fetchPublicSignedUrl } from '../hooks/useBlob.tsx';
 
 const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
 
-export async function updatePostLoader({ params }: { params: { postId?: string } }) {
+export async function updatePostLoader({ params }: { params: { id?: string } }) {
+    console.log('updatePostLoader called with params', params);
     const access = userStore.getState().access;
     if (!access) {
         throw redirect('/signin');
@@ -16,7 +17,7 @@ export async function updatePostLoader({ params }: { params: { postId?: string }
         throw redirect('/signin');
     }
     const companyId = tokenPayload.id;
-    const postId = params.postId;
+    const postId = params.id;
     if (!postId) {
         throw redirect('/');
     }
