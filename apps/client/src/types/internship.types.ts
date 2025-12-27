@@ -62,5 +62,6 @@ export interface InternshipFilters {
     city?: string;
     radiusKm?: number;
     keySkills?: string | string[];
+    company?: string;
     sort?: string;
 }

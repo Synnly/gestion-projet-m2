@@ -5,6 +5,7 @@ import { fetchPublicSignedUrl } from './useBlob';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { UseAuthFetch } from './useAuthFetch';
+import { userStore } from '../store/userStore.ts';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
@@ -104,6 +105,10 @@ export function useFetchInternships() {
 
         queryFn: async () => {
             /** 1) Query params */
+            const accessToken = userStore.getState().access;
+            if (userStore.getState().get(accessToken)?.role === 'COMPANY') {
+                filters.company = userStore.getState().get(accessToken)?.id;
+            }
             const params = buildQueryParams(filters);
 
             /** 2) Fetch base posts */

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RotateCcw, MapPin, ListFilter } from 'lucide-react';
+import { RotateCcw, MapPin, ListFilter, Eye, Pen } from 'lucide-react';
 import { FilterInput } from '../../components/inputs/selectInput';
 import { internshipFilters, mapOptionToPayload } from './filters';
 import { useInternshipStore } from '../../store/useInternshipStore';
@@ -43,6 +43,16 @@ export function FilterList() {
                 <div className="card-body p-3">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
+                            <label className="swap">
+                                <input type="checkbox" />
+                                <div className="flex justify-between swap-on btn">
+                                    Visualisation <Eye />
+                                </div>
+                                <div className="flex justify-between swap-off btn">
+                                    Modification
+                                    <Pen />{' '}
+                                </div>
+                            </label>
                             <button
                                 type="button"
                                 className="btn btn-xs btn-ghost flex items-center"
