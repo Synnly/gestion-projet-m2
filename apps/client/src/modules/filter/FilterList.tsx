@@ -39,10 +39,15 @@ export function FilterList() {
 
     return (
         <div className="w-full space-y-2 pb-4">
-            <div className="card bg-base-100 shadow-md">
+            <div className="card bg-base-100 shadow-md shadow-base-300">
                 <div className="card-body p-3">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
+                            <label className="swap btn">
+                                <input type="checkbox" />
+                                <div className="swap-on">Toutes les annonces</div>
+                                <div className="swap-off">Mes candidatures</div>
+                            </label>
                             <button
                                 type="button"
                                 className="btn btn-xs btn-ghost flex items-center"

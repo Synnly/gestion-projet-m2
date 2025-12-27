@@ -116,7 +116,7 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                                     </div>
                                 </div>
                             </div>
-                            {applyable && ((payload && payload.role === 'STUDENT') || !payload) && (
+                            {applyable && ((payload && payload.role === 'STUDENT') || !payload) && application && (
                                 <ApplicationStatus application={application} />
                             )}
                         </div>
