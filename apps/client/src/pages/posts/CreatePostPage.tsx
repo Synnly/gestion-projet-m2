@@ -4,14 +4,23 @@ import { PostPreview } from '../../components/posts/PostPreview';
 import { profileStore } from '../../store/profileStore';
 import { useCreatePostStore } from '../../store/CreatePostStore';
 import { Navbar } from '../../components/navbar/Navbar';
+import type { CompanyInInternship } from '../../types/internship.types.ts';
 
 export default function CreatePostPage() {
     const profile = profileStore((state) => state.profile);
-    const companyName = profile?.name ?? 'Mon entreprise';
     const reset = useCreatePostStore((state) => state.reset);
     useLayoutEffect(() => {
         reset();
     }, [reset]);
+
+    if (!profile) return;
+
+    const company: CompanyInInternship = {
+        _id: profile._id ?? '',
+        email: profile.email ?? '',
+        name: profile.name ?? '',
+        logo: profile.logo,
+    };
 
     return (
         <div className="min-h-screen bg-base-100">
@@ -32,7 +41,7 @@ export default function CreatePostPage() {
                         <h2 className="text-sm font-semibold uppercase tracking-wide text-base-500">
                             Apercu en direct
                         </h2>
-                        <PostPreview companyName={companyName} />
+                        <PostPreview company={company} />
                     </aside>
                 </div>
             </div>
