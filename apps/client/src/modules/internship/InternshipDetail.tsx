@@ -52,11 +52,11 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                     <div className="card-body p-6">
                         <div className="flex items-start justify-between">
                             <div className="flex items-start gap-4">
-                                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-neutral-300">
+                                <div className="avatar flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-neutral-300">
                                     {internship.company.logoUrl ? (
                                         <img
                                             alt={`${internship.company.name} logo`}
-                                            className="h-9 w-9"
+                                            className="rounded"
                                             src={internship.company.logoUrl}
                                         />
                                     ) : (

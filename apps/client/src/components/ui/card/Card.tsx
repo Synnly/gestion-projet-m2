@@ -30,11 +30,11 @@ export const Card: React.FC<CardProps> = ({
             <div className="card-body p-3">
                 <div className="flex items-center gap-4">
                     <div className="avatar">
-                        <div className="w-12 rounded-lg bg-neutral-300 flex items-center justify-center">
+                        <div className="w-12 bg-neutral-300 flex items-center justify-center">
                             <img
                                 src={imageSrc ?? logoPlaceholder}
                                 alt={imageAlt ?? title}
-                                className="h-7 w-7 object-cover"
+                                className="object-cover rounded"
                             />
                         </div>
                     </div>

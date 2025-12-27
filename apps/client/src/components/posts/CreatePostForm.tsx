@@ -173,7 +173,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                     : "L'offre de stage a été créée avec succès.";
 
             toast.success(successText, { toastId: 'post-success' });
-            navigate('/company/dashboard');
+            navigate('/');
         },
         onError: (error) => {
             console.error(error);
