@@ -53,7 +53,7 @@ export default function UpdatePostPage() {
                     </div>
                     <aside className="w-full md:flex-2 space-y-3 md:sticky md:top-6">
                         <h2 className="text-sm font-semibold uppercase tracking-wide text-base-content">
-                            Apercu en direct
+                            Aperçu en direct
                         </h2>
                         <PostPreview company={post.company} />
                     </aside>

@@ -44,7 +44,6 @@ export const useInternshipStore = create<InternshipStore>()(
             savedInternships: [],
             detailHeight: null,
             refetchCallback: null,
-            editionMode: false,
             showMyApplicationsOnly: false,
 
             // Actions
@@ -66,7 +65,6 @@ export const useInternshipStore = create<InternshipStore>()(
                 set((state) => ({
                     filters: { ...state.filters, ...newFilters },
                 }));
-                console.log('Filters updated:', { ...get().filters, ...newFilters });
                 // Appel automatique du refetch si une callback est enregistrée
                 const callback = get().refetchCallback;
                 if (callback) {

@@ -5,6 +5,7 @@ import { profileStore } from '../../store/profileStore';
 import { useCreatePostStore } from '../../store/CreatePostStore';
 import { Navbar } from '../../components/navbar/Navbar';
 import type { CompanyInInternship } from '../../types/internship.types.ts';
+import Spinner from '../../components/Spinner/Spinner.tsx';
 
 export default function CreatePostPage() {
     const profile = profileStore((state) => state.profile);
@@ -13,7 +14,7 @@ export default function CreatePostPage() {
         reset();
     }, [reset]);
 
-    if (!profile) return;
+    if (!profile) return <Spinner />;
 
     const company: CompanyInInternship = {
         _id: profile._id ?? '',
@@ -41,7 +42,7 @@ export default function CreatePostPage() {
                     {/* Preview on the right, sticky on desktop */}
                     <aside className="w-full md:flex-[2] space-y-3 md:sticky md:top-6">
                         <h2 className="text-sm font-semibold uppercase tracking-wide text-base-500">
-                            Apercu en direct
+                            Aperçu en direct
                         </h2>
                         <PostPreview company={company} />
                     </aside>

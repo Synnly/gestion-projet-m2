@@ -8,9 +8,11 @@ import { useNavigate } from 'react-router';
 export const ApplicationStatusChecker = ({
     application,
     isLoading,
+    postId,
 }: {
     application: Application;
     isLoading: boolean;
+    postId: string;
 }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [fileType, setFileType] = useState<'cv' | 'lm'>('cv');
@@ -28,7 +30,7 @@ export const ApplicationStatusChecker = ({
     }
 
     const handleApply = () => {
-        navigate(`/internship/apply/${application._id}`);
+        navigate(`/internship/apply/${postId}`);
     };
 
     function previewFile(type: 'cv' | 'lm') {
