@@ -127,7 +127,7 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
 
                         {get(access)?.role === 'COMPANY' && (
                             <div className="flex justify-between gap-8 mt-4">
-                                <a className="btn grow 1" href={`/internship/${internship._id}/edit`}>
+                                <a className="btn grow" href={`/internship/${internship._id}/edit`}>
                                     Modifier <Pen />
                                 </a>
                                 <a className="btn grow" href={`/internship/${internship._id}/applications`}>
