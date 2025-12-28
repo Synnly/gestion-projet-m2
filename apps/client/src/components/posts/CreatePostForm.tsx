@@ -403,10 +403,9 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                     value={minSalary}
                                     type="number"
                                     min={0}
-                                    onChange={(e) => {
-                                        console.log(e.target.value);
-                                        setMinSalary(e.target.value === '' ? undefined : Number(e.target.value));
-                                    }}
+                                    onChange={(e) =>
+                                        setMinSalary(e.target.value === '' ? undefined : Number(e.target.value))
+                                    }
                                 />
                             </div>
                             <div className="space-y-1">
