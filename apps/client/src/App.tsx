@@ -36,9 +36,6 @@ import FAQ from './pages/legal/FAQ';
 import Help from './pages/legal/Help';
 import { internshipLoader } from './loaders/intershipLoader';
 import { AdminDashboard } from './admin/dashboard';
-import ApplicationPage from './pages/applications/ApplicationPage';
-import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
-import { StudentDashboard } from './student/dashboard';
 import { ApplicationList } from './company/applicationList/ApplicationList.tsx';
 import ImportStudent from './admin/importStudent.tsx';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
@@ -177,20 +174,6 @@ function App() {
                                     element: <AdminDashboard />,
                                     handle: { title: 'Tableau de bord admin' },
                                     children: [{ index: true, element: <ImportStudent /> }],
-                                },
-                            ],
-                        },
-                        {
-                            path: 'student',
-                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} redirectPath="/" />,
-                            children: [
-                                {
-                                    path: 'dashboard',
-                                    element: <StudentDashboard />,
-                                    children: [
-                                        { index: true, element: <ApplicationPage /> },
-                                        { path: ':applicationId', element: <ApplicationDetailPage /> },
-                                    ],
                                 },
                             ],
                         },

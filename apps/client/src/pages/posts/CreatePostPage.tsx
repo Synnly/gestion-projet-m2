@@ -25,14 +25,16 @@ export default function CreatePostPage() {
     return (
         <div className="min-h-screen bg-base-100">
             <Navbar />
-            <div className="mx-auto max-w-7xl px-4 lg:px-8">
+            <div className="mx-auto px-4 py-6 lg:px-8">
                 {/* Page title */}
-                <h1 className="mb-6 text-3xl font-bold text-base-900">Créer une nouvelle annonce de stage</h1>
+                <h1 className="mb-6 text-3xl w-1/2 text-center font-bold text-base-900">
+                    Créer une nouvelle annonce de stage
+                </h1>
 
                 {/* Layout: form on the left, preview on the right */}
                 <div className="flex flex-col gap-8 md:flex-row items-start">
                     {/* Form on the left */}
-                    <div className="flex-[3]">
+                    <div className="flex">
                         <CreatePostForm />
                     </div>
 
