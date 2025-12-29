@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Bell, Check, Trash2, X } from 'lucide-react';
 import { notificationStore } from '../../store/notificationStore';
 import { userStore } from '../../store/userStore';
+import { toast } from 'react-toastify';
 import {
     getUserNotifications,
     getUnreadCount,
@@ -17,6 +18,7 @@ import { fr } from 'date-fns/locale';
 export const NotificationBell = () => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const previousUnreadCountRef = useRef<number>(0);
     const navigate = useNavigate();
 
     const { notifications, unreadCount, isLoading, error } = notificationStore();
@@ -43,6 +45,7 @@ export const NotificationBell = () => {
                 const [notifs, count] = await Promise.all([getUserNotifications(userId), getUnreadCount(userId)]);
                 setNotifications(notifs);
                 setUnreadCount(count);
+                previousUnreadCountRef.current = count;
                 setError(null);
             } catch (err) {
                 setError('Erreur lors du chargement des notifications');
@@ -61,6 +64,14 @@ export const NotificationBell = () => {
         const interval = setInterval(async () => {
             try {
                 const count = await getUnreadCount(userId);
+                if (count > previousUnreadCountRef.current) {
+                    const newNotifications = count - previousUnreadCountRef.current;
+                    toast.info(
+                        `Vous avez ${newNotifications} nouvelle${newNotifications > 1 ? 's' : ''} notification${newNotifications > 1 ? 's' : ''}`,
+                        { toastId: 'new-notifications' },
+                    );
+                }
+                previousUnreadCountRef.current = count;
                 setUnreadCount(count);
             } catch (err) {
                 console.error('Erreur polling notifications:', err);
@@ -152,7 +163,7 @@ export const NotificationBell = () => {
             >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-error text-error-content text-xs font-bold">
+                    <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-error text-error-content text-sm font-bold">
                         {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 )}
