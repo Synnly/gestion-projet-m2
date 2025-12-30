@@ -25,5 +25,5 @@ export interface PaginationResult<T> {
     hasNext: boolean;
 
     /** True if there is a previous page */
-    hasPrev?: boolean;
+    hasPrev: boolean;
 }

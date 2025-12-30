@@ -7,6 +7,7 @@ import { Application, ApplicationStatus } from '../../../src/application/applica
 import { CreateApplicationDto } from '../../../src/application/dto/createApplication.dto';
 import { PostService } from '../../../src/post/post.service';
 import { StudentService } from '../../../src/student/student.service';
+import { PaginationService } from '../../../src/common/pagination/pagination.service';
 import { S3Service } from '../../../src/s3/s3.service';
 
 describe('ApplicationService', () => {
@@ -15,6 +16,7 @@ describe('ApplicationService', () => {
     const mockApplicationModel: any = jest.fn();
     mockApplicationModel.find = jest.fn();
     mockApplicationModel.findOne = jest.fn();
+    mockApplicationModel.aggregate = jest.fn();
 
     const mockStudentService = {
         findOne: jest.fn(),
@@ -25,6 +27,10 @@ describe('ApplicationService', () => {
     };
     const mockS3Service = {
         generatePresignedUploadUrl: jest.fn(),
+    };
+
+    const mockPaginationService = {
+        paginate: jest.fn(),
     };
 
     const studentId = new Types.ObjectId('507f1f77bcf86cd799439011');
@@ -49,6 +55,10 @@ describe('ApplicationService', () => {
                 {
                     provide: S3Service,
                     useValue: mockS3Service,
+                },
+                {
+                    provide: PaginationService,
+                    useValue: mockPaginationService,
                 },
             ],
         }).compile();
@@ -79,10 +89,12 @@ describe('ApplicationService', () => {
             const result = await service.findAll();
 
             expect(mockApplicationModel.find).toHaveBeenCalledWith({ deletedAt: { $exists: false } });
-            expect(populate).toHaveBeenCalledWith([
-                { path: 'post', select: service.postFieldsToPopulate },
-                { path: 'student', select: service.studentFieldsToPopulate },
-            ]);
+            expect(populate).toHaveBeenCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({ path: 'post', select: service.postFieldsToPopulate }),
+                    expect.objectContaining({ path: 'student', select: service.studentFieldsToPopulate }),
+                ]),
+            );
             expect(exec).toHaveBeenCalledTimes(1);
             expect(result).toEqual(applications);
         });
@@ -118,10 +130,16 @@ describe('ApplicationService', () => {
                 _id: postId,
                 deletedAt: { $exists: false },
             });
-            expect(populate).toHaveBeenCalledWith([
-                { path: 'post', select: service.postFieldsToPopulate },
-                { path: 'student', select: service.studentFieldsToPopulate },
-            ]);
+            expect(populate).toHaveBeenCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        path: 'post',
+                        select: service.postFieldsToPopulate,
+                        populate: expect.anything(),
+                    }),
+                    expect.objectContaining({ path: 'student', select: service.studentFieldsToPopulate }),
+                ]),
+            );
             expect(exec).toHaveBeenCalledTimes(1);
             expect(result).toEqual(application);
         });
@@ -186,15 +204,17 @@ describe('ApplicationService', () => {
 
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 1,
-                `${studentId.toString()}_${postId.toString()}.pdf`,
+                `${studentId.toString()}.pdf`,
                 'cv',
                 studentId.toString(),
+                post._id.toString(),
             );
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 2,
-                `${studentId.toString()}_${postId.toString()}.docx`,
+                `${studentId.toString()}.docx`,
                 'lm',
                 studentId.toString(),
+                post._id.toString(),
             );
             expect(mockApplicationModel).toHaveBeenCalledWith({
                 student,
@@ -260,6 +280,82 @@ describe('ApplicationService', () => {
             expect(exec).toHaveBeenCalledTimes(1);
         });
     });
+    describe('findByPostPaginated', () => {
+        const postId = new Types.ObjectId('507f1f77bcf86cd799439012');
+
+        const paginatedResult = {
+            data: [
+                {
+                    _id: new Types.ObjectId(),
+                    status: ApplicationStatus.Pending,
+                    student: { _id: new Types.ObjectId(), firstName: 'John', lastName: 'Doe' },
+                    post: { _id: postId, title: 'Internship' },
+                },
+            ],
+            total: 1,
+            page: 1,
+            limit: 10,
+            hasNext: true,
+            hasPrev: false,
+        };
+
+        it('should call paginationService.paginate with default page and limit', async () => {
+            mockPaginationService.paginate.mockResolvedValue(paginatedResult);
+
+            const result = await service.findByPostPaginated(postId, { page: 1, limit: 10 });
+
+            expect(mockPaginationService.paginate).toHaveBeenCalledWith(
+                mockApplicationModel,
+                { post: postId, deletedAt: { $exists: false } },
+                1,
+                10,
+                [{ path: 'student', select: '_id firstName lastName email' }],
+                'createdAt',
+            );
+
+            expect(result).toEqual(paginatedResult);
+        });
+
+        it('should use provided page and limit from query', async () => {
+            mockPaginationService.paginate.mockResolvedValue({
+                ...paginatedResult,
+                page: 2,
+                limit: 10,
+            });
+
+            const query = { page: 2, limit: 10 };
+
+            const result = await service.findByPostPaginated(postId, query);
+
+            expect(mockPaginationService.paginate).toHaveBeenCalledWith(
+                mockApplicationModel,
+                { post: postId, deletedAt: { $exists: false } },
+                2,
+                10,
+                [{ path: 'student', select: '_id firstName lastName email' }],
+                'createdAt',
+            );
+
+            expect(result.page).toBe(2);
+            expect(result.limit).toBe(10);
+        });
+
+        it('should return empty data when paginationService returns no results', async () => {
+            const emptyResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 20,
+            };
+
+            mockPaginationService.paginate.mockResolvedValue(emptyResult);
+
+            const result = await service.findByPostPaginated(postId, {});
+
+            expect(result).toEqual(emptyResult);
+            expect(result.data).toHaveLength(0);
+        });
+    });
 
     describe('getApplicationByStudentAndPost', () => {
         it('should return an application when valid studentId and postId are provided, with populated fields', async () => {
@@ -309,6 +405,76 @@ describe('ApplicationService', () => {
             ]);
             expect(exec).toHaveBeenCalledTimes(1);
             expect(result).toBeNull();
+        });
+    });
+
+    describe('findByStudent', () => {
+        it('devrait retourner des résultats paginés avec filtrage status/search', async () => {
+            const aggResult = [
+                {
+                    data: [
+                        {
+                            _id: postId,
+                            status: ApplicationStatus.Pending,
+                            post: { _id: postId, title: 'Titre', company: { _id: new Types.ObjectId(), name: 'Comp' } },
+                            student: { _id: studentId },
+                        },
+                    ],
+                    totalCount: [{ count: 1 }],
+                },
+            ];
+            const exec = jest.fn().mockResolvedValue(aggResult);
+            mockApplicationModel.aggregate.mockReturnValue({ exec });
+
+            const res = await service.findByStudent(studentId, 1, 5, ApplicationStatus.Pending, 'Titre');
+
+            expect(mockApplicationModel.aggregate).toHaveBeenCalledTimes(1);
+            expect(res.total).toBe(1);
+            expect(res.data).toHaveLength(1);
+            expect(res.limit).toBe(5);
+            expect(res.page).toBe(1);
+        });
+
+        it('returns empty result when aggregate returns empty', async () => {
+            const exec = jest.fn().mockResolvedValue([{ data: [], totalCount: [] }]);
+            mockApplicationModel.aggregate.mockReturnValue({ exec });
+
+            const res = await service.findByStudent(studentId, 2, 5);
+
+            expect(res.total).toBe(0);
+            expect(res.data).toEqual([]);
+            expect(res.page).toBe(2);
+            expect(res.limit).toBe(5);
+        });
+
+        it('adds a status match when status is provided', async () => {
+            const exec = jest.fn().mockResolvedValue([{ data: [], totalCount: [] }]);
+            mockApplicationModel.aggregate.mockReturnValue({ exec });
+
+            await service.findByStudent(studentId, 1, 10, ApplicationStatus.Accepted);
+
+            const pipeline = mockApplicationModel.aggregate.mock.calls[0][0];
+            const hasStatusMatch = pipeline.some(
+                (stage: any) => typeof stage === 'object' && stage?.$match?.status === ApplicationStatus.Accepted,
+            );
+            expect(hasStatusMatch).toBe(true);
+        });
+
+        it('adds regex filtering when searchQuery is provided', async () => {
+            const exec = jest.fn().mockResolvedValue([{ data: [], totalCount: [] }]);
+            mockApplicationModel.aggregate.mockReturnValue({ exec });
+
+            await service.findByStudent(studentId, 1, 10, undefined, 'Data');
+
+            const pipeline = mockApplicationModel.aggregate.mock.calls[0][0];
+            const searchStage = pipeline.find((stage: any) => typeof stage === 'object' && stage?.$match?.$or);
+            expect(searchStage).toBeDefined();
+            expect(searchStage.$match.$or).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ 'post.title': expect.any(Object) }),
+                    expect.objectContaining({ 'post.company.name': expect.any(Object) }),
+                ]),
+            );
         });
     });
 });

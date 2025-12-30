@@ -26,10 +26,10 @@ export class QueryBuilder<T> {
 
     /**
      * Build a Mongoose filter object based on the provided params.
-     *
+     * @param isForum - Whether the query is for forums (affects visibility filter), defaults to false
      * @returns A `FilterQuery<T>` suitable for passing to `Model.find()`
      */
-    async build(): Promise<FilterQuery<T>> {
+    async build(isForum: boolean = false): Promise<FilterQuery<T>> {
         const mutableFilter: Record<string, unknown> = {};
 
         // Global search using MongoDB text index (optimized for performance)
@@ -86,8 +86,14 @@ export class QueryBuilder<T> {
         }
 
         // Salary interval: match posts whose salary range overlaps the requested interval
-        const minSalary = this.params.minSalary as number | undefined;
-        const maxSalary = this.params.maxSalary as number | undefined;
+        let minSalary = this.params.minSalary as number | undefined;
+        let maxSalary = this.params.maxSalary as number | undefined;
+
+        if (minSalary && maxSalary && minSalary > maxSalary) {
+            const temp = minSalary;
+            minSalary = maxSalary;
+            maxSalary = temp;
+        }
 
         if (minSalary || maxSalary) {
             const andConditions = (mutableFilter.$and ??= []) as Array<Record<string, unknown>>;
@@ -126,20 +132,20 @@ export class QueryBuilder<T> {
         }
 
         // Only show visible posts
-        mutableFilter.isVisible = true;
+        if (!isForum) mutableFilter.isVisible = true;
 
         return mutableFilter as FilterQuery<T>;
     }
 
-    buildSort() {
+    buildSort(sortParam: string | undefined): string {
         // return string acceptable by Mongoose `sort()`
-        switch (this.params.sort) {
+        switch (sortParam) {
             case 'dateAsc':
-                return 'createdAt';
+                return '1';
             case 'dateDesc':
-                return '-createdAt';
+                return '-1';
             default:
-                return 'createdAt';
+                return '-1';
         }
     }
 }

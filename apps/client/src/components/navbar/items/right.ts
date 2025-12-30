@@ -6,7 +6,7 @@ export const rightNavItems: NavItem[] = [
         title: 'Ajouter annonce',
         to: '/company/offers/add',
         type: 'button',
-        className: 'btn btn-primary text-black rounded-xl',
+        className: 'btn btn-primary text-primary-content',
         role: ['COMPANY'],
     },
     {
@@ -21,13 +21,13 @@ export const rightNavItems: NavItem[] = [
                 type: 'link',
                 role: ['COMPANY'],
             },
-            {
-                key: 'profile',
-                title: 'Profil',
-                to: '/student/profile',
-                type: 'link',
-                role: ['STUDENT'],
-            },
+            // {
+            //     key: 'profile',
+            //     title: 'Profil',
+            //     to: '/student/profile',
+            //     type: 'link',
+            //     role: ['STUDENT'],
+            // },
             {
                 key: 'logout',
                 title: 'Se déconnecter',

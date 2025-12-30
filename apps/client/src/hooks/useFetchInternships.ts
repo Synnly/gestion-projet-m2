@@ -4,26 +4,46 @@ import type { PaginationResult, Internship } from '../types/internship.types';
 import { fetchPublicSignedUrl } from './useBlob';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
+import { UseAuthFetch } from './useAuthFetch';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
 export function buildQueryParams(filters: any) {
-    return new URLSearchParams(
-        Object.entries({
-            page: filters.page ?? 1,
-            limit: filters.limit ?? 10,
-            searchQuery: filters.searchQuery,
-        })
-            .filter(([, v]) => v !== undefined && v !== null && v !== '')
-            .map(([k, v]) => [k, String(v)]),
-    );
+    const params = new URLSearchParams();
+
+    const setParam = (key: string, value: any) => {
+        if (value === undefined || value === null || value === '') return;
+        if (Array.isArray(value)) {
+            value.forEach((v) => params.append(key, String(v)));
+        } else {
+            params.set(key, String(value));
+        }
+    };
+
+    params.set('page', String(filters.page ?? 1));
+    params.set('limit', String(filters.limit ?? 10));
+
+    setParam('searchQuery', filters.searchQuery);
+    setParam('title', filters.title);
+    setParam('description', filters.description);
+    setParam('duration', filters.duration);
+    setParam('sector', filters.sector);
+    setParam('type', filters.type);
+    setParam('minSalary', filters.minSalary);
+    setParam('maxSalary', filters.maxSalary);
+    setParam('keySkills', filters.keySkills);
+    setParam('city', filters.city);
+    setParam('radiusKm', filters.radiusKm);
+    setParam('sort', filters.sort);
+    setParam('company', filters.company);
+    return params;
 }
 
 export async function fetchPosts(API_URL: string, params: URLSearchParams) {
-    const res = await fetch(`${API_URL}/api/company/0/posts?${params}`, {
+    const authFetch = UseAuthFetch();
+    const res = await authFetch(`${API_URL}/api/company/0/posts?${params}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
     });
 
     if (!res.ok) {
@@ -35,12 +55,12 @@ export async function fetchPosts(API_URL: string, params: URLSearchParams) {
 }
 
 export async function fetchCompanyProfiles(companyIds: string[], API_URL: string) {
+    const authFetch = UseAuthFetch();
     return Promise.all(
         companyIds.map(async (id) => {
-            const res = await fetch(`${API_URL}/api/companies/${id}`, {
+            const res = await authFetch(`${API_URL}/api/companies/${id}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
             });
 
             if (!res.ok) return { companyId: id, logo: null };
@@ -139,6 +159,13 @@ export function useFetchInternships() {
         }
     }, [query.data, setInternships]);
 
+    // Enregistrer la fonction refetch dans le store pour permettre le refetch lors du changement de filtres
+    const setRefetchCallback = useInternshipStore((state) => state.setRefetchCallback);
+    useEffect(() => {
+        setRefetchCallback(query.refetch);
+        return () => setRefetchCallback(null);
+    }, [query.refetch, setRefetchCallback]);
+
     return query;
 }
 
@@ -149,11 +176,10 @@ export function useFetchInternships() {
  */
 export async function fetchInternshipById(id?: string): Promise<Internship | null> {
     if (!id) return null;
-
-    const res = await fetch(`${API_URL}/api/company/0/posts/${id}`, {
+    const authFetch = UseAuthFetch();
+    const res = await authFetch(`${API_URL}/api/company/0/posts/${id}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
     });
 
     if (!res.ok) {

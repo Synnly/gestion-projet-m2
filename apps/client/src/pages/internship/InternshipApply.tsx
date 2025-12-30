@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navbar } from '../../components/navbar/Navbar';
 import { Navigate, useNavigate, useParams } from 'react-router';
-import Spinner from '../../components/Spinner/Spinner';
 import FileInput from '../../components/inputs/fileInput/FileInput';
 import InternshipDetail from '../../modules/internship/InternshipDetail';
 import { useState, type FormEvent } from 'react';
@@ -9,6 +8,7 @@ import { userStore } from '../../store/userStore';
 import { useUploadFile } from '../../hooks/useUploadFile';
 import { toast } from 'react-toastify';
 import type { Internship } from '../../types/internship.types';
+import { UseAuthFetch } from '../../hooks/useAuthFetch';
 
 const getfileExtension = (file: File | null): string | null => {
     if (!file) return null;
@@ -45,7 +45,7 @@ export const InternshipApply = () => {
                     return null;
                 }
             }
-            let errorMessage = `Erreur HTTP ${res.status}`;
+            const errorMessage = `Erreur HTTP ${res.status}`;
             throw new Error(errorMessage);
         },
 
@@ -55,12 +55,11 @@ export const InternshipApply = () => {
     const { data, isLoading } = useQuery<Internship>({
         queryKey: ['internship', internshipId],
         queryFn: async () => {
-            const res = await fetch(`${import.meta.env.VITE_APIURL}/api/company/0/posts/${internshipId}`, {
+            const res = await authFetch(`${import.meta.env.VITE_APIURL}/api/company/0/posts/${internshipId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include',
             });
             if (!res.ok) {
                 throw new Error('Failed to fetch internship data');
@@ -71,21 +70,21 @@ export const InternshipApply = () => {
 
     const [cv, setCv] = useState<File | null>(null);
     const [coverLetter, setCoverLetter] = useState<File | null>(null);
+    const authFetch = UseAuthFetch();
     const mutation = useMutation({
         mutationFn: async () => {
             if (!cv || (data?.isCoverLetterRequired && !coverLetter)) return;
-            const fetchApply = await fetch(`${import.meta.env.VITE_APIURL}/api/application`, {
+            const fetchApply = await authFetch(`${import.meta.env.VITE_APIURL}/api/application`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
+                data: JSON.stringify({
                     studentId: payload?.id,
                     postId: internshipId,
                     cvExtension: getfileExtension(cv),
                     lmExtension: getfileExtension(coverLetter),
                 }),
-                credentials: 'include',
             });
             if (!fetchApply.ok) {
                 return false;

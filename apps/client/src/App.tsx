@@ -1,5 +1,5 @@
 import './App.css';
-import { createBrowserRouter, redirect, RouterProvider } from 'react-router';
+import { createBrowserRouter, redirect, RouterProvider, Navigate } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CompanySignup } from './auth/companySignup/index';
 import { Login } from './auth/Login/index';
@@ -37,6 +37,15 @@ import Contact from './pages/legal/Contact';
 import FAQ from './pages/legal/FAQ';
 import Help from './pages/legal/Help';
 import { internshipLoader } from './loaders/intershipLoader';
+import { AdminDashboard } from './admin/dashboard';
+import ApplicationPage from './pages/applications/ApplicationPage';
+import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
+import { StudentDashboard } from './student/dashboard';
+import { ApplicationList } from './company/dashboard/applicationList/ApplicationList.tsx';
+import ImportStudent from './admin/importStudent.tsx';
+import { MainForumPage } from './pages/forums/MainForumPage.tsx';
+import { ForumPage } from './pages/forums/ForumPage.tsx';
+
 function App() {
     userStore.persist.rehydrate();
     const queryClient = new QueryClient();
@@ -104,6 +113,7 @@ function App() {
                                             index: true,
                                             element: <DashboardInternshipList />,
                                         },
+                                        { path: 'post/:postId/applications', element: <ApplicationList /> },
                                     ],
                                 },
                                 {
@@ -145,7 +155,6 @@ function App() {
                                     element: <VerifiedRoutes redirectPath="/" />,
                                     children: [],
                                 },
-
                                 {
                                     path: 'detail/:id',
                                     element: <InternshipDetailPage />,
@@ -161,6 +170,44 @@ function App() {
                                     ],
                                     handle: { title: 'Postuler à un stage' },
                                 },
+                            ],
+                        },
+                        {
+                            path: 'admin',
+                            element: <ProtectedRoutesByRole allowedRoles={['ADMIN']} />,
+                            children: [
+                                {
+                                    path: 'dashboard',
+                                    element: <AdminDashboard />,
+                                    handle: { title: 'Tableau de bord admin' },
+                                    children: [{ index: true, element: <ImportStudent /> }],
+                                },
+                            ],
+                        },
+                        {
+                            path: 'student',
+                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} redirectPath="/" />,
+                            children: [
+                                {
+                                    path: 'dashboard',
+                                    element: <StudentDashboard />,
+                                    children: [
+                                        { index: true, element: <ApplicationPage /> },
+                                        { path: ':applicationId', element: <ApplicationDetailPage /> },
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            path: 'applications',
+                            element: <Navigate to="/student/dashboard" replace />,
+                        },
+                        {
+                            path: 'forums',
+                            children: [
+                                { index: true, element: <MainForumPage /> },
+                                { path: 'general', element: <ForumPage isGeneral={true} /> },
+                                { path: ':companyId', element: <ForumPage /> },
                             ],
                         },
                     ],

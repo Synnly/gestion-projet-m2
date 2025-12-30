@@ -11,6 +11,8 @@ export interface InternshipStore {
     savedInternships: string[];
     // UI: height of the InternshipDetail content in pixels when it fits viewport, else null
     detailHeight: number | null;
+    // Callback pour refetch les données quand les filtres changent
+    refetchCallback: (() => void) | null;
 
     // Actions
     setInternships: (data: PaginationResult<Internship>) => void;
@@ -21,6 +23,7 @@ export interface InternshipStore {
     clearInternships: () => void;
     removeInternshipsByIds: (ids: string[]) => void;
     setDetailHeight: (h: number | null) => void;
+    setRefetchCallback: (callback: (() => void) | null) => void;
 }
 
 const DEFAULT_FILTERS: InternshipFilters = {
@@ -30,7 +33,7 @@ const DEFAULT_FILTERS: InternshipFilters = {
 
 export const useInternshipStore = create<InternshipStore>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             // État initial
             internships: [],
             pagination: null,
@@ -38,6 +41,7 @@ export const useInternshipStore = create<InternshipStore>()(
             selectedInternshipId: null,
             savedInternships: [],
             detailHeight: null,
+            refetchCallback: null,
 
             // Actions
             setInternships: (data) =>
@@ -54,12 +58,25 @@ export const useInternshipStore = create<InternshipStore>()(
                     selectedInternshipId: data.data.length > 0 ? data.data[0]._id : null,
                 }),
 
-            setFilters: (newFilters) =>
+            setFilters: (newFilters) => {
                 set((state) => ({
                     filters: { ...state.filters, ...newFilters },
-                })),
+                }));
+                // Appel automatique du refetch si une callback est enregistrée
+                const callback = get().refetchCallback;
+                if (callback) {
+                    callback();
+                }
+            },
 
-            resetFilters: () => set({ filters: DEFAULT_FILTERS }),
+            resetFilters: () => {
+                set({ filters: DEFAULT_FILTERS });
+                // Appel automatique du refetch si une callback est enregistrée
+                const callback = get().refetchCallback;
+                if (callback) {
+                    callback();
+                }
+            },
 
             setSelectedInternshipId: (id) => set({ selectedInternshipId: id }),
 
@@ -81,6 +98,7 @@ export const useInternshipStore = create<InternshipStore>()(
                     pagination: state.pagination,
                 })),
             setDetailHeight: (h: number | null) => set({ detailHeight: h }),
+            setRefetchCallback: (callback: (() => void) | null) => set({ refetchCallback: callback }),
         }),
         {
             name: 'internship-storage',

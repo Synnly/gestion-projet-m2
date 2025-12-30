@@ -36,8 +36,8 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
 
     if (minimal) {
         return (
-            <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100/15 text-base-content px-8 py-2">
-                <div className="max-w-7xl mx-auto flex items-cente justify-between">
+            <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-base-content px-8 py-2">
+                <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <ItemLink
                         item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
                         className="flex items-center gap-3 hover:opacity-80 transition-opacity"
@@ -55,7 +55,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
     }
 
     return (
-        <nav className="sticky top-0 z-50 w-full mx-auto bg-base-300/15 text-base-content px-8 py-2 border-b-2 border-base-200">
+        <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-base-content px-8 py-2 border-b-2 border-base-200">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <ItemLink
                     item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
@@ -88,24 +88,24 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
                                                 className="h-8 w-8 object-contain rounded"
                                             />
                                         ) : (
-                                            <User />
+                                            <User className="size-7 text-primary" />
                                         )}
                                     </div>
 
                                     <ul
                                         tabIndex={-1}
-                                        className="menu dropdown-content bg-base-100 rounded-box z-10 mt-4 w-52 p-2 shadow-sm"
+                                        className="menu dropdown-content bg-base-100 rounded-box z-10 mt-4 p-2 shadow-sm"
                                     >
                                         {item.children?.map((child) => {
                                             const role = get(user!)?.role;
                                             return (
                                                 role &&
                                                 child.role?.includes(role) && (
-                                                    <li key={child.key}>
+                                                    <li key={child.key} className="min-w-max">
                                                         {child.to ? (
                                                             <ItemLink item={child} className={child.className ?? ''} />
                                                         ) : (
-                                                            <a className={child.className ?? ''}>{child.title}</a>
+                                                            <a className={`${child.className ?? ''}`}>{child.title}</a>
                                                         )}
                                                     </li>
                                                 )

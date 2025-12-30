@@ -13,8 +13,8 @@ export const ItemLink: React.FC<ItemLinkProps> = ({ item, className }) => (
     <NavLink
         to={item.to ?? '#'}
         className={({ isActive }) => {
-            const baseClasses = className ?? item.className ?? 'hover:text-info btn btn-ghost transition-colors';
-            return isActive && item.to !== '/' ? `${baseClasses} text-info` : `${baseClasses}`;
+            const baseClasses = className ?? item.className ?? 'btn btn-ghost transition-colors';
+            return isActive && item.to !== '/' ? `${baseClasses}` : `${baseClasses}`;
         }}
     >
         {item.title}

@@ -31,6 +31,7 @@ import { StorageProviderType } from './s3/s3.constants';
         PostModule,
         MailerModule,
         StudentModule,
+        ForumModule,
         ApplicationModule,
     ],
     controllers: [],

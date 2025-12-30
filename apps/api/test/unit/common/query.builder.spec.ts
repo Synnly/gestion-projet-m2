@@ -260,24 +260,25 @@ describe('QueryBuilder', () => {
     });
 
     describe('buildSort', () => {
-        it('returns ascending sort for dateAsc', () => {
+        it('returns ascending sort token for dateAsc', () => {
             const qb = new QueryBuilder({ sort: 'dateAsc' } as any, mockGeoService as any);
-            expect(qb.buildSort()).toBe('createdAt');
+            // Call with the explicit sort param (current implementation expects an argument)
+            expect(qb.buildSort('dateAsc')).toBe('1');
         });
 
-        it('returns descending sort for dateDesc', () => {
+        it('returns descending sort token for dateDesc', () => {
             const qb = new QueryBuilder({ sort: 'dateDesc' } as any, mockGeoService as any);
-            expect(qb.buildSort()).toBe('-createdAt');
+            expect(qb.buildSort('dateDesc')).toBe('-1');
         });
 
-        it('returns default descending sort for unknown value', () => {
+        it('returns default descending token for unknown value', () => {
             const qb = new QueryBuilder({ sort: 'unknown' } as any, mockGeoService as any);
-            expect(qb.buildSort()).toBe('createdAt');
+            expect(qb.buildSort('unknown')).toBe('-1');
         });
 
-        it('returns default descending sort when no sort provided', () => {
+        it('returns default descending token when no sort provided', () => {
             const qb = new QueryBuilder({} as any, mockGeoService as any);
-            expect(qb.buildSort()).toBe('createdAt');
+            expect(qb.buildSort(undefined)).toBe('-1');
         });
     });
 });

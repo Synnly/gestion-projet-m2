@@ -4,6 +4,7 @@ import type { Internship, InternshipFilters, PaginationResult } from '../types/i
 import { userStore } from '../store/userStore';
 import { toast } from 'react-toastify';
 import { useEffect } from 'react';
+import { UseAuthFetch } from './useAuthFetch';
 
 const API_URL = import.meta.env.VITE_APIURL;
 export function buildQueryParams(filters: InternshipFilters, companyId: string) {
@@ -20,10 +21,10 @@ export function buildQueryParams(filters: InternshipFilters, companyId: string) 
     return params;
 }
 export async function fetchPosts(API_URL: string, params: URLSearchParams, companyId: string) {
-    const res = await fetch(`${API_URL}/api/company/${companyId}/posts?${params}`, {
+    const authFetch = UseAuthFetch();
+    const res = await authFetch(`${API_URL}/api/company/${companyId}/posts?${params}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
     });
 
     if (!res.ok) {

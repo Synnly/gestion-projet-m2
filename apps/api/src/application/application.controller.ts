@@ -1,15 +1,19 @@
 import {
     Body,
     Controller,
+    DefaultValuePipe,
     Get,
     HttpCode,
     HttpStatus,
     NotFoundException,
     Param,
     ParseEnumPipe,
+    ParseIntPipe,
     Post,
     Put,
     Query,
+    Req,
+    UnauthorizedException,
     UseGuards,
     ValidationPipe,
 } from '@nestjs/common';
@@ -21,11 +25,14 @@ import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { Types } from 'mongoose';
 import { plainToInstance } from 'class-transformer';
-import { ApplicationDto } from './dto/application.dto';
+import { ApplicationDto, ApplicationPaginationDto } from './dto/application.dto';
 import { ApplicationOwnerGuard } from '../common/roles/applicationOwner.guard';
 import { CreateApplicationDto } from './dto/createApplication.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { ApplicationStatus } from './application.schema';
+import { PostOwnerGuard } from 'src/post/guard/IsPostOwnerGuard';
+import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
+import type { Request } from 'express';
 
 @Controller('/api/application')
 export class ApplicationController {
@@ -102,7 +109,10 @@ export class ApplicationController {
     async getApplicationFile(
         @Param('applicationId', ParseObjectIdPipe) ApplicationDto: Types.ObjectId,
         @Param('fileType') fileType: string,
+        @Req() req: Request,
     ): Promise<{ downloadUrl: string }> {
+        if (!req.user || !req.user.sub || !req.user.role) throw new UnauthorizedException('User not authenticated');
+
         const application = await this.applicationService.findOne(ApplicationDto);
         if (!application) throw new NotFoundException(`Application with id ${ApplicationDto} not found`);
 
@@ -112,8 +122,12 @@ export class ApplicationController {
 
         if (!path) throw new NotFoundException(`${fileType} not found for this application`);
 
-        const url = await this.s3Service.generatePublicDownloadUrl(path);
-        return url;
+        return await this.s3Service.generatePresignedDownloadUrl(
+            path,
+            req.user.sub,
+            req.user.role,
+            application.post._id.toString(),
+        );
     }
 
     /**
@@ -136,6 +150,45 @@ export class ApplicationController {
     }
 
     /**
+     * Return paginated applications for a given student id.
+     * @param studentId The student identifier whose applications are requested.
+     * @param page The page number (1-based).
+     * @param limit The number of items per page (capped server-side).
+     * @returns Paginated applications with pagination metadata.
+     */
+    @Get('student/:studentId')
+    @UseGuards(AuthGuard, RolesGuard, StudentOwnerGuard)
+    @Roles(Role.ADMIN, Role.STUDENT)
+    @HttpCode(HttpStatus.OK)
+    async findMine(
+        @Param('studentId', ParseObjectIdPipe) studentId: Types.ObjectId,
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+        @Query('status', new ParseEnumPipe(ApplicationStatus, { optional: true })) status?: ApplicationStatus,
+        @Query('searchQuery') searchQuery?: string,
+    ): Promise<ApplicationPaginationDto> {
+        const {
+            data,
+            total,
+            limit: appliedLimit,
+            page: appliedPage,
+        } = await this.applicationService.findByStudent(studentId, page, limit, status, searchQuery);
+
+        return plainToInstance(
+            ApplicationPaginationDto,
+            {
+                data: data.map((application) =>
+                    plainToInstance(ApplicationDto, application, { excludeExtraneousValues: true }),
+                ),
+                page: appliedPage,
+                limit: appliedLimit,
+                total,
+            },
+            { excludeExtraneousValues: true },
+        );
+    }
+
+    /**
      * Update the status of an application.
      * @param applicationId The id of the application to update.
      * @param status The new status to set for the application. Must be one of the values defined in ApplicationStatus enum.
@@ -150,5 +203,38 @@ export class ApplicationController {
         @Body('status', new ParseEnumPipe(ApplicationStatus)) status: ApplicationStatus,
     ): Promise<void> {
         await this.applicationService.updateStatus(applicationId, status);
+    }
+
+    /**
+     * Return a list of the applications for a company's post
+     * @param postId The id of the post
+     * @param query Pagination parameters (page, limit)
+     * @returns A paginated list of applications for the specified post
+     */
+    @Get('/post/:postId')
+    @UseGuards(AuthGuard, RolesGuard, PostOwnerGuard)
+    @Roles(Role.ADMIN, Role.COMPANY)
+    @HttpCode(HttpStatus.OK)
+    async findByPostPaginated(
+        @Param('postId', ParseObjectIdPipe) postId: Types.ObjectId,
+        @Query() query: ApplicationPaginationDto,
+    ): Promise<{
+        data: ApplicationDto[];
+        total: number;
+        totalPages: number;
+        page: number;
+        hasNext: boolean;
+        hasPrev: boolean;
+    }> {
+        const result = await this.applicationService.findByPostPaginated(postId, query);
+
+        return {
+            data: result.data.map((app) => plainToInstance(ApplicationDto, app, { excludeExtraneousValues: true })),
+            total: result.total,
+            totalPages: result.totalPages,
+            page: result.page,
+            hasNext: result.hasNext,
+            hasPrev: result.hasPrev,
+        };
     }
 }

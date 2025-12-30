@@ -37,10 +37,33 @@ export class ApplicationDto {
     coverLetter?: string;
 
     /**
+     * Timestamp when the application was created
+     */
+    @Expose()
+    createdAt: string;
+
+    /**
      * Constructor to create an ApplicationDto instance
      * @param application Partial application data to initialize the DTO
      */
     constructor(application?: Partial<ApplicationDto>) {
         Object.assign(this, application);
     }
+}
+
+@Exclude()
+export class ApplicationPaginationDto {
+    @Expose()
+    @ValidateNested({ each: true })
+    @Type(() => ApplicationDto)
+    data: ApplicationDto[];
+
+    @Expose()
+    total: number;
+
+    @Expose()
+    page: number;
+
+    @Expose()
+    limit: number;
 }

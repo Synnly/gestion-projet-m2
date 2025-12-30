@@ -6,7 +6,7 @@ export function ToggleDarkMode() {
     const darkMode = useDarkModeStore((state) => state.darkMode);
     return (
         <button
-            className="rounded-2xl overflow-hidden w-12 h-12 flex items-center justify-center"
+            className="rounded-2xl overflow-hidden w-12 h-12 flex items-center justify-center cursor-pointer"
             onClick={() => changeDarkMode()}
         >
             <AnimatePresence initial={false} mode="sync">

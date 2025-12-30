@@ -2,17 +2,18 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowUpRight, Share2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApplicationStatus } from './ApplicationStatus';
+import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: string; adId: string }) => {
+    const authFetch = UseAuthFetch();
     const { data: application, isLoading } = useQuery({
         queryKey: ['application', studentId, adId],
 
         queryFn: async () => {
             const url = `${import.meta.env.VITE_APIURL}/api/application/check?studentId=${studentId}&postId=${adId}`;
 
-            const res = await fetch(url, {
+            const res = await authFetch(url, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
             });
 
             if (res.ok) {
@@ -23,7 +24,7 @@ export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: stri
                     return null;
                 }
             }
-            let errorMessage = `Erreur HTTP ${res.status}`;
+            const errorMessage = `Erreur HTTP ${res.status}`;
             throw new Error(errorMessage);
         },
 
@@ -65,7 +66,7 @@ export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: stri
                 <div className="flex flex-col">
                     <ApplicationStatus status={application.status} />
                     <Link
-                        to={`/candidatures/${application._id}`}
+                        to={`/student/dashboard/${application._id}`}
                         className="btn btn-primary flex py-2 h-11 flex-1 items-center justify-center gap-2"
                     >
                         Voir le statut

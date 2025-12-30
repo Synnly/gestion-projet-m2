@@ -2,7 +2,7 @@ import EditPencilIcon from '../../../../components/icons/EditPencilIcon';
 import type { Internship } from '../../../../types/internship.types';
 import { NavLink } from 'react-router-dom';
 
-const formatDate = (timeStamp: string) => {
+export const formatDate = (timeStamp: string) => {
     const date = new Date(timeStamp);
     return date.toLocaleDateString('fr-FR', {
         year: 'numeric',
@@ -12,7 +12,6 @@ const formatDate = (timeStamp: string) => {
 };
 
 export function TableRow({ internship }: { internship: Internship }) {
-    console.log(internship);
     return (
         <tr className="border-t border-t-slate-200 dark:border-t-slate-800">
             <td className="px-4 py-2 text-color-accent text-center text-sm font-medium">
@@ -32,7 +31,7 @@ export function TableRow({ internship }: { internship: Internship }) {
             <td className=" px-4 py-2 text-slate-600 text-center text-sm">
                 <NavLink
                     className="text-color-accent hover:underline text-center"
-                    to={`/company/offers/${internship._id}/applications`}
+                    to={`/company/dashboard/post/${internship._id}/applications`}
                 >
                     {internship.applications?.length || 0} candidatures
                 </NavLink>

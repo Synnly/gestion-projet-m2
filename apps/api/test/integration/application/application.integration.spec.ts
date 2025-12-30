@@ -26,6 +26,9 @@ import { S3Service } from '../../../src/s3/s3.service';
 import { Company, CompanyDocument } from '../../../src/company/company.schema';
 import { User, UserDocument } from '../../../src/user/user.schema';
 import { Student, StudentDocument } from '../../../src/student/student.schema';
+import { PaginationService } from 'src/common/pagination/pagination.service';
+import { ForumModule } from '../../../src/forum/forum.module';
+import { Forum, ForumDocument } from '../../../src/forum/forum.schema';
 
 describe('Application Integration Tests', () => {
     let app: INestApplication;
@@ -36,6 +39,7 @@ describe('Application Integration Tests', () => {
     let companyModel: Model<CompanyDocument>;
     let studentModel: Model<StudentDocument>;
     let userModel: Model<UserDocument>;
+    let forumModel: Model<ForumDocument>;
 
     const ACCESS_TOKEN_SECRET = 'test-access-secret';
     const REFRESH_TOKEN_SECRET = 'test-refresh-secret';
@@ -127,9 +131,15 @@ describe('Application Integration Tests', () => {
                 UsersModule,
                 PostModule,
                 StudentModule,
+                ForumModule,
             ],
             controllers: [ApplicationController],
-            providers: [ApplicationService, ApplicationOwnerGuard, { provide: S3Service, useValue: mockS3Service }],
+            providers: [
+                ApplicationService,
+                ApplicationOwnerGuard,
+                { provide: S3Service, useValue: mockS3Service },
+                PaginationService,
+            ],
         })
             .overrideGuard(AuthGuard)
             .useValue({
@@ -150,6 +160,7 @@ describe('Application Integration Tests', () => {
         companyModel = moduleRef.get<Model<CompanyDocument>>(getModelToken(Company.name));
         studentModel = moduleRef.get<Model<StudentDocument>>(getModelToken(Student.name));
         userModel = moduleRef.get<Model<UserDocument>>(getModelToken(User.name));
+        forumModel = moduleRef.get<Model<ForumDocument>>(getModelToken(Forum.name));
 
         app = moduleRef.createNestApplication();
         app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
@@ -294,15 +305,17 @@ describe('Application Integration Tests', () => {
 
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 1,
-                `${student._id}_${post._id}.pdf`,
+                `${student._id}.pdf`,
                 'cv',
                 student._id.toString(),
+                post._id.toString(),
             );
             expect(mockS3Service.generatePresignedUploadUrl).toHaveBeenNthCalledWith(
                 2,
-                `${student._id}_${post._id}.docx`,
+                `${student._id}.docx`,
                 'lm',
                 student._id.toString(),
+                post._id.toString(),
             );
         });
 
