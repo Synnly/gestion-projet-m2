@@ -9,6 +9,7 @@ import { S3Service } from '../s3/s3.service';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { ApplicationQueryBuilder } from '../common/pagination/applicationQuery.builder';
 import { ApplicationPaginationDto } from 'src/common/pagination/dto/applicationPagination.dto';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class ApplicationService {
@@ -26,6 +27,7 @@ export class ApplicationService {
         private readonly studentService: StudentService,
         private readonly s3Service: S3Service,
         private readonly paginationService: PaginationService,
+        private readonly notificationService: NotificationService,
     ) {}
 
     /** Fields to populate when retrieving related Post documents */
@@ -68,6 +70,7 @@ export class ApplicationService {
     /**
      * Create a new application for a student applying to a post.
      * Generates presigned URLs for uploading CV and optional cover letter.
+     * Send a notification to the post's company about the new application.
      * @param studentId The ID of the student applying
      * @param postId The ID of the post being applied to
      * @param dto Data transfer object containing CV and cover letter extensions
@@ -121,11 +124,19 @@ export class ApplicationService {
             coverLetter: lm?.fileName,
         }).save();
         await this.postService.addApplication(postId.toString(), newApplication._id.toString());
+
+        await this.notificationService.create({
+            userId: post.company._id,
+            message: `Vous avez reçu une nouvelle candidature pour le poste : ${post.title}`,
+            returnLink: `/posts/${post._id}/applications`,
+        });
+
         return { cvUrl: cv.uploadUrl, lmUrl: lm?.uploadUrl };
     }
 
     /**
      * Update the status of an existing application.
+     * Send a notification to the student about the status update.
      * @param id The unique identifier of the application
      * @param status The new status to set for the application
      * @returns A promise that resolves when the update is complete
@@ -137,6 +148,12 @@ export class ApplicationService {
 
         application.status = status;
         await application.save();
+
+        await this.notificationService.create({
+            userId: application.student._id,
+            message: `Le statut de votre candidature pour le poste : ${application.post.title} a été mis à jour.`,
+            returnLink: `/students/${application.student._id}/applications`,
+        });
     }
 
     /**

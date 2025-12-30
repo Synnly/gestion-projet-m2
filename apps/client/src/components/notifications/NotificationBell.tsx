@@ -70,6 +70,8 @@ export const NotificationBell = () => {
                         `Vous avez ${newNotifications} nouvelle${newNotifications > 1 ? 's' : ''} notification${newNotifications > 1 ? 's' : ''}`,
                         { toastId: 'new-notifications' },
                     );
+                    const notifs = await getUserNotifications(userId);
+                    setNotifications(notifs);
                 }
                 previousUnreadCountRef.current = count;
                 setUnreadCount(count);
