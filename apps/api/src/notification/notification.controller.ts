@@ -8,7 +8,6 @@ import {
     HttpCode,
     HttpStatus,
     Put,
-    Patch,
     NotFoundException,
     ValidationPipe,
     UseGuards,
@@ -23,6 +22,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
+import { UserOwnerGuard } from '../common/roles/userOwner.guard';
 
 @UseGuards(AuthGuard, RolesGuard)
 @Controller('/api/notifications')
@@ -52,6 +52,7 @@ export class NotificationController {
      * @returns An array of `NotificationDto` objects.
      */
     @Get('user/:userId')
+    @UseGuards(UserOwnerGuard)
     @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
     @HttpCode(HttpStatus.OK)
     async findByUserId(@Param('userId', ParseObjectIdPipe) userId: string): Promise<NotificationDto[]> {
@@ -65,6 +66,7 @@ export class NotificationController {
      * @returns An array of unread `NotificationDto` objects.
      */
     @Get('user/:userId/unread')
+    @UseGuards(UserOwnerGuard)
     @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
     @HttpCode(HttpStatus.OK)
     async findUnreadByUserId(@Param('userId', ParseObjectIdPipe) userId: string): Promise<NotificationDto[]> {
@@ -78,6 +80,7 @@ export class NotificationController {
      * @returns An object containing the count of unread notifications.
      */
     @Get('user/:userId/unread/count')
+    @UseGuards(UserOwnerGuard)
     @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
     @HttpCode(HttpStatus.OK)
     async countUnreadForUser(@Param('userId', ParseObjectIdPipe) userId: string): Promise<{ count: number }> {
@@ -101,22 +104,6 @@ export class NotificationController {
     }
 
     /**
-     * Create a new notification.
-     * @param dto The `CreateNotificationDto` payload used to create the notification.
-     * @returns The created `NotificationDto`.
-     */
-    @Post('')
-    @Roles(Role.ADMIN)
-    @HttpCode(HttpStatus.CREATED)
-    async create(
-        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
-        dto: CreateNotificationDto,
-    ): Promise<NotificationDto> {
-        const notification = await this.notificationService.create(dto);
-        return plainToInstance(NotificationDto, notification, { excludeExtraneousValues: true });
-    }
-
-    /**
      * Update an existing notification.
      * @param notificationId The id of the notification to update.
      * @param dto The `UpdateNotificationDto` payload used to update the notification.
@@ -125,6 +112,7 @@ export class NotificationController {
      */
     @Put(':notificationId')
     @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
+    @UseGuards(UserOwnerGuard)
     @HttpCode(HttpStatus.OK)
     async update(
         @Param('notificationId', ParseObjectIdPipe) notificationId: string,
@@ -143,6 +131,7 @@ export class NotificationController {
      */
     @Put(':notificationId/read')
     @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
+    @UseGuards(UserOwnerGuard)
     @HttpCode(HttpStatus.OK)
     async markAsRead(@Param('notificationId', ParseObjectIdPipe) notificationId: string): Promise<NotificationDto> {
         const notification = await this.notificationService.markAsRead(notificationId);
@@ -155,6 +144,7 @@ export class NotificationController {
      * @returns An object containing the count of modified notifications.
      */
     @Put('user/:userId/read-all')
+    @UseGuards(UserOwnerGuard)
     @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
     @HttpCode(HttpStatus.OK)
     async markAllAsReadForUser(@Param('userId', ParseObjectIdPipe) userId: string): Promise<{ modified: number }> {
@@ -180,6 +170,7 @@ export class NotificationController {
      * @returns An object containing the count of deleted notifications.
      */
     @Delete('user/:userId')
+    @UseGuards(UserOwnerGuard)
     @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
     @HttpCode(HttpStatus.OK)
     async deleteAllForUser(@Param('userId', ParseObjectIdPipe) userId: string): Promise<{ deleted: number }> {

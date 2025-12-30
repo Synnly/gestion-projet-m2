@@ -144,22 +144,6 @@ describe('NotificationController', () => {
         });
     });
 
-    describe('create', () => {
-        it('should create a new notification', async () => {
-            const dto = {
-                userId: new Types.ObjectId('507f1f77bcf86cd799439012'),
-                message: 'New notification',
-                returnLink: '/test',
-            };
-            mockService.create.mockResolvedValue(mockNotification);
-
-            const result = await controller.create(dto);
-
-            expect(mockService.create).toHaveBeenCalledWith(dto);
-            expect(result).toHaveProperty('message', 'Test notification');
-        });
-    });
-
     describe('update', () => {
         it('should update an existing notification', async () => {
             const notificationId = '507f1f77bcf86cd799439011';
