@@ -27,6 +27,8 @@ import { plainToInstance } from 'class-transformer';
 import { PostDto } from '../post/dto/post.dto';
 import { PostDocument } from '../post/post.schema';
 import { Company } from './company.schema';
+import { UpdateCompanyPublicProfileDto } from './dto/updateCompanyPublicProfile.dto';
+import { CompanyPublicDto } from './dto/publicProfileCompany.dto';
 
 /**
  * Controller handling company-related HTTP requests
@@ -131,5 +133,29 @@ export class CompanyController {
             ...company,
             posts: posts.map((post: PostDocument) => new PostDto(post)),
         });
+    }
+
+    @Get('/:companyId/public-profile')
+    @HttpCode(HttpStatus.OK)
+    async getPublicProfile(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyPublicDto> {
+        return this.companyService.getPublicCompanyById(companyId);
+    }
+
+    @Put('/:companyId/public-profile')
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async updatePublicProfile(
+        @Param('companyId', ParseObjectIdPipe) companyId: string,
+        @Body(
+            new ValidationPipe({
+                whitelist: true,
+                forbidNonWhitelisted: true,
+                transform: true,
+            }),
+        )
+        dto: UpdateCompanyPublicProfileDto,
+    ) {
+        await this.companyService.updatePublicProfile(companyId, dto);
     }
 }
