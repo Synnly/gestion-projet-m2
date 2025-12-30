@@ -110,8 +110,8 @@ export class NotificationController {
      * @throws {NotFoundException} When no notification matches the provided id.
      */
     @Put(':notificationId')
-    @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
     @UseGuards(UserOwnerGuard)
+    @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
     @HttpCode(HttpStatus.OK)
     async update(
         @Param('notificationId', ParseObjectIdPipe) notificationId: string,
