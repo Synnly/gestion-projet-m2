@@ -13,7 +13,6 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { NotificationService } from './notification.service';
-import { CreateNotificationDto } from './dto/createNotification.dto';
 import { UpdateNotificationDto } from './dto/updateNotification.dto';
 import { NotificationDto } from './dto/notification.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
