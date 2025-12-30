@@ -7,6 +7,8 @@ import { Company } from './company.schema';
 import { CompanyUserDocument } from '../user/user.schema';
 import { PostService } from '../post/post.service';
 import { Post } from '../post/post.schema';
+import { UpdateCompanyPublicProfileDto } from './dto/updateCompanyPublicProfile.dto';
+import { CompanyPublicDto } from './dto/publicProfileCompany.dto';
 
 /**
  * Service handling business logic for company operations
@@ -194,5 +196,22 @@ export class CompanyService {
             throw new NotFoundException('Company not found or already deleted');
         }
         return;
+    }
+
+    async updatePublicProfile(companyId: string, dto: UpdateCompanyPublicProfileDto): Promise<void> {
+        const result = await this.companyModel.updateOne({ _id: companyId }, { $set: dto }).exec();
+
+        if (!result) {
+            throw new NotFoundException('Company not found');
+        }
+    }
+
+    async getPublicCompanyById(companyId: string): Promise<CompanyPublicDto> {
+        const company = await this.companyModel.findById(companyId).exec();
+
+        if (!company) {
+            throw new NotFoundException('Company not found');
+        }
+        return company;
     }
 }
