@@ -101,8 +101,15 @@ export const NotificationBell = () => {
 
     const handleMarkAsRead = async (notificationId: string, returnLink?: string) => {
         try {
+            const notification = notifications.find((n) => n._id === notificationId);
+            const wasUnread = notification && !notification.read;
+
             await markAsRead(notificationId);
             markAsReadStore(notificationId);
+
+            if (wasUnread) {
+                previousUnreadCountRef.current = Math.max(0, previousUnreadCountRef.current - 1);
+            }
 
             if (returnLink) {
                 navigate(returnLink);
@@ -120,6 +127,7 @@ export const NotificationBell = () => {
             await markAllAsRead(userId);
             setNotifications(notifications.map((n) => ({ ...n, read: true })));
             setUnreadCount(0);
+            previousUnreadCountRef.current = 0;
         } catch (err) {
             console.error('Erreur marquage toutes notifications:', err);
         }
@@ -129,8 +137,15 @@ export const NotificationBell = () => {
         e.stopPropagation();
 
         try {
+            const notification = notifications.find((n) => n._id === notificationId);
+            const wasUnread = notification && !notification.read;
+
             await deleteNotification(notificationId);
             deleteNotificationStore(notificationId);
+
+            if (wasUnread) {
+                previousUnreadCountRef.current = Math.max(0, previousUnreadCountRef.current - 1);
+            }
         } catch (err) {
             console.error('Erreur suppression notification:', err);
         }
@@ -142,6 +157,7 @@ export const NotificationBell = () => {
         try {
             await deleteAllNotifications(userId);
             clearAll();
+            previousUnreadCountRef.current = 0;
         } catch (err) {
             console.error('Erreur suppression toutes notifications:', err);
         }

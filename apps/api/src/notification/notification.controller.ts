@@ -1,7 +1,6 @@
 import {
     Controller,
     Get,
-    Post,
     Body,
     Param,
     Delete,
@@ -22,6 +21,7 @@ import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 import { UserOwnerGuard } from '../common/roles/userOwner.guard';
+import { NotificationOwnerGuard } from './guard/notificationOwner.guard';
 
 @UseGuards(AuthGuard, RolesGuard)
 @Controller('/api/notifications')
@@ -94,6 +94,7 @@ export class NotificationController {
      * @throws {NotFoundException} When no notification matches the provided id.
      */
     @Get(':notificationId')
+    @UseGuards(NotificationOwnerGuard)
     @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
     @HttpCode(HttpStatus.OK)
     async findOne(@Param('notificationId', ParseObjectIdPipe) notificationId: string): Promise<NotificationDto> {
@@ -110,7 +111,7 @@ export class NotificationController {
      * @throws {NotFoundException} When no notification matches the provided id.
      */
     @Put(':notificationId')
-    @UseGuards(UserOwnerGuard)
+    @UseGuards(NotificationOwnerGuard)
     @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
     @HttpCode(HttpStatus.OK)
     async update(
@@ -129,8 +130,8 @@ export class NotificationController {
      * @throws {NotFoundException} When no notification matches the provided id.
      */
     @Put(':notificationId/read')
+    @UseGuards(NotificationOwnerGuard)
     @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
-    @UseGuards(UserOwnerGuard)
     @HttpCode(HttpStatus.OK)
     async markAsRead(@Param('notificationId', ParseObjectIdPipe) notificationId: string): Promise<NotificationDto> {
         const notification = await this.notificationService.markAsRead(notificationId);
@@ -157,6 +158,7 @@ export class NotificationController {
      * @throws {NotFoundException} When no notification matches the provided id.
      */
     @Delete(':notificationId')
+    @UseGuards(NotificationOwnerGuard)
     @Roles(Role.ADMIN, Role.STUDENT, Role.COMPANY)
     @HttpCode(HttpStatus.NO_CONTENT)
     async delete(@Param('notificationId', ParseObjectIdPipe) notificationId: string): Promise<void> {

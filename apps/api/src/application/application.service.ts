@@ -125,11 +125,15 @@ export class ApplicationService {
         }).save();
         await this.postService.addApplication(postId.toString(), newApplication._id.toString());
 
-        await this.notificationService.create({
-            userId: post.company._id,
-            message: `Vous avez reçu une nouvelle candidature pour le poste : ${post.title}`,
-            returnLink: `/posts/${post._id}/applications`,
-        });
+        try {
+            await this.notificationService.create({
+                userId: post.company._id,
+                message: `Vous avez reçu une nouvelle candidature pour le poste : ${post.title}`,
+                returnLink: `/posts/${post._id}/applications`,
+            });
+        } catch (error) {
+            console.error('Failed to send notification for new application:', error);
+        }
 
         return { cvUrl: cv.uploadUrl, lmUrl: lm?.uploadUrl };
     }
@@ -149,11 +153,15 @@ export class ApplicationService {
         application.status = status;
         await application.save();
 
-        await this.notificationService.create({
-            userId: application.student._id,
-            message: `Le statut de votre candidature pour le poste : ${application.post.title} a été mis à jour.`,
-            returnLink: `/students/${application.student._id}/applications`,
-        });
+        try {
+            await this.notificationService.create({
+                userId: application.student._id,
+                message: `Le statut de votre candidature pour le poste : ${application.post.title} a été mis à jour.`,
+                returnLink: `/students/${application.student._id}/applications`,
+            });
+        } catch (error) {
+            console.error('Failed to send notification for application status update:', error);
+        }
     }
 
     /**

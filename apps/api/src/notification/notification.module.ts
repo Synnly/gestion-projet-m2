@@ -4,13 +4,14 @@ import { NotificationController } from './notification.controller';
 import { NotificationService } from './notification.service';
 import { Notification } from './notification.schema';
 import { SchemaFactory } from '@nestjs/mongoose';
+import { NotificationOwnerGuard } from './guard/notificationOwner.guard';
 
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Notification.name, schema: SchemaFactory.createForClass(Notification) }]),
     ],
     controllers: [NotificationController],
-    providers: [NotificationService],
+    providers: [NotificationService, NotificationOwnerGuard],
     exports: [NotificationService],
 })
 export class NotificationModule {}
