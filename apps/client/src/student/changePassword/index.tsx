@@ -3,12 +3,12 @@ import { useForm, type Resolver } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { userStore } from '../../../store/userStore';
-import { Navbar } from '../../../components/navbar/Navbar';
-import { FormSection } from '../../../components/form/FormSection';
-import { FormInputEdit } from '../../../components/form/FormInputEdit';
-import { FormSubmit } from '../../../components/form/FormSubmit';
-import { UseAuthFetch } from '../../../hooks/useAuthFetch';
+import { userStore } from '../../store/userStore';
+import { Navbar } from '../../components/navbar/Navbar';
+import { FormSection } from '../../components/form/FormSection';
+import { FormInputEdit } from '../../components/form/FormInputEdit';
+import { FormSubmit } from '../../components/form/FormSubmit';
+import { UseAuthFetch } from '../../hooks/useAuthFetch';
 
 // Schéma de validation pour le changement de mot de passe
 const changePasswordSchema = z
@@ -43,31 +43,35 @@ export function ChangePassword() {
         handleSubmit,
         formState: { errors },
         clearErrors,
-        reset,
     } = useForm<ChangePasswordFormType>({
         resolver: zodResolver(changePasswordSchema) as Resolver<ChangePasswordFormType>,
     });
 
-    const { isPending, isError, error, mutateAsync } = useMutation({
-        mutationFn: async (password: string) => {
-            const res = await authFetch(`${API_URL}/api/companies/${userInfo?.id}`, {
+    const { mutateAsync, isPending, isError, error, reset: resetMutation } = useMutation({
+        mutationFn: async (data: ChangePasswordFormType) => {
+            if (!userInfo) throw new Error('Utilisateur non connecté');
+            const res = await authFetch(`${API_URL}/api/students/${userInfo.id}/profile`, {
                 method: 'PUT',
-                data: JSON.stringify({ password }),
+                data: JSON.stringify({
+                    password: data.newPassword,
+                    isFirstTime: false
+                }),
             });
             if (!res.ok) {
-                throw new Error('Erreur lors de la modification du mot de passe');
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Erreur lors du changement de mot de passe');
             }
             return res;
         },
         onSuccess: () => {
-            reset();
-            navigate('/company/profile');
+            navigate('/');
         },
     });
 
-    const onSubmit = async (data: ChangePasswordFormType) => {
-        await mutateAsync(data.newPassword);
+    const onSubmit = async (data: ChangePasswordFormType): Promise<void> => {
+        await mutateAsync(data);
     };
+
     const formInputStyle = 'input input-primary w-full rounded-xl';
 
     return (
@@ -75,19 +79,29 @@ export function ChangePassword() {
             <Navbar />
             <div className="p-8">
                 <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center bg-white rounded-lg shadow">
-                    <h1 className="text-3xl font-bold">Modifier le mot de passe</h1>
-                    <p className="text-sm mt-2 italic text-gray-600">Choisissez un nouveau mot de passe sécurisé</p>
-
-                    <form className="mt-8 w-full max-w-md flex flex-col flex-1" onSubmit={handleSubmit(onSubmit)}>
-                        <FormSection title="Nouveau mot de passe" className="mb-8">
+                    <h1 className="text-3xl font-bold text-base-content text-center">Changer votre mot de passe</h1>
+                    <p className="text-sm mt-2 italic text-gray-600 mb-4">
+                        Pour des raisons de sécurité, vous devez changer votre mot de passe lors de votre première connexion.
+                    </p>
+                    <form
+                        onSubmit={handleSubmit(onSubmit)}
+                        className="mt-4 w-full max-w-md flex flex-col flex-1"
+                        onChange={() => {
+                            clearErrors();
+                            resetMutation();
+                        }}
+                    >
+                        <FormSection
+                            title="Nouveau mot de passe"
+                            className="mb-8 space-y-4"
+                        >
                             <FormInputEdit<ChangePasswordFormType>
-                                type="password"
-                                placeholder="Nouveau mot de passe"
-                                register={register('newPassword', {
-                                    onChange: () => clearErrors('newPassword'),
-                                })}
-                                error={errors.newPassword}
                                 className={formInputStyle}
+                                register={register('newPassword')}
+                                label="Nouveau mot de passe"
+                                type="password"
+                                error={errors.newPassword}
+                                placeholder="Entrez votre nouveau mot de passe"
                             />
                             <div className="mt-2 text-xs text-gray-600 space-y-1">
                                 <p>Le mot de passe doit contenir :</p>
@@ -99,43 +113,23 @@ export function ChangePassword() {
                                     <li>Un symbole (!@#$%^&*...)</li>
                                 </ul>
                             </div>
-                        </FormSection>
-
-                        <FormSection title="Confirmation" className="mb-8">
                             <FormInputEdit<ChangePasswordFormType>
-                                type="password"
-                                placeholder="Confirmez le mot de passe"
-                                register={register('confirmPassword', {
-                                    onChange: () => clearErrors('confirmPassword'),
-                                })}
-                                error={errors.confirmPassword}
                                 className={formInputStyle}
+                                register={register('confirmPassword')}
+                                label="Confirmer le mot de passe"
+                                type="password"
+                                error={errors.confirmPassword}
+                                placeholder="Confirmez votre nouveau mot de passe"
                             />
-                        </FormSection>
-
-                        {isError && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                                <p className="text-red-600">Erreur: {error?.message}</p>
-                            </div>
-                        )}
-
-                        <div className="flex gap-4 mt-6 justify-end">
-                            <button
-                                type="button"
-                                onClick={() => navigate('/company/profile')}
-                                className="btn btn-base text-black rounded-xl"
-                            >
-                                Annuler
-                            </button>
                             <FormSubmit
                                 isPending={isPending}
-                                title="Modifier le mot de passe"
-                                pendingTitle="Modification..."
                                 isError={isError}
                                 error={error}
-                                className="btn btn-primary text-black rounded-xl"
+                                title="Changer le mot de passe"
+                                pendingTitle="Changement en cours..."
+                                className="w-full btn btn-primary text-black rounded-xl"
                             />
-                        </div>
+                        </FormSection>
                     </form>
                 </div>
             </div>

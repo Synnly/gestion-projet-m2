@@ -7,7 +7,7 @@ import { StudentUserDocument } from '../user/user.schema';
 import { Role } from '../common/roles/roles.enum';
 import { UpdateStudentDto } from './dto/updateStudent.dto';
 import * as bcrypt from 'bcrypt';
-import { generateRandomPassword } from '../common/utils/password.utils'; 
+import { generateRandomPassword } from '../common/utils/password.utils';
 import { StudentLoginInfo } from '../common/types/student.types';
 import { MailerService } from '../mailer/mailer.service';
 import * as chardet from 'chardet';
@@ -26,7 +26,7 @@ export class StudentService {
         @InjectModel(Student.name) private readonly studentModel: Model<StudentUserDocument>,
         private readonly mailerService: MailerService,
         private readonly configService: ConfigService
-    ) {}
+    ) { }
 
     /**
      * Find all students that are not soft-deleted.
@@ -52,7 +52,7 @@ export class StudentService {
      */
     async create(dto: CreateStudentDto): Promise<void> {
         const rawPassword = generateRandomPassword();
-        
+
         const studentData = {
             ...dto,
             role: Role.STUDENT,
@@ -110,10 +110,10 @@ export class StudentService {
 
             try {
                 await this.studentModel.insertMany(studentsToInsert);
-            } catch(e) {
+            } catch (e) {
                 throw e;
             }
-            
+
             // Sending mails for each student created
             const emailResults = await Promise.allSettled(
                 studentsLogin.map(async (loginMailInfo) => {
@@ -134,7 +134,7 @@ export class StudentService {
                 }
             });
         }
-        
+
         return {
             added: newStudentsToCreateDtos.length,
             skipped: dtos.length - newStudentsToCreateDtos.length,
@@ -151,8 +151,10 @@ export class StudentService {
         const student = await this.studentModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
 
         if (student) {
+            // Mise à jour partielle : seuls les champs fournis sont assignés
             Object.assign(student, dto);
-            await student.save();
+            // Déclenche les hooks pre-save (hashage), mais désactive la validation complète
+            await student.save({ validateBeforeSave: false });
             return;
         }
 
@@ -225,7 +227,7 @@ export class StudentService {
 
 
 
-    async checkConflicts(dtos: CreateStudentDto[], skipExistingRecords: boolean) : Promise<CreateStudentDto[]> {
+    async checkConflicts(dtos: CreateStudentDto[], skipExistingRecords: boolean): Promise<CreateStudentDto[]> {
         const incomingEmails = dtos.map((dto) => dto.email);
         const incomingStudentNumbers = dtos.map((dto) => dto.studentNumber);
         // Check for already existing records in the database

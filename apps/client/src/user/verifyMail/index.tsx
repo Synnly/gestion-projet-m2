@@ -119,7 +119,13 @@ export function VerifyEmail() {
             } else {
                 const refreshed = await refreshRes.text();
                 set(refreshed);
-                navigate(`/complete-profil`);
+                // Récupérez le rôle depuis le token ou userStore
+                const userInfo = accessToken.get(accessToken.accessToken);
+                if (userInfo?.role === 'STUDENT') {
+                    navigate('/student/changePassword');  // Redirection pour étudiants
+                } else {
+                    navigate('/complete-profil');  // Redirection par défaut
+                }
             }
         }
         reset();

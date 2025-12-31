@@ -1,7 +1,7 @@
 import { redirect } from 'react-router-dom';
 import { userStore } from '../store/userStore'; // ton zustand store
 
-interface FetchOptions<TData = unknown> {
+interface FetchOptions<TData extends BodyInit | null | undefined = BodyInit | null | undefined> {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
     data?: TData;
     headers?: Record<string, string>;
@@ -22,7 +22,7 @@ export const UseAuthFetch = () => {
     const accessToken = userStore.getState().access;
     const setUserToken = userStore.getState().set;
 
-    const authFetch = async <TData = unknown,>(url: string, options?: FetchOptions<TData>): Promise<Response> => {
+    const authFetch = async <TData extends BodyInit | null | undefined = BodyInit | null | undefined>(url: string, options?: FetchOptions<TData>): Promise<Response> => {
         const doFetch = async (): Promise<Response> => {
             try {
                 const res = await fetch(url, {

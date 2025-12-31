@@ -44,6 +44,19 @@ export const useLogin = () => {
             setAccess(accessToken);
             const user = getAccess(accessToken);
             if (!user) throw new Error('Erreur lors de la récupération des informations utilisateur.');
+            
+            // Force verification for students
+            if (user.role === 'STUDENT') {
+                if (!user.isVerified) {
+                    navigate('/verify');
+                    return;
+                }
+                if (user.isFirstTime) {
+                    navigate('/student/changePassword');
+                    return;
+                }
+            }
+            
             const redirectTo = lastLocationRoute || '/';
             navigate(redirectTo);
         }

@@ -41,6 +41,7 @@ import { AdminDashboard } from './admin/dashboard';
 import ApplicationPage from './pages/applications/ApplicationPage';
 import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
 import { StudentDashboard } from './student/dashboard';
+import { ChangePassword as StudentChangePassword } from './student/changePassword';
 import { ApplicationList } from './company/dashboard/applicationList/ApplicationList.tsx';
 import ImportStudent from './admin/importStudent.tsx';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
@@ -188,6 +189,11 @@ function App() {
                             path: 'student',
                             element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} redirectPath="/" />,
                             children: [
+                                {
+                                    path: 'change-password',
+                                    element: <StudentChangePassword />,
+                                    handle: { title: 'Changer le mot de passe' },
+                                },
                                 {
                                     path: 'dashboard',
                                     element: <StudentDashboard />,

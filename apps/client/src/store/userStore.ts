@@ -7,6 +7,7 @@ export type userPayload = {
     role: 'COMPANY' | 'ADMIN' | 'STUDENT';
     isVerified: boolean;
     isValid: boolean;
+    isFirstTime?: boolean;
 };
 
 type authStore = {
@@ -27,6 +28,7 @@ type accessPayload = {
     rti: string;
     isVerified: boolean;
     isValid: boolean;
+    isFirstTime?: boolean;
 };
 
 export const userStore = create<authStore>()(
@@ -43,8 +45,9 @@ export const userStore = create<authStore>()(
                         id: accessPayload.sub,
                         mail: accessPayload.email,
                         role: accessPayload.role,
-                        isVerified: accessPayload.role === 'STUDENT' ? true : accessPayload.isVerified,
+                        isVerified: accessPayload.isVerified,
                         isValid: accessPayload.isValid,
+                        isFirstTime: accessPayload.isFirstTime,
                     };
                 } catch (e) {
                     // Invalid token format or JSON parse error

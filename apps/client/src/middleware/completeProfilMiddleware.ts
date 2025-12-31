@@ -66,4 +66,29 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
             throw redirect(`/${payload.role.toLowerCase()}/dashboard`);
         }
     }
+    if (payload.role === 'STUDENT') {
+        // Fetch student profile to check isFirstTime
+        const studentRes = await authFetch(`${API_URL}/api/students/${payload.id}`, {
+            headers: {
+                Authorization: `Bearer ${access}`,
+            },
+        });
+
+        if (!studentRes.ok) {
+            return redirect('/signin');
+        }
+
+        const studentProfile = await studentRes.json();
+        const isFirstTime = studentProfile.isFirstTime;
+
+        if (isFirstTime && pathname === '/student/change-password') {
+            return;
+        }
+        if (isFirstTime && pathname !== '/student/change-password') {
+            throw redirect('/student/change-password');
+        }
+        if (!isFirstTime && pathname === '/student/change-password') {
+            throw redirect('/student/dashboard');
+        }
+    }
 };
