@@ -43,6 +43,7 @@ import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
 import { StudentDashboard } from './student/dashboard';
 import { ApplicationList } from './company/dashboard/applicationList/ApplicationList';
 import ImportStudent from './admin/importStudent';
+import { StatsPage } from './admin/stats';
 
 function App() {
     userStore.persist.rehydrate();
@@ -178,7 +179,14 @@ function App() {
                                     path: 'dashboard',
                                     element: <AdminDashboard />,
                                     handle: { title: 'Tableau de bord admin' },
-                                    children: [{ index: true, element: <ImportStudent /> }],
+                                    children: [
+                                        { index: true, element: <ImportStudent /> },
+                                    ],
+                                },
+                                {
+                                    path: 'stats',
+                                    element: <StatsPage />,
+                                    handle: { title: 'Statistiques' },
                                 },
                             ],
                         },

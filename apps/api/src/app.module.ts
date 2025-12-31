@@ -11,6 +11,7 @@ import { MailerProviderType } from './mailer/constants';
 import { StudentModule } from './student/student.module';
 import { ApplicationModule } from './application/application.module';
 import { StorageProviderType } from './s3/s3.constants';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
     imports: [
@@ -32,6 +33,7 @@ import { StorageProviderType } from './s3/s3.constants';
         MailerModule,
         StudentModule,
         ApplicationModule,
+        StatsModule,
     ],
     controllers: [],
     providers: [],

@@ -22,6 +22,12 @@ export const centerNavItems: NavItem[] = [
         type: 'link',
         role: ['ADMIN'],
     },
+     {
+        key: 'admin-stats-link', // New item for admin stats
+        title: 'Statistiques', // Title for the link
+        to: '/admin/stats', // Route to the stats page
+        role: ['ADMIN'], // Only visible for ADMIN role
+    },
     /*{
         key: 'offers',
         title: 'Annonces',
