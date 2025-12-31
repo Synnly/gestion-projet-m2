@@ -2,31 +2,18 @@ import type { NavItem } from './types';
 
 export const centerNavItems: NavItem[] = [
     {
-        key: 'home-company',
-        title: 'TABLEAU DE BORD',
-        to: '/company/dashboard',
+        key: 'forums',
+        title: 'FORUMS',
+        to: '/forums',
         type: 'link',
-        role: ['COMPANY'],
+        role: ['ADMIN', 'STUDENT', 'COMPANY'],
     },
-    {
-        key: 'home-student',
-        title: 'TABLEAU DE BORD',
-        to: '/student/dashboard',
-        type: 'link',
-        role: ['STUDENT'],
-    },
-    {
-        key: 'home-admin',
-        title: 'TABLEAU DE BORD',
-        to: '/admin/dashboard',
-        type: 'link',
-        role: ['ADMIN'],
-    },
+
      {
-        key: 'admin-stats-link', // New item for admin stats
-        title: 'Statistiques', // Title for the link
-        to: '/admin/stats', // Route to the stats page
-        role: ['ADMIN'], // Only visible for ADMIN role
+        key: 'admin-stats-link', 
+        title: 'Statistiques', 
+        to: '/admin/stats',
+        role: ['ADMIN'],
     },
     /*{
         key: 'offers',
