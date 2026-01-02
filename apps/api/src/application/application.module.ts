@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ApplicationController } from './application.controller';
 import { ApplicationService } from './application.service';
 import { PostModule } from '../post/post.module';
@@ -13,7 +13,7 @@ import { NotificationModule } from 'src/notification/notification.module';
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Application.name, schema: ApplicationSchema }]),
-        PostModule,
+        forwardRef(() => PostModule),
         StudentModule,
         NotificationModule,
         S3Module.register({ provider: StorageProviderType.MINIO }),

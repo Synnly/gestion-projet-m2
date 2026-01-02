@@ -17,6 +17,7 @@ describe('PostController', () => {
         findOne: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
+        findAllByStudent: jest.fn(),
     };
 
     const mockJwtService = {
@@ -191,6 +192,7 @@ describe('PostController', () => {
             adress: 'Lyon, France',
             type: PostType.Presentiel,
             isVisible: true,
+            isCoverLetterRequired: false,
         };
 
         it('should create a post when valid dto is provided and create is called', async () => {
@@ -207,6 +209,7 @@ describe('PostController', () => {
                 title: 'Titre minimal',
                 description: 'Description minimale',
                 keySkills: ['Compétence1'],
+                isCoverLetterRequired: false,
             };
             mockPostService.create.mockResolvedValue({ ...mockPost, ...minimalDto });
 
@@ -259,6 +262,176 @@ describe('PostController', () => {
             await expect(controller.update(companyId, postId, { title: 'x' } as any)).rejects.toThrow(
                 NotFoundException,
             );
+        });
+    });
+
+    describe('findAllWithApplications', () => {
+        const studentId = '507f1f77bcf86cd799439088';
+        const mockRequest = {
+            user: {
+                sub: studentId,
+            },
+        };
+
+        it('should return paginated posts when student has applications', async () => {
+            const mockPosts = [
+                mockPost,
+                {
+                    ...mockPost,
+                    _id: new Types.ObjectId('507f1f77bcf86cd799439012'),
+                    title: 'Développeur Backend',
+                },
+            ];
+            const paginationResult = {
+                data: mockPosts,
+                total: 2,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockPostService.findAllByStudent.mockResolvedValue(paginationResult);
+
+            const result = await controller.findAllWithApplications({ page: 1, limit: 10 } as any, mockRequest);
+
+            expect(service.findAllByStudent).toHaveBeenCalledWith({ page: 1, limit: 10 }, studentId);
+            expect(service.findAllByStudent).toHaveBeenCalledTimes(1);
+            expect(result.data).toHaveLength(2);
+            expect(result.data[0].title).toBe('Développeur Full Stack');
+            expect(result.data[1].title).toBe('Développeur Backend');
+            expect(result.total).toBe(2);
+        });
+
+        it('should return empty paginated result when student has no applications', async () => {
+            const paginationResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockPostService.findAllByStudent.mockResolvedValue(paginationResult);
+
+            const result = await controller.findAllWithApplications({ page: 1, limit: 10 } as any, mockRequest);
+
+            expect(service.findAllByStudent).toHaveBeenCalledWith({ page: 1, limit: 10 }, studentId);
+            expect(result.data).toHaveLength(0);
+            expect(result.total).toBe(0);
+        });
+
+        it('should pass correct student ID from request to service', async () => {
+            const customStudentId = '507f1f77bcf86cd799439099';
+            const customRequest = {
+                user: {
+                    sub: customStudentId,
+                },
+            };
+            const paginationResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockPostService.findAllByStudent.mockResolvedValue(paginationResult);
+
+            await controller.findAllWithApplications({ page: 1, limit: 10 } as any, customRequest);
+
+            expect(service.findAllByStudent).toHaveBeenCalledWith({ page: 1, limit: 10 }, customStudentId);
+        });
+
+        it('should handle pagination correctly with multiple pages', async () => {
+            const mockPosts = [mockPost];
+            const paginationResult = {
+                data: mockPosts,
+                total: 25,
+                page: 2,
+                limit: 10,
+                totalPages: 3,
+                hasNext: true,
+                hasPrev: true,
+            };
+
+            mockPostService.findAllByStudent.mockResolvedValue(paginationResult);
+
+            const result = await controller.findAllWithApplications({ page: 2, limit: 10 } as any, mockRequest);
+
+            expect(service.findAllByStudent).toHaveBeenCalledWith({ page: 2, limit: 10 }, studentId);
+            expect(result.page).toBe(2);
+            expect(result.totalPages).toBe(3);
+            expect(result.hasNext).toBe(true);
+            expect(result.hasPrev).toBe(true);
+        });
+
+        it('should return PostDto instances when posts are found', async () => {
+            const paginationResult = {
+                data: [mockPost],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockPostService.findAllByStudent.mockResolvedValue(paginationResult);
+
+            const result = await controller.findAllWithApplications({ page: 1, limit: 10 } as any, mockRequest);
+
+            expect(result.data[0]).toHaveProperty('title');
+            expect(result.data[0]).toHaveProperty('description');
+            expect(result.data[0]).toHaveProperty('keySkills');
+            expect(result.data[0]._id).toBeDefined();
+        });
+
+        it('should handle custom page size', async () => {
+            const paginationResult = {
+                data: [mockPost],
+                total: 50,
+                page: 1,
+                limit: 25,
+                totalPages: 2,
+                hasNext: true,
+                hasPrev: false,
+            };
+
+            mockPostService.findAllByStudent.mockResolvedValue(paginationResult);
+
+            const result = await controller.findAllWithApplications({ page: 1, limit: 25 } as any, mockRequest);
+
+            expect(service.findAllByStudent).toHaveBeenCalledWith({ page: 1, limit: 25 }, studentId);
+            expect(result.limit).toBe(25);
+        });
+
+        it('should preserve all pagination metadata', async () => {
+            const paginationResult = {
+                data: [mockPost],
+                total: 15,
+                page: 2,
+                limit: 5,
+                totalPages: 3,
+                hasNext: true,
+                hasPrev: true,
+            };
+
+            mockPostService.findAllByStudent.mockResolvedValue(paginationResult);
+
+            const result = await controller.findAllWithApplications({ page: 2, limit: 5 } as any, mockRequest);
+
+            expect(result.total).toBe(15);
+            expect(result.page).toBe(2);
+            expect(result.limit).toBe(5);
+            expect(result.totalPages).toBe(3);
+            expect(result.hasNext).toBe(true);
+            expect(result.hasPrev).toBe(true);
         });
     });
 });
