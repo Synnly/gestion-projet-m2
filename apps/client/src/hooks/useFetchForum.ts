@@ -58,8 +58,8 @@ export async function fetchForumByCompanyId(companyId: string) {
         const error = await res.json().catch(() => ({ message: res.statusText }));
         throw new Error(error.message || 'Erreur lors de la récupération du forum');
     }
-
-    return res.json();
+    const responseData = await res.json();
+    return responseData;
 }
 
 /**

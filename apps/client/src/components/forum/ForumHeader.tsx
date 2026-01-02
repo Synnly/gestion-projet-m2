@@ -5,9 +5,10 @@ import type { Forum } from '../../types/forum.types.ts';
 
 type Props = {
     forum: Forum;
+    onCreateTopic?: () => void;
 };
 
-export const ForumHeader = ({ forum }: Props) => {
+export const ForumHeader = ({ forum, onCreateTopic }: Props) => {
     return (
         <div className="flex flex-col justify-center gap-8">
             <div className="card bg-base-100 shadow-sm shadow-base-300">
@@ -45,8 +46,7 @@ export const ForumHeader = ({ forum }: Props) => {
                             <div>messages</div>
                         </div>
                         <div>
-                            {/*TODO: Implémenter la modale et l'ouverte de celle-ci*/}
-                            <button className="btn btn-primary">
+                            <button className="btn btn-primary" onClick={onCreateTopic}>
                                 <Pencil size={16} />
                                 Nouveau sujet
                             </button>
