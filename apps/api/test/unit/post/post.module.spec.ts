@@ -6,6 +6,7 @@ import { PostController } from '../../../src/post/post.controller';
 import { PaginationService } from '../../../src/common/pagination/pagination.service';
 import { GeoService } from '../../../src/common/geography/geo.service';
 import { CompanyService } from '../../../src/company/company.service';
+import { ApplicationService } from '../../../src/application/application.service';
 
 describe('PostModule', () => {
     let module: TestingModule;
@@ -73,6 +74,10 @@ describe('PostModule', () => {
                 {
                     provide: CompanyService,
                     useValue: mockCompanyService,
+                },
+                {
+                    provide: ApplicationService,
+                    useValue: {},
                 },
             ],
         }).compile();
