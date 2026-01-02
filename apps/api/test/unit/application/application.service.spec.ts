@@ -279,7 +279,8 @@ describe('ApplicationService', () => {
                 save: jest.fn().mockResolvedValue(true),
             };
             const exec = jest.fn().mockResolvedValue(application);
-            mockApplicationModel.findOne.mockReturnValue({ exec });
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
 
             await service.updateStatus(postId, ApplicationStatus.Accepted);
 
@@ -287,13 +288,18 @@ describe('ApplicationService', () => {
                 _id: postId,
                 deletedAt: { $exists: false },
             });
+            expect(populate).toHaveBeenCalledWith([
+                { path: 'post', select: 'title _id' },
+                { path: 'student', select: '_id' },
+            ]);
             expect(application.status).toBe(ApplicationStatus.Accepted);
             expect(application.save).toHaveBeenCalledTimes(1);
         });
 
         it('should throw NotFoundException when the application does not exist', async () => {
             const exec = jest.fn().mockResolvedValue(null);
-            mockApplicationModel.findOne.mockReturnValue({ exec });
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
 
             await expect(service.updateStatus(postId, ApplicationStatus.Rejected)).rejects.toThrow(NotFoundException);
             expect(exec).toHaveBeenCalledTimes(1);

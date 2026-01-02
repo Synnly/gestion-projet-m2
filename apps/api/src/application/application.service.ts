@@ -147,7 +147,13 @@ export class ApplicationService {
      * @throws NotFoundException if the application does not exist
      */
     async updateStatus(id: Types.ObjectId, status: ApplicationStatus): Promise<void> {
-        const application = await this.applicationModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
+        const application = await this.applicationModel
+            .findOne({ _id: id, deletedAt: { $exists: false } })
+            .populate([
+                { path: 'post', select: 'title _id' },
+                { path: 'student', select: '_id' },
+            ])
+            .exec();
         if (!application) throw new NotFoundException(`Application with id ${id} not found`);
 
         application.status = status;
