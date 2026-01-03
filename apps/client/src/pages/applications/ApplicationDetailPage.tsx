@@ -3,7 +3,7 @@ import { ArrowLeft, Eye } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useFetchApplicationDetail } from '../../hooks/useFetchApplicationDetail';
 import { type ApplicationStatus } from '../../store/useApplicationStore';
-import { PdfModal } from '../../company/dashboard/applicationList/component/PdfModal.tsx';
+import { PdfModal } from '../../company/applicationList/component/PdfModal.tsx';
 import { useState } from 'react';
 
 const statusStyles: Record<ApplicationStatus | string, string> = {

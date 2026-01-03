@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ApplicationController } from './application.controller';
 import { ApplicationService } from './application.service';
 import { PostModule } from '../post/post.module';
@@ -12,7 +12,7 @@ import { PaginationService } from '../common/pagination/pagination.service';
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Application.name, schema: ApplicationSchema }]),
-        PostModule,
+        forwardRef(() => PostModule),
         StudentModule,
         S3Module.register({ provider: StorageProviderType.MINIO }),
     ],

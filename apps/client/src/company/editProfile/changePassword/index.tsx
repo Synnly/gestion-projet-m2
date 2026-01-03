@@ -8,6 +8,7 @@ import { Navbar } from '../../../components/navbar/Navbar';
 import { FormSection } from '../../../components/form/FormSection';
 import { FormInputEdit } from '../../../components/form/FormInputEdit';
 import { FormSubmit } from '../../../components/form/FormSubmit';
+import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 
 // Schéma de validation pour le changement de mot de passe
 const changePasswordSchema = z
@@ -36,7 +37,7 @@ export function ChangePassword() {
     const access = userStore((state) => state.access);
     const getUserInfo = userStore((state) => state.get);
     const userInfo = access ? getUserInfo(access) : null;
-
+    const authFetch = UseAuthFetch();
     const {
         register,
         handleSubmit,
@@ -49,7 +50,7 @@ export function ChangePassword() {
 
     const { isPending, isError, error, mutateAsync } = useMutation({
         mutationFn: async (password: string) => {
-            const res = await fetch(`${API_URL}/api/companies/${userInfo?.id}`, {
+            const res = await authFetch(`${API_URL}/api/companies/${userInfo?.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
