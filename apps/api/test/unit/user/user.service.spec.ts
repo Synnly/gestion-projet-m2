@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from '../../../src/user/user.service';
 import { getModelToken } from '@nestjs/mongoose';
 import { User } from '../../../src/user/user.schema';
+import { RefreshToken } from '../../../src/auth/refreshToken.schema';
 import { MailerService } from '../../../src/mailer/mailer.service';
 import { NotFoundException } from '@nestjs/common';
 import { Model } from 'mongoose';
@@ -9,11 +10,16 @@ import { Model } from 'mongoose';
 describe('UserService', () => {
   let service: UserService;
   let userModel: Model<User>;
+  let refreshTokenModel: Model<RefreshToken>;
   let mailerService: MailerService;
 
   const mockUserModel = {
     findOne: jest.fn(),
     findOneAndUpdate: jest.fn(),
+  };
+
+  const mockRefreshTokenModel = {
+    deleteMany: jest.fn(),
   };
 
   const mockMailerService = {
@@ -36,6 +42,10 @@ describe('UserService', () => {
           useValue: mockUserModel,
         },
         {
+          provide: getModelToken(RefreshToken.name),
+          useValue: mockRefreshTokenModel,
+        },
+        {
           provide: MailerService,
           useValue: mockMailerService,
         },
@@ -44,6 +54,7 @@ describe('UserService', () => {
 
     service = module.get<UserService>(UserService);
     userModel = module.get<Model<User>>(getModelToken(User.name));
+    refreshTokenModel = module.get<Model<RefreshToken>>(getModelToken(RefreshToken.name));
     mailerService = module.get<MailerService>(MailerService);
 
     jest.clearAllMocks();
@@ -81,10 +92,12 @@ describe('UserService', () => {
   });
 
   describe('ban', () => {
-    it('should ban a user and send an email', async () => {
+    it('should ban a user, delete refresh tokens and send an email', async () => {
       mockUserModel.findOneAndUpdate.mockReturnValue({
         exec: jest.fn().mockResolvedValue(mockUser),
       });
+      
+      mockRefreshTokenModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
       mockMailerService.sendAccountBanEmail.mockResolvedValue(null);
 
       await service.ban('user123', 'Comportement inapproprié');
@@ -93,6 +106,8 @@ describe('UserService', () => {
         { _id: 'user123', ban: { $exists: false }, deletedAt: { $exists: false } },
         { $set: { ban: { date: expect.any(Date), reason: 'Comportement inapproprié' } } },
       );
+
+      expect(refreshTokenModel.deleteMany).toHaveBeenCalledWith({ userId: 'user123' });
 
       expect(mailerService.sendAccountBanEmail).toHaveBeenCalledWith(
         mockUser.email,
@@ -109,6 +124,7 @@ describe('UserService', () => {
         .rejects
         .toThrow(NotFoundException);
 
+      expect(refreshTokenModel.deleteMany).not.toHaveBeenCalled();
       expect(mailerService.sendAccountBanEmail).not.toHaveBeenCalled();
     });
 
@@ -116,11 +132,13 @@ describe('UserService', () => {
       mockUserModel.findOneAndUpdate.mockReturnValue({
         exec: jest.fn().mockResolvedValue(mockUser),
       });
+      mockRefreshTokenModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
       jest.spyOn(console, 'error').mockImplementation(() => {});
       mockMailerService.sendAccountBanEmail.mockRejectedValue(new Error('SMTP Error'));
 
       await expect(service.ban('user123', 'reason')).resolves.not.toThrow();
       
+      expect(refreshTokenModel.deleteMany).toHaveBeenCalledWith({ userId: 'user123' });
       expect(mailerService.sendAccountBanEmail).toHaveBeenCalled();
     });
   });
