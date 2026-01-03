@@ -3,12 +3,15 @@ import type { companyFormLogin } from '../auth/Login/type';
 import { userStore } from '../store/userStore';
 import { useLocation, useNavigate } from 'react-router';
 function translateMessage(message: string): string {
-    if (message === 'Invalid email or password') {
-        return 'email ou mot de passe invalide.';
-    }
-    const regex = /User with email ([\w.-]+@[\w.-]+\.\w+) not found/i;
-    if (regex.test(message)) {
-        return "Utilisateur avec cet email n'existe pas.";
+    if (message === 'Invalid email or password') return 'email ou mot de passe invalide.';
+
+    const notFoundRegex = /User with email ([\w.-]+@[\w.-]+\.\w+) not found/i;
+    if (notFoundRegex.test(message)) return "Aucun utilisateur avec cet email n'existe.";
+    
+    const bannedRegex = /User with email ([\w.-]+@[\w.-]+\.\w+) is banned/i;
+    if (bannedRegex.test(message)) {
+        const reason = message.split('for')[1] ? message.split('for')[1].trim() : 'Raison inconnue';
+        return `L'utilisateur avec cet email est banni pour le motif suivant :\n${reason}`;
     }
 
     return 'Une erreur est survenue, veuillez réessayer plus tard.';

@@ -22,7 +22,7 @@ export class UserService {
      * @returns The `User` document or null if not found.
      */
     async findOne(id: string): Promise<User | null> {
-        return this.userModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
+        return this.userModel.findOne({ _id: id, deletedAt: { $exists: false }, ban: { $exists: false } }).exec();
     }
 
 

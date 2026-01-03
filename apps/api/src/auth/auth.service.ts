@@ -58,6 +58,9 @@ export class AuthService {
         if (!(await bcrypt.compare(password, user.password))) {
             throw new InvalidCredentialsException('Invalid email or password');
         }
+
+        if (user.ban) throw new NotFoundException(`User with email ${email} is banned for '${user.ban.reason}'`);
+
         // Generating tokens
         const { token, rti } = await this.generateRefreshToken(user._id, user.role);
         const accessToken = await this.generateAccessToken(user._id, user.email, rti);
