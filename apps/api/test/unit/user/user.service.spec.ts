@@ -65,6 +65,7 @@ describe('UserService', () => {
       expect(userModel.findOne).toHaveBeenCalledWith({
         _id: 'user123',
         deletedAt: { $exists: false },
+        ban: { $exists: false },
       });
     });
 
