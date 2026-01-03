@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
 import { MailerService } from '../mailer/mailer.service';
+import { RefreshToken, RefreshTokenDocument } from 'src/auth/refreshToken.schema';
 
 @Injectable()
 /**
@@ -13,6 +14,7 @@ import { MailerService } from '../mailer/mailer.service';
 export class UserService {
     constructor(
         @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+        @InjectModel(RefreshToken.name) private readonly refreshTokenModel: Model<RefreshTokenDocument>,
         private readonly mailerService: MailerService,
     ) {}
 
@@ -28,18 +30,21 @@ export class UserService {
 
     /**
      * Ban a user by setting a `ban` object.
-     * @param id The user's id.
+     * @param userId The user's id.
      * @throws NotFoundException if the user does not exist or is already deleted.
      */
-    async ban(id: string, reason: string): Promise<void> {
+    async ban(userId: string, reason: string): Promise<void> {
         const bannedUser = await this.userModel
             .findOneAndUpdate(
-                { _id: id, ban: { $exists: false }, deletedAt: { $exists: false } },
+                { _id: userId, ban: { $exists: false }, deletedAt: { $exists: false } },
                 { $set: { ban: {date: new Date(), reason: reason } } })
             .exec();
 
         if (!bannedUser) throw new NotFoundException('User not found or already banned / deleted');
-        
+
+        // Deletes all refresh tokens linked to the user
+        await this.refreshTokenModel.deleteMany({ userId: userId });
+
         // Send an email to the banned user
         try {
             await this.mailerService.sendAccountBanEmail(bannedUser.email, reason);

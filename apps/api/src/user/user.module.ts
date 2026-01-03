@@ -9,10 +9,14 @@ import { Admin, AdminSchema } from '../admin/admin.schema';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { MailerModule } from '../mailer/mailer.module';
+import { RefreshToken, RefreshTokenSchema } from 'src/auth/refreshToken.schema';
 
 @Module({
     imports: [
-        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+        MongooseModule.forFeature([
+            { name: User.name, schema: UserSchema },
+            { name: RefreshToken.name, schema: RefreshTokenSchema }
+        ]),
         MailerModule.register(),
     ],
     controllers: [UserController],
