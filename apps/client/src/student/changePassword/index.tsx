@@ -33,7 +33,7 @@ export function ChangePassword() {
     const navigate = useNavigate();
     const API_URL = import.meta.env.VITE_APIURL;
 
-    // Récupérer les informations utilisateur
+    // Retrieve user information
     const access = userStore((state) => state.access);
     const getUserInfo = userStore((state) => state.get);
     const userInfo = access ? getUserInfo(access) : null;
