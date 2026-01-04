@@ -115,7 +115,7 @@ export class QueryBuilder<T> {
                 andConditions.push(
                     { minSalary: { $type: 'number', $lte: maxSalary } },
                     {
-                        $or: [{ maxSalary: { $lte: maxSalary } }, { maxSalary: { $exists: false } }],
+                        $or: [{ maxSalary: { $type: 'number', $lte: maxSalary } }, { maxSalary: { $exists: false } }],
                     },
                 );
             }
