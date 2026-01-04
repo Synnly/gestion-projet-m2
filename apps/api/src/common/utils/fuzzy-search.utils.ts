@@ -28,15 +28,24 @@ export function normalizeText(text: string): string {
 
 /**
  * Tokenize a search query into individual terms.
+ *
+ * Note: Results are intentionally truncated to at most `maxTokens` tokens
+ * (default: 8). This limit helps prevent denial-of-service issues and
+ * excessive regex complexity when building fuzzy search patterns from user
+ * input. Callers that need to know whether truncation occurred can compare
+ * the number of returned tokens with the number of raw whitespace-separated
+ * segments in the original query.
+ *
  * @param value the search query
  * @param maxTokens maximum number of tokens to return (default: 8)
- * @returns array of tokens
+ * @returns array of tokens, truncated to at most `maxTokens` entries
  */
 export function tokenizeSearchQuery(value: string, maxTokens: number = 8): string[] {
     return value
         .split(/\s+/)
         .map((t) => t.trim())
         .filter(Boolean)
+        // Intentionally limit the number of tokens to avoid excessive fuzzy-regex complexity.
         .slice(0, maxTokens);
 }
 
