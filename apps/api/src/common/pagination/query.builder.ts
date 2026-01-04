@@ -46,13 +46,27 @@ export class QueryBuilder<T> {
         if (globalSearch) {
             // “Le/les mots” => AND across tokens, and OR across fields for each token
             const tokens = tokenizeSearchQuery(globalSearch);
+
             if (tokens.length > 0) {
-                const andConditions = (mutableFilter.$and ??= []) as Array<Record<string, unknown>>;
-                for (const token of tokens) {
-                    const re = buildFuzzyRegex(token);
-                    andConditions.push({
-                        $or: DEFAULT_GLOBAL_SEARCH_FIELDS.map((field) => ({ [field]: re })),
-                    });
+                // Prefer MongoDB native text search for simple single-token queries (fast, index-backed),
+                // and fall back to fuzzy regex search for more complex or typo-tolerant queries.
+                const isSingleSimpleToken =
+                    tokens.length === 1 &&
+                    // Simple heuristic: single alphanumeric token (no punctuation/operators)
+                    /^[\p{L}\p{N}]+$/u.test(tokens[0]);
+
+                if (isSingleSimpleToken) {
+                    // Use text index when available; keeps query fast and index-backed.
+                    // Fuzzy search will still be used for multi-word/complex queries below.
+                    (mutableFilter as any).$text = { $search: globalSearch };
+                } else {
+                    const andConditions = (mutableFilter.$and ??= []) as Array<Record<string, unknown>>;
+                    for (const token of tokens) {
+                        const re = buildFuzzyRegex(token);
+                        andConditions.push({
+                            $or: DEFAULT_GLOBAL_SEARCH_FIELDS.map((field) => ({ [field]: re })),
+                        });
+                    }
                 }
             }
         }
