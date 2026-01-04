@@ -81,13 +81,13 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
         const studentProfile = await studentRes.json();
         const isFirstTime = studentProfile.isFirstTime;
 
-        if (isFirstTime && pathname === '/student/change-password') {
+        if (isFirstTime && pathname === '/student/changePassword') {
             return;
         }
-        if (isFirstTime && pathname !== '/student/change-password') {
-            throw redirect('/student/change-password');
+        if (isFirstTime && pathname !== '/student/changePassword') {
+            throw redirect('/student/changePassword');
         }
-        if (!isFirstTime && pathname === '/student/change-password') {
+        if (!isFirstTime && pathname === '/student/changePassword') {
             throw redirect('/student/dashboard');
         }
     }
