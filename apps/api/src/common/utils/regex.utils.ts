@@ -4,5 +4,5 @@
  * @returns the escaped string
  */
 export function escapeRegexLiteral(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return value.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&');
 }
