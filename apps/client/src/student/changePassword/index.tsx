@@ -10,7 +10,7 @@ import { FormInputEdit } from '../../components/form/FormInputEdit';
 import { FormSubmit } from '../../components/form/FormSubmit';
 import { UseAuthFetch } from '../../hooks/useAuthFetch';
 
-// Schéma de validation pour le changement de mot de passe
+// Validation schema for password change
 const changePasswordSchema = z
     .object({
         newPassword: z
