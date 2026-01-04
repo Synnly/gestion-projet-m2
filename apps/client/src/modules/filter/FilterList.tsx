@@ -53,7 +53,7 @@ export function FilterList() {
                                 Réinitialiser
                             </button>
 
-                            <div className="btn btn-xs btn-ghost ml-2">
+                            <div className="ml-2">
                                 <SortSelect />
                             </div>
                         </div>
