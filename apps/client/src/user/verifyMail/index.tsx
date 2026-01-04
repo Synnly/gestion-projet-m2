@@ -119,12 +119,12 @@ export function VerifyEmail() {
             } else {
                 const refreshed = await refreshRes.text();
                 set(refreshed);
-                // Récupérez le rôle depuis le token ou userStore
+                // Get the role from the token or userStore
                 const userInfo = accessToken.get(accessToken.accessToken);
                 if (userInfo?.role === 'STUDENT') {
-                    navigate('/student/changePassword');  // Redirection pour étudiants
+                    navigate('/student/changePassword');  // Redirect for students
                 } else {
-                    navigate('/complete-profil');  // Redirection par défaut
+                    navigate('/complete-profil');  // Default redirect
                 }
             }
         }
