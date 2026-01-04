@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Application, ApplicationDocument, ApplicationStatus } from './application.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -9,6 +9,7 @@ import { S3Service } from '../s3/s3.service';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { ApplicationQueryBuilder } from '../common/pagination/applicationQuery.builder';
 import { ApplicationPaginationDto } from 'src/common/pagination/dto/applicationPagination.dto';
+import { Post } from '../post/post.schema';
 
 @Injectable()
 export class ApplicationService {
@@ -22,7 +23,7 @@ export class ApplicationService {
      */
     constructor(
         @InjectModel('Application') private readonly applicationModel: Model<ApplicationDocument>,
-        private readonly postService: PostService,
+        @Inject(forwardRef(() => PostService)) private readonly postService: PostService,
         private readonly studentService: StudentService,
         private readonly s3Service: S3Service,
         private readonly paginationService: PaginationService,
@@ -267,5 +268,17 @@ export class ApplicationService {
         const data = facet.data as Application[];
 
         return { data, total, limit: safeLimit, page: safePage };
+    }
+
+    /**
+     * Gets the post IDs to which the student applied.
+     * @param studentId The id of the student
+     * @returns A promise with an array of post IDs
+     */
+    async getPostIdsByStudent(studentId: string): Promise<Post[]> {
+        return this.applicationModel
+            .find({ student: new Types.ObjectId(studentId) })
+            .distinct('post')
+            .exec();
     }
 }

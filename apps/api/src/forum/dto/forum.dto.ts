@@ -2,6 +2,7 @@ import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { Types } from 'mongoose';
 import { ValidateNested } from 'class-validator';
 import { CompanyDto } from '../../company/dto/company.dto';
+import { TopicDto } from '../topic/dto/topic.dto';
 
 @Exclude()
 export class ForumDto {
@@ -20,10 +21,10 @@ export class ForumDto {
     @Type(() => CompanyDto)
     company?: CompanyDto;
 
-    // @Expose()
-    // @ValidateNested({ each: true })
-    // @Type(() => TopicDto)
-    // topics: TopicDto[];
+    @Expose()
+    @ValidateNested({ each: true })
+    @Type(() => TopicDto)
+    topics: TopicDto[];
 
     /**
      * Number of topics in the forum

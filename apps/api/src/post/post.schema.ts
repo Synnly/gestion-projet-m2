@@ -50,7 +50,7 @@ export class Post {
     maxSalary: number;
 
     @Prop({ type: Boolean, default: false })
-    isCoverLetterRequired: string;
+    isCoverLetterRequired: boolean;
 
     /** Work sector of the internship (IT, Science, ...) */
     @Prop()

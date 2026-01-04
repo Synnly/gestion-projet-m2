@@ -350,7 +350,7 @@ describe('ApplicationService', () => {
 
             mockPaginationService.paginate.mockResolvedValue(emptyResult);
 
-            const result = await service.findByPostPaginated(postId, {});
+            const result = await service.findByPostPaginated(postId, { page: 1, limit: 20 });
 
             expect(result).toEqual(emptyResult);
             expect(result.data).toHaveLength(0);
@@ -475,6 +475,76 @@ describe('ApplicationService', () => {
                     expect.objectContaining({ 'post.company.name': expect.any(Object) }),
                 ]),
             );
+        });
+    });
+
+    describe('getPostIdsByStudent', () => {
+        it('should return an array of post IDs when the student has applications', async () => {
+            const postIds = [
+                new Types.ObjectId('507f1f77bcf86cd799439020'),
+                new Types.ObjectId('507f1f77bcf86cd799439021'),
+                new Types.ObjectId('507f1f77bcf86cd799439022'),
+            ];
+
+            const exec = jest.fn().mockResolvedValue(postIds);
+            const distinct = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.find.mockReturnValue({ distinct });
+
+            const result = await service.getPostIdsByStudent(studentId.toString());
+
+            expect(mockApplicationModel.find).toHaveBeenCalledWith({
+                student: studentId,
+            });
+            expect(distinct).toHaveBeenCalledWith('post');
+            expect(exec).toHaveBeenCalledTimes(1);
+            expect(result).toEqual(postIds);
+            expect(result).toHaveLength(3);
+        });
+
+        it('should return an empty array when the student has no applications', async () => {
+            const exec = jest.fn().mockResolvedValue([]);
+            const distinct = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.find.mockReturnValue({ distinct });
+
+            const result = await service.getPostIdsByStudent(studentId.toString());
+
+            expect(mockApplicationModel.find).toHaveBeenCalledWith({
+                student: studentId,
+            });
+            expect(distinct).toHaveBeenCalledWith('post');
+            expect(exec).toHaveBeenCalledTimes(1);
+            expect(result).toEqual([]);
+            expect(result).toHaveLength(0);
+        });
+
+        it('should convert string studentId to ObjectId correctly', async () => {
+            const studentIdString = '507f1f77bcf86cd799439011';
+            const expectedObjectId = new Types.ObjectId(studentIdString);
+
+            const exec = jest.fn().mockResolvedValue([]);
+            const distinct = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.find.mockReturnValue({ distinct });
+
+            await service.getPostIdsByStudent(studentIdString);
+
+            expect(mockApplicationModel.find).toHaveBeenCalledWith({
+                student: expectedObjectId,
+            });
+        });
+
+        it('should return unique post IDs when student has multiple applications to the same post', async () => {
+            const duplicatePostIds = [
+                new Types.ObjectId('507f1f77bcf86cd799439020'),
+                new Types.ObjectId('507f1f77bcf86cd799439020'),
+            ];
+
+            const exec = jest.fn().mockResolvedValue(duplicatePostIds);
+            const distinct = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.find.mockReturnValue({ distinct });
+
+            const result = await service.getPostIdsByStudent(studentId.toString());
+
+            expect(result).toEqual(duplicatePostIds);
         });
     });
 });

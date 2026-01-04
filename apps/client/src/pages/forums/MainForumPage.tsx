@@ -65,7 +65,7 @@ export function MainForumPage() {
                         <table className="table max-w-full">
                             <tbody>
                                 {generalForum?.topics?.map((topic) => (
-                                    <TopicRow topic={topic} key={topic._id} />
+                                    <TopicRow topic={topic} key={topic._id} forumId={generalForum._id} />
                                 ))}
                             </tbody>
                         </table>
