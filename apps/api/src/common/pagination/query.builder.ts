@@ -7,7 +7,7 @@ import { escapeRegexLiteral } from '../utils/regex.utils';
 /**
  * Build a Mongoose `FilterQuery<T>` from request query parameters.
  * Implements fuzzy search (typo-tolerant and accent-insensitive).
- * Supports field regex, `keySkills` ($in regex), salary-overlap and geolocation via `GeoService`.
+ * Supports field regex, `keySkills` ($in regex), salary-range filtering (containment/boundary conditions), and geolocation via `GeoService`.
  * `build()` is async because geocoding may be performed; result is ready for `Model.find()`.
  */
 
