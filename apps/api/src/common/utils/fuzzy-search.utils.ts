@@ -41,29 +41,46 @@ export function normalizeText(text: string): string {
  * @returns array of tokens, truncated to at most `maxTokens` entries
  */
 export function tokenizeSearchQuery(value: string, maxTokens: number = 8): string[] {
-    return value
-        .split(/\s+/)
-        .map((t) => t.trim())
-        .filter(Boolean)
-        // Intentionally limit the number of tokens to avoid excessive fuzzy-regex complexity.
-        .slice(0, maxTokens);
+    return (
+        value
+            .split(/\s+/)
+            .map((t) => t.trim())
+            .filter(Boolean)
+            // Intentionally limit the number of tokens to avoid excessive fuzzy-regex complexity.
+            .slice(0, maxTokens)
+    );
 }
 
 /**
  * Build a fuzzy regex pattern that tolerates typos and accent variations.
  * - Accent variations: each latin char matches itself + common diacritics.
  * - Typo tolerance: for tokens >= 5 chars, allow an optional char between middle letters.
+ *
+ * Implementation note: The order of operations is:
+ * 1. normalizeText() removes accents and lowercases, producing ONLY alphanumeric chars
+ * 2. escapeRegexLiteral() escapes regex special chars (safe because input is alphanumeric)
+ * 3. Character substitution with ACCENT_CLASS_MAP adds intentionally unescaped `[` `]`
+ *    (these are regex metacharacters we want to preserve as character classes)
+ *
+ * This order is safe because normalization guarantees no special chars exist before escaping.
  */
 export function buildFuzzyPattern(term: string): string {
+    // Step 1: Normalize to alphanumeric (removes accents, lowercases)
     const normalized = normalizeText(term);
+
+    // Step 2: Escape regex special chars (safe because normalized is alphanumeric-only)
     const escaped = escapeRegexLiteral(normalized);
 
     const allowTypos = escaped.length >= 5;
 
+    // Step 3: Substitute each char with its accent class (contains unescaped [ ] by design)
     return escaped
         .split('')
         .map((char, index) => {
+            // Use accent class if available, otherwise keep the escaped char as-is
             const charPattern = ACCENT_CLASS_MAP[char] ?? char;
+
+            // Add optional typo tolerance (.?) for middle chars in longer terms
             if (allowTypos && index > 0 && index < escaped.length - 1) return `${charPattern}.?`;
             return charPattern;
         })

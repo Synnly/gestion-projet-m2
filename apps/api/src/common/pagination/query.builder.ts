@@ -42,7 +42,7 @@ export class QueryBuilder<T> {
         // Examples: "sa" finds "sanitaires", "assistante",
         //           "creation" finds "création", "crzation" (with typo), etc.
 
-        const globalSearch = toStringOrUndefined((this.params as any).searchQuery);
+        const globalSearch = toStringOrUndefined(this.params.searchQuery);
         if (globalSearch) {
             // “Le/les mots” => AND across tokens, and OR across fields for each token
             const tokens = tokenizeSearchQuery(globalSearch);
@@ -58,7 +58,7 @@ export class QueryBuilder<T> {
                 if (isSingleSimpleToken) {
                     // Use text index when available; keeps query fast and index-backed.
                     // Fuzzy search will still be used for multi-word/complex queries below.
-                    (mutableFilter as any).$text = { $search: globalSearch };
+                    (mutableFilter.$text = { $search: globalSearch });
                 } else {
                     const andConditions = (mutableFilter.$and ??= []) as Array<Record<string, unknown>>;
                     for (const token of tokens) {
@@ -72,29 +72,29 @@ export class QueryBuilder<T> {
         }
 
         // Specific field filters
-        const title = toStringOrUndefined((this.params as any).title);
+        const title = toStringOrUndefined(this.params.title);
         if (title) mutableFilter.title = { $regex: escapeRegexLiteral(title), $options: 'i' };
 
-        const description = toStringOrUndefined((this.params as any).description);
+        const description = toStringOrUndefined(this.params.description);
         if (description) mutableFilter.description = { $regex: escapeRegexLiteral(description), $options: 'i' };
 
-        const sector = toStringOrUndefined((this.params as any).sector);
+        const sector = toStringOrUndefined(this.params.sector);
         if (sector) mutableFilter.sector = { $regex: `^${escapeRegexLiteral(sector)}$`, $options: 'i' };
 
-        if ((this.params as any).type != null) mutableFilter.type = (this.params as any).type;
+        if (this.params.type != null) mutableFilter.type = this.params.type;
 
-        const duration = toStringOrUndefined((this.params as any).duration);
+        const duration = toStringOrUndefined(this.params.duration);
         if (duration) mutableFilter.duration = { $regex: escapeRegexLiteral(duration), $options: 'i' };
 
         // Company filter (by ObjectId)
-        const companyId = toStringOrUndefined((this.params as any).company);
+        const companyId = toStringOrUndefined(this.params.company);
         if (companyId && Types.ObjectId.isValid(companyId)) {
             mutableFilter.company = new Types.ObjectId(companyId);
         }
 
         // Salary interval: match posts whose salary range is contained within the requested interval
-        let minSalary = toNumberOrUndefined((this.params as any).minSalary);
-        let maxSalary = toNumberOrUndefined((this.params as any).maxSalary);
+        let minSalary = toNumberOrUndefined(this.params.minSalary);
+        let maxSalary = toNumberOrUndefined(this.params.maxSalary);
 
         // Swap if minSalary > maxSalary (handle user input errors)
         if (minSalary != null && maxSalary != null && minSalary > maxSalary) {
@@ -122,8 +122,8 @@ export class QueryBuilder<T> {
         }
 
         // KeySkills filter: support single string or array
-        if ((this.params as any).keySkills) {
-            const raw = (this.params as any).keySkills;
+        if (this.params.keySkills) {
+            const raw = this.params.keySkills;
             const skills = (Array.isArray(raw) ? raw : [raw])
                 .map((s: unknown) => toStringOrUndefined(s))
                 .filter((s): s is string => Boolean(s));
@@ -135,8 +135,8 @@ export class QueryBuilder<T> {
         }
 
         // Geolocation filter: find posts within a radius
-        const radiusKm = toNumberOrUndefined((this.params as any).radiusKm);
-        const city = toStringOrUndefined((this.params as any).city);
+        const radiusKm = toNumberOrUndefined(this.params.radiusKm);
+        const city = toStringOrUndefined(this.params.city);
 
         if (city && radiusKm != null && radiusKm > 0) {
             const coo = await this.geoService.geocodeAddress(city);
