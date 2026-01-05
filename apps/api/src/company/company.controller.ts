@@ -12,6 +12,7 @@ import {
     ValidationPipe,
     UseGuards,
     ConflictException,
+    Query,
 } from '@nestjs/common';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
@@ -27,6 +28,8 @@ import { plainToInstance } from 'class-transformer';
 import { PostDto } from '../post/dto/post.dto';
 import { PostDocument } from '../post/post.schema';
 import { Company } from './company.schema';
+import { PaginationDto } from '../common/pagination/dto/pagination.dto';
+import { PaginationResult } from '../common/pagination/dto/paginationResult';
 
 /**
  * Controller handling company-related HTTP requests
@@ -50,6 +53,57 @@ export class CompanyController {
                 excludeExtraneousValues: true,
             }),
         );
+    }
+
+
+    /**
+     * Retrieves companies pending validation with pagination
+     * Requires ADMIN role
+     * @returns Paginated list of companies awaiting validation
+     */
+    @Get('/pending-validation')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    @HttpCode(HttpStatus.OK)
+    async findPendingValidation(
+        @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        query: PaginationDto,
+    ): Promise<PaginationResult<CompanyDto>> {
+        const result = await this.companyService.findPendingValidation(query);
+        return {
+            ...result,
+            data: result.data.map((company) =>
+                plainToInstance(CompanyDto, company, {
+                    excludeExtraneousValues: true,
+                }),
+            ),
+        };
+    }
+
+    /**
+     * Validates a company (sets isValid to true)
+     * Requires ADMIN role
+     * @param companyId The company identifier to validate
+     */
+    @Put('/:companyId/validate')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async validateCompany(@Param('companyId', ParseObjectIdPipe) companyId: string) {
+        await this.companyService.update(companyId, { isValid: true });
+    }
+
+    /**
+     * Rejects a company validation
+     * Requires ADMIN role
+     * @param companyId The company identifier to reject
+     */
+    @Put('/:companyId/reject')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async rejectCompany(@Param('companyId', ParseObjectIdPipe) companyId: string) {
+        await this.companyService.update(companyId, { isValid: false });
     }
 
     /**

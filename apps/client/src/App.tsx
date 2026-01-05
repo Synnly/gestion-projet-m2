@@ -38,7 +38,6 @@ import Help from './pages/legal/Help';
 import { internshipLoader } from './loaders/intershipLoader';
 import { AdminDashboard } from './admin/dashboard';
 import { ApplicationList } from './company/applicationList/ApplicationList.tsx';
-import ImportStudent from './admin/importStudent.tsx';
 import TopicDetailPage from './pages/forum/TopicDetailPage';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
 import { ForumPage } from './pages/forums/ForumPage.tsx';
@@ -175,7 +174,6 @@ function App() {
                                     path: 'dashboard',
                                     element: <AdminDashboard />,
                                     handle: { title: 'Tableau de bord admin' },
-                                    children: [{ index: true, element: <ImportStudent /> }],
                                 },
                             ],
                         },

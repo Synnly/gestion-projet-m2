@@ -8,6 +8,9 @@ import { CompanyUserDocument } from '../user/user.schema';
 import { PostService } from '../post/post.service';
 import { Post } from '../post/post.schema';
 import { ForumService } from '../forum/forum.service';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { PaginationResult } from '../common/pagination/dto/paginationResult';
+import { PaginationDto } from '../common/pagination/dto/pagination.dto';
 
 /**
  * Service handling business logic for company operations
@@ -36,6 +39,7 @@ export class CompanyService {
         @InjectModel(Company.name) private readonly companyModel: Model<CompanyUserDocument>,
         @Inject(forwardRef(() => PostService)) private readonly postService: PostService,
         @Inject(forwardRef(() => ForumService)) private readonly forumService: ForumService,
+        private readonly paginationService: PaginationService,
     ) {}
     populateField = '_id title description duration startDate minSalary maxSalary sector keySkills adress type';
     /**
@@ -198,5 +202,25 @@ export class CompanyService {
             throw new NotFoundException('Company not found or already deleted');
         }
         return;
+    }
+
+    /**
+     * Retrieves companies pending validation with pagination
+     * Uses PaginationService for standardized pagination
+     * @param query - Pagination parameters (page, limit)
+     * @returns Promise resolving to paginated result with companies and metadata
+     */
+    async findPendingValidation(query: PaginationDto): Promise<PaginationResult<Company>> {
+        const { page, limit } = query;
+        const filter = { deletedAt: { $exists: false }, isValid: false };
+        
+        return this.paginationService.paginate(
+            this.companyModel,
+            filter,
+            page,
+            limit,
+            undefined,
+            '-1',
+        );
     }
 }
