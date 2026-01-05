@@ -13,6 +13,7 @@ export const centerNavItems: NavItem[] = [
         key: 'admin-stats-link', 
         title: 'Statistiques', 
         to: '/admin/stats',
+        type: 'link',
         role: ['ADMIN'],
     },
     /*{
