@@ -151,10 +151,10 @@ export class StudentService {
         const student = await this.studentModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
 
         if (student) {
-            // Mise à jour partielle : seuls les champs fournis sont assignés
+            // Partial update: only the provided fields are assigned
             Object.assign(student, dto);
-            // Déclenche les hooks pre-save (hashage), mais désactive la validation complète
-            await student.save({ validateBeforeSave: false });
+            // Triggers pre-save hooks (hashing), but disables full validation
+            await student.save({ validateModifiedOnly: true });
             return;
         }
 

@@ -69,9 +69,7 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
     if (payload.role === 'STUDENT') {
         // Fetch student profile to check isFirstTime
         const studentRes = await authFetch(`${API_URL}/api/students/${payload.id}`, {
-            headers: {
-                Authorization: `Bearer ${access}`,
-            },
+            
         });
 
         if (!studentRes.ok) {

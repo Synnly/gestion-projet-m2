@@ -75,12 +75,12 @@ export function ChangePassword() {
     const formInputStyle = 'input input-primary w-full rounded-xl';
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-base-200">
             <Navbar />
             <div className="p-8">
-                <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center bg-white rounded-lg shadow">
+                <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center bg-base-100 rounded-lg shadow">
                     <h1 className="text-3xl font-bold text-base-content text-center">Changer votre mot de passe</h1>
-                    <p className="text-sm mt-2 italic text-gray-600 mb-4">
+                    <p className="text-sm mt-2 italic text-base-content mb-4">
                         Pour des raisons de sécurité, vous devez changer votre mot de passe lors de votre première connexion.
                     </p>
                     <form
@@ -103,7 +103,7 @@ export function ChangePassword() {
                                 error={errors.newPassword}
                                 placeholder="Entrez votre nouveau mot de passe"
                             />
-                            <div className="mt-2 text-xs text-gray-600 space-y-1">
+                            <div className="mt-2 text-xs text-base-content space-y-1">
                                 <p>Le mot de passe doit contenir :</p>
                                 <ul className="list-disc list-inside pl-2 space-y-1">
                                     <li>Au moins 8 caractères</li>
