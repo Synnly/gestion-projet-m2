@@ -8,11 +8,12 @@ import '@uiw/react-markdown-preview/markdown.css';
 
 import { createPost, type CreatePostPayload } from '../../api/create_post';
 import { updatePost } from '../../api/update_post';
-import { useCreatePostStore, type WorkMode } from '../../store/CreatePostStore';
+import { useCreatePostStore } from '../../store/CreatePostStore';
 import { profileStore } from '../../store/profileStore';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import { companyInternshipStore } from '../../store/companyInternshipStore';
 import { toast } from 'react-toastify';
+import type { PostType } from '../../types/internship.types.ts';
 
 type PostFormMode = 'create' | 'edit';
 
@@ -27,10 +28,10 @@ type InitialPostData = Partial<{
     duration: string;
     sector: string;
     startDate: string;
-    minSalary: string;
-    maxSalary: string;
+    minSalary: number;
+    maxSalary: number;
     keySkills: string[];
-    workMode: WorkMode;
+    type: PostType;
     isVisibleToStudents: boolean;
     isCoverLetterRequired: boolean;
 }>;
@@ -57,7 +58,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         isVisibleToStudents,
         isCoverLetterRequired,
         skills,
-        workMode,
+        type,
         setTitle,
         setDescription,
         setLocation,
@@ -73,7 +74,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         setSkills,
         addSkill,
         removeSkill,
-        setWorkMode,
+        setPostType,
         setIsCoverLetterRequired,
     } = useCreatePostStore();
 
@@ -99,11 +100,11 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         setDuration(initialData.duration ?? '');
         setSector(initialData.sector ?? '');
         setStartDate(initialData.startDate ?? '');
-        setMinSalary(initialData.minSalary ?? '');
-        setMaxSalary(initialData.maxSalary ?? '');
+        if (initialData.minSalary) setMinSalary(initialData.minSalary);
+        if (initialData.maxSalary) setMaxSalary(initialData.maxSalary);
         setIsVisibleToStudents(initialData.isVisibleToStudents ?? true);
         if (initialData.keySkills) setSkills(initialData.keySkills);
-        if (initialData.workMode) setWorkMode(initialData.workMode);
+        if (initialData.type) setPostType(initialData.type);
         setIsCoverLetterRequired(initialData.isCoverLetterRequired ?? false);
     }, [
         initialData,
@@ -120,7 +121,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         setSkills,
         setStartDate,
         setTitle,
-        setWorkMode,
+        setPostType,
         setIsCoverLetterRequired,
     ]);
 
@@ -148,12 +149,6 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         'Éducation / Formation',
     ];
 
-    const workModeMap: Record<WorkMode, string> = {
-        presentiel: 'Présentiel',
-        teletravail: 'Télétravail',
-        hybride: 'Hybride',
-    };
-
     function handleSkillKeyDown(event: KeyboardEvent<HTMLInputElement>) {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -178,7 +173,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                     : "L'offre de stage a été créée avec succès.";
 
             toast.success(successText, { toastId: 'post-success' });
-            navigate('/company/dashboard');
+            navigate('/');
         },
         onError: (error) => {
             console.error(error);
@@ -220,7 +215,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
             maxSalary: Number.isFinite(maxSalaryNumber) ? maxSalaryNumber : undefined,
             keySkills: skills,
             adress: location || undefined,
-            type: workModeMap[workMode],
+            type: type,
             isVisible: isVisibleToStudents,
             isCoverLetterRequired: isCoverLetterRequired,
         };
@@ -238,7 +233,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
 
     return (
         <div className="w-full max-w-3xl">
-            <div className="rounded-2xl border border-base-300 bg-base-100 shadow-sm">
+            <div className="card border border-base-300 bg-base-100 shadow-sm">
                 <div className="border-b border-base-100 px-6 pb-4 pt-5">
                     <h1 className="text-base font-semibold text-base-900">
                         {mode === 'edit' ? "Mettre à jour l'offre de stage" : 'Créer une offre de stage'}
@@ -252,7 +247,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                 Intitulé du stage <span className="text-error">*</span>
                             </label>
                             <input
-                                className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                className="input input-sm w-full border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                                 placeholder="Ex : Stagiaire Développeur Frontend"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
@@ -263,7 +258,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             <label className="text-xs font-medium text-base-700">
                                 Description du stage <span className="text-error">*</span>
                             </label>
-                            <div className="rounded-xl !bg-base-100 text-sm !text-base-content shadow-sm">
+                            <div className="!bg-base-100 text-sm !text-base-content shadow-sm">
                                 <MDEditor
                                     value={description}
                                     onChange={(value) => setDescription(value ?? '')}
@@ -289,7 +284,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             <div className="space-y-1">
                                 <label className="text-xs font-medium text-base-700">Durée du stage</label>
                                 <input
-                                    className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    className="input input-sm w-full border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     placeholder="Ex : 6 mois, temps plein"
                                     value={duration}
                                     onChange={(e) => setDuration(e.target.value)}
@@ -299,7 +294,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             <div className="space-y-1">
                                 <label className="text-xs font-medium text-base-700">Secteur d'activité</label>
                                 <select
-                                    className="select select-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    className="select select-sm w-full border-base-300 bg-base-100 text-sm text-base-content focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     value={sector}
                                     onChange={(e) => setSector(e.target.value)}
                                 >
@@ -339,7 +334,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             </div>
 
                             <input
-                                className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                className="input input-sm w-full border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                                 placeholder="Ajouter une compétence et appuyer sur Entrée"
                                 value={skillInput}
                                 onChange={(e) => setSkillInput(e.target.value)}
@@ -358,7 +353,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             <div className="space-y-1">
                                 <label className="text-xs font-medium text-base-700">Adresse (ligne)</label>
                                 <input
-                                    className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    className="input input-sm w-full border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     placeholder="Ex : 10 rue de Rivoli"
                                     value={addressLine}
                                     onChange={(e) => setAddressLine(e.target.value)}
@@ -369,7 +364,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                 <label className="text-xs font-medium text-base-700">Date de début souhaitée</label>
                                 <input
                                     type="date"
-                                    className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content [color-scheme:light] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    className="input input-sm w-full border-base-300 bg-base-100 text-sm text-base-content [color-scheme:light] focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
                                 />
@@ -380,7 +375,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             <div className="space-y-1">
                                 <label className="text-xs font-medium text-base-700">Code postal</label>
                                 <input
-                                    className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    className="input input-sm w-full border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     placeholder="Ex : 75001"
                                     value={postalCode}
                                     onChange={(e) => setPostalCode(e.target.value)}
@@ -389,7 +384,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             <div className="space-y-1">
                                 <label className="text-xs font-medium text-base-700">Ville</label>
                                 <input
-                                    className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    className="input input-sm w-full border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     placeholder="Ex : Paris"
                                     value={city}
                                     onChange={(e) => setCity(e.target.value)}
@@ -403,10 +398,14 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                     Gratification minimale (optionnel)
                                 </label>
                                 <input
-                                    className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    className="input input-sm w-full border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     placeholder="Ex : 900 € / mois (brut)"
                                     value={minSalary}
-                                    onChange={(e) => setMinSalary(e.target.value)}
+                                    type="number"
+                                    min={0}
+                                    onChange={(e) =>
+                                        setMinSalary(e.target.value === '' ? undefined : Number(e.target.value))
+                                    }
                                 />
                             </div>
                             <div className="space-y-1">
@@ -414,22 +413,26 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                     Gratification maximale (optionnel)
                                 </label>
                                 <input
-                                    className="input input-sm w-full rounded-xl border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                    className="input input-sm w-full border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     placeholder="Ex : 1200 € / mois (brut)"
                                     value={maxSalary}
-                                    onChange={(e) => setMaxSalary(e.target.value)}
+                                    type="number"
+                                    min={0}
+                                    onChange={(e) =>
+                                        setMaxSalary(e.target.value === '' ? undefined : Number(e.target.value))
+                                    }
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-base-700">Organisation du travail</label>
-                            <div className="join w-full rounded-xl bg-base-200 p-0.5">
+                            <div className="join w-full bg-base-200 p-0.5">
                                 <button
                                     type="button"
-                                    onClick={() => setWorkMode('presentiel')}
+                                    onClick={() => setPostType('Présentiel')}
                                     className={`btn btn-xs sm:btn-sm join-item flex-1 border shadow-none ${
-                                        workMode === 'presentiel'
+                                        type === 'Présentiel'
                                             ? 'bg-base-100 text-base-content border-base-200'
                                             : 'bg-transparent border-0 text-base-400 hover:bg-base-300/60'
                                     }`}
@@ -438,9 +441,9 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setWorkMode('teletravail')}
+                                    onClick={() => setPostType('Télétravail')}
                                     className={`btn btn-xs sm:btn-sm join-item flex-1 border shadow-none ${
-                                        workMode === 'teletravail'
+                                        type === 'Télétravail'
                                             ? 'bg-base-100 text-base-content border-base-200'
                                             : 'bg-transparent border-0 text-base-400 hover:bg-base-300/60'
                                     }`}
@@ -449,9 +452,9 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => setWorkMode('hybride')}
+                                    onClick={() => setPostType('Hybride')}
                                     className={`btn btn-xs sm:btn-sm join-item flex-1 border shadow-none ${
-                                        workMode === 'hybride'
+                                        type === 'Hybride'
                                             ? 'bg-base-100 text-base-content border-base-200'
                                             : 'bg-transparent border-0 text-base-400 hover:bg-base-300/60'
                                     }`}

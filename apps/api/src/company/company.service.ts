@@ -7,6 +7,7 @@ import { Company } from './company.schema';
 import { CompanyUserDocument } from '../user/user.schema';
 import { PostService } from '../post/post.service';
 import { Post } from '../post/post.schema';
+import { ForumService } from '../forum/forum.service';
 
 /**
  * Service handling business logic for company operations
@@ -29,10 +30,12 @@ export class CompanyService {
      * Creates a new CompanyService instance
      * @param companyModel - Injected Mongoose model for Company operations
      * @param postService - Injected PostService for managing related posts
+     * @param forumService - Injected ForumService for managing related forums
      */
     constructor(
         @InjectModel(Company.name) private readonly companyModel: Model<CompanyUserDocument>,
         @Inject(forwardRef(() => PostService)) private readonly postService: PostService,
+        @Inject(forwardRef(() => ForumService)) private readonly forumService: ForumService,
     ) {}
     populateField = '_id title description duration startDate minSalary maxSalary sector keySkills adress type';
     /**
@@ -85,7 +88,7 @@ export class CompanyService {
     }
 
     /**
-     * Creates a new company in the database
+     * Creates a new company in the database with it's associated forum.
      *
      * The password provided in the DTO will be automatically hashed by the User schema
      * pre-save hook before storage. Email and SIRET number are set during creation
@@ -108,7 +111,8 @@ export class CompanyService {
      * ```
      */
     async create(dto: CreateCompanyDto): Promise<void> {
-        await this.companyModel.create({ ...dto });
+        const company = await this.companyModel.create({ ...dto });
+        await this.forumService.create(company._id);
         return;
     }
 

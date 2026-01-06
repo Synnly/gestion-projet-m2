@@ -1,19 +1,18 @@
 import { useEffect, useState } from 'react';
 import { ChevronUp, Eye } from 'lucide-react';
-import { PdfModal } from './PdfModal';
-import { ApplicationPagination } from './ApplicationPagination';
+import { PdfModal } from './PdfModal.tsx';
+import { ApplicationPagination } from './ApplicationPagination.tsx';
 import {
     type Application,
     type ApplicationFilters,
     type ApplicationStatus,
     ApplicationStatusEnum,
-} from '../../../../types/application.types';
+} from '../../../types/application.types.ts';
 import { useQuery } from '@tanstack/react-query';
-import type { PaginationResult } from '../../../../types/internship.types';
+import type { PaginationResult } from '../../../types/internship.types.ts';
 import { useParams } from 'react-router';
-import { fetchApplicationsByPost } from '../../../../hooks/useFetchApplications';
-import { formatDate } from '../../intershipList/component/tableRow';
-import { UseAuthFetch } from '../../../../hooks/useAuthFetch';
+import { fetchApplicationsByPost } from '../../../hooks/useFetchApplications.tsx';
+import { UseAuthFetch } from '../../../hooks/useAuthFetch.tsx';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
@@ -24,13 +23,22 @@ interface Props {
     setActiveTab: (tab: ApplicationStatus | null) => void;
 }
 
+export const formatDate = (timeStamp: string) => {
+    const date = new Date(timeStamp);
+    return date.toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+};
+
 export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Props) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedApplication, setSelectedApplication] = useState<{ id: string; type: 'cv' | 'lm' } | null>(null);
     const [filters, setFilters] = useState<ApplicationFilters>({ page: 1, limit: 5, status });
     const [paginationShown, setPaginationShown] = useState<PaginationResult<Application> | undefined>();
 
-    const postId = useParams().postId as string;
+    const postId = useParams().id as string;
     const authFetch = UseAuthFetch();
     const { data: applicationsData, isLoading } = useQuery<PaginationResult<Application>, Error>({
         queryKey: ['applications', postId, filters],

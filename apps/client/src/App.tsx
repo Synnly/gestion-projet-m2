@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CompanySignup } from './auth/companySignup/index';
 import { Login } from './auth/Login/index';
 import { CompleteProfil } from './company/completeProfil/index';
-import { CompanyDashboard } from './company/dashboard/index';
 import { CompanyProfile } from './company/profile/index';
 import { EditCompanyProfile } from './company/editProfile/index';
 import { ChangePassword } from './company/editProfile/changePassword/index';
@@ -17,12 +16,12 @@ import { ForgotPassword } from './user/ForgotPassword';
 import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
 import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
+import { CompanyForumRoute } from './protectedRoutes/companyForumRoute';
 import { InternshipPage } from './pages/internship/InternshipPage';
 import InternshipDetailPage from './pages/internship/InternshipDetailPage';
 import CreatePostPage from './pages/posts/CreatePostPage';
 import UpdatePostPage from './pages/posts/UpdatePostPage';
 import { updatePostLoader } from './loaders/updatePostLoader';
-import { DashboardInternshipList } from './company/dashboard/intershipList/DashboardInternshipList';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { InternshipApply } from './pages/internship/InternshipApply';
@@ -38,11 +37,11 @@ import FAQ from './pages/legal/FAQ';
 import Help from './pages/legal/Help';
 import { internshipLoader } from './loaders/intershipLoader';
 import { AdminDashboard } from './admin/dashboard';
-import ApplicationPage from './pages/applications/ApplicationPage';
-import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
-import { StudentDashboard } from './student/dashboard';
-import { ApplicationList } from './company/dashboard/applicationList/ApplicationList';
-import ImportStudent from './admin/importStudent';
+import { ApplicationList } from './company/applicationList/ApplicationList.tsx';
+import ImportStudent from './admin/importStudent.tsx';
+import TopicDetailPage from './pages/forum/TopicDetailPage';
+import { MainForumPage } from './pages/forums/MainForumPage.tsx';
+import { ForumPage } from './pages/forums/ForumPage.tsx';
 
 function App() {
     userStore.persist.rehydrate();
@@ -62,7 +61,6 @@ function App() {
                     },
                 },
 
-                { index: true, element: <InternshipPage /> },
                 { path: 'about', element: <About /> },
                 { path: 'contact', element: <Contact /> },
                 { path: 'faq', element: <FAQ /> },
@@ -103,18 +101,6 @@ function App() {
                             element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
                             children: [
                                 {
-                                    path: 'dashboard',
-                                    handle: { title: 'Tableau de bord entreprise' },
-                                    element: <CompanyDashboard />,
-                                    children: [
-                                        {
-                                            index: true,
-                                            element: <DashboardInternshipList />,
-                                        },
-                                        { path: 'post/:postId/applications', element: <ApplicationList /> },
-                                    ],
-                                },
-                                {
                                     path: 'profile',
                                     element: <CompanyProfile />,
                                     handle: { title: "Profil de l'entreprise" },
@@ -138,20 +124,14 @@ function App() {
                                     element: <CreatePostPage />,
                                     handle: { title: 'Créer une offre' },
                                 },
-                                {
-                                    path: 'offers/:postId/edit',
-                                    loader: updatePostLoader,
-                                    element: <UpdatePostPage />,
-                                    handle: { title: 'Modifier une offre' },
-                                },
                             ],
                         },
                         {
                             path: 'internship',
                             children: [
                                 {
+                                    index: true,
                                     element: <VerifiedRoutes redirectPath="/" />,
-                                    children: [],
                                 },
                                 {
                                     path: 'detail/:id',
@@ -168,6 +148,23 @@ function App() {
                                     ],
                                     handle: { title: 'Postuler à un stage' },
                                 },
+                                {
+                                    path: ':id',
+                                    element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
+                                    children: [
+                                        {
+                                            index: true,
+                                            element: <VerifiedRoutes redirectPath="/" />,
+                                        },
+                                        { path: 'applications', element: <ApplicationList /> },
+                                        {
+                                            path: 'edit',
+                                            loader: updatePostLoader,
+                                            element: <UpdatePostPage />,
+                                            handle: { title: 'Modifier une offre' },
+                                        },
+                                    ],
+                                },
                             ],
                         },
                         {
@@ -183,22 +180,30 @@ function App() {
                             ],
                         },
                         {
-                            path: 'student',
-                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} redirectPath="/" />,
+                            path: 'applications',
+                            element: <Navigate to="/student/dashboard" replace />,
+                        },
+                        {
+                            path: 'forums',
                             children: [
+                                { index: true, element: <MainForumPage /> },
                                 {
-                                    path: 'dashboard',
-                                    element: <StudentDashboard />,
+                                    path: 'general',
+
                                     children: [
-                                        { index: true, element: <ApplicationPage /> },
-                                        { path: ':applicationId', element: <ApplicationDetailPage /> },
+                                        { index: true, element: <ForumPage isGeneral={true} /> },
+                                        { path: 'topics/:forumId/:topicId/', element: <TopicDetailPage /> },
+                                    ],
+                                },
+                                {
+                                    path: ':companyId',
+                                    element: <CompanyForumRoute />,
+                                    children: [
+                                        { index: true, element: <ForumPage /> },
+                                        { path: 'topics/:forumId/:topicId', element: <TopicDetailPage /> },
                                     ],
                                 },
                             ],
-                        },
-                        {
-                            path: 'applications',
-                            element: <Navigate to="/student/dashboard" replace />,
                         },
                     ],
                 },

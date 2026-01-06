@@ -1,27 +1,38 @@
-import { Clock } from 'lucide-react';
+import { Check, Clock, Eye, X } from 'lucide-react';
+import type { Application } from '../../../types/application.types.ts';
 
-export const ApplicationStatus = ({ status }: { status: string }) => {
-    if (status === 'Pending') {
-        return (
-            <div className="flex flex-col items-center">
-                <Clock size={48} className="text-primary mb-2" />
-                <div className="px-3 py-2 rounded-3xl bg-secondary flex flex-col items-center gap-1 mb-4">
-                    <span className="text-sm font-bold">Statut : En attente de réception </span>
-                    <span>Votre candidature est en attente d'analyse</span>
-                </div>
-            </div>
-        );
+export const ApplicationStatus = ({ application }: { application: Application }) => {
+    let status;
+    let badgeColorClass = '';
+    let badgeIcon = null;
+    switch (application?.status) {
+        case 'Pending':
+            status = 'En attente';
+            badgeIcon = <Clock width={16} />;
+            break;
+        case 'Read':
+            status = 'Lue';
+            badgeColorClass = 'badge-info';
+            badgeIcon = <Eye width={16} />;
+            break;
+        case 'Accepted':
+            status = 'Acceptée';
+            badgeColorClass = 'badge-success';
+            badgeIcon = <Check width={16} />;
+            break;
+        case 'Rejected':
+            status = 'Refusée';
+            badgeColorClass = 'badge-error';
+            badgeIcon = <X width={16} />;
+            break;
+        default:
+            status = '';
+            break;
     }
 
-    if (status === 'Read') {
-        return (
-            <div className="flex flex-col items-center">
-                <Clock size={48} className="text-primary mb-2" />
-                <div className="px-3 py-2 rounded-3xl bg-secondary flex flex-col items-center gap-1 mb-4">
-                    <span className="text-sm font-bold">Statut : En attente de réception </span>
-                    <span>Votre candidature a été reçue et est en cours d'analyse</span>
-                </div>
-            </div>
-        );
-    }
+    return (
+        <div className={`badge ${badgeColorClass}`}>
+            {status} {badgeIcon}
+        </div>
+    );
 };

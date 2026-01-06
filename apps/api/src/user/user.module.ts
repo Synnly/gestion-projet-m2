@@ -5,6 +5,7 @@ import { User, UserSchema } from './user.schema';
 import { Company, CompanySchema } from '../company/company.schema';
 import { Student, StudentSchema } from '../student/student.schema';
 import { Role } from '../common/roles/roles.enum';
+import { Admin, AdminSchema } from '../admin/admin.schema';
 
 @Module({
     imports: [MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])],
@@ -38,7 +39,20 @@ import { Role } from '../common/roles/roles.enum';
             },
             inject: [getConnectionToken()],
         },
+        {
+            provide: getModelToken(Admin.name),
+            useFactory: (connection: Connection) => {
+                const userModel = connection.model(User.name);
+
+                if (!userModel.discriminators?.[Admin.name]) {
+                    return userModel.discriminator(Admin.name, AdminSchema, Role.ADMIN);
+                }
+
+                return connection.model(Admin.name);
+            },
+            inject: [getConnectionToken()],
+        },
     ],
-    exports: [MongooseModule, getModelToken(Company.name), getModelToken(Student.name)],
+    exports: [MongooseModule, getModelToken(Company.name), getModelToken(Student.name), getModelToken(Admin.name)],
 })
 export class UsersModule {}
