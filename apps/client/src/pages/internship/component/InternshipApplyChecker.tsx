@@ -42,13 +42,13 @@ export const ApplicationStatusChecker = ({ studentId, adId }: { studentId?: stri
 
     const share = async () => {
         try {
-            const internshipUrl = `${window.location.origin}/internship/detail/${adId}`;;
+            const internshipUrl = `${window.location.origin}/internship/detail/${adId}`;
             await navigator.clipboard.writeText(internshipUrl);
             
             toast.success('Lien copié !', { toastId: 'post-success' });
         } catch (err) {
             console.error('Erreur lors de la copie du lien:', err);
-            alert("Impossible de copier le lien (votre navigateur n'est pas supporté).");
+            toast.error("Impossible de copier le lien (votre navigateur n'est pas supporté).", { toastId: 'post-error' });
         }
     };
 
