@@ -7,9 +7,9 @@ import { RefreshToken, RefreshTokenDocument } from 'src/auth/refreshToken.schema
 
 @Injectable()
 /**
- * Service that handles student data operations.
+ * Service that handles user data operations.
  *
- * Provides methods to find, create, update and soft-delete student records in the database.
+ * Provides methods to find, create, update and soft-delete user records (including students, companies, and admins) in the database.
  */
 export class UserService {
     constructor(
@@ -31,13 +31,14 @@ export class UserService {
     /**
      * Ban a user by setting a `ban` object.
      * @param userId The user's id.
+     * @param reason The reason for banning the user.
      * @throws NotFoundException if the user does not exist or is already deleted.
      */
     async ban(userId: string, reason: string): Promise<void> {
         const bannedUser = await this.userModel
             .findOneAndUpdate(
                 { _id: userId, ban: { $exists: false }, deletedAt: { $exists: false } },
-                { $set: { ban: {date: new Date(), reason: reason } } })
+                { $set: { ban: { date: new Date(), reason: reason } } })
             .exec();
 
         if (!bannedUser) throw new NotFoundException('User not found or already banned / deleted');
@@ -51,7 +52,5 @@ export class UserService {
         } catch (error) {
             console.error(`Failed to send ban email to ${bannedUser.email}:`, error);
         }
-        return;
     }
-
 }

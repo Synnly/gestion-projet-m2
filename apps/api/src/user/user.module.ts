@@ -9,7 +9,7 @@ import { Admin, AdminSchema } from '../admin/admin.schema';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { MailerModule } from '../mailer/mailer.module';
-import { RefreshToken, RefreshTokenSchema } from 'src/auth/refreshToken.schema';
+import { RefreshToken, RefreshTokenSchema } from '../auth/refreshToken.schema';
 
 @Module({
     imports: [

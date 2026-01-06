@@ -37,11 +37,9 @@ export class UserController {
     @HttpCode(HttpStatus.NO_CONTENT)
     async ban(
         @Param('userId', ParseObjectIdPipe) userId: string,
-        @Query('reason') reason: string,
+        @Query('reason') reason?: string,
     ) {
-        const user = await this.userService.findOne(userId);
-        if (!user) throw new NotFoundException(`User with id ${userId} not found`);
-
-        await this.userService.ban(userId, reason);
+        const banReason = reason?.trim() || 'No reason provided';
+        await this.userService.ban(userId, banReason);
     }
 }
