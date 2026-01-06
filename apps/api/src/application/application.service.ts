@@ -130,7 +130,7 @@ export class ApplicationService {
             await this.notificationService.create({
                 userId: post.company._id,
                 message: `Vous avez reçu une nouvelle candidature pour le poste : ${post.title}`,
-                returnLink: `/posts/${post._id}/applications`,
+                returnLink: `/internship/${post._id}/applications`,
             });
         } catch (error) {
             console.error('Failed to send notification for new application:', error);
@@ -163,8 +163,7 @@ export class ApplicationService {
         try {
             await this.notificationService.create({
                 userId: application.student._id,
-                message: `Le statut de votre candidature pour le poste : ${application.post.title} a été mis à jour.`,
-                returnLink: `/students/${application.student._id}/applications`,
+                message: `Le statut de votre candidature pour le poste : ${application.post.title} a été mis à jour.`
             });
         } catch (error) {
             console.error('Failed to send notification for application status update:', error);
