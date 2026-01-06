@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -50,6 +50,7 @@ export class AuthService {
      * @returns A Promise that resolves to an object containing the access and refresh tokens.
      * @throws {NotFoundException} If the user with the specified email is not found.
      * @throws {InvalidCredentialsException} If the provided credentials are invalid.
+     * @throws {ForbiddenException} If the user with the specified email is banned.
      */
     async login(email: string, password: string): Promise<{ access: string; refresh: string }> {
         const user = await this.userModel.findOne({ email: email });
@@ -59,7 +60,7 @@ export class AuthService {
             throw new InvalidCredentialsException('Invalid email or password');
         }
 
-        if (user.ban) throw new NotFoundException(`User with email ${email} is banned for '${user.ban.reason}'`);
+        if (user.ban) throw new ForbiddenException(`User with email ${email} is banned for '${user.ban.reason}'`);
 
         // Generating tokens
         const { token, rti } = await this.generateRefreshToken(user._id, user.role);
