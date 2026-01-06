@@ -1,6 +1,7 @@
 import type { Forum } from '../../types/forum.types.ts';
 import { formatNumber } from '../../utils/format.ts';
 import logoPlaceholder from '../../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg';
+import { fetchPublicSignedUrl } from '../../hooks/useBlob.tsx';
 
 type Props = {
     forum: Forum;
@@ -8,7 +9,7 @@ type Props = {
 
 export function ForumCard({ forum }: Props) {
     return (
-        <div className="w-99/300 h-fit card bg-base-100 shadow-sm shadow-base-300 hover:shadow-md hover:bg-base-200 transition-all duration-100 ease-out cursor-pointer">
+        <div className="w-99/300 h-fit card bg-base-100 shadow-sm shadow-base-300 hover:shadow-md hover:bg-base-200 w-fit transition-all duration-100 ease-out cursor-pointer">
             <a href={`/forums/${forum.company?._id}`}>
                 <div className="card-body flex flex-row justify-between items-center">
                     <div className="flex flex-row items-center gap-4">

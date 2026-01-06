@@ -73,7 +73,6 @@ export class ForumController {
     @HttpCode(HttpStatus.OK)
     async getGeneralForum(): Promise<ForumDto | null> {
         const general = await this.forumService.findOneByCompanyId();
-        Logger.log(general);
         return plainToInstance(ForumDto, general);
     }
 
@@ -86,13 +85,12 @@ export class ForumController {
     @HttpCode(HttpStatus.OK)
     async findOneByCompanyId(@Param('companyId', ParseObjectIdPipe) companyId?: string): Promise<ForumDto | null> {
         const forum = await this.forumService.findOneByCompanyId(companyId);
-        Logger.log(forum);
         return plainToInstance(ForumDto, forum);
     }
 
     @Post('/topic/:topicId/message')
     @HttpCode(HttpStatus.OK)
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard, ForumAccessGuard)
     async sendMessage(
         @Param('topicId', ParseObjectIdPipe) topicId: string,
         @Body() messageDto: CreateMessageDto,
@@ -102,13 +100,13 @@ export class ForumController {
     }
 
     @Get('/topic/:topicId/message')
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard, ForumAccessGuard)
     async getMessages(
         @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
         query: MessagePaginationDto,
         @Param('topicId', ParseObjectIdPipe) topicId: string,
     ): Promise<PaginationResult<MessageDto>> {
-        const messages = await this.messageService.findAll(topicId, query);
+        const messages = await this.messageService.findAll(query, topicId);
         return {
             ...messages,
             data: messages.data.map((message) => plainToInstance(MessageDto, message)),

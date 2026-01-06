@@ -21,8 +21,8 @@ import { Message, MessageSchema } from './message/message.schema';
         forwardRef(() => CompanyModule),
     ],
     controllers: [ForumController],
-    providers: [ForumService, TopicService, MessageService, PaginationService, GeoService, MessageService],
-    exports: [ForumService, MessageService],
+    providers: [ForumService, TopicService, MessageService, PaginationService, GeoService],
+    exports: [ForumService, MessageService, TopicService],
 })
 export class ForumModule {
 }

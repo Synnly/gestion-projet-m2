@@ -27,13 +27,20 @@ export const MessageItem = ({
     return (
         <div className="bg-base-100 border border-slate-200 rounded-xl p-4 mb-2 shadow-lg w-full ">
             <div className="flex items-start gap-3 h-full">
-                <div className="h-10 w-10 rounded-full bg-slate-200 flex-shrink-0 overflow-hidden">
-                    {displayName.name ? (
+                <div className="h-10 w-10 rounded-full  flex-shrink-0 overflow-hidden">
+                    {message.authorId.logo ? (
                         <div className="h-full w-full flex items-center justify-center  font-bold text-primary-content ">
+                            <img
+                                src={message.authorId.logo}
+                                alt={displayName.name || `${displayName.firstName} ${displayName.lastName}`}
+                            />
+                        </div>
+                    ) : displayName.name ? (
+                        <div className="h-full w-full flex items-center justify-center bg-slate-200  font-bold text-primary-content ">
                             {displayName.name?.[0]}
                         </div>
                     ) : (
-                        <div className="h-full w-full flex items-center justify-center text-primary-content font-bold">
+                        <div className="h-full w-full flex items-center justify-center bg-slate-200 text-primary-content font-bold">
                             {displayName.firstName?.[0]}
                             {displayName.lastName?.[0]}
                         </div>

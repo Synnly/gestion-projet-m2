@@ -10,11 +10,11 @@ export class CreateMessageDto {
      * Content of the message
      */
     @IsString()
-    message: string;
+    content: string;
     /**
      * Optional ID of the message being replied to
      */
     @IsOptional()
-    @IsString()
-    replyToMessageId?: string;
+    @IsMongoId()
+    parentMessageId?: string;
 }

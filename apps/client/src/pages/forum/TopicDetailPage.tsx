@@ -17,6 +17,7 @@ import { DataPagination } from '../../components/ui/pagination/DataPagination.ts
 import { UseAuthFetch } from '../../hooks/useAuthFetch.tsx';
 import { buildQueryParams } from '../../hooks/useFetchInternships.ts';
 import type { PaginationResult } from '../../types/internship.types.ts';
+import { fetchPublicSignedUrl } from '../../hooks/useBlob.tsx';
 export type Role = 'ADMIN' | 'STUDENT' | 'COMPANY';
 export type MessageType = {
     _id: string;
@@ -58,7 +59,16 @@ export default function TopicDetailPage() {
             if (!response.ok) {
                 throw new Error('Failed to fetch messages');
             }
-            return response.json();
+            const message = await response.json();
+            await Promise.all(
+                message.data.map(async (message: MessageType) => {
+                    if (message.authorId.logo) {
+                        const presignedUrl = await fetchPublicSignedUrl(message.authorId.logo);
+                        if (presignedUrl) message.authorId.logo = presignedUrl;
+                    }
+                }),
+            );
+            return message;
         },
         placeholderData: keepPreviousData,
     });
@@ -230,7 +240,7 @@ export default function TopicDetailPage() {
                             <div className="flex items-center gap-3 text-sm text-base-content/70 mb-4">
                                 <div className="flex items-center gap-2">
                                     <div className="avatar placeholder">
-                                        <div className="text-neutral-content bg-black flex justify-center items-center rounded-full w-10 h-10">
+                                        <div className="text-neutral-content  flex justify-center items-center rounded-full w-10 h-10">
                                             {topic.author.logo ? (
                                                 <img
                                                     src={topic.author.logo}
@@ -240,12 +250,14 @@ export default function TopicDetailPage() {
                                                     }
                                                 />
                                             ) : (
-                                                <span className="text-lg font-bold">
-                                                    {(
-                                                        topic.author.name?.charAt(0) ||
-                                                        topic.author.firstName?.charAt(0)
-                                                    )?.toUpperCase()}
-                                                </span>
+                                                <div className="w-full h-full bg-black flex justify-center items-center">
+                                                    <span className="text-lg font-bold">
+                                                        {(
+                                                            topic.author.name?.charAt(0) ||
+                                                            topic.author.firstName?.charAt(0)
+                                                        )?.toUpperCase()}
+                                                    </span>
+                                                </div>
                                             )}
                                         </div>
                                     </div>

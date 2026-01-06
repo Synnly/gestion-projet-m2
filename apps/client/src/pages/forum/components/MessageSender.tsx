@@ -32,7 +32,6 @@ export function MessageSender({ topicId, reply, shown, afterSend, onCancel, canc
                 data: data,
             });
 
-            console.log("c'est arrivé");
             if (!response.ok) {
                 throw new Error('Failed to send message');
             }
