@@ -179,7 +179,7 @@ export const NotificationBell = () => {
                 className="btn btn-ghost btn-circle relative hover:bg-base-200 transition-colors"
                 aria-label="Notifications"
             >
-                <Bell className="w-5 h-5" />
+                <Bell className="w-5 h-5 text-primary" />
                 {unreadCount > 0 && (
                     <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-error text-error-content text-sm font-bold">
                         {unreadCount > 9 ? '9+' : unreadCount}
