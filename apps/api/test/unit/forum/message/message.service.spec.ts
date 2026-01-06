@@ -11,6 +11,7 @@ import { UpdateTopicDto } from '../../../../src/forum/topic/dto/updateTopic.dto'
 import { Model } from 'mongoose';
 import { Message } from '../../../../src/forum/message/message.schema';
 import { CreateMessageDto } from '../../../../src/forum/message/dto/createMessageDto';
+import { NotFoundException } from '@nestjs/common';
 describe('MessageService', () => {
     let service: MessageService;
     let messageModel: Model<Message>;
@@ -198,7 +199,9 @@ describe('MessageService', () => {
                 { $inc: { nbMessages: 1 } },
                 { new: true },
             );
+            expect(message).toEqual(createdMessage);
         });
+
         it('should create a new message with reply, update topic and forum', async () => {
             const createDto: CreateMessageDto = {
                 content: 'New Message Content',
@@ -217,6 +220,38 @@ describe('MessageService', () => {
             });
             expect(topicModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 mockTopicId,
+                {
+                    $push: { topics: mockTopicId },
+                },
+                { new: true },
+            );
+            expect(forumModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
+            expect(forumModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                mockTopic?.forumId,
+                { $inc: { nbMessages: 1 } },
+                { new: true },
+            );
+            expect(message).toEqual(createdMessage);
+        });
+
+        it("should not update topic and forum if topic doesn't exist and throw not found", async () => {
+            const createDto: CreateMessageDto = {
+                content: 'New Message Content',
+                authorId: mockAuthorId.toString(),
+                parentMessageId: new Types.ObjectId().toString(),
+            };
+            const createdMessage = { ...mockMessage, ...createDto, _id: mockMessage._id };
+            mockMessageModel.create.mockResolvedValue(createdMessage);
+            mockTopicModel.findByIdAndUpdate.mockResolvedValue(null);
+
+            expect(await service.sendMessage(mockTopicId.toString(), createDto)).toThrow(NotFoundException);
+
+            expect(messageModel.create).toHaveBeenCalledWith({
+                ...createDto,
+                topicId: mockForumId.toString(),
+            });
+            expect(topicModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                mockTopicId.toString(),
                 {
                     $push: { topics: mockTopicId },
                 },
