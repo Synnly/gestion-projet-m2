@@ -25,6 +25,7 @@ describe('CompanyController', () => {
         create: jest.fn(),
         update: jest.fn(),
         remove: jest.fn(),
+        findPendingValidation: jest.fn(),
     };
 
     const mockReflector = {
@@ -1271,6 +1272,140 @@ describe('CompanyController', () => {
             expect(dto).toBeInstanceOf(CompanyDto);
             expect(dto.posts).toBeDefined();
             expect(dto.posts[0]).toBeDefined();
+        });
+    });
+
+    describe('findPendingValidation', () => {
+        it('should return paginated pending companies when called with valid query', async () => {
+            const mockPaginatedResult = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439011',
+                        name: 'Pending Company 1',
+                        email: 'pending1@test.com',
+                        isValid: false,
+                    },
+                    {
+                        _id: '507f1f77bcf86cd799439012',
+                        name: 'Pending Company 2',
+                        email: 'pending2@test.com',
+                        isValid: false,
+                    },
+                ],
+                total: 2,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockCompanyService.findPendingValidation.mockResolvedValue(mockPaginatedResult);
+
+            const query = { page: 1, limit: 10 } as any;
+            const result = await controller.findPendingValidation(query);
+
+            expect(service.findPendingValidation).toHaveBeenCalledWith(query);
+            expect(result.data).toHaveLength(2);
+            expect(result.total).toBe(2);
+            expect(result.data[0]).toBeInstanceOf(CompanyDto);
+        });
+
+        it('should transform all companies to CompanyDto', async () => {
+            const mockPaginatedResult = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439011',
+                        name: 'Company 1',
+                        email: 'c1@test.com',
+                        password: 'hashed',
+                        isValid: false,
+                    },
+                ],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockCompanyService.findPendingValidation.mockResolvedValue(mockPaginatedResult);
+
+            const query = { page: 1, limit: 10 } as any;
+            const result = await controller.findPendingValidation(query);
+
+            expect(result.data.every((company) => company instanceof CompanyDto)).toBe(true);
+        });
+
+        it('should handle empty results', async () => {
+            const mockPaginatedResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockCompanyService.findPendingValidation.mockResolvedValue(mockPaginatedResult);
+
+            const query = { page: 1, limit: 10 } as any;
+            const result = await controller.findPendingValidation(query);
+
+            expect(result.data).toEqual([]);
+            expect(result.total).toBe(0);
+        });
+    });
+
+    describe('validateCompany', () => {
+        it('should call service.update with isValid=true when validateCompany is called', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.update.mockResolvedValue(undefined);
+
+            await controller.validateCompany(companyId);
+
+            expect(service.update).toHaveBeenCalledWith(companyId, { isValid: true });
+        });
+
+        it('should not throw error when company exists', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.update.mockResolvedValue(undefined);
+
+            await expect(controller.validateCompany(companyId)).resolves.not.toThrow();
+        });
+
+        it('should propagate errors from service', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.update.mockRejectedValue(new NotFoundException('Company not found'));
+
+            await expect(controller.validateCompany(companyId)).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('rejectCompany', () => {
+        it('should call service.update with isValid=false when rejectCompany is called', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.update.mockResolvedValue(undefined);
+
+            await controller.rejectCompany(companyId);
+
+            expect(service.update).toHaveBeenCalledWith(companyId, { isValid: false });
+        });
+
+        it('should not throw error when company exists', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.update.mockResolvedValue(undefined);
+
+            await expect(controller.rejectCompany(companyId)).resolves.not.toThrow();
+        });
+
+        it('should propagate errors from service', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.update.mockRejectedValue(new NotFoundException('Company not found'));
+
+            await expect(controller.rejectCompany(companyId)).rejects.toThrow(NotFoundException);
         });
     });
 });
