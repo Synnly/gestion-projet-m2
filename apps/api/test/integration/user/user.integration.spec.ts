@@ -28,6 +28,8 @@ describe('User Security Integration', () => {
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
       providers: [
@@ -49,7 +51,7 @@ describe('User Security Integration', () => {
     await app.close();
   });
 
-  it('should FAIL (403) if user is STUDENT', async () => {
+  it('should return 403 when user is a STUDENT', async () => {
     mockUser = { role: Role.STUDENT } as any;
 
     await request(app.getHttpServer())
@@ -59,7 +61,7 @@ describe('User Security Integration', () => {
     expect(userService.ban).not.toHaveBeenCalled();
   });
 
-  it('should SUCCEED (204) if user is ADMIN', async () => {
+  it('should return 204 when user is an ADMIN', async () => {
     mockUser = { role: Role.ADMIN } as any;
 
     await request(app.getHttpServer())

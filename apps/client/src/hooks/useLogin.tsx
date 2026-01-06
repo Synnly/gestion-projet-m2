@@ -8,10 +8,11 @@ function translateMessage(message: string): string {
     const notFoundRegex = /User with email ([\w.-]+@[\w.-]+\.\w+) not found/i;
     if (notFoundRegex.test(message)) return "Aucun utilisateur avec cet email n'existe.";
     
-    const bannedRegex = /User with email ([\w.-]+@[\w.-]+\.\w+) is banned/i;
-    if (bannedRegex.test(message)) {
-        const reason = message.split('for')[1] ? message.split('for')[1].trim() : 'Raison inconnue';
-        return `L'utilisateur avec cet email est banni pour le motif suivant :\n${reason}`;
+    const bannedRegex = /User with email ([\w.-]+@[\w.-]+\.\w+) is banned(?: for (.+))?/i;
+    const bannedMatch = message.match(bannedRegex);
+    if (bannedMatch) {
+        const reason = bannedMatch[2]?.trim() || 'Raison inconnue';
+        return `L'utilisateur avec cet email a été banni pour le motif suivant :\n${reason}`;
     }
 
     return 'Une erreur est survenue, veuillez réessayer plus tard.';
