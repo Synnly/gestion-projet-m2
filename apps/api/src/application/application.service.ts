@@ -10,6 +10,7 @@ import { PaginationService } from '../common/pagination/pagination.service';
 import { ApplicationQueryBuilder } from '../common/pagination/applicationQuery.builder';
 import { ApplicationPaginationDto } from 'src/common/pagination/dto/applicationPagination.dto';
 import { Post } from '../post/post.schema';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class ApplicationService {
