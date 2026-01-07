@@ -5,6 +5,11 @@ import { toast } from 'react-toastify';
 export const CompanyForumRoute = () => {
     const user = useOutletContext<userContext>();
     const { companyId } = useParams<{ companyId: string }>();
+
+    if (!companyId) {
+        return <Outlet context={user} />;
+    }
+
     if (!user.accessToken) {
         return <Navigate to="/signin" replace />;
     }

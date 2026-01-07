@@ -18,6 +18,7 @@ import { UseAuthFetch } from '../../hooks/useAuthFetch.tsx';
 import { buildQueryParams } from '../../hooks/useFetchInternships.ts';
 import type { PaginationResult } from '../../types/internship.types.ts';
 import { fetchPublicSignedUrl } from '../../hooks/useBlob.tsx';
+import { useFetchGeneralForum, useFetchForumByCompanyId } from '../../hooks/useFetchForum';
 export type Role = 'ADMIN' | 'STUDENT' | 'COMPANY';
 export type MessageType = {
     _id: string;
@@ -28,6 +29,7 @@ export type MessageType = {
     createdAt: Date;
 };
 const apiUrl = import.meta.env.VITE_APIURL;
+
 export default function TopicDetailPage() {
     const authFetch = UseAuthFetch();
     const { forumId, topicId, companyId } = useParams<{ forumId: string; topicId: string; companyId: string }>();
@@ -88,7 +90,8 @@ export default function TopicDetailPage() {
         },
         enabled: !!companyId,
     });
-    console.log(companyData);
+    const isGeneral = !companyId || companyId === 'general';
+    const { data: forum } = isGeneral ? useFetchGeneralForum() : useFetchForumByCompanyId(companyId!);
     const {
         data: topic,
         isLoading,
@@ -169,7 +172,7 @@ export default function TopicDetailPage() {
                     <div className="text-sm breadcrumbs">
                         <ul>
                             <li>
-                                <Link to="/">Accueil</Link>
+                                <Link to={`/forums`}>Forums</Link>
                             </li>
                             <li>
                                 <Link to="/forums">Forums</Link>

@@ -167,7 +167,6 @@ export class ForumController {
         @Param('forumId') forumId: string,
         @Param('id') id: string,
         @Body() dto: UpdateTopicDto | CreateTopicDto,
-        @Req() req: Request,
     ): Promise<void> {
         await this.topicService.update(forumId, id, dto);
     }

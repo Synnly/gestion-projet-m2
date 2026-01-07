@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CompanySignup } from './auth/companySignup/index';
 import { Login } from './auth/Login/index';
 import { CompleteProfil } from './company/completeProfil/index';
-import { CompanyDashboard } from './company/dashboard/index';
 import { CompanyProfile } from './company/profile/index';
 import { EditCompanyProfile } from './company/editProfile/index';
 import { ChangePassword } from './company/editProfile/changePassword/index';
@@ -23,7 +22,6 @@ import InternshipDetailPage from './pages/internship/InternshipDetailPage';
 import CreatePostPage from './pages/posts/CreatePostPage';
 import UpdatePostPage from './pages/posts/UpdatePostPage';
 import { updatePostLoader } from './loaders/updatePostLoader';
-import { DashboardInternshipList } from './company/dashboard/intershipList/DashboardInternshipList';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { InternshipApply } from './pages/internship/InternshipApply';
@@ -39,10 +37,7 @@ import FAQ from './pages/legal/FAQ';
 import Help from './pages/legal/Help';
 import { internshipLoader } from './loaders/intershipLoader';
 import { AdminDashboard } from './admin/dashboard';
-import ApplicationPage from './pages/applications/ApplicationPage';
-import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
-import { StudentDashboard } from './student/dashboard';
-import { ApplicationList } from './company/dashboard/applicationList/ApplicationList.tsx';
+import { ApplicationList } from './company/applicationList/ApplicationList.tsx';
 import ImportStudent from './admin/importStudent.tsx';
 import TopicDetailPage from './pages/forum/TopicDetailPage';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
@@ -66,7 +61,6 @@ function App() {
                     },
                 },
 
-                { index: true, element: <InternshipPage /> },
                 { path: 'about', element: <About /> },
                 { path: 'contact', element: <Contact /> },
                 { path: 'faq', element: <FAQ /> },
@@ -107,18 +101,6 @@ function App() {
                             element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
                             children: [
                                 {
-                                    path: 'dashboard',
-                                    handle: { title: 'Tableau de bord entreprise' },
-                                    element: <CompanyDashboard />,
-                                    children: [
-                                        {
-                                            index: true,
-                                            element: <DashboardInternshipList />,
-                                        },
-                                        { path: 'post/:postId/applications', element: <ApplicationList /> },
-                                    ],
-                                },
-                                {
                                     path: 'profile',
                                     element: <CompanyProfile />,
                                     handle: { title: "Profil de l'entreprise" },
@@ -142,20 +124,14 @@ function App() {
                                     element: <CreatePostPage />,
                                     handle: { title: 'Créer une offre' },
                                 },
-                                {
-                                    path: 'offers/:postId/edit',
-                                    loader: updatePostLoader,
-                                    element: <UpdatePostPage />,
-                                    handle: { title: 'Modifier une offre' },
-                                },
                             ],
                         },
                         {
                             path: 'internship',
                             children: [
                                 {
+                                    index: true,
                                     element: <VerifiedRoutes redirectPath="/" />,
-                                    children: [],
                                 },
                                 {
                                     path: 'detail/:id',
@@ -172,6 +148,23 @@ function App() {
                                     ],
                                     handle: { title: 'Postuler à un stage' },
                                 },
+                                {
+                                    path: ':id',
+                                    element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
+                                    children: [
+                                        {
+                                            index: true,
+                                            element: <VerifiedRoutes redirectPath="/" />,
+                                        },
+                                        { path: 'applications', element: <ApplicationList /> },
+                                        {
+                                            path: 'edit',
+                                            loader: updatePostLoader,
+                                            element: <UpdatePostPage />,
+                                            handle: { title: 'Modifier une offre' },
+                                        },
+                                    ],
+                                },
                             ],
                         },
                         {
@@ -183,20 +176,6 @@ function App() {
                                     element: <AdminDashboard />,
                                     handle: { title: 'Tableau de bord admin' },
                                     children: [{ index: true, element: <ImportStudent /> }],
-                                },
-                            ],
-                        },
-                        {
-                            path: 'student',
-                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} redirectPath="/" />,
-                            children: [
-                                {
-                                    path: 'dashboard',
-                                    element: <StudentDashboard />,
-                                    children: [
-                                        { index: true, element: <ApplicationPage /> },
-                                        { path: ':applicationId', element: <ApplicationDetailPage /> },
-                                    ],
                                 },
                             ],
                         },

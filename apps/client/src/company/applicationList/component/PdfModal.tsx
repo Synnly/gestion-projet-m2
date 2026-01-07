@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { useFetchFileSignedUrl } from '../../../../hooks/useFetchApplications';
+import { useFetchFileSignedUrl } from '../../../hooks/useFetchApplications.tsx';
 
 interface PdfModalProps {
     selectedApplication: { id: string; type: 'cv' | 'lm' } | null;

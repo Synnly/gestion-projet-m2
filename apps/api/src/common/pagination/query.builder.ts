@@ -134,6 +134,8 @@ export class QueryBuilder<T> {
         // Only show visible posts
         if (!isForum) mutableFilter.isVisible = true;
 
+        if (this.params._id) mutableFilter._id = this.params._id;
+
         return mutableFilter as FilterQuery<T>;
     }
     buildMessageFilter(): FilterQuery<T> {

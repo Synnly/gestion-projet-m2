@@ -1,7 +1,7 @@
-import { INestApplication, ValidationPipe, UnauthorizedException } from '@nestjs/common';
+import { INestApplication, UnauthorizedException, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { MongooseModule, getModelToken } from '@nestjs/mongoose';
+import { getModelToken, MongooseModule } from '@nestjs/mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { ConfigModule } from '@nestjs/config';
 import { Model, Types } from 'mongoose';
@@ -9,20 +9,27 @@ import cookieParser from 'cookie-parser';
 
 import { PostModule } from '../../../src/post/post.module';
 import { AuthGuard } from '../../../src/auth/auth.guard';
-import { Post, PostDocument } from '../../../src/post/post.schema';
-import { PostType } from '../../../src/post/post.schema';
+import { Post, PostDocument, PostType } from '../../../src/post/post.schema';
 import { AuthModule } from '../../../src/auth/auth.module';
 import { CompanyModule } from '../../../src/company/company.module';
-import { User, CompanyUserDocument } from '../../../src/user/user.schema';
+import { CompanyUserDocument, User } from '../../../src/user/user.schema';
 import { Role } from '../../../src/common/roles/roles.enum';
+import { Application, ApplicationDocument, ApplicationStatus } from '../../../src/application/application.schema';
+import { ApplicationModule } from '../../../src/application/application.module';
+import { Student, StudentDocument } from '../../../src/student/student.schema';
+import { StudentModule } from '../../../src/student/student.module';
 
 describe('Post Integration Tests', () => {
     let app: INestApplication;
     let mongod: MongoMemoryServer;
     let postModel: Model<PostDocument>;
     let userModel: Model<CompanyUserDocument>;
+    let studentModel: Model<StudentDocument>;
+    let applicationModel: Model<ApplicationDocument>;
     let accessToken: string;
+    let studentAccessToken: string;
     let companyId: Types.ObjectId;
+    let studentId: Types.ObjectId;
 
     const ACCESS_TOKEN_SECRET = 'test-access-secret';
     const REFRESH_TOKEN_SECRET = 'test-refresh-secret';
@@ -50,6 +57,8 @@ describe('Post Integration Tests', () => {
                 CompanyModule,
                 AuthModule,
                 PostModule,
+                ApplicationModule,
+                StudentModule,
             ],
         });
 
@@ -85,6 +94,8 @@ describe('Post Integration Tests', () => {
 
         postModel = moduleFixture.get<Model<PostDocument>>(getModelToken(Post.name));
         userModel = moduleFixture.get<Model<CompanyUserDocument>>(getModelToken(User.name));
+        studentModel = moduleFixture.get<Model<StudentDocument>>(getModelToken(Student.name));
+        applicationModel = moduleFixture.get<Model<ApplicationDocument>>(getModelToken(Application.name));
 
         // Create a company and login to get access token
         const createdUser = await userModel.create({
@@ -106,14 +117,40 @@ describe('Post Integration Tests', () => {
         }
 
         accessToken = loginRes.text;
+
+        // Create a student with all required fields
+        const createdStudent = await studentModel.create({
+            email: 'student@test.com',
+            password: 'TestP@ss123',
+            name: 'Test Student',
+            role: Role.STUDENT,
+            isValid: true,
+            studentNumber: 'STU12345',
+            firstName: 'John',
+            lastName: 'Doe',
+        });
+
+        studentId = createdStudent._id;
+
+        const studentLoginRes = await request(app.getHttpServer())
+            .post('/api/auth/login')
+            .send({ email: 'student@test.com', password: 'TestP@ss123' });
+
+        if (studentLoginRes.status !== 201) {
+            throw new Error('Failed to login student for tests');
+        }
+
+        studentAccessToken = studentLoginRes.text;
     });
 
     afterEach(async () => {
         await postModel.deleteMany({}).exec();
+        await applicationModel.deleteMany({}).exec();
     });
 
     afterAll(async () => {
         await userModel.deleteMany({}).exec();
+        await studentModel.deleteMany({}).exec();
         await app.close();
         if (mongod) await mongod.stop();
     });
@@ -637,6 +674,220 @@ describe('Post Integration Tests', () => {
             expect(posts[0].keySkills).toEqual(['Java', 'Spring']);
             expect(posts[0].adress).toBe('Marseille, France');
             expect(posts[0].type).toBe(PostType.Hybride);
+        });
+    });
+
+    describe('GET /api/company/:companyId/posts/by-student - Find All Posts With Applications', () => {
+        it('should return empty paginated result when student has no applications', async () => {
+            await createPost({
+                title: 'Développeur Full Stack',
+                description: 'Description',
+                keySkills: ['JavaScript'],
+                type: PostType.Hybride,
+            });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/by-student'))
+                .set('Authorization', `Bearer ${studentAccessToken}`)
+                .expect(200);
+
+            expect(res.body.data).toEqual([]);
+            expect(res.body.total).toBe(0);
+            expect(res.body.page).toBe(1);
+        });
+
+        it('should return posts when student has applications', async () => {
+            const post1 = await createPost({
+                title: 'Développeur Frontend',
+                description: 'Description Frontend',
+                keySkills: ['React'],
+                type: PostType.Presentiel,
+            });
+
+            const post2 = await createPost({
+                title: 'Développeur Backend',
+                description: 'Description Backend',
+                keySkills: ['Node.js'],
+                type: PostType.Teletravail,
+            });
+
+            await applicationModel.create({
+                student: studentId,
+                post: post1._id,
+                company: companyId,
+                status: ApplicationStatus.Pending,
+                cv: 'https://example.com/cv1.pdf',
+            });
+
+            await applicationModel.create({
+                student: studentId,
+                post: post2._id,
+                company: companyId,
+                status: ApplicationStatus.Pending,
+                cv: 'https://example.com/cv2.pdf',
+            });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/by-student'))
+                .set('Authorization', `Bearer ${studentAccessToken}`)
+                .expect(200);
+
+            expect(res.body.data).toHaveLength(2);
+            expect(res.body.total).toBe(2);
+            const titles = res.body.data.map((p: any) => p.title);
+            expect(titles).toContain('Développeur Frontend');
+            expect(titles).toContain('Développeur Backend');
+        });
+
+        it('should return only posts the student applied to', async () => {
+            const post1 = await createPost({
+                title: 'Applied Post',
+                description: 'Description',
+                keySkills: ['Skill1'],
+                type: PostType.Hybride,
+            });
+
+            await createPost({
+                title: 'Not Applied Post',
+                description: 'Description',
+                keySkills: ['Skill2'],
+                type: PostType.Presentiel,
+            });
+
+            await applicationModel.create({
+                student: studentId,
+                post: post1._id,
+                company: companyId,
+                status: ApplicationStatus.Pending,
+                cv: 'https://example.com/cv.pdf',
+            });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/by-student'))
+                .set('Authorization', `Bearer ${studentAccessToken}`)
+                .expect(200);
+
+            expect(res.body.data).toHaveLength(1);
+            expect(res.body.data[0].title).toBe('Applied Post');
+        });
+
+        it('should return 401 when no authorization token is provided', async () => {
+            await request(app.getHttpServer()).get(buildPostsPath('/by-student')).expect(401);
+        });
+
+        it('should handle pagination correctly with page parameter', async () => {
+            for (let i = 0; i < 15; i++) {
+                const post = await createPost({
+                    title: `Post ${i}`,
+                    description: `Description ${i}`,
+                    keySkills: ['Skill1'],
+                    type: PostType.Hybride,
+                });
+                await applicationModel.create({
+                    student: studentId,
+                    post: post._id,
+                    company: companyId,
+                    status: ApplicationStatus.Pending,
+                    cv: `https://example.com/cv${i}.pdf`,
+                });
+            }
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/by-student?page=2&limit=10'))
+                .set('Authorization', `Bearer ${studentAccessToken}`)
+                .expect(200);
+
+            expect(res.body.data).toHaveLength(5);
+            expect(res.body.total).toBe(15);
+            expect(res.body.page).toBe(2);
+            expect(res.body.totalPages).toBe(2);
+            expect(res.body.hasNext).toBe(false);
+            expect(res.body.hasPrev).toBe(true);
+        });
+
+        it('should handle custom limit parameter', async () => {
+            for (let i = 0; i < 5; i++) {
+                const post = await createPost({
+                    title: `Post ${i}`,
+                    description: `Description ${i}`,
+                    keySkills: ['Skill1'],
+                    type: PostType.Hybride,
+                });
+                await applicationModel.create({
+                    student: studentId,
+                    post: post._id,
+                    company: companyId,
+                    status: ApplicationStatus.Pending,
+                    cv: `https://example.com/cv${i}.pdf`,
+                });
+            }
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/by-student?limit=3'))
+                .set('Authorization', `Bearer ${studentAccessToken}`)
+                .expect(200);
+
+            expect(res.body.data).toHaveLength(3);
+            expect(res.body.limit).toBe(3);
+        });
+
+        it('should return posts with company populated', async () => {
+            const post = await createPost({
+                title: 'Test Post',
+                description: 'Description',
+                keySkills: ['Skill1'],
+                type: PostType.Hybride,
+            });
+
+            await applicationModel.create({
+                student: studentId,
+                post: post._id,
+                company: companyId,
+                status: ApplicationStatus.Pending,
+                cv: 'https://example.com/cv.pdf',
+            });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/by-student'))
+                .set('Authorization', `Bearer ${studentAccessToken}`)
+                .expect(200);
+
+            expect(res.body.data[0]).toHaveProperty('company');
+            expect(res.body.data[0].company).toHaveProperty('_id');
+            expect(res.body.data[0].company).toHaveProperty('name');
+        });
+
+        it('should not return duplicate posts when student has multiple applications to same post', async () => {
+            const post = await createPost({
+                title: 'Duplicate Test',
+                description: 'Description',
+                keySkills: ['Skill1'],
+                type: PostType.Hybride,
+            });
+
+            await applicationModel.create({
+                student: studentId,
+                post: post._id,
+                company: companyId,
+                status: ApplicationStatus.Pending,
+                cv: 'https://example.com/cv1.pdf',
+            });
+
+            await applicationModel.create({
+                student: studentId,
+                post: post._id,
+                company: companyId,
+                status: ApplicationStatus.Accepted,
+                cv: 'https://example.com/cv2.pdf',
+            });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/by-student'))
+                .set('Authorization', `Bearer ${studentAccessToken}`)
+                .expect(200);
+
+            expect(res.body.data).toHaveLength(1);
+            expect(res.body.total).toBe(1);
         });
     });
 });

@@ -31,7 +31,6 @@ export async function fetchTopicById(forumId: string, topicId: string): Promise<
 
     const topic = await response.json();
 
-    // Fetch signed URL for author logo if exists
     if (topic?.author?.logo) {
         const presignedUrl = await fetchPublicSignedUrl(topic.author.logo);
         if (presignedUrl) topic.author.logo = presignedUrl;
@@ -72,7 +71,6 @@ export async function fetchTopics({
 
     const paginationResult = await response.json();
 
-    // Fetch signed URLs for author logos
     await Promise.all(
         paginationResult.data.map(async (topic: TopicDetail) => {
             if (topic.author?.logo) {

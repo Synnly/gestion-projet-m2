@@ -1,6 +1,6 @@
-import Pagination from '../../../../components/ui/pagination/Pagination.tsx';
-import type { Application } from '../../../../types/application.types.ts';
-import type { PaginationResult } from '../../../../types/internship.types.ts';
+import Pagination from '../../../components/ui/pagination/Pagination.tsx';
+import type { Application } from '../../../types/application.types.ts';
+import type { PaginationResult } from '../../../types/internship.types.ts';
 
 interface Props {
     pagination: PaginationResult<Application> | undefined;
