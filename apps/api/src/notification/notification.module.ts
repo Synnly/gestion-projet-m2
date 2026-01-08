@@ -12,6 +12,6 @@ import { NotificationOwnerGuard } from './guard/notificationOwner.guard';
     ],
     controllers: [NotificationController],
     providers: [NotificationService, NotificationOwnerGuard],
-    exports: [NotificationService],
+    exports: [NotificationService, MongooseModule],
 })
 export class NotificationModule {}

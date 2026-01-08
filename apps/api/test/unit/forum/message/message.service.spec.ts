@@ -1,13 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
-import { TopicService } from '../../../../src/forum/topic/topic.service';
 import { Topic } from '../../../../src/forum/topic/topic.schema';
 import { Forum } from '../../../../src/forum/forum.schema';
 import { MessageService } from '../../../../src/forum/message/message.service';
 import { PaginationService } from '../../../../src/common/pagination/pagination.service';
-import { CreateTopicDto } from '../../../../src/forum/topic/dto/createTopic.dto';
-import { UpdateTopicDto } from '../../../../src/forum/topic/dto/updateTopic.dto';
 import { Model } from 'mongoose';
 import { Message } from '../../../../src/forum/message/message.schema';
 import { CreateMessageDto } from '../../../../src/forum/message/dto/createMessageDto';
@@ -15,8 +12,6 @@ import { NotFoundException } from '@nestjs/common';
 describe('MessageService', () => {
     let service: MessageService;
     let messageModel: Model<Message>;
-    let topicModel: Model<Topic>;
-    let forumModel: Model<Forum>;
     let paginationService: PaginationService;
 
     const mockTopicId = new Types.ObjectId('507f1f77bcf86cd799439011');
@@ -55,29 +50,28 @@ describe('MessageService', () => {
         findByIdAndUpdate: jest.fn(),
     };
     const mockMessageModel = {
-        create: jest.fn(),
+        save: jest.fn(),
         find: jest.fn(),
+        findById: jest.fn(),
     };
 
     const mockPaginationService = {
         paginate: jest.fn(),
     };
-
-    const mockMessageService = { sendMessage: jest.fn(), findAll: jest.fn() };
-
+    const mockQuery = (result: any) => ({
+        exec: jest.fn().mockResolvedValue(result),
+        populate: jest.fn().mockReturnThis(),
+        then: (resolve: any) => Promise.resolve(result).then(resolve),
+    });
     beforeEach(async () => {
         jest.clearAllMocks();
 
         const module: TestingModule = await Test.createTestingModule({
             providers: [
-                TopicService,
+                MessageService,
                 {
                     provide: getModelToken(Topic.name),
                     useValue: mockTopicModel,
-                },
-                {
-                    provide: MessageService,
-                    useValue: mockMessageService,
                 },
                 {
                     provide: getModelToken(Message.name),
@@ -92,8 +86,6 @@ describe('MessageService', () => {
 
         service = module.get<MessageService>(MessageService);
         messageModel = module.get(getModelToken(Message.name));
-        topicModel = module.get(getModelToken(Topic.name));
-        forumModel = module.get(getModelToken(Forum.name));
         paginationService = module.get<PaginationService>(PaginationService);
     });
 
@@ -121,9 +113,9 @@ describe('MessageService', () => {
             const result = await service.findAll(paginationDto, mockTopicId.toString());
 
             expect(result).toEqual(expectedResult);
-            expect(paginationService.paginate).toHaveBeenCalledWith(
-                topicModel,
-                { topicId: mockTopic.toString() },
+            expect(this.paginationService!.paginate).toHaveBeenCalledWith(
+                messageModel,
+                { topicId: mockTopic._id.toString() },
                 1,
                 10,
                 [
@@ -157,7 +149,7 @@ describe('MessageService', () => {
             await service.findAll(paginationDto, mockTopicId.toString());
 
             expect(paginationService.paginate).toHaveBeenCalledWith(
-                topicModel,
+                messageModel,
                 { topicId: mockTopicId.toString() },
                 1,
                 10,
@@ -177,24 +169,25 @@ describe('MessageService', () => {
                 authorId: mockAuthorId.toString(),
             };
             const createdMessage = { ...mockMessage, ...createDto, _id: mockMessage._id };
-            mockMessageModel.create.mockResolvedValue(createdMessage);
+            mockMessageModel.save.mockResolvedValue(createdMessage);
             mockTopicModel.findByIdAndUpdate.mockResolvedValue({ ...mockTopic, messages: [mockMessage._id] });
+            mockForumModel.findByIdAndUpdate.mockResolvedValue({ company: { _id: new Types.ObjectId() } });
 
             const message = await service.sendMessage(mockTopicId.toString(), createDto);
 
-            expect(messageModel.create).toHaveBeenCalledWith({
+            expect(mockMessageModel.save).toHaveBeenCalledWith({
                 ...createDto,
                 topicId: mockForumId.toString(),
             });
-            expect(topicModel.findByIdAndUpdate).toHaveBeenCalledWith(
+            expect(mockTopicModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 mockTopicId,
                 {
                     $push: { topics: mockTopicId },
                 },
                 { new: true },
             );
-            expect(forumModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
-            expect(forumModel.findByIdAndUpdate).toHaveBeenCalledWith(
+            expect(mockForumModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
+            expect(mockForumModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 mockTopic?.forumId,
                 { $inc: { nbMessages: 1 } },
                 { new: true },
@@ -209,24 +202,24 @@ describe('MessageService', () => {
                 parentMessageId: new Types.ObjectId().toString(),
             };
             const createdMessage = { ...mockMessage, ...createDto, _id: mockMessage._id };
-            mockMessageModel.create.mockResolvedValue(createdMessage);
+            mockMessageModel.save.mockResolvedValue(createdMessage);
             mockTopicModel.findByIdAndUpdate.mockResolvedValue({ ...mockTopic, messages: [mockMessage._id] });
 
             const message = await service.sendMessage(mockTopicId.toString(), createDto);
 
-            expect(messageModel.create).toHaveBeenCalledWith({
+            expect(mockMessageModel.save).toHaveBeenCalledWith({
                 ...createDto,
                 topicId: mockForumId.toString(),
             });
-            expect(topicModel.findByIdAndUpdate).toHaveBeenCalledWith(
+            expect(mockTopicModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 mockTopicId,
                 {
                     $push: { topics: mockTopicId },
                 },
                 { new: true },
             );
-            expect(forumModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
-            expect(forumModel.findByIdAndUpdate).toHaveBeenCalledWith(
+            expect(mockForumModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
+            expect(mockForumModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 mockTopic?.forumId,
                 { $inc: { nbMessages: 1 } },
                 { new: true },
@@ -246,19 +239,19 @@ describe('MessageService', () => {
 
             expect(await service.sendMessage(mockTopicId.toString(), createDto)).toThrow(NotFoundException);
 
-            expect(messageModel.create).toHaveBeenCalledWith({
+            expect(mockMessageModel.create).toHaveBeenCalledWith({
                 ...createDto,
                 topicId: mockForumId.toString(),
             });
-            expect(topicModel.findByIdAndUpdate).toHaveBeenCalledWith(
+            expect(mockTopicModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 mockTopicId.toString(),
                 {
                     $push: { topics: mockTopicId },
                 },
                 { new: true },
             );
-            expect(forumModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
-            expect(forumModel.findByIdAndUpdate).toHaveBeenCalledWith(
+            expect(mockForumModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
+            expect(mockForumModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 mockTopic?.forumId,
                 { $inc: { nbMessages: 1 } },
                 { new: true },

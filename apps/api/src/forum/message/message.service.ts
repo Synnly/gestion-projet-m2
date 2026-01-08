@@ -9,6 +9,8 @@ import { PaginationResult } from 'client/src/types/internship.types';
 import { QueryBuilder } from '../../common/pagination/query.builder';
 import { MessagePaginationDto } from '../../common/pagination/dto/messagePagination.dto';
 import { Topic } from '../topic/topic.schema';
+import { NotificationService } from 'src/notification/notification.service';
+import { CreateNotificationDto } from 'src/notification/dto/createNotification.dto';
 @Injectable()
 export class MessageService {
     constructor(
@@ -16,7 +18,8 @@ export class MessageService {
         @InjectModel(Topic.name) private readonly topicModel: Model<Topic>,
         @InjectModel(Forum.name) private readonly forumModel: Model<Forum>,
         private readonly paginationService: PaginationService,
-    ) { }
+        private readonly notificationService: NotificationService,
+    ) {}
 
     /**
      * Send a message in a topic.
@@ -35,13 +38,24 @@ export class MessageService {
             $push: { messages: newMessages._id },
         });
         if (!topic) throw new NotFoundException("topic doesn't exist ");
-        await this.forumModel.findByIdAndUpdate(
+        const forum = await this.forumModel.findByIdAndUpdate(
             topic?.forumId,
             {
                 $inc: { nbMessages: 1 },
             },
             { new: true },
         );
+        if (message.parentMessageId) {
+            const replyMessage = await this.messageModel.findById(message.parentMessageId).populate('authorId').exec();
+            const dto = new CreateNotificationDto();
+            dto.userId = replyMessage!.authorId._id;
+            dto.message = `Votre message a une nouvelle réponse dans le topic "${topic.title}"`;
+            const companyPart = forum?.company?._id.toString() ?? 'general';
+            dto.returnLink = `/forums/${companyPart}/${forum?._id.toString()}/${topic._id.toString()}`;
+            this.notificationService.create(dto).catch((err) => {
+                Logger.error('Failed to create notification for reply message', err);
+            });
+        }
         return newMessages;
     }
 
