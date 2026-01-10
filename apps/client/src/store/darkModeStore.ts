@@ -17,8 +17,8 @@ interface DarkModeState {
 export const useDarkModeStore = create<DarkModeState>((set, get) => ({
     darkMode: (() => {
         if (typeof window === 'undefined') return false;
-        const stored = localStorage.getItem('darkMode');
-        return stored === 'true' ? true : false;
+        const isDark = localStorage.getItem('darkMode');
+        return isDark === 'true' ? true : false;
     })(),
     isInitialized: false,
 

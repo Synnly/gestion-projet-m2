@@ -7,6 +7,7 @@ import { cn } from '../../../utils/cn';
 import { useMutation } from '@tanstack/react-query';
 import { userStore } from '../../../store/userStore';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
+import { useDarkModeStore } from '../../../store/darkModeStore';
 type MessageSenderProps = {
     forumId: string;
     topicId?: string;
@@ -31,7 +32,7 @@ export function MessageSender({
     const get = userStore((state) => state.get);
     const id = get(access)?.id;
     const authfetch = UseAuthFetch();
-
+    const darkMode = useDarkModeStore((state) => state.darkMode);
     const { mutateAsync, isPending } = useMutation({
         mutationFn: async () => {
             if (!content) return;
@@ -124,7 +125,7 @@ export function MessageSender({
                         placeholder: 'écrivez votre réponse ici...',
                         autoComplete: 'off',
                         spellCheck: false,
-                        className: 'reply-textarea !bg-transparent !text-black !outline-none !border-none',
+                        className: `reply-textarea !bg-transparent ${darkMode ? '!text-white' : '!text-black'} !outline-none !border-none`,
                     }}
                 />
             </div>

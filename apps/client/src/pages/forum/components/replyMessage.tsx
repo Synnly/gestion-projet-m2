@@ -8,7 +8,7 @@ type replyMessageProps = {
 };
 export const ReplyMessage = ({ replyMessage }: replyMessageProps) => {
     return (
-        <div className="flex flex-col border-l-4 border-blue-400 bg-blue-50/50 p-4 rounded-r-lg max-w-2xl font-sans">
+        <div className="flex flex-col border-l-4 border-blue-400 bg-base-200 p-4 rounded-r-lg max-w-2xl font-sans">
             {/* Header : L'auteur et la date */}
             <div className="flex items-center gap-2 mb-2 text-sm text-primary font-medium">
                 <Reply size={14} className="transform rotate-180" />
