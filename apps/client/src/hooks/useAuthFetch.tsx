@@ -20,11 +20,23 @@ interface FetchOptions<TData = unknown> {
  */
 export const UseAuthFetch = () => {
     const accessToken = userStore.getState().access;
+    console.log(accessToken);
     const setUserToken = userStore.getState().set;
 
     const authFetch = async <TData = unknown,>(url: string, options?: FetchOptions<TData>): Promise<Response> => {
         const doFetch = async (): Promise<Response> => {
             try {
+                const config = {
+                    method: options?.method || 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(options?.headers || {}),
+                        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+                    },
+                    body: options?.data,
+                    credentials: 'include',
+                };
+                console.log(url, config);
                 const res = await fetch(url, {
                     method: options?.method || 'GET',
                     headers: {

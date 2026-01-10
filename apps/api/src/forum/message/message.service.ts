@@ -51,10 +51,8 @@ export class MessageService {
             dto.userId = replyMessage!.authorId._id;
             dto.message = `Votre message a une nouvelle réponse dans le topic "${topic.title}"`;
             const companyPart = forum?.company?._id.toString() ?? 'general';
-            dto.returnLink = `/forums/${companyPart}/${forum?._id.toString()}/${topic._id.toString()}`;
-            this.notificationService.create(dto).catch((err) => {
-                Logger.error('Failed to create notification for reply message', err);
-            });
+            dto.returnLink = `/forums/${companyPart}/topics/${forum?._id.toString()}/${topic._id.toString()}`;
+            await this.notificationService.create(dto);
         }
         return newMessages;
     }

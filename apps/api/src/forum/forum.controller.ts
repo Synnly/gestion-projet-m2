@@ -44,7 +44,7 @@ export class ForumController {
         private readonly forumService: ForumService,
         private readonly messageService: MessageService,
         private readonly topicService: TopicService,
-    ) { }
+    ) {}
 
     /**
      * Return a paginated list of forums. Query parameters `page` and `limit`
@@ -106,6 +106,7 @@ export class ForumController {
         query: MessagePaginationDto,
         @Param('topicId', ParseObjectIdPipe) topicId: string,
     ): Promise<PaginationResult<MessageDto>> {
+        Logger.log('on me demande les messages du topic ' + topicId);
         const messages = await this.messageService.findAll(query, topicId);
         return {
             ...messages,

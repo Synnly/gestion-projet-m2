@@ -54,6 +54,7 @@ export default function TopicDetailPage() {
         queryKey: ['topicMessages', topicId, filter],
         queryFn: async () => {
             const param = buildQueryParams(filter);
+
             const response = await authFetch(`${apiUrl}/api/forum/topic/${topicId}/message?${param}`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
