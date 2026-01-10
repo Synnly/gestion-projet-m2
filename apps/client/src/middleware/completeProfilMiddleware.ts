@@ -63,8 +63,6 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
             throw redirect('/complete-profil');
         }
         
-        // Vérifier si l'utilisateur est une entreprise et si son compte est validé
-        // Ne pas vérifier si on est déjà sur la page pending-validation pour éviter une boucle
         if (isComplete && pathname !== '/pending-validation') {
             const validationRes = await authFetch(`${API_URL}/api/companies/${payload.id}/is-valid`, {
                 method: 'GET',
