@@ -41,6 +41,7 @@ import { ApplicationList } from './company/applicationList/ApplicationList.tsx';
 import TopicDetailPage from './pages/forum/TopicDetailPage';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
 import { ForumPage } from './pages/forums/ForumPage.tsx';
+import { PendingValidation } from './pages/PendingValidation.tsx';
 
 function App() {
     userStore.persist.rehydrate();
@@ -90,6 +91,11 @@ function App() {
                     element: <AuthRoutes />,
                     children: [
                         { path: 'verify', element: <VerifyEmail />, handle: { title: 'Vérifier votre mail' } },
+                        { 
+                            path: 'pending-validation', 
+                            element: <PendingValidation />, 
+                            handle: { title: 'Compte en cours de validation' } 
+                        },
                         {
                             path: 'complete-profil',
                             element: <CompleteProfil />,

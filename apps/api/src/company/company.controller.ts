@@ -186,4 +186,17 @@ export class CompanyController {
             posts: posts.map((post: PostDocument) => new PostDto(post)),
         });
     }
+
+    /**
+     * Checks if a company is valid
+     * @param companyId The company identifier
+     * @returns An object indicating whether the company is valid
+     */
+    @Get('/:companyId/is-valid')
+    @HttpCode(HttpStatus.OK)
+    async isValid(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<{ isValid: boolean }> {
+        const isValid = await this.companyService.isValid(companyId);
+        console.log(`Company ${companyId} is valid: ${isValid}`);
+        return { isValid };
+    }
 }

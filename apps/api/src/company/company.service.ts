@@ -213,14 +213,20 @@ export class CompanyService {
     async findPendingValidation(query: PaginationDto): Promise<PaginationResult<Company>> {
         const { page, limit } = query;
         const filter = { deletedAt: { $exists: false }, isValid: false };
-        
-        return this.paginationService.paginate(
-            this.companyModel,
-            filter,
-            page,
-            limit,
-            undefined,
-            '-1',
-        );
+
+        return this.paginationService.paginate(this.companyModel, filter, page, limit, undefined, '-1');
+    }
+
+    /**
+     * Checks if a company is valid
+     * @param companyId The company identifier
+     * @returns Promise resolving to true if the company is valid, false otherwise
+     */
+    async isValid(companyId: string): Promise<boolean> {
+        const company = await this.companyModel.findOne({ _id: companyId, deletedAt: { $exists: false } }).exec();
+        if (!company) {
+            throw new NotFoundException(`Company with id ${companyId} not found`);
+        }
+        return company.isValid ?? false;
     }
 }
