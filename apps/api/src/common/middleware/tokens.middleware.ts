@@ -1,4 +1,4 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { NextFunction, Request, Response } from 'express';
 import { InvalidConfigurationException } from '../exceptions/invalidConfiguration.exception';
@@ -17,7 +17,9 @@ export class TokensMiddleware implements NestMiddleware {
 
         // Load and validate access token secret
         secret = this.configService.get<string>('ACCESS_TOKEN_SECRET');
-        if (!secret) throw new InvalidConfigurationException('Access token secret is not configured');
+        if (!secret) {
+            throw new InvalidConfigurationException('Access token secret is not configured');
+        }
         this.ACCESS_TOKEN_SECRET = secret;
     }
 
@@ -34,6 +36,7 @@ export class TokensMiddleware implements NestMiddleware {
                 const accessPayload = this.jwtService.verify<AccessTokenPayload>(token, {
                     secret: this.ACCESS_TOKEN_SECRET,
                 });
+
                 req['accessToken'] = token;
                 this.setUser(req, accessPayload);
             } catch {
@@ -51,11 +54,13 @@ export class TokensMiddleware implements NestMiddleware {
      */
     private extractTokenFromHeader(request: Request): string | undefined {
         const authorization = request?.headers?.authorization;
+
         if (!authorization) {
             return undefined;
         }
 
         const [type, token] = authorization.split(' ');
+
         return type === 'Bearer' ? token : undefined;
     }
 

@@ -8,6 +8,7 @@ import { useMutation } from '@tanstack/react-query';
 import { userStore } from '../../../store/userStore';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 type MessageSenderProps = {
+    forumId: string;
     topicId?: string;
     reply?: { id: string; name: string } | null;
     shown?: boolean;
@@ -15,7 +16,15 @@ type MessageSenderProps = {
     onCancel?: () => void;
     cancelReply?: () => void;
 };
-export function MessageSender({ topicId, reply, shown, afterSend, onCancel, cancelReply }: MessageSenderProps) {
+export function MessageSender({
+    forumId,
+    topicId,
+    reply,
+    shown,
+    afterSend,
+    onCancel,
+    cancelReply,
+}: MessageSenderProps) {
     const [content, setContent] = useState<string | undefined>('');
     const apiUrl = import.meta.env.VITE_APIURL;
     const access = userStore((state) => state.access);
@@ -27,7 +36,7 @@ export function MessageSender({ topicId, reply, shown, afterSend, onCancel, canc
         mutationFn: async () => {
             if (!content) return;
             const data = JSON.stringify({ authorId: id, content, parentMessageId: reply?.id || null });
-            const response = await authfetch(`${apiUrl}/api/forum/topic/${topicId}/message`, {
+            const response = await authfetch(`${apiUrl}/api/forum/${forumId}/topic/${topicId}/message`, {
                 method: 'POST',
                 data: data,
             });
@@ -38,16 +47,13 @@ export function MessageSender({ topicId, reply, shown, afterSend, onCancel, canc
             return response.json();
         },
         onSuccess: () => {
-            console.log('terminé bitchies!!!');
             setContent('');
             afterSend?.();
         },
     });
     const onSubmit = async (e: React.FormEvent) => {
-        console.log('toto');
         e.preventDefault();
         const message = await mutateAsync();
-        console.log(message);
     };
     return (
         <div

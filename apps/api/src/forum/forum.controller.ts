@@ -88,7 +88,7 @@ export class ForumController {
         return plainToInstance(ForumDto, forum);
     }
 
-    @Post('/topic/:topicId/message')
+    @Post(':forumId/topic/:topicId/message')
     @HttpCode(HttpStatus.OK)
     @UseGuards(AuthGuard, ForumAccessGuard)
     async sendMessage(
@@ -99,14 +99,13 @@ export class ForumController {
         return plainToInstance(MessageDto, message);
     }
 
-    @Get('/topic/:topicId/message')
+    @Get(':forumId/topic/:topicId/message')
     @UseGuards(AuthGuard, ForumAccessGuard)
     async getMessages(
         @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
         query: MessagePaginationDto,
         @Param('topicId', ParseObjectIdPipe) topicId: string,
     ): Promise<PaginationResult<MessageDto>> {
-        Logger.log('on me demande les messages du topic ' + topicId);
         const messages = await this.messageService.findAll(query, topicId);
         return {
             ...messages,

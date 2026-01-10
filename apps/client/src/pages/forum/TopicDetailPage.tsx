@@ -55,10 +55,7 @@ export default function TopicDetailPage() {
         queryFn: async () => {
             const param = buildQueryParams(filter);
 
-            const response = await authFetch(`${apiUrl}/api/forum/topic/${topicId}/message?${param}`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-            });
+            const response = await authFetch(`${apiUrl}/api/forum/${forumId}/topic/${topicId}/message?${param}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch messages');
             }
@@ -181,7 +178,7 @@ export default function TopicDetailPage() {
                             <li>
                                 {(companyData || !companyId) && (
                                     <Link to={`/forums/${companyId || 'general'}`}>
-                                        {companyId ? companyData.name : 'Generale'}
+                                        {companyId ? companyData.name : 'General'}
                                     </Link>
                                 )}
                             </li>
@@ -337,6 +334,7 @@ export default function TopicDetailPage() {
                         </>
                     )}
                     <MessageSender
+                        forumId={forumId}
                         topicId={topicId}
                         reply={reply}
                         shown={shown}

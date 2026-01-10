@@ -7,7 +7,6 @@ type replyMessageProps = {
     replyMessage: MessageType;
 };
 export const ReplyMessage = ({ replyMessage }: replyMessageProps) => {
-    console.log(replyMessage);
     return (
         <div className="flex flex-col border-l-4 border-blue-400 bg-blue-50/50 p-4 rounded-r-lg max-w-2xl font-sans">
             {/* Header : L'auteur et la date */}

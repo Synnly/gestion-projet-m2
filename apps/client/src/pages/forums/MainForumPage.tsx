@@ -33,7 +33,6 @@ export function MainForumPage() {
     const handleSearchChange = (query: string) => {
         setFilters({ companyName: query || undefined, page: 1, limit: 12 });
     };
-    console.log(apiUrl);
     const companyForum = useFetchForumByCompanyId(id);
     return (
         <div className="flex flex-col h-screen">

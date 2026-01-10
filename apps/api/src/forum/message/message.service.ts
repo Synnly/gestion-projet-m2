@@ -47,12 +47,14 @@ export class MessageService {
         );
         if (message.parentMessageId) {
             const replyMessage = await this.messageModel.findById(message.parentMessageId).populate('authorId').exec();
-            const dto = new CreateNotificationDto();
-            dto.userId = replyMessage!.authorId._id;
-            dto.message = `Votre message a une nouvelle réponse dans le topic "${topic.title}"`;
-            const companyPart = forum?.company?._id.toString() ?? 'general';
-            dto.returnLink = `/forums/${companyPart}/topics/${forum?._id.toString()}/${topic._id.toString()}`;
-            await this.notificationService.create(dto);
+            if (replyMessage && replyMessage.authorId._id.toString() !== createMessageDto.authorId.toString()) {
+                const dto = new CreateNotificationDto();
+                dto.userId = replyMessage.authorId._id;
+                dto.message = `Votre message a une nouvelle réponse dans le topic "${topic.title}"`;
+                const companyPart = forum?.company?._id.toString() ?? 'general';
+                dto.returnLink = `/forums/${companyPart}/topics/${forum?._id.toString()}/${topic._id.toString()}`;
+                await this.notificationService.create(dto);
+            }
         }
         return newMessages;
     }
