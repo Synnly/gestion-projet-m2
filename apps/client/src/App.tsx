@@ -42,6 +42,7 @@ import ImportStudent from './admin/importStudent.tsx';
 import TopicDetailPage from './pages/forum/TopicDetailPage';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
 import { ForumPage } from './pages/forums/ForumPage.tsx';
+import { EditStudentProfile } from './student/profile/EditStudentProfile.tsx';
 
 function App() {
     userStore.persist.rehydrate();
@@ -123,6 +124,17 @@ function App() {
                                     path: 'offers/add',
                                     element: <CreatePostPage />,
                                     handle: { title: 'Créer une offre' },
+                                },
+                            ],
+                        },
+                        {
+                            path: 'student',
+                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} />,
+                            children: [
+                                {
+                                    path: 'profile/edit',
+                                    element: <EditStudentProfile />,
+                                    handle: { title: 'Éditer le profil' },
                                 },
                             ],
                         },

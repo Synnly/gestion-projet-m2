@@ -1,5 +1,6 @@
 import { Expose, Exclude, Transform } from 'class-transformer';
 import { Types } from 'mongoose';
+import { Prop } from '@nestjs/mongoose';
 
 /**
  * Data Transfer Object representing a Student returned by the API.
@@ -32,6 +33,30 @@ export class StudentDto {
     /** Whether this account is the user's first time on the platform */
     @Expose()
     isFirstTime: boolean;
+
+    /**
+     * A short tagline or motto for the student.
+     */
+    @Expose()
+    tagLine?: string;
+
+    /**
+     * A detailed biography or description of the student.
+     */
+    @Expose()
+    biography?: string;
+
+    /**
+     * Student's profile picture object in the storage service.
+     */
+    @Expose()
+    profilePicture?: string;
+
+    /**
+     * Student's default cv object in the storage service.
+     */
+    @Expose()
+    defaultCv?: string;
 
     /**
      * Create a partial `StudentDto` instance.
