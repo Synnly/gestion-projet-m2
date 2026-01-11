@@ -1062,4 +1062,99 @@ describe('CompanyService', () => {
             expect(filter.isValid).toBe(false);
         });
     });
+
+    describe('isValid', () => {
+        it('should return true when company exists and isValid is true', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockCompany = {
+                _id: companyId,
+                name: 'Valid Company',
+                isValid: true,
+            };
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(mockCompany) });
+
+            const result = await service.isValid(companyId);
+
+            expect(mockCompanyModel.findOne).toHaveBeenCalledWith({
+                _id: companyId,
+                deletedAt: { $exists: false },
+            });
+            expect(result).toBe(true);
+        });
+
+        it('should return false when company exists and isValid is false', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockCompany = {
+                _id: companyId,
+                name: 'Invalid Company',
+                isValid: false,
+            };
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(mockCompany) });
+
+            const result = await service.isValid(companyId);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when company exists and isValid is null', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockCompany = {
+                _id: companyId,
+                name: 'Company Without Validation',
+                isValid: null,
+            };
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(mockCompany) });
+
+            const result = await service.isValid(companyId);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when company exists and isValid is undefined', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockCompany = {
+                _id: companyId,
+                name: 'Company Without Validation',
+            };
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(mockCompany) });
+
+            const result = await service.isValid(companyId);
+
+            expect(result).toBe(false);
+        });
+
+        it('should throw NotFoundException when company does not exist', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+            await expect(service.isValid(companyId)).rejects.toThrow(NotFoundException);
+            await expect(service.isValid(companyId)).rejects.toThrow(`Company with id ${companyId} not found`);
+        });
+
+        it('should throw NotFoundException when company is soft-deleted', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+            await expect(service.isValid(companyId)).rejects.toThrow(NotFoundException);
+        });
+
+        it('should exclude soft-deleted companies from the query', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+            await expect(service.isValid(companyId)).rejects.toThrow();
+
+            expect(mockCompanyModel.findOne).toHaveBeenCalledWith({
+                _id: companyId,
+                deletedAt: { $exists: false },
+            });
+        });
+    });
 });

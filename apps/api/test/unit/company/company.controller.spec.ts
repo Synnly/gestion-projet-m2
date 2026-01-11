@@ -26,6 +26,7 @@ describe('CompanyController', () => {
         update: jest.fn(),
         remove: jest.fn(),
         findPendingValidation: jest.fn(),
+        isValid: jest.fn(),
     };
 
     const mockReflector = {
@@ -1406,6 +1407,46 @@ describe('CompanyController', () => {
             mockCompanyService.update.mockRejectedValue(new NotFoundException('Company not found'));
 
             await expect(controller.rejectCompany(companyId)).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('isValid', () => {
+        it('should return { isValid: true } when company is valid', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.isValid.mockResolvedValue(true);
+
+            const result = await controller.isValid(companyId);
+
+            expect(service.isValid).toHaveBeenCalledWith(companyId);
+            expect(result).toEqual({ isValid: true });
+        });
+
+        it('should return { isValid: false } when company is not valid', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.isValid.mockResolvedValue(false);
+
+            const result = await controller.isValid(companyId);
+
+            expect(service.isValid).toHaveBeenCalledWith(companyId);
+            expect(result).toEqual({ isValid: false });
+        });
+
+        it('should propagate NotFoundException when company does not exist', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.isValid.mockRejectedValue(new NotFoundException('Company with id 507f1f77bcf86cd799439011 not found'));
+
+            await expect(controller.isValid(companyId)).rejects.toThrow(NotFoundException);
+            await expect(controller.isValid(companyId)).rejects.toThrow('Company with id 507f1f77bcf86cd799439011 not found');
+        });
+
+        it('should call service with correct companyId', async () => {
+            const companyId = '507f1f77bcf86cd799439012';
+            mockCompanyService.isValid.mockResolvedValue(true);
+
+            await controller.isValid(companyId);
+
+            expect(service.isValid).toHaveBeenCalledTimes(1);
+            expect(service.isValid).toHaveBeenCalledWith(companyId);
         });
     });
 });
