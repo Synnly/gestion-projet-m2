@@ -127,13 +127,13 @@ describe('Message Integration Tests', () => {
     const createCompany = async (): Promise<CompanyDocument> => {
         return await companyModel.create({ email: 'toto@toto.com', name: 'toto', password: 'A12345678z!' });
     };
-    describe('GET /api/forum/topic/:topicId/message - Find All Message for one topic', () => {
+    describe('GET /api/forum/:forumId/topic/:topicId/message - Find All Message for one topic', () => {
         it('should return paginate message with the good topic', async () => {
             const topic = await createTopic({ title: 'topic1' });
             const msg1 = await createMessage({ content: 'coucou', topicId: topic._id });
             const msg2 = await createMessage({ content: 'coucou', topicId: topic._id });
             const res = await request(app.getHttpServer())
-                .get(`/api/forum/topic/${topic._id}/message?limit=2&page=1`)
+                .get(`/api/forum/${forumId}/topic/${topic._id}/message?limit=2&page=1`)
                 .set('Authorization', 'Bearer ' + accessToken)
                 .expect(200);
 
@@ -148,7 +148,7 @@ describe('Message Integration Tests', () => {
             const msg1 = await createMessage({ content: 'coucou', topicId: topic._id });
             const msg2 = await createMessage({ content: 'coucou', topicId: topic._id });
             const res = await request(app.getHttpServer())
-                .get(`/api/forum/topic/${topic._id}/message?limit=1&page=1`)
+                .get(`/api/forum/${forumId}/topic/${topic._id}/message?limit=1&page=1`)
                 .set('Authorization', 'Bearer ' + accessToken)
                 .expect(200);
 
@@ -160,7 +160,7 @@ describe('Message Integration Tests', () => {
         it('should return empty paginated result when no messages exist', async () => {
             const topic = await createTopic({});
             const res = await request(app.getHttpServer())
-                .get(`/api/forum/topic/${topic._id}/message?page=1&limit=1`)
+                .get(`/api/forum/${forumId}/topic/${topic._id}/message?page=1&limit=1`)
                 .set('Authorization', 'Bearer ' + accessToken)
                 .expect(200);
 
@@ -172,7 +172,7 @@ describe('Message Integration Tests', () => {
         it('should return 400 when invalid page number is provided', async () => {
             const topic = await createTopic({});
             await request(app.getHttpServer())
-                .get(`/api/forum/topic/${topic._id.toString()}/message?page=-1&limit= 1`)
+                .get(`/api/forum/${forumId}/topic/${topic._id.toString()}/message?page=-1&limit= 1`)
                 .set('Authorization', 'Bearer ' + accessToken)
                 .expect(400);
         });
@@ -180,7 +180,7 @@ describe('Message Integration Tests', () => {
         it('should return 400 when invalid limit is provided', async () => {
             const topic = await createTopic({});
             await request(app.getHttpServer())
-                .get(`/api/forum/topic/${topic._id.toString()}/message?limit=-4&page=1`)
+                .get(`/api/forum/${forumId}/topic/${topic._id.toString()}/message?limit=-4&page=1`)
                 .set('Authorization', 'Bearer ' + accessToken)
                 .expect(400);
         });
@@ -198,7 +198,7 @@ describe('Message Integration Tests', () => {
             const message10 = await createMessage({ topicId: topic._id });
             const message11 = await createMessage({ topicId: topic._id });
             const res = await request(app.getHttpServer())
-                .get(`/api/forum/topic/${topic._id.toString()}/message`)
+                .get(`/api/forum/${forumId}/topic/${topic._id.toString()}/message`)
                 .set('Authorization', 'Bearer ' + accessToken)
                 .expect(200);
 

@@ -16,6 +16,7 @@ describe('ForumController', () => {
     let controller: ForumController;
     let service: ForumService;
     let topicService: TopicService;
+    let messageService: MessageService;
     const mockForumService = {
         findAll: jest.fn(),
         findOneByCompanyId: jest.fn(),
@@ -40,7 +41,7 @@ describe('ForumController', () => {
         company: new Types.ObjectId('507f1f77bcf86cd799439022'),
         createdAt: new Date(),
         updatedAt: new Date(),
-        toJSON: function() {
+        toJSON: function () {
             return this;
         },
     };
@@ -81,7 +82,7 @@ describe('ForumController', () => {
         controller = module.get<ForumController>(ForumController);
         service = module.get<ForumService>(ForumService);
         topicService = module.get<TopicService>(TopicService);
-
+        messageService = module.get<MessageService>(MessageService);
         jest.clearAllMocks();
     });
 
@@ -407,7 +408,7 @@ describe('ForumController', () => {
                 hasNext: false,
                 hasPrev: false,
             };
-            mockMessageService.findAll.mockResolvedValue(paginationResult);
+            messageService.findAll.mockResolvedValue(paginationResult);
 
             const query: PaginationDto = { page: 1, limit: 2 };
             const result = await controller.getMessages(query, topicId.toString());
@@ -417,9 +418,8 @@ describe('ForumController', () => {
             expect(result.data[0]._id).toEqual(msg1._id);
             expect(result.data[1]._id).toEqual(msg2._id);
             expect(result.total).toBe(2);
-            expect(service.findAll).toHaveBeenCalledWith(query);
-            expect(service.findAll).toHaveBeenCalledWith(topicId.toString(), query);
-            expect(service.findAll).toHaveBeenCalledTimes(1);
+            expect(messageService.findAll).toHaveBeenCalledWith(query, topicId.toString());
+            expect(messageService.findAll).toHaveBeenCalledTimes(1);
         });
 
         it("should return a paginated result of forums when findAllForums is called with message total's not exceeding the number of message ", async () => {
@@ -434,7 +434,7 @@ describe('ForumController', () => {
                 hasNext: false,
                 hasPrev: false,
             };
-            mockMessageService.findAll.mockResolvedValue(paginationResult);
+            messageService.findAll.mockResolvedValue(paginationResult);
 
             const query: PaginationDto = { page: 1, limit: 2 };
             const result = await controller.getMessages(query, topicId.toString());
@@ -444,9 +444,8 @@ describe('ForumController', () => {
             expect(result.data[0]._id).toEqual(msg1._id);
             expect(result.total).toBe(1);
             expect(result.limit).toBe(2);
-            expect(service.findAll).toHaveBeenCalledWith(query);
-            expect(service.findAll).toHaveBeenCalledWith(topicId.toString(), query);
-            expect(service.findAll).toHaveBeenCalledTimes(1);
+            expect(messageService.findAll).toHaveBeenCalledWith(query, topicId.toString());
+            expect(messageService.findAll).toHaveBeenCalledTimes(1);
         });
         it('should return an empty paginated result of forums when findAllForums is called and no messages exist', async () => {
             const topicId = new Types.ObjectId();
@@ -459,14 +458,13 @@ describe('ForumController', () => {
                 hasNext: false,
                 hasPrev: false,
             };
-            mockMessageService.findAll.mockResolvedValue(paginationResult);
+            messageService.findAll.mockResolvedValue(paginationResult);
             const query: PaginationDto = { page: 1, limit: 2 };
             const result = await controller.getMessages(query, topicId.toString());
             expect(result.data).toHaveLength(0);
             expect(result.total).toBe(0);
-            expect(service.findAll).toHaveBeenCalledWith(query);
-            expect(service.findAll).toHaveBeenCalledWith(topicId.toString(), query);
-            expect(service.findAll).toHaveBeenCalledTimes(1);
+            expect(messageService.findAll).toHaveBeenCalledWith(query, topicId.toString());
+            expect(messageService.findAll).toHaveBeenCalledTimes(1);
         });
     });
     describe('sendMessage', () => {
@@ -477,13 +475,12 @@ describe('ForumController', () => {
                 authorId: userId.toString(),
                 content: 'This is a test message',
             };
-            mockMessageService.sendMessage.mockResolvedValue(undefined);
+            messageService.sendMessage.mockResolvedValue(undefined);
             await controller.sendMessage(topicId, createDto as any);
-            expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
+            expect(messageService.sendMessage).toHaveBeenCalledWith(topicId, {
                 ...createDto,
             });
-            expect(mockMessageService.sendMessage).toHaveBeenCalledWith(topicId);
-            expect(mockMessageService.sendMessage).toHaveBeenCalledTimes(1);
+            expect(messageService.sendMessage).toHaveBeenCalledTimes(1);
         });
         it('should send a message to a topic with reply', async () => {
             const topicId = new Types.ObjectId().toString();
@@ -494,13 +491,12 @@ describe('ForumController', () => {
                 content: 'This is a reply message',
                 parentMessageId: parentMessageId.toString(),
             };
-            mockMessageService.sendMessage.mockResolvedValue(undefined);
+            messageService.sendMessage.mockResolvedValue(undefined);
             await controller.sendMessage(topicId, createDto as any);
-            expect(mockMessageService.sendMessage).toHaveBeenCalledWith(topicId);
-            expect(mockMessageService.sendMessage).toHaveBeenCalledWith({
+            expect(messageService.sendMessage).toHaveBeenCalledWith(topicId, {
                 ...createDto,
             });
-            expect(mockMessageService.sendMessage).toHaveBeenCalledTimes(1);
+            expect(messageService.sendMessage).toHaveBeenCalledTimes(1);
         });
     });
 });

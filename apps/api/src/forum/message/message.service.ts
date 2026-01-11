@@ -28,14 +28,13 @@ export class MessageService {
      * @returns The created message.
      */
     async sendMessage(topicId: string, createMessageDto: CreateMessageDto): Promise<Message> {
-        const message = new this.messageModel({
+        const message = await this.messageModel.create({
             topicId,
             ...createMessageDto,
         });
 
-        const newMessages = await message.save();
         const topic = await this.topicModel.findByIdAndUpdate(topicId, {
-            $push: { messages: newMessages._id },
+            $push: { messages: message._id },
         });
         if (!topic) throw new NotFoundException("topic doesn't exist ");
         const forum = await this.forumModel.findByIdAndUpdate(
@@ -56,7 +55,7 @@ export class MessageService {
                 await this.notificationService.create(dto);
             }
         }
-        return newMessages;
+        return message;
     }
 
     /**
