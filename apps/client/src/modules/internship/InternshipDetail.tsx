@@ -126,6 +126,7 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                                 application={application}
                                 isLoading={isLoading}
                                 postId={internship._id}
+                                isPostVisible={internship.isVisible ?? true}
                             />
                         )}
 

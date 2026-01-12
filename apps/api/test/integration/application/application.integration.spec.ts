@@ -61,7 +61,9 @@ describe('Application Integration Tests', () => {
     const createCompany = async (attrs: Partial<CompanyDocument> = {}) => {
         const unique = new Types.ObjectId().toString();
         return companyModel.create({
+            // @ts-ignore
             email: attrs.email || `company-${unique}@test.com`,
+            // @ts-ignore
             password: attrs.password || 'TestP@ss123',
             role: Role.COMPANY,
             name: (attrs as any).name || 'Test Company',
@@ -73,7 +75,9 @@ describe('Application Integration Tests', () => {
     const createStudent = async (attrs: Partial<StudentDocument> = {}) => {
         const unique = new Types.ObjectId().toString();
         return studentModel.create({
+            // @ts-ignore
             email: (attrs.email as any) || `student-${unique}@test.com`,
+            // @ts-ignore
             password: attrs.password || 'TestP@ss123',
             studentNumber: (attrs as any).studentNumber || `SN-${unique}`,
             role: Role.STUDENT,
@@ -256,6 +260,7 @@ describe('Application Integration Tests', () => {
             const company = await createCompany();
             // @ts-ignore
             const studentOwner = await createStudent({ email: 'owner@test.com' });
+            // @ts-ignore
             const otherStudent = await createStudent({ email: 'other@test.com' });
             const post = await createPostForCompany(company._id);
             const created = await createApplicationDoc(studentOwner._id, post._id);
@@ -390,6 +395,31 @@ describe('Application Integration Tests', () => {
                     cvExtension: 'pdf',
                 })
                 .expect(409);
+        });
+
+        it('should return 409 when post is not visible', async () => {
+            const company = await createCompany();
+            const student = await createStudent();
+            const post = await postModel.create({
+                title: 'Hidden Internship',
+                description: 'This post is not visible',
+                type: PostType.Presentiel,
+                keySkills: ['Skill1'],
+                company: company._id,
+                isVisible: false,
+            });
+
+            const res = await request(app.getHttpServer())
+                .post('/api/application')
+                .set('Authorization', `Bearer ${tokenFor(Role.STUDENT, student._id)}`)
+                .send({
+                    studentId: student._id.toString(),
+                    postId: post._id.toString(),
+                    cvExtension: 'pdf',
+                })
+                .expect(409);
+
+            expect(res.body.message).toBe('Cannot apply to a post that is not visible');
         });
 
         it('should return 400 when identifiers are not valid ObjectIds', async () => {
