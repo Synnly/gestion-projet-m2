@@ -196,7 +196,6 @@ export class CompanyController {
     @HttpCode(HttpStatus.OK)
     async isValid(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<{ isValid: boolean }> {
         const isValid = await this.companyService.isValid(companyId);
-        console.log(`Company ${companyId} is valid: ${isValid}`);
         return { isValid };
     }
 }
