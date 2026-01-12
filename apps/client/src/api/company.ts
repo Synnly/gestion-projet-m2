@@ -29,11 +29,12 @@ export const fetchPendingCompanies = async (
     authFetch: ReturnType<typeof UseAuthFetch>,
     page: number = 1,
     limit: number = 10,
+    sortOrder: '-1' | '1' = '-1',
 ): Promise<PaginatedCompanyResponse> => {
     const queryParams = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
-        sort: "1",
+        sort: sortOrder,
     });
 
     const response = await authFetch(`${API_URL}/api/companies/pending-validation?${queryParams.toString()}`, {
