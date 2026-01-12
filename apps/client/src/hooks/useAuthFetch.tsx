@@ -25,14 +25,19 @@ export const UseAuthFetch = () => {
     const authFetch = async <TData = unknown,>(url: string, options?: FetchOptions<TData>): Promise<Response> => {
         const doFetch = async (): Promise<Response> => {
             try {
+                const headers: Record<string, string> = {
+                    ...(options?.headers || {}),
+                    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+                };
+
+                if (!(options?.data instanceof FormData)) {
+                    headers['Content-Type'] = 'application/json';
+                }
+
                 const res = await fetch(url, {
                     method: options?.method || 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(options?.headers || {}),
-                        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-                    },
-                    body: options?.data,
+                    headers: headers,
+                    body: options?.data instanceof FormData ? options.data : JSON.stringify(options?.data),
                     credentials: 'include',
                 });
 
