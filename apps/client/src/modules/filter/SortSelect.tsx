@@ -1,5 +1,6 @@
 import { ChevronUp, ChevronDown, Filter } from 'lucide-react';
 import { useInternshipStore } from '../../store/useInternshipStore';
+import { cn } from '../../utils/cn';
 
 export default function SortSelect() {
     const filters = useInternshipStore((s) => s.filters);
@@ -13,11 +14,14 @@ export default function SortSelect() {
                 <Filter className="h-4 w-4" />
                 Trier
             </label>
-            <ul tabIndex={0} className="dropdown-content menu p-1 shadow bg-base-100 rounded-box w-40">
+            <ul tabIndex={0} className="dropdown-content menu menu-sm p-1 shadow bg-base-100 rounded-box w-44">
                 <li>
                     <button
                         type="button"
-                        className={`flex items-center justify-between w-full ${current === 'dateDesc' ? 'font-semibold' : ''}`}
+                        className={cn(
+                            'flex w-full items-center justify-between px-2 py-2',
+                            current === 'dateDesc' && 'active font-semibold',
+                        )}
                         onClick={() => setFilters({ sort: 'dateDesc', page: 1 })}
                     >
                         <span>Plus récentes</span>
@@ -27,7 +31,10 @@ export default function SortSelect() {
                 <li>
                     <button
                         type="button"
-                        className={`flex items-center justify-between w-full ${current === 'dateAsc' ? 'font-semibold' : ''}`}
+                        className={cn(
+                            'flex w-full items-center justify-between px-2 py-2',
+                            current === 'dateAsc' && 'active font-semibold',
+                        )}
                         onClick={() => setFilters({ sort: 'dateAsc', page: 1 })}
                     >
                         <span>Plus anciennes</span>
