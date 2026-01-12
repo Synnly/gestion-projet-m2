@@ -233,31 +233,31 @@ describe('MessageService', () => {
             expect(mockNotificationService.create).toHaveBeenCalledWith(dto);
         });
 
-        /* it("should not update topic and forum if topic doesn't exist and throw not found", async () => {
+        it("should not update topic and forum if topic doesn't exist and throw not found", async () => {
             const createDto: CreateMessageDto = {
                 content: 'New Message Content',
                 authorId: mockAuthorId.toString(),
                 parentMessageId: new Types.ObjectId().toString(),
             };
+
+            // Simulation : Le message est créé, mais le topic est introuvable lors de l'update
             const createdMessage = { ...mockMessage, ...createDto, _id: mockMessage._id };
             messageModel.create.mockResolvedValue(createdMessage);
-            topicModel.findByIdAndUpdate.mockResolvedValue(null);
+            topicModel.findByIdAndUpdate.mockResolvedValue(null); // Simule "Not Found"
 
-            expect(await service.sendMessage(mockTopicId.toString(), createDto)).toThrow(NotFoundException);
+            // CORRECTION 1 : Utilisation de .rejects pour attraper l'exception asynchrone
+            await expect(service.sendMessage(mockTopicId.toString(), createDto)).rejects.toThrow(NotFoundException);
 
+            // Vérification des appels effectués avant l'erreur
             expect(messageModel.create).toHaveBeenCalledWith({
                 ...createDto,
-                topicId: mockForumId.toString(),
+                topicId: mockTopicId.toString(), // CORRECTION 2 : Cohérence de l'ID
             });
-            expect(topicModel.findByIdAndUpdate).toHaveBeenCalledWith(mockTopicId.toString(), {
-                $push: { messages: mockMessage._id },
-            });
-            expect(forumModel.findByIdAndUpdate).toHaveBeenCalledTimes(1);
-            expect(forumModel.findByIdAndUpdate).toHaveBeenCalledWith(
-                mockTopic?.forumId,
-                { $inc: { nbMessages: 1 } },
-                { new: true },
-            );
-        }); */
+
+            expect(topicModel.findByIdAndUpdate).toHaveBeenCalled();
+
+            // CORRECTION 3 : Si le topic n'existe pas, le forum ne doit PAS être mis à jour
+            expect(forumModel.findByIdAndUpdate).not.toHaveBeenCalled();
+        });
     });
 });

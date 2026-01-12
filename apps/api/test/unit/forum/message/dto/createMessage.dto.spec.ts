@@ -1,4 +1,3 @@
-import { describe } from 'node:test';
 import { CreateMessageDto } from '../../../../../src/forum/message/dto/createMessageDto';
 import { validate } from 'class-validator';
 import { Types } from 'mongoose';
