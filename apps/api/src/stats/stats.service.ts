@@ -10,15 +10,20 @@ import { StatsDto } from './dto/stats.dto';
 
 @Injectable()
 export class StatsService {
+    
     constructor(
         @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
         @InjectModel(Company.name) private readonly companyModel: Model<CompanyDocument>,
         @InjectModel(Student.name) private readonly studentModel: Model<StudentDocument>,
         @InjectModel(Application.name) private readonly applicationModel: Model<ApplicationDocument>,
         @InjectModel(Post.name) private readonly postModel: Model<PostDocument>,
-    ) {}
+    ) { }
 
     async getStats(): Promise<StatsDto> {
+
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
         const [
             totalUsers,
             totalCompanies,
@@ -44,32 +49,37 @@ export class StatsService {
 
             // --- Aggregation 2: Applications per Month (Bar Chart) ---
             // Groups applications by creation month (YYYY-MM), sorts by date, and limits to the last 6 months
-            this.applicationModel.aggregate([
-                { 
-                    $group: { 
-                        _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } }, 
-                        count: { $sum: 1 } 
-                    } 
-                },
-                { $sort: { _id: 1 } },
-                { $limit: 6 },
-                { $project: { name: "$_id", count: 1, _id: 0 } }
-            ]),
+        
+        this.applicationModel.aggregate([
+            {
+                $match: {
+                    createdAt: { $gte: sixMonthsAgo }
+                }
+            },
+            {
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+                    count: { $sum: 1 }
+                }
+            },
+            { $sort: { _id: 1 } },
+            { $project: { name: "$_id", count: 1, _id: 0 } }
+        ]),
 
             // --- Aggregation 3: Top Companies & Response Rate ---
             this.postModel.aggregate([
-                { 
-                    $group: { 
-                        _id: "$company", 
+                {
+                    $group: {
+                        _id: "$company",
                         offersCount: { $sum: 1 },
-                        postIds: { $push: "$_id" } 
-                    } 
+                        postIds: { $push: "$_id" }
+                    }
                 },
                 { $sort: { offersCount: -1 } },
                 { $limit: 5 },
                 {
                     $lookup: {
-                        from: "users", 
+                        from: "users",
                         localField: "_id",
                         foreignField: "_id",
                         as: "companyInfo"
@@ -87,10 +97,10 @@ export class StatsService {
                         as: "companyApplications"
                     }
                 },
-                { 
-                    $project: { 
-                        name: "$companyInfo.name", 
-                        offersCount: 1, 
+                {
+                    $project: {
+                        name: "$companyInfo.name",
+                        offersCount: 1,
                         responseRate: {
                             $cond: {
                                 if: { $eq: [{ $size: "$companyApplications" }, 0] },
@@ -116,13 +126,13 @@ export class StatsService {
                                 }
                             }
                         },
-                        _id: 0 
-                    } 
+                        _id: 0
+                    }
                 },
-                { 
-                    $addFields: { 
-                        responseRate: { $round: ["$responseRate", 0] } 
-                    } 
+                {
+                    $addFields: {
+                        responseRate: { $round: ["$responseRate", 0] }
+                    }
                 }
             ]),
 

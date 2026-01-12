@@ -21,7 +21,6 @@ describe('StatsService (Integration)', () => {
   let userModel: Model<User>;
   let studentModel: Model<Student>;
 
-  // Setup: Start in-memory MongoDB, configure the testing module, and retrieve models
   beforeAll(async () => {
     mongod = await MongoMemoryServer.create();
     const uri = mongod.getUri();
@@ -55,7 +54,6 @@ describe('StatsService (Integration)', () => {
     studentModel = module.get<Model<Student>>(getModelToken(Student.name));
   });
 
-  // Teardown: Delete all documents from all collections after each test to ensure isolation
   afterEach(async () => {
     const collections = mongoConnection.collections;
     for (const key in collections) {
@@ -64,15 +62,15 @@ describe('StatsService (Integration)', () => {
     }
   });
 
-  // Teardown: Close connection and stop the server after all tests are done
   afterAll(async () => {
     await mongoConnection.close(); 
     await mongod.stop();
   });
 
-  describe('getStats - KPI Globaux', () => {
-    // Verify that the service correctly counts users, companies, and students
-    it('should count total users and companies correctly', async () => {
+  describe('getStats', () => {
+
+    // Scénario 1 : KPI Globaux
+    it('should count total users, companies and students correctly', async () => {
       await companyModel.create({ 
           email: 'comp@test.com', password: 'pwd', 
           name: 'Test Corp', siretNumber: '123' 
@@ -94,11 +92,9 @@ describe('StatsService (Integration)', () => {
       expect(stats.totalCompanies).toBe(1); 
       expect(stats.totalStudents).toBe(2);   
     });
-  });
 
-  describe('getStats - Taux de Réponse (Top Companies)', () => {
-    // Verify that the response rate calculation is correct (e.g., 2 processed / 4 total = 50%)
-    it('should calculate 50% response rate correctly', async () => {
+    // Scénario 2 : Top Companies & Taux de réponse
+    it('should calculate 50% response rate for top companies', async () => {
       const company = await companyModel.create({
           email: 'response@test.com', password: 'pwd',
           name: 'Reponse SAS', siretNumber: '999'
@@ -125,8 +121,8 @@ describe('StatsService (Integration)', () => {
       expect(targetCompany.responseRate).toBe(50);
     });
 
-    // Verify that the response rate is 0% when there are no applications (avoid division by zero)
-    it('should return 0% response rate if no applications', async () => {
+    // Scénario 3 : Division par zéro
+    it('should return 0% response rate if no applications exist', async () => {
       const company = await companyModel.create({
           email: 'zero@test.com', password: 'pwd',
           name: 'Zero Corp', siretNumber: '888'
@@ -140,11 +136,9 @@ describe('StatsService (Integration)', () => {
 
       expect(targetCompany.responseRate).toBe(0);
     });
-  });
 
-  describe('getStats - Offres Orphelines', () => {
-    // Verify that only posts with zero applications are counted as orphans
-    it('should count only posts with 0 applications', async () => {
+    // Scénario 4 : Offres orphelines
+    it('should count only posts with 0 applications as orphans', async () => {
       const company = await companyModel.create({
           email: 'orphan@test.com', password: 'pwd', name: 'Orphan Corp'
       });
@@ -168,16 +162,50 @@ describe('StatsService (Integration)', () => {
       
       expect(stats.orphanOffersCount).toBe(1);
     });
-  });
 
-  describe('getStats - Graphiques', () => {
-    // Verify that the service returns empty arrays (instead of null/error) when the DB is empty
+    // Scénario 5 : Tableaux vides
     it('should return empty arrays when no data exists', async () => {
       const stats = await service.getStats();
       
       expect(stats.applicationsByStatus).toEqual([]);
       expect(stats.applicationsOverTime).toEqual([]);
       expect(stats.topCompanies).toEqual([]);
+    });
+
+    // Scénario 6 : Filtre des 6 mois 
+    it('should ignore applications older than 6 months in timeline chart', async () => {
+        const today = new Date();
+        const sevenMonthsAgo = new Date();
+        sevenMonthsAgo.setMonth(today.getMonth() - 7);
+  
+        const company = await companyModel.create({ email: 'date@test.com', password: 'p', name: 'Date Corp' });
+        
+        const post = await postModel.create({ 
+            title: 'Date Post', 
+            description: 'Description requise', 
+            company: company._id, 
+            type: PostType.Teletravail 
+        });
+        
+        const studentId = new Types.ObjectId();
+  
+        await applicationModel.create({ 
+            post: post._id, student: studentId, status: 'Pending', cv: 'cv.pdf',
+            createdAt: today 
+        });
+  
+        const oldApp = new applicationModel({ 
+            post: post._id, student: studentId, status: 'Pending', cv: 'cv.pdf' 
+        });
+        oldApp.createdAt = sevenMonthsAgo;
+        await oldApp.save();
+  
+        const stats = await service.getStats();
+  
+        expect(stats.totalApplications).toBe(2);
+  
+        const totalInChart = stats.applicationsOverTime.reduce((acc, val) => acc + (val.count || 0), 0);
+        expect(totalInChart).toBe(1);
     });
   });
 });

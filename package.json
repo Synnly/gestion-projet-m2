@@ -21,7 +21,6 @@
     "dependencies": {
         "@isaacs/brace-expansion": "^5.0.0",
         "csv-parse": "^6.1.0",
-        "recharts": "^3.6.0",
         "ts-jest": "^29.4.5"
     }
 }
