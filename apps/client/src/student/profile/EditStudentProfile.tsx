@@ -6,7 +6,6 @@ import { userStore } from '../../store/userStore';
 import { profileStore } from '../../store/profileStore';
 import { Navbar } from '../../components/navbar/Navbar';
 import { FormSection } from '../../components/form/FormSection';
-import { FormInputEdit } from '../../components/form/FormInputEdit';
 import { TextAreaEdit } from '../../components/form/TextAreaEdit';
 import { FormSubmit } from '../../components/form/FormSubmit';
 import { ProfilePicture } from '../../components/profile/profilPicture';
@@ -228,20 +227,20 @@ export function EditStudentProfile() {
 
                         <FormSection title="Informations publiques" className="mb-8 space-y-4">
                             <div className="flex flex-col gap-4">
-                                <FormInputEdit<editProfilFormType>
+                                <TextAreaEdit<editProfilFormType>
                                     label="Phrase d'accroche"
                                     type="text"
-                                    placeholder="Étudiant·e en informatique — passionné·e par le développement web et l'IA"
+                                    placeholder="(max 200 caractères)"
                                     register={register('tagLine', {
                                         onChange: () => clearErrors('tagLine'),
                                     })}
                                     error={errors.tagLine}
-                                    className="input input-primary"
+                                    className="textarea textarea-primary"
                                 />
                                 <TextAreaEdit<editProfilFormType>
                                     label="Biographie"
                                     type="text"
-                                    placeholder="Etudiant·e en informatique spécialisé·e en développement web, passionné·e par la création d'interfaces intuitives et la résolution de problèmes complexes. Curieux·se et rigoureux·se, j'aime apprendre de nouvelles technologies, collaborer en équipe et pratique la photographie pendant mon temps libre."
+                                    placeholder="(max 1000 caractères)"
                                     register={register('biography', {
                                         onChange: () => clearErrors('biography'),
                                     })}
