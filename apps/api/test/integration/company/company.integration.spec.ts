@@ -1454,17 +1454,17 @@ describe('Company Integration Tests', () => {
                 isValid: false,
             });
 
-            // Vérifier l'état initial
+            // Check initial state
             let response = await request(app.getHttpServer())
                 .get(`/api/companies/${company._id}/is-valid`)
                 .expect(200);
 
             expect(response.body).toEqual({ isValid: false });
 
-            // Changer l'état de validation
+            // Change validation state
             await companyModel.findByIdAndUpdate(company._id, { isValid: true });
 
-            // Vérifier le nouvel état
+            // Check new state
             response = await request(app.getHttpServer())
                 .get(`/api/companies/${company._id}/is-valid`)
                 .expect(200);
