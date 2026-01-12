@@ -21,7 +21,7 @@ export const CompanyForumRoute = () => {
     }
 
     if (payload.role === 'COMPANY') {
-        if (payload.id === companyId || companyId === undefined) {
+        if (payload.id === companyId) {
             return <Outlet context={user} />;
         }
         toast.error("Vous n'avez pas accès au forum de cette entreprise.", { toastId: 'forbidden-forum' });

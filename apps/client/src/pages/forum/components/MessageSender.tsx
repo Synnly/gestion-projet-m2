@@ -54,7 +54,7 @@ export function MessageSender({
     });
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const message = await mutateAsync();
+        await mutateAsync();
     };
     return (
         <div

@@ -7,18 +7,10 @@ import { TopicRow } from '../../components/forum/TopicRow.tsx';
 import { SearchBar } from '../../components/inputs/searchBar';
 import { formatNumber } from '../../utils/format.ts';
 import { forumStore } from '../../store/forumStore.ts';
-import {
-    fetchForumByCompanyId,
-    useFetchForumByCompanyId,
-    useFetchForums,
-    useFetchGeneralForum,
-} from '../../hooks/useFetchForum.ts';
+import { useFetchForumByCompanyId, useFetchForums, useFetchGeneralForum } from '../../hooks/useFetchForum.ts';
 import { userStore } from '../../store/userStore.ts';
-import { useQuery } from '@tanstack/react-query';
-import { UseAuthFetch } from '../../hooks/useAuthFetch.tsx';
 
 export function MainForumPage() {
-    const apiUrl = import.meta.env.VITE_APIURL;
     const navigation = useNavigation();
     const filters = forumStore((state) => state.filters);
     const setFilters = forumStore((state) => state.setFilters);
@@ -27,7 +19,6 @@ export function MainForumPage() {
     const access = userStore((state) => state.access);
     const get = userStore((state) => state.get);
     const { id, role } = get(access)!;
-    const authFetch = UseAuthFetch();
     const forums: Forum[] = forumStore((state) => state.forums);
     const generalForum: Forum = forumStore((state) => state.generalForum)!;
     const handleSearchChange = (query: string) => {

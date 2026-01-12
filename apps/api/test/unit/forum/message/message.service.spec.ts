@@ -41,7 +41,6 @@ describe('MessageService', () => {
         authorId: mockAuthorId,
         topicId: mockTopicId,
         createdAt: new Date(),
-        save: jest.fn().mockResolvedValue(this),
     };
 
     const mockTopicModel = {
@@ -59,7 +58,6 @@ describe('MessageService', () => {
         create: jest.fn(),
         find: jest.fn(),
         findById: jest.fn(),
-        create: jest.fn(),
     };
 
     const mockPaginationService = {
@@ -68,11 +66,6 @@ describe('MessageService', () => {
     const mockNotificationService = {
         create: jest.fn(),
     };
-    const mockQuery = (result: any) => ({
-        exec: jest.fn().mockResolvedValue(result),
-        populate: jest.fn().mockReturnThis(),
-        then: (resolve: any) => Promise.resolve(result).then(resolve),
-    });
     beforeEach(async () => {
         jest.clearAllMocks();
 
@@ -240,23 +233,19 @@ describe('MessageService', () => {
                 parentMessageId: new Types.ObjectId().toString(),
             };
 
-            // Simulation : Le message est créé, mais le topic est introuvable lors de l'update
             const createdMessage = { ...mockMessage, ...createDto, _id: mockMessage._id };
             messageModel.create.mockResolvedValue(createdMessage);
-            topicModel.findByIdAndUpdate.mockResolvedValue(null); // Simule "Not Found"
+            topicModel.findByIdAndUpdate.mockResolvedValue(null);
 
-            // CORRECTION 1 : Utilisation de .rejects pour attraper l'exception asynchrone
             await expect(service.sendMessage(mockTopicId.toString(), createDto)).rejects.toThrow(NotFoundException);
 
-            // Vérification des appels effectués avant l'erreur
             expect(messageModel.create).toHaveBeenCalledWith({
                 ...createDto,
-                topicId: mockTopicId.toString(), // CORRECTION 2 : Cohérence de l'ID
+                topicId: mockTopicId.toString(),
             });
 
             expect(topicModel.findByIdAndUpdate).toHaveBeenCalled();
 
-            // CORRECTION 3 : Si le topic n'existe pas, le forum ne doit PAS être mis à jour
             expect(forumModel.findByIdAndUpdate).not.toHaveBeenCalled();
         });
     });

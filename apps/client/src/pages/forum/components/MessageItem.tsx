@@ -20,7 +20,7 @@ export const MessageItem = ({
             : { name: authorId.name };
 
     const variant: Record<Role, { tag: string; style: string }> = {
-        ADMIN: { tag: 'Administatrateur', style: 'bg-accent' },
+        ADMIN: { tag: 'Administrateur', style: 'bg-accent' },
         STUDENT: { tag: 'Étudiant', style: 'bg-primary' },
         COMPANY: { tag: 'Entreprise', style: 'bg-secondary' },
     };

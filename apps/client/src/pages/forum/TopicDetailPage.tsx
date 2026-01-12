@@ -18,7 +18,7 @@ import { UseAuthFetch } from '../../hooks/useAuthFetch.tsx';
 import { buildQueryParams } from '../../hooks/useFetchInternships.ts';
 import type { PaginationResult } from '../../types/internship.types.ts';
 import { fetchPublicSignedUrl } from '../../hooks/useBlob.tsx';
-import { useFetchGeneralForum, useFetchForumByCompanyId } from '../../hooks/useFetchForum';
+import type { companyProfile } from '../../types.ts';
 export type Role = 'ADMIN' | 'STUDENT' | 'COMPANY';
 export type MessageType = {
     _id: string;
@@ -40,15 +40,12 @@ export default function TopicDetailPage() {
     });
     const {
         data,
-        isLoading: messageIsLoading,
-        isError: messageIsError,
-        isPlaceholderData,
+        isError: isMessageError,
         refetch: messageRefetch,
     }: {
         data: PaginationResult<MessageType> | undefined;
         isError: boolean;
         isLoading: boolean;
-        isPlaceholderData: boolean;
         refetch: any;
     } = useQuery({
         queryKey: ['topicMessages', topicId, filter],
@@ -75,8 +72,11 @@ export default function TopicDetailPage() {
 
     const {
         data: companyData,
-        isLoading: isCompanyLoading,
         isError: isCompanyError,
+    }: {
+        data: companyProfile | undefined;
+        isLoading: boolean;
+        isError: boolean;
     } = useQuery({
         queryKey: ['companyTopic', companyId],
         queryFn: async () => {
@@ -88,8 +88,6 @@ export default function TopicDetailPage() {
         },
         enabled: !!companyId,
     });
-    const isGeneral = !companyId || companyId === 'general';
-    const { data: forum } = isGeneral ? useFetchGeneralForum() : useFetchForumByCompanyId(companyId!);
     const {
         data: topic,
         isLoading,
@@ -141,9 +139,28 @@ export default function TopicDetailPage() {
         await refetch();
         await messageRefetch();
         toggleSender();
-        setReply;
+        setReply(null);
     };
+
     if (!forumId || !topicId) {
+        return (
+            <div className="h-screen flex flex-col">
+                <Navbar />
+                <main className="flex-1 w-full flex flex-col mx-auto max-w-5xl px-4 py-6 overflow-hidden">
+                    <div className="text-center">
+                        <h2 className="text-2xl font-bold text-base-content mb-2">Paramètres manquants</h2>
+                        <p className="text-base-content/70 mb-6">
+                            Les identifiants du forum ou du topic sont manquants.
+                        </p>
+                        <Link to="/" className="btn btn-primary">
+                            Retour à l'accueil
+                        </Link>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+    if (isCompanyError || isMessageError) {
         return (
             <div className="h-screen flex flex-col">
                 <Navbar />
@@ -178,7 +195,7 @@ export default function TopicDetailPage() {
                             <li>
                                 {(companyData || !companyId) && (
                                     <Link to={`/forums/${companyId || 'general'}`}>
-                                        {companyId ? companyData.name : 'General'}
+                                        {companyId ? companyData?.name : 'General'}
                                     </Link>
                                 )}
                             </li>

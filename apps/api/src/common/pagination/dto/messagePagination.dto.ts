@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsMongoId, IsOptional, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class MessagePaginationDto {
     /** Requested page number (1-based). Must be an integer >= 1. */
