@@ -45,7 +45,7 @@ export class Student {
     biography?: string;
 
     /**
-     * URL to the student's profile picture.
+     * Storage key or file name for the student's profile picture in the storage service.
      */
     @Prop({ required: false, trim: true })
     profilePicture?: string;
