@@ -16,7 +16,7 @@ export class ForumService {
         private readonly paginationService: PaginationService,
         private readonly geoService: GeoService,
         @Inject(forwardRef(() => CompanyService)) private readonly companyService: CompanyService,
-    ) { }
+    ) {}
 
     private readonly companyFields =
         '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo';
