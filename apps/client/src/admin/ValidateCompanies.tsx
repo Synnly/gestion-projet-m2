@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { UseAuthFetch } from '../hooks/useAuthFetch';
 import { toast } from 'react-toastify';
 import { CheckCircle2, Eye, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -21,7 +21,7 @@ export default function ValidateCompanies() {
 
     const authFetch = UseAuthFetch();
 
-    const loadPendingCompanies = async (page: number = 1) => {
+    const loadPendingCompanies = useCallback(async (page: number = 1) => {
         setIsLoading(true);
         try {
             const data = await fetchPendingCompanies(authFetch, page, itemsPerPage);
@@ -35,11 +35,11 @@ export default function ValidateCompanies() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [authFetch, itemsPerPage]);
 
     useEffect(() => {
         loadPendingCompanies(currentPage);
-    }, [currentPage]);
+    }, [currentPage, loadPendingCompanies]);
 
     const handleValidate = async (companyId: string) => {
         setActionLoading(companyId);
