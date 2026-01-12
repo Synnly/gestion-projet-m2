@@ -107,6 +107,18 @@ export class CompanyController {
     }
 
     /**
+     * Checks if a company is valid
+     * @param companyId The company identifier
+     * @returns An object indicating whether the company is valid
+     */
+    @Get('/:companyId/is-valid')
+    @HttpCode(HttpStatus.OK)
+    async isValid(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<{ isValid: boolean }> {
+        const isValid = await this.companyService.isValid(companyId);
+        return { isValid };
+    }
+
+    /**
      * Retrieves a single company by its ID
      * @param companyId The company identifier
      * @returns The company with the specified ID
@@ -187,15 +199,4 @@ export class CompanyController {
         });
     }
 
-    /**
-     * Checks if a company is valid
-     * @param companyId The company identifier
-     * @returns An object indicating whether the company is valid
-     */
-    @Get('/:companyId/is-valid')
-    @HttpCode(HttpStatus.OK)
-    async isValid(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<{ isValid: boolean }> {
-        const isValid = await this.companyService.isValid(companyId);
-        return { isValid };
-    }
 }
