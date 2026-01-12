@@ -66,15 +66,30 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
         if (isComplete) {
             const validationRes = await authFetch(`${API_URL}/api/companies/${payload.id}/is-valid`, {
                 method: 'GET',
-            });
+            try {
+                const validationRes = await authFetch(`${API_URL}/api/companies/${payload.id}/is-valid`, {
+                    method: 'GET',
+                });
 
-            if (validationRes.ok) {
+                if (!validationRes.ok) {
+                    console.error(
+                        `Failed to check company validation status: received HTTP ${validationRes.status} for company ${payload.id}`
+                    );
+                    // Allow navigation to continue to avoid degrading UX on transient failures.
+                    return;
+                }
+
                 const { isValid } = await validationRes.json();
-
-                // If company is not valid yet and user is not already on the pending page, redirect there.
                 if (!isValid && pathname !== '/pending-validation') {
                     throw redirect('/pending-validation');
                 }
+            } catch (error) {
+                console.error(
+                    `Error while checking company validation status for company ${payload.id}:`,
+                    error
+                );
+                // Allow navigation to continue to avoid degrading UX on transient failures.
+                return;
 
                 // If company has become valid while on the pending page, redirect to dashboard.
                 if (isValid && pathname === '/pending-validation') {
