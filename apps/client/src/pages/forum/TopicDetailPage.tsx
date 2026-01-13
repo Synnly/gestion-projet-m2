@@ -190,9 +190,6 @@ export default function TopicDetailPage() {
                                 <Link to={`/forums`}>Forums</Link>
                             </li>
                             <li>
-                                <Link to="/forums">Forums</Link>
-                            </li>
-                            <li>
                                 {(companyData || !companyId) && (
                                     <Link to={`/forums/${companyId || 'general'}`}>
                                         {companyId ? companyData?.name : 'General'}
