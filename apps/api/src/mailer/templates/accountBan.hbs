@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 5px; }
+        .header { background-color: #f8f9fa; padding: 15px; text-align: center; border-bottom: 1px solid #eee; }
+        .content { padding: 20px; color: #333; line-height: 1.6; }
+        .footer { font-size: 12px; color: #888; text-align: center; margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; }
+        .warning { color: #dc3545; font-size: 1.1em; margin-top: 10px; text-align: center;}
+        .banReason {font-size: 1.5em; font-weight: bold; text-align: center; font-variant-caps: all-petite-caps; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Vous avez été banni de la plateforme {{fromName}} !</h2>
+        </div>
+        <div class="content">
+            <p class="warning">⚠️ Un administrateur vous a banni pour la raison suivante :</p>
+            <p class="banReason">{{banReason}}</p>
+
+            <p>Cordialement,<br>L'équipe {{fromName}}</p>
+        </div>
+        <div class="footer">
+            Cet email a été envoyé automatiquement, merci de ne pas y répondre.
+        </div>
+    </div>
+</body>
+</html>
