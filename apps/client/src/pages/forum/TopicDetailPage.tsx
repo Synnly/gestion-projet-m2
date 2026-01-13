@@ -314,7 +314,7 @@ export default function TopicDetailPage() {
                         onClick={toggleSender}
                         className={cn(
                             'btn btn-primary btn-outline gap-2 rounded-full px-8 shadow-sm transition-all duration-400 ease-in-out',
-                            !shown ? 'btn-active' : 'opacity-0',
+                            !shown ? 'btn-active' : 'hidden',
                         )}
                     >
                         <svg
@@ -329,7 +329,7 @@ export default function TopicDetailPage() {
                         Répondre au sujet
                     </button>
                 </div>
-                <div className=" card bg-base-100 shadow-lg flex flex-col overflow-hidden border border-slate-200 ">
+                <div className="flex flex-col overflow-hidden">
                     {!topic?.messages || topic?.messages.length === 0 ? (
                         <div className="card text-center py-12 text-base-content/60">
                             <MessageSquare size={48} className="mx-auto mb-4 opacity-50" />

@@ -15,17 +15,19 @@ export const MessageItem = ({
 }) => {
     const { authorId } = message;
     const displayName =
-        'firstName' in authorId
-            ? { firstName: authorId.firstName, lastName: authorId.lastName }
-            : { name: authorId.name };
+        authorId.role === 'ADMIN'
+            ? { name: 'Administrateur' }
+            : 'firstName' in authorId
+              ? { firstName: authorId.firstName, lastName: authorId.lastName }
+              : { name: authorId.name };
 
     const variant: Record<Role, { tag: string; style: string }> = {
-        ADMIN: { tag: 'Administrateur', style: 'bg-accent' },
+        ADMIN: { tag: 'Administrateur', style: 'bg-error' },
         STUDENT: { tag: 'Étudiant', style: 'bg-primary' },
         COMPANY: { tag: 'Entreprise', style: 'bg-secondary' },
     };
     return (
-        <div className="bg-base-100 border border-slate-200 rounded-xl p-4 mb-2 shadow-lg w-full ">
+        <div className="bg-base-100 border border-base-300 rounded-xl p-4 mb-2 shadow-lg shadow-base-300 w-full ">
             <div className="flex items-start gap-3 h-full">
                 <div className="h-10 w-10 rounded-full  flex-shrink-0 overflow-hidden">
                     {message.authorId.logo ? (

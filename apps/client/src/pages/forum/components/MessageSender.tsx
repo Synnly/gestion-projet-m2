@@ -59,11 +59,11 @@ export function MessageSender({
     return (
         <div
             className={cn(
-                'rounded-lg  p-2  w-full overflow-hidden transition-all duration-400 ease-in-out bg-base-100 border-[0.5px]',
+                'rounded-lg  p-2  w-full overflow-hidden transition-all duration-400 ease-in-out bg-base-100',
                 shown ? 'max-h-[500px]' : 'max-h-[0px] opacity-0',
             )}
         >
-            <div className="w-full rounded-xl border border-slate-300 bg-base-100 p-1 transition-all duration-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 shadow-sm">
+            <div className="w-full rounded-xl border border-slate-300 bg-base-100 p-1 transition-all duration-200  shadow-sm">
                 {reply && (
                     <div className="flex items-center justify-between bg-base-100 px-4 py-2 border-b border-slate-200">
                         <div className="flex items-center gap-2 text-slate-500 text-sm">
@@ -131,14 +131,14 @@ export function MessageSender({
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-50">
                 <button
-                    className="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium shadow-lg"
+                    className="bg-info text-white px-4 py-1.5 rounded-lg text-sm font-medium shadow-lg"
                     onClick={onSubmit}
                     disabled={isPending || !content}
                 >
                     Envoyer le message
                 </button>
                 <button
-                    className="bg-red-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium shadow-lg"
+                    className="bg-error text-white px-4 py-1.5 rounded-lg text-sm font-medium shadow-lg"
                     onClick={onCancel}
                 >
                     Annulez
