@@ -7,7 +7,6 @@ export type FormInputProps<T extends FieldValues> = {
     error?: FieldError;
     className?: string;
     setFile: (file: File | null) => void;
-    setModalOpen?: (open: boolean) => void;
 } & React.InputHTMLAttributes<HTMLInputElement>;
 
 export function FormFileInput<T extends FieldValues>({
@@ -17,7 +16,6 @@ export function FormFileInput<T extends FieldValues>({
     error,
     className,
     setFile,
-    setModalOpen,
     ...props
 }: FormInputProps<T>) {
     return (
@@ -44,7 +42,7 @@ export function FormFileInput<T extends FieldValues>({
 
             {error && error.message && (
                 <span className="text-error-content mt-1 bg-error p-3">
-                    {error?.message.charAt(0).toUpperCase() + error?.message.slice(1)}
+                    {error.message.charAt(0).toUpperCase() + error.message.slice(1)}
                 </span>
             )}
         </div>

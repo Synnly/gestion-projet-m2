@@ -51,7 +51,7 @@ export class Student {
     profilePicture?: string;
 
     /**
-     * URL to the student's default CV document.
+     * Storage object key or file name for the student's default CV document.
      */
     @Prop({ required: false, trim: true })
     defaultCv?: string;

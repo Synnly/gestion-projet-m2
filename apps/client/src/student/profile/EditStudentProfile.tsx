@@ -20,7 +20,7 @@ import type { SignedUrlResponse } from '../../company/completeProfil/type.tsx';
 import { FormFileInput } from '../../components/form/FormFileInput.tsx';
 import { Eye, X } from 'lucide-react';
 
-export function EditStudentProfile() {
+export const EditStudentProfile = () => {
     const navigate = useNavigate();
     const API_URL = import.meta.env.VITE_APIURL;
 
@@ -317,4 +317,4 @@ export function EditStudentProfile() {
             </div>
         </div>
     );
-}
+};

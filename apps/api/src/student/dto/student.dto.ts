@@ -1,6 +1,5 @@
 import { Expose, Exclude, Transform } from 'class-transformer';
 import { Types } from 'mongoose';
-import { Prop } from '@nestjs/mongoose';
 
 /**
  * Data Transfer Object representing a Student returned by the API.

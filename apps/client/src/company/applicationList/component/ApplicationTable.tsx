@@ -156,7 +156,11 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                                     className="hover:bg-base-300 duration-300 ease-out transition-color"
                                                 >
                                                     <td className="whitespace-nowrap text-center w-0">
-                                                        <a href={`/student/public/${app.student._id}`} target="_blank">
+                                                        <a
+                                                            href={`/student/public/${app.student._id}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >
                                                             <SquareArrowOutUpRight strokeWidth={2} />
                                                         </a>
                                                     </td>

@@ -9,7 +9,6 @@ import { StudentProfileInfo } from './StudentProfileInfo.tsx';
 export const PublicStudentProfile = () => {
     const params = useParams();
     const studentId = params.studentId || '';
-    if (!studentId) return <Navigate to={'/'} />;
 
     const { data: profile, isError, isLoading, error } = useGetStudentProfile(studentId);
 
@@ -27,6 +26,8 @@ export const PublicStudentProfile = () => {
             URL.revokeObjectURL(objectUrl);
         };
     }, [logoBlob]);
+
+    if (!studentId) return <Navigate to={'/'} />;
 
     return (
         <div className="min-h-screen bg-base-100">
