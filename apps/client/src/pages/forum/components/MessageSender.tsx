@@ -63,9 +63,9 @@ export function MessageSender({
                 shown ? 'max-h-[500px]' : 'max-h-[0px] opacity-0',
             )}
         >
-            <div className="w-full rounded-xl border border-slate-300 bg-base-100 p-1 transition-all duration-200  shadow-sm">
+            <div className="w-full rounded-xl border border-base-300 bg-base-100 p-1 transition-all duration-200  shadow-sm">
                 {reply && (
-                    <div className="flex items-center justify-between bg-base-100 px-4 py-2 border-b border-slate-200">
+                    <div className="flex items-center justify-between bg-base-100 px-4 py-2 border-b border-base-200">
                         <div className="flex items-center gap-2 text-slate-500 text-sm">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -120,7 +120,7 @@ export function MessageSender({
                         commands.quote,
                         commands.codeBlock,
                     ]}
-                    className="reply-editor !flex !flex-col-reverse !bg-transparent  !border-2 !shadow-none !focus:border-blue-600 !outline-none !border-none"
+                    className="reply-editor !flex !flex-col-reverse !bg-transparent !shadow-none !focus:border-blue-600 !outline-none !border-none"
                     textareaProps={{
                         placeholder: 'écrivez votre réponse ici...',
                         autoComplete: 'off',
@@ -129,19 +129,19 @@ export function MessageSender({
                     }}
                 />
             </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-50">
+            <div className="flex justify-end gap-2 pt-2  border-slate-50">
                 <button
-                    className="bg-info text-white px-4 py-1.5 rounded-lg text-sm font-medium shadow-lg"
+                    className="btn btn-info px-4 py-1.5 rounded-lg text-sm font-medium shadow-lg"
                     onClick={onSubmit}
                     disabled={isPending || !content}
                 >
                     Envoyer le message
                 </button>
                 <button
-                    className="bg-error text-white px-4 py-1.5 rounded-lg text-sm font-medium shadow-lg"
+                    className="btn btn-error px-4 py-1.5 rounded-lg text-sm font-medium shadow-lg"
                     onClick={onCancel}
                 >
-                    Annulez
+                    Annuler
                 </button>
             </div>
         </div>

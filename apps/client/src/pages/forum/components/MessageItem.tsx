@@ -22,9 +22,9 @@ export const MessageItem = ({
               : { name: authorId.name };
 
     const variant: Record<Role, { tag: string; style: string }> = {
-        ADMIN: { tag: 'Administrateur', style: 'bg-error' },
-        STUDENT: { tag: 'Étudiant', style: 'bg-primary' },
-        COMPANY: { tag: 'Entreprise', style: 'bg-secondary' },
+        ADMIN: { tag: 'Administrateur', style: 'badge-error' },
+        STUDENT: { tag: 'Étudiant', style: 'badge-primary' },
+        COMPANY: { tag: 'Entreprise', style: 'badge-secondary' },
     };
     return (
         <div className="bg-base-100 border border-base-300 rounded-xl p-4 mb-2 shadow-lg shadow-base-300 w-full ">
@@ -38,11 +38,11 @@ export const MessageItem = ({
                             />
                         </div>
                     ) : displayName.name ? (
-                        <div className="h-full w-full flex items-center justify-center bg-slate-200  font-bold text-primary-content ">
+                        <div className="h-full w-full flex items-center justify-center bg-base-200  font-bold text-primary-content ">
                             {displayName.name?.[0]}
                         </div>
                     ) : (
-                        <div className="h-full w-full flex items-center justify-center bg-slate-200 text-primary-content font-bold">
+                        <div className="h-full w-full flex items-center justify-center bg-base-200 text-primary-content font-bold">
                             {displayName.firstName?.[0]}
                             {displayName.lastName?.[0]}
                         </div>
@@ -71,7 +71,7 @@ export const MessageItem = ({
                     />
                     <div className="flex flex-row gap-2 p-2 justify-between items-center">
                         <button
-                            className="flex items-center gap-1 px-3 py-1 border border-slate-200 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                            className="btn btn-soft btn-sm"
                             onClick={() =>
                                 onReply?.(
                                     message._id,
