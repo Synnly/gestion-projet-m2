@@ -15,6 +15,8 @@ import { SeedModule } from './seed/seed.module';
 import { AdminModule } from './admin/admin.module';
 import { ForumModule } from './forum/forum.module';
 import { NotificationModule } from './notification/notification.module';
+import { UsersModule } from './user/user.module';
+
 
 @Module({
     imports: [
@@ -40,6 +42,7 @@ import { NotificationModule } from './notification/notification.module';
         SeedModule,
         ApplicationModule,
         NotificationModule,
+        UsersModule,
     ],
     controllers: [],
     providers: [],
