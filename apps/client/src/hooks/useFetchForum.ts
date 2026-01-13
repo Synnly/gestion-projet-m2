@@ -158,7 +158,6 @@ export function useFetchGeneralForum() {
             setGeneralForum(query.data);
         }
     }, [query.data, setGeneralForum]);
-
     return query;
 }
 

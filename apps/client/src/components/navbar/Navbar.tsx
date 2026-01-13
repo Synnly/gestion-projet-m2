@@ -6,6 +6,7 @@ import { User } from 'lucide-react';
 import { centerNavItems, rightNavItems, ItemLink } from './items';
 import { userStore } from '../../store/userStore';
 import { ToggleDarkMode } from '../darkMode/darkModeToggle';
+import { NotificationBell } from '../notifications/NotificationBell';
 interface NavbarProps {
     appName?: string;
     /** If true, render only the logo/link */
@@ -119,6 +120,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
                         // Fallback for any plain link-type item
                         return <ItemLink key={item.key} item={item} />;
                     })}
+                    <NotificationBell />
                     <ToggleDarkMode />
                 </div>
             </div>

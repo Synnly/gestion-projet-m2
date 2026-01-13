@@ -34,7 +34,7 @@ export interface Topic {
     title: string;
     description: string;
     author: UserForum;
-    nbMessages: number;
+    messages: string[];
 }
 
 export interface ForumFilters {

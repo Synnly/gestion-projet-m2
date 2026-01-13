@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { companyInternshipStore } from '../store/companyInternshipStore';
 import type { Internship, InternshipFilters, PaginationResult } from '../types/internship.types';
 import { userStore } from '../store/userStore';
@@ -67,7 +67,7 @@ export function useFetchCompanyInternships() {
 
             return paginationResult;
         },
-
+        placeholderData:keepPreviousData,
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
         retry: 2,
