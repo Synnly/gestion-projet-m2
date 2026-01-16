@@ -317,10 +317,12 @@ export default function TopicDetailPage() {
                                             ) : (
                                                 <div className="w-full h-full bg-black flex justify-center items-center">
                                                     <span className="text-lg font-bold">
-                                                        {(
-                                                            topic.author.name?.charAt(0) ||
-                                                            topic.author.firstName?.charAt(0)
-                                                        )?.toUpperCase()}
+                                                        {topic.author.ban 
+                                                            ? 'U'
+                                                            : (
+                                                                topic.author.name?.charAt(0) ||
+                                                                topic.author.firstName?.charAt(0)
+                                                            )?.toUpperCase()}
                                                     </span>
                                                 </div>
                                             )}

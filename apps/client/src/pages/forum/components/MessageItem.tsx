@@ -77,7 +77,7 @@ export const MessageItem = ({
                         </div>
                     ) : displayName.name ? (
                         <div className="h-full w-full flex items-center justify-center bg-base-200  font-bold text-primary-content ">
-                            {displayName.name?.[0]}
+                            {isAuthorBanned ? 'U' : displayName.name?.[0]}
                         </div>
                     ) : (
                         <div className="h-full w-full flex items-center justify-center bg-base-200 text-primary-content font-bold">
@@ -119,19 +119,21 @@ export const MessageItem = ({
                         style={{ fontFamily: 'inherit' }}
                     />
                     <div className="flex flex-row gap-2 p-2 justify-between items-center">
-                        <button
-                            className="btn btn-soft btn-sm"
-                            onClick={() =>
-                                onReply?.(
-                                    message._id,
-                                    displayName.name
-                                        ? displayName.name
-                                        : `${displayName.firstName} ${displayName.lastName}`,
-                                )
-                            }
-                        >
-                            <span className="text-lg leading-none mt-1">“</span> Citer
-                        </button>
+                        {!isAuthorBanned && (
+                            <button
+                                className="btn btn-soft btn-sm"
+                                onClick={() =>
+                                    onReply?.(
+                                        message._id,
+                                        displayName.name
+                                            ? displayName.name
+                                            : `${displayName.firstName} ${displayName.lastName}`,
+                                    )
+                                }
+                            >
+                                <span className="text-lg leading-none mt-1">"</span> Citer
+                            </button>
+                        )}
                         <span className={cn('badge', variant[`${message.authorId.role}`].style)}>
                             {variant[`${message.authorId.role}`].tag}
                         </span>
