@@ -132,11 +132,8 @@ export default function ImportStudent() {
 
     return (
         <div className="container mx-auto p-6">
-<<<<<<< HEAD
-=======
             <h1 className="text-2xl font-bold mb-6">Import des étudiants</h1>
 
->>>>>>> 7e72e09 (feat: dashboard admin des signalements ; on cache les messages et le nom d'un utilisateur banni)
             <div className="card bg-base-200 shadow-xl mb-6">
                 <div className="card-body">
                     <h2 className="card-title">Sélectionner un fichier</h2>
