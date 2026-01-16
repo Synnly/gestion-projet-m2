@@ -12,18 +12,22 @@ import { GeoService } from '../common/geography/geo.service';
 import { CompanyModule } from '../company/company.module';
 import { Message, MessageSchema } from './message/message.schema';
 import { NotificationModule } from '../notification/notification.module';
+import { Report, ReportSchema } from './report/report.schema';
+import { ReportService } from './report/report.service';
+import { ReportController } from './report/report.controller';
 @Module({
     imports: [
         MongooseModule.forFeature([
             { name: Forum.name, schema: ForumSchema },
             { name: Topic.name, schema: TopicSchema },
             { name: Message.name, schema: MessageSchema },
+            { name: Report.name, schema: ReportSchema },
         ]),
         forwardRef(() => CompanyModule),
         NotificationModule,
     ],
-    controllers: [ForumController],
-    providers: [ForumService, TopicService, MessageService, PaginationService, GeoService],
-    exports: [ForumService, MessageService, TopicService],
+    controllers: [ForumController, ReportController],
+    providers: [ForumService, TopicService, MessageService, ReportService, PaginationService, GeoService],
+    exports: [ForumService, MessageService, TopicService, ReportService],
 })
 export class ForumModule {}

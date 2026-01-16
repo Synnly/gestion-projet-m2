@@ -1,9 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserDocument } from './user.schema';
 import { MailerService } from '../mailer/mailer.service';
 import { RefreshToken, RefreshTokenDocument } from 'src/auth/refreshToken.schema';
+import { Message, MessageDocument } from '../forum/message/message.schema';
+import { Report, ReportDocument } from '../forum/report/report.schema';
 
 @Injectable()
 /**
@@ -15,6 +17,8 @@ export class UserService {
     constructor(
         @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
         @InjectModel(RefreshToken.name) private readonly refreshTokenModel: Model<RefreshTokenDocument>,
+        @InjectModel(Message.name) private readonly messageModel: Model<MessageDocument>,
+        @InjectModel(Report.name) private readonly reportModel: Model<ReportDocument>,
         private readonly mailerService: MailerService,
     ) {}
 
@@ -45,6 +49,25 @@ export class UserService {
 
         // Deletes all refresh tokens linked to the user
         await this.refreshTokenModel.deleteMany({ userId: userId });
+
+        // Get all messages from this user (using regex for MongoDB compatibility)
+        const userMessages = await this.messageModel
+            .find({ authorId: new RegExp(`^${userId}$`) })
+            .select('_id')
+            .exec();
+
+        if (userMessages.length > 0) {
+            const messageIds = userMessages.map(msg => msg._id);
+            
+            // Update all reports related to this user's messages to "resolved"
+            const updateResult = await this.reportModel.updateMany(
+                { 
+                    messageId: { $in: messageIds },
+                    status: { $ne: 'resolved' }
+                },
+                { $set: { status: 'resolved' } }
+            ).exec();
+        }
 
         // Send an email to the banned user
         try {

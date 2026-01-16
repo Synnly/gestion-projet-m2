@@ -10,14 +10,20 @@ import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { MailerModule } from '../mailer/mailer.module';
 import { RefreshToken, RefreshTokenSchema } from '../auth/refreshToken.schema';
+import { ForumModule } from '../forum/forum.module';
+import { Message, MessageSchema } from '../forum/message/message.schema';
+import { Report, ReportSchema } from '../forum/report/report.schema';
 
 @Module({
     imports: [
         MongooseModule.forFeature([
             { name: User.name, schema: UserSchema },
-            { name: RefreshToken.name, schema: RefreshTokenSchema }
+            { name: RefreshToken.name, schema: RefreshTokenSchema },
+            { name: Message.name, schema: MessageSchema },
+            { name: Report.name, schema: ReportSchema },
         ]),
         MailerModule.register(),
+        ForumModule,
     ],
     controllers: [UserController],
     providers: [

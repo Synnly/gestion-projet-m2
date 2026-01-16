@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { MessageSquare, RefreshCw } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -8,7 +8,7 @@ import { TopicHeaderSkeleton } from './components/Skeleton';
 import type { Topic } from './types';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { cn } from '../../utils/cn';
 import { MessageSender } from './components//MessageSender';
 import { MessageContainer } from './components//MessageContainer';
@@ -19,11 +19,13 @@ import { buildQueryParams } from '../../hooks/useFetchInternships.ts';
 import type { PaginationResult } from '../../types/internship.types.ts';
 import { fetchPublicSignedUrl } from '../../hooks/useBlob.tsx';
 import type { companyProfile } from '../../types.ts';
+import { getMyReports } from '../../api/reports';
+import { userStore } from '../../store/userStore';
 export type Role = 'ADMIN' | 'STUDENT' | 'COMPANY';
 export type MessageType = {
     _id: string;
     topicId: string;
-    authorId: { logo: string; role: Role } & ({ firstName: string; lastName: string } | { name: string });
+    authorId: { _id: string; logo: string; role: Role; ban?: { date: string; reason: string } } & ({ firstName: string; lastName: string } | { name: string });
     parentMessageId?: MessageType;
     content: string;
     createdAt: Date;
@@ -32,7 +34,38 @@ const apiUrl = import.meta.env.VITE_APIURL;
 
 export default function TopicDetailPage() {
     const authFetch = UseAuthFetch();
+    const location = useLocation();
     const { forumId, topicId, companyId } = useParams<{ forumId: string; topicId: string; companyId: string }>();
+    const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+
+    // Récupérer l'utilisateur actuel
+    const access = userStore((state) => state.access);
+    const getUserInfo = userStore((state) => state.get);
+    const currentUser = access ? getUserInfo(access) : null;
+
+    // Récupérer les signalements de l'utilisateur
+    const { data: myReports } = useQuery({
+        queryKey: ['myReports'],
+        queryFn: getMyReports,
+        enabled: !!currentUser,
+        staleTime: 5 * 60 * 1000, // Cache pendant 5 minutes
+    });
+
+    // Créer un Set des IDs de messages déjà signalés pour une vérification rapide
+    const reportedMessageIds = useMemo(() => {
+        if (!myReports) return new Set<string>();
+        console.log('myReports:', myReports);
+        const ids = myReports.map((report) => {
+            // Gérer le cas où messageId peut être soit un objet, soit une chaîne
+            const messageId = typeof report.messageId === 'string' 
+                ? report.messageId 
+                : report.messageId._id;
+            console.log('Reported messageId:', messageId);
+            return messageId;
+        });
+        console.log('All reported message IDs:', ids);
+        return new Set(ids);
+    }, [myReports]);
 
     const [filter, setFilter] = useState({
         page: 1,
@@ -104,6 +137,23 @@ export default function TopicDetailPage() {
     const [shown, setShown] = useState(false);
 
     const [reply, setReply] = useState<{ id: string; name: string } | null>(null);
+
+    // Gérer le hash pour highlight et scroll vers un message spécifique
+    useEffect(() => {
+        const hash = location.hash;
+        if (hash.startsWith('#message-')) {
+            const messageId = hash.replace('#message-', '');
+            setHighlightedMessageId(messageId);
+            
+            // Attendre que le DOM soit prêt avant de scroller
+            setTimeout(() => {
+                const element = document.getElementById(hash.substring(1));
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 500);
+        }
+    }, [location.hash, data]);
 
     const toggleSender = () => setShown(!shown);
 
@@ -277,9 +327,11 @@ export default function TopicDetailPage() {
                                         </div>
                                     </div>
                                     <span className="font-medium text-base-content">
-                                        {topic.author.firstName && topic.author.lastName
-                                            ? topic.author.firstName + ' ' + topic.author.lastName
-                                            : topic.author.name}{' '}
+                                        {topic.author.ban
+                                            ? '[utilisateur supprimé]'
+                                            : topic.author.firstName && topic.author.lastName
+                                              ? topic.author.firstName + ' ' + topic.author.lastName
+                                              : topic.author.name}{' '}
                                     </span>
                                 </div>
                                 <span>•</span>
@@ -339,7 +391,14 @@ export default function TopicDetailPage() {
                                 <MessageContainer className="w-full">
                                     {data &&
                                         data.data.map((message: MessageType) => (
-                                            <MessageItem key={message._id} message={message} onReply={onReply} />
+                                            <MessageItem 
+                                                key={message._id} 
+                                                message={message} 
+                                                onReply={onReply}
+                                                isHighlighted={highlightedMessageId === message._id}
+                                                currentUserId={currentUser?.id}
+                                                reportedMessageIds={reportedMessageIds}
+                                            />
                                         ))}
                                 </MessageContainer>
                             </div>

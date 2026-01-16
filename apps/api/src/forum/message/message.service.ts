@@ -45,7 +45,7 @@ export class MessageService {
             { new: true },
         );
         if (message.parentMessageId) {
-            const replyMessage = await this.messageModel.findById(message.parentMessageId).populate('authorId').exec();
+            const replyMessage = await this.messageModel.findById(message.parentMessageId).populate('authorId', 'firstName lastName name ban').exec();
             if (replyMessage && replyMessage.authorId._id.toString() !== createMessageDto.authorId.toString()) {
                 const dto = new CreateNotificationDto();
                 dto.userId = replyMessage.authorId._id;
@@ -69,12 +69,12 @@ export class MessageService {
         const queryBuilder = new QueryBuilder<Message>({ ...rest, topicId });
         const filter = queryBuilder.buildMessageFilter();
         const populate = [
-            { path: 'authorId', select: 'firstName lastName name logo role ' },
+            { path: 'authorId', select: 'firstName lastName name logo role ban' },
             {
                 path: 'parentMessageId',
                 populate: {
                     path: 'authorId',
-                    select: 'firstName lastName name',
+                    select: 'firstName lastName name ban',
                 },
             },
         ];
