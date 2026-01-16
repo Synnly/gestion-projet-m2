@@ -15,6 +15,7 @@ import { SeedModule } from './seed/seed.module';
 import { AdminModule } from './admin/admin.module';
 import { ForumModule } from './forum/forum.module';
 import { UsersModule } from './user/user.module';
+import { ReportModule } from './forum/message/report/report.module';
 
 @Module({
     imports: [
@@ -37,6 +38,7 @@ import { UsersModule } from './user/user.module';
         StudentModule,
         AdminModule,
         ForumModule,
+        ReportModule,
         SeedModule,
         ApplicationModule,
         UsersModule,

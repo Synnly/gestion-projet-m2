@@ -6,6 +6,7 @@ import { TopicService } from './topic/topic.service';
 import { MessageService } from './message/message.service';
 import { Forum, ForumSchema } from './forum.schema';
 import { Topic, TopicSchema } from './topic/topic.schema';
+import { Message, MessageSchema } from './message/message.schema';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { GeoService } from '../common/geography/geo.service';
 import { CompanyModule } from '../company/company.module';
@@ -15,6 +16,7 @@ import { CompanyModule } from '../company/company.module';
         MongooseModule.forFeature([
             { name: Forum.name, schema: ForumSchema },
             { name: Topic.name, schema: TopicSchema },
+            { name: Message.name, schema: MessageSchema },
         ]),
         forwardRef(() => CompanyModule),
     ],
