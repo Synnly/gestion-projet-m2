@@ -106,12 +106,12 @@ export const InternshipApply = () => {
             setCoverLetter(null);
             setCv(null);
             toast.success('Candidature envoyée avec succès.', { toastId: 'application-success' });
-            navigate('/');
+            navigate('/home');
         }
     }
     if (application) {
         toast.error('Vous avez déjà postulé à cette offre.', { toastId: 'already-applied-error' });
-        return <Navigate to="/" replace={true} />;
+        return <Navigate to="/home" replace={true} />;
     }
     return (
         <>

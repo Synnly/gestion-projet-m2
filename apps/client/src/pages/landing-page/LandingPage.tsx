@@ -7,10 +7,12 @@ import { features } from './mockFeatures.data';
 import { stats } from './mockStats';
 import FeatureCard from './components/FeatureCard';
 import InternshipGrid from './components/InternshipGrid';
+import { userStore } from '../../store/userStore';
 export default function LandingPage() {
+    const user = userStore((state) => state.access);
     return (
         <div className="min-h-screen bg-base-100">
-            <Navbar />
+            <Navbar minimal={!user} />
 
             <section className="hero min-h-[90vh] bg-base-100">
                 <div className="hero-content text-center max-w-5xl px-4">
@@ -27,7 +29,7 @@ export default function LandingPage() {
                             entreprises vérifiées.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Link to="/" className="btn btn-primary btn-lg gap-2">
+                            <Link to="/home" className="btn btn-primary btn-lg gap-2">
                                 <Briefcase className="w-5 h-5" />
                                 Découvrir les offres
                             </Link>
@@ -143,7 +145,7 @@ export default function LandingPage() {
                         transition={{ duration: 0.5, delay: 0.8 }}
                         className="text-center mt-16"
                     >
-                        <Link to="/" className="btn btn-primary btn-wide gap-2">
+                        <Link to="/home" className="btn btn-primary btn-wide gap-2">
                             Voir toutes les offres
                             <ArrowRight className="w-5 h-5" />
                         </Link>
@@ -165,7 +167,7 @@ export default function LandingPage() {
                         <p className="text-xl mb-8 text-base-content/70">
                             Rejoignez des milliers d'étudiants qui ont trouvé leur stage grâce à Stagora
                         </p>
-                        <Link to="/" className="btn btn-lg btn-primary gap-2">
+                        <Link to="/home" className="btn btn-lg btn-primary gap-2">
                             Découvrir les offres
                             <ArrowRight className="w-5 h-5" />
                         </Link>
