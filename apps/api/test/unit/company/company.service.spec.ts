@@ -9,6 +9,7 @@ import { CreateCompanyDto } from '../../../src/company/dto/createCompany.dto';
 import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
 import { NafCode } from '../../../src/company/nafCodes.enum';
 import { PostService } from '../../../src/post/post.service';
+import { UpdateCompanyPublicProfileDto } from '../../../src/company/dto/updateCompanyPublicProfile.dto';
 
 describe('CompanyService', () => {
     let service: CompanyService;
@@ -17,9 +18,11 @@ describe('CompanyService', () => {
     const mockCompanyModel = {
         find: jest.fn(),
         findOne: jest.fn(),
+        findById: jest.fn(),
         create: jest.fn(),
         findOneAndUpdate: jest.fn(),
         findOneAndDelete: jest.fn(),
+        updateOne: jest.fn(),
     };
 
     const mockExec = jest.fn();
@@ -951,4 +954,230 @@ describe('CompanyService', () => {
             expect(mockCompanyModel.create).toHaveBeenCalledTimes(2);
         });
     });
+
+    describe('getPublicCompanyById', () => {
+        it('should return public company profile when getPublicCompanyById is called with valid id', async () => {
+            const company = {
+                _id: '507f1f77bcf86cd799439011',
+                name: 'Test Company',
+                description: 'A test company',
+                emailContact: 'contact@test.com',
+            };
+
+            mockExec.mockResolvedValue(company);
+            mockCompanyModel.findById.mockReturnValue({ exec: mockExec });
+
+            const result = await service.getPublicCompanyById('507f1f77bcf86cd799439011');
+
+            expect(result).toEqual(company);
+            expect(mockCompanyModel.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+            expect(mockExec).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw NotFoundException when getPublicCompanyById is called with non-existent id', async () => {
+            mockExec.mockResolvedValue(null);
+            mockCompanyModel.findById.mockReturnValue({ exec: mockExec });
+
+            await expect(service.getPublicCompanyById('507f1f77bcf86cd799439999')).rejects.toThrow(
+                NotFoundException
+            );
+            await expect(service.getPublicCompanyById('507f1f77bcf86cd799439999')).rejects.toThrow('Company not found');
+        });
+
+        it('should return company with minimal public fields when getPublicCompanyById finds company with basic data', async () => {
+            const company = {
+                _id: '507f1f77bcf86cd799439011',
+                name: 'Test Company',
+            };
+
+            mockExec.mockResolvedValue(company);
+            mockCompanyModel.findById.mockReturnValue({ exec: mockExec });
+
+            const result = await service.getPublicCompanyById('507f1f77bcf86cd799439011');
+
+            expect(result.name).toBe('Test Company');
+        });
+
+        it('should return company with all public fields when getPublicCompanyById finds full profile', async () => {
+            const company = {
+                _id: '507f1f77bcf86cd799439011',
+                name: 'Test Company',
+                description: 'Comprehensive description',
+                emailContact: 'contact@test.com',
+                website: 'https://test.com',
+                telephone: '+33123456789',
+                city: 'Paris',
+                country: 'France',
+            };
+
+            mockExec.mockResolvedValue(company);
+            mockCompanyModel.findById.mockReturnValue({ exec: mockExec });
+
+            const result = await service.getPublicCompanyById('507f1f77bcf86cd799439011');
+
+            expect(result).toEqual(company);
+            expect(result.description).toBe('Comprehensive description');
+            expect(result.website).toBe('https://test.com');
+        });
+
+        it('should throw error when getPublicCompanyById encounters database error', async () => {
+            const error = new Error('Database error');
+            mockExec.mockRejectedValue(error);
+            mockCompanyModel.findById.mockReturnValue({ exec: mockExec });
+
+            await expect(service.getPublicCompanyById('507f1f77bcf86cd799439011')).rejects.toThrow('Database error');
+        });
+    });
+
+    describe('updatePublicProfile', () => {
+        it('should update public profile when updatePublicProfile is called with valid data', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                description: 'Updated description',
+                emailContact: 'newemail@test.com',
+            });
+
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 1, acknowledged: true }),
+            });
+
+            await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011' },
+                { $set: updateDto }
+            );
+        });
+
+        it('should return void after successful update when updatePublicProfile resolves', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                description: 'Updated',
+            });
+
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 1, acknowledged: true }),
+            });
+
+            const result = await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(result).toBeUndefined();
+        });
+
+        it('should update single field when updatePublicProfile is called with one field', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                description: 'Only description update',
+            });
+
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 1, acknowledged: true }),
+            });
+
+            await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011' },
+                { $set: updateDto }
+            );
+        });
+
+        it('should update multiple fields when updatePublicProfile is called with multiple fields', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                description: 'Updated description',
+                emailContact: 'newemail@test.com',
+                website: 'https://newsite.com',
+                telephone: '+33123456789',
+                city: 'Lyon',
+                country: 'France',
+            });
+
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 1, acknowledged: true }),
+            });
+
+            await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011' },
+                { $set: updateDto }
+            );
+        });
+
+        it('should throw NotFoundException when updatePublicProfile result is falsy', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                description: 'Updated',
+            });
+
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            await expect(service.updatePublicProfile('507f1f77bcf86cd799439999', updateDto)).rejects.toThrow(
+                NotFoundException
+            );
+        });
+
+        it('should throw error when updatePublicProfile encounters database error', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                description: 'Updated',
+            });
+
+            const error = new Error('Database error');
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockRejectedValue(error),
+            });
+
+            await expect(service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow(
+                'Database error'
+            );
+        });
+
+        it('should handle empty update DTO when updatePublicProfile is called with empty data', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({});
+
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 0, acknowledged: true }),
+            });
+
+            await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011' },
+                { $set: updateDto }
+            );
+        });
+
+        it('should update emailContact field when updatePublicProfile is called with new email', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                emailContact: 'newemail@test.com',
+            });
+
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 1, acknowledged: true }),
+            });
+
+            await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011' },
+                { $set: { emailContact: 'newemail@test.com' } }
+            );
+        });
+
+        it('should update website field when updatePublicProfile is called with new website', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                website: 'https://company.com',
+            });
+
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 1, acknowledged: true }),
+            });
+
+            await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011' },
+                { $set: { website: 'https://company.com' } }
+            );
+        });
+    });
 });
+

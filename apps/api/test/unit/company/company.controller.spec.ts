@@ -12,6 +12,8 @@ import { Role } from '../../../src/common/roles/roles.enum';
 import { ExecutionContext } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { UpdateCompanyPublicProfileDto } from '../../../src/company/dto/updateCompanyPublicProfile.dto';
+import { CompanyPublicDto } from '../../../src/company/dto/publicProfileCompany.dto';
 
 describe('CompanyController', () => {
     let controller: CompanyController;
@@ -25,6 +27,8 @@ describe('CompanyController', () => {
         create: jest.fn(),
         update: jest.fn(),
         remove: jest.fn(),
+        getPublicCompanyById: jest.fn(),
+        updatePublicProfile: jest.fn(),
     };
 
     const mockReflector = {
@@ -1273,4 +1277,176 @@ describe('CompanyController', () => {
             expect(dto.posts[0]).toBeDefined();
         });
     });
+
+    describe('getPublicProfile', () => {
+        it('should return CompanyPublicDto when getPublicProfile is called with valid company id', async () => {
+            const publicProfile: CompanyPublicDto = {
+                _id: '507f1f77bcf86cd799439011',
+                name: 'Test Company',
+                description: 'A test company',
+                logo: 'logo.png',
+            } as CompanyPublicDto;
+
+            mockCompanyService.getPublicCompanyById.mockResolvedValue(publicProfile);
+
+            const result = await controller.getPublicProfile('507f1f77bcf86cd799439011');
+
+            expect(result).toEqual(publicProfile);
+            expect(service.getPublicCompanyById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+            expect(service.getPublicCompanyById).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw NotFoundException when getPublicProfile is called with non-existent company id', async () => {
+            mockCompanyService.getPublicCompanyById.mockRejectedValue(
+                new NotFoundException('Company not found')
+            );
+
+            await expect(controller.getPublicProfile('507f1f77bcf86cd799439999')).rejects.toThrow(NotFoundException);
+            expect(service.getPublicCompanyById).toHaveBeenCalledWith('507f1f77bcf86cd799439999');
+        });
+
+        it('should return public profile with minimal fields when getPublicProfile finds company with only required fields', async () => {
+            const publicProfile: CompanyPublicDto = {
+                _id: '507f1f77bcf86cd799439011',
+                name: 'Test Company',
+            } as CompanyPublicDto;
+
+            mockCompanyService.getPublicCompanyById.mockResolvedValue(publicProfile);
+
+            const result = await controller.getPublicProfile('507f1f77bcf86cd799439011');
+
+            expect(result._id).toBe('507f1f77bcf86cd799439011');
+            expect(result.name).toBe('Test Company');
+        });
+
+        it('should return public profile with all optional fields when getPublicProfile finds company with full data', async () => {
+            const publicProfile: CompanyPublicDto = {
+                _id: '507f1f77bcf86cd799439011',
+                name: 'Test Company',
+                description: 'A comprehensive test company',
+                logo: 'logo.png',
+                website: 'https://test.com',
+                sector: 'Technology',
+                city: 'Paris',
+                country: 'France',
+            } as CompanyPublicDto;
+
+            mockCompanyService.getPublicCompanyById.mockResolvedValue(publicProfile);
+
+            const result = await controller.getPublicProfile('507f1f77bcf86cd799439011');
+
+            expect(result).toEqual(publicProfile);
+            expect(result.description).toBe('A comprehensive test company');
+            expect(result.website).toBe('https://test.com');
+        });
+
+        it('should throw error when getPublicProfile encounters database error', async () => {
+            mockCompanyService.getPublicCompanyById.mockRejectedValue(new Error('Database error'));
+
+            await expect(controller.getPublicProfile('507f1f77bcf86cd799439011')).rejects.toThrow('Database error');
+        });
+    });
+
+    describe('updatePublicProfile', () => {
+        it('should update public profile successfully when updatePublicProfile is called with valid data', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                description: 'Updated description',
+            });
+
+            mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
+
+            await controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(service.updatePublicProfile).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
+            expect(service.updatePublicProfile).toHaveBeenCalledTimes(1);
+        });
+
+        it('should update public profile with multiple fields when updatePublicProfile is called with multiple fields', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                description: 'Updated description',
+                logo: 'new-logo.png',
+                website: 'https://newwebsite.com',
+                sector: 'Finance',
+            });
+
+            mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
+
+            await controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(service.updatePublicProfile).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
+        });
+
+        it('should update public profile with single field when updatePublicProfile is called with one field', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                description: 'Only description update',
+            });
+
+            mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
+
+            await controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(service.updatePublicProfile).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
+        });
+
+        it('should update logo when updatePublicProfile is called with new logo', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                logo: 'updated-logo.png',
+            });
+
+            mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
+
+            await controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(service.updatePublicProfile).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
+        });
+
+        it('should update website when updatePublicProfile is called with new website', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                website: 'https://company.com',
+            });
+
+            mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
+
+            await controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(service.updatePublicProfile).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
+        });
+
+        it('should throw error when updatePublicProfile encounters database error', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                description: 'Updated',
+            });
+
+            mockCompanyService.updatePublicProfile.mockRejectedValue(new Error('Update failed'));
+
+            await expect(controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow(
+                'Update failed'
+            );
+        });
+
+        it('should throw NotFoundException when updatePublicProfile is called with non-existent company id', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({
+                description: 'Updated',
+            });
+
+            mockCompanyService.updatePublicProfile.mockRejectedValue(
+                new NotFoundException('Company not found')
+            );
+
+            await expect(controller.updatePublicProfile('507f1f77bcf86cd799439999', updateDto)).rejects.toThrow(
+                NotFoundException
+            );
+        });
+
+        it('should handle empty update DTO when updatePublicProfile is called with empty data', async () => {
+            const updateDto = new UpdateCompanyPublicProfileDto({});
+
+            mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
+
+            await controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(service.updatePublicProfile).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
+        });
+    });
+
 });
