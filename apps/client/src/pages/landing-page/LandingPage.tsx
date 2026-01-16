@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Briefcase, Building2, ArrowRight } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, useInView } from 'motion/react';
+import { useState, useEffect, useRef } from 'react';
 import { Navbar } from '../../components/navbar/Navbar';
 import { mockInternships } from './mockInternships.data';
 import { features } from './mockFeatures.data';
@@ -10,6 +11,28 @@ import InternshipGrid from './components/InternshipGrid';
 import { userStore } from '../../store/userStore';
 export default function LandingPage() {
     const user = userStore((state) => state.access);
+    const [activeStep, setActiveStep] = useState(0);
+    const stepsRef = useRef<HTMLDivElement>(null);
+    const isInView = useInView(stepsRef, { once: true });
+
+    useEffect(() => {
+        if (!isInView) return;
+        
+        const sequence = [
+            { step: 1, delay: 500 },
+            { step: 2, delay: 1500 },
+            { step: 3, delay: 2500 },
+            { step: 4, delay: 3500 },
+            { step: 1, delay: 4500 },
+        ];
+
+        const timers = sequence.map(({ step, delay }) =>
+            setTimeout(() => setActiveStep(step), delay)
+        );
+
+        return () => timers.forEach(timer => clearTimeout(timer));
+    }, [isInView]);
+
     return (
         <div className="min-h-screen bg-base-100">
             <Navbar minimal={!user} />
@@ -20,6 +43,7 @@ export default function LandingPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
+                        viewport={{ once: true }}
                     >
                         <h1 className="text-5xl md:text-7xl font-black mb-6 text-primary">
                             Trouvez le stage de vos rêves
@@ -47,6 +71,7 @@ export default function LandingPage() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.6, delay: 0.1 * index }}
+                                    viewport={{ once: true }}
                                 >
                                     <div className="stat-value text-primary">{stat.value}</div>
                                     <div className="stat-desc text-base-content/70">{stat.label}</div>
@@ -83,34 +108,42 @@ export default function LandingPage() {
                         </p>
                     </div>
 
-                    <div className="max-w-6xl mx-auto">
+                    <div className="max-w-6xl mx-auto" ref={stepsRef}>
                         <ul className="steps steps-vertical lg:steps-horizontal w-full">
-                            <li className="step step-primary">
+                            <motion.li 
+                                className={`step ${activeStep >= 1 ? 'step-primary' : ''}`}
+                            >
                                 <div className="text-left mt-4">
                                     <h3 className="font-bold text-lg">1. Créez votre compte</h3>
                                     <p className="text-base-content/70">Inscription rapide et gratuite</p>
                                 </div>
-                            </li>
-                            <li className="step step-primary">
+                            </motion.li>
+                            <motion.li 
+                                className={`step ${activeStep >= 2 ? 'step-primary' : ''}`}
+                            >
                                 <div className="text-left mt-4">
                                     <h3 className="font-bold text-lg">2. Complétez votre profil</h3>
                                     <p className="text-base-content/70">Ajoutez vos compétences et expériences</p>
                                 </div>
-                            </li>
-                            <li className="step step-primary">
+                            </motion.li>
+                            <motion.li 
+                                className={`step ${activeStep >= 3 ? 'step-primary' : ''}`}
+                            >
                                 <div className="text-left mt-4">
                                     <h3 className="font-bold text-lg">3. Postulez</h3>
                                     <p className="text-base-content/70">Candidatez aux offres qui vous intéressent</p>
                                 </div>
-                            </li>
-                            <li className="step">
+                            </motion.li>
+                            <motion.li 
+                                className={`step ${activeStep >= 4 ? 'step-primary' : ''}`}
+                            >
                                 <div className="text-left mt-4">
                                     <h3 className="font-bold text-lg">4. Décrochez votre stage</h3>
                                     <p className="text-base-content/70">
                                         Suivez vos candidatures et obtenez des réponses
                                     </p>
                                 </div>
-                            </li>
+                            </motion.li>
                         </ul>
                     </div>
                 </div>
@@ -124,6 +157,7 @@ export default function LandingPage() {
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5 }}
                             className="text-4xl md:text-5xl font-bold mb-4"
+                            viewport={{ once: true }}
                         >
                             Offres de stage populaires
                         </motion.h2>
@@ -131,6 +165,7 @@ export default function LandingPage() {
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: 0.1 }}
+                            viewport={{ once: true }}
                             className="text-xl text-base-content/70 max-w-2xl mx-auto"
                         >
                             Découvrez les opportunités les plus consultées par les étudiants
@@ -144,6 +179,7 @@ export default function LandingPage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.8 }}
                         className="text-center mt-16"
+                        viewport={{ once: true }}
                     >
                         <Link to="/home" className="btn btn-primary btn-wide gap-2">
                             Voir toutes les offres
@@ -159,6 +195,7 @@ export default function LandingPage() {
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
+                        viewport={{ once: true }}
                         className="max-w-3xl mx-auto"
                     >
                         <h2 className="text-4xl md:text-5xl font-bold mb-6 text-base-content">
@@ -189,6 +226,7 @@ export default function LandingPage() {
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5 }}
+                            viewport={{ once: true }}
                             className="card bg-base-100 shadow-xl"
                         >
                             <div className="card-body">
@@ -221,6 +259,7 @@ export default function LandingPage() {
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: 0.1 }}
+                            viewport={{ once: true }}
                             className="card bg-base-100 shadow-xl"
                         >
                             <div className="card-body">
@@ -253,6 +292,7 @@ export default function LandingPage() {
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: 0.2 }}
+                            viewport={{ once: true }}
                             className="card bg-base-100 shadow-xl"
                         >
                             <div className="card-body">
