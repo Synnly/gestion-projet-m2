@@ -10,7 +10,8 @@ import { Message, MessageSchema } from './message/message.schema';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { GeoService } from '../common/geography/geo.service';
 import { CompanyModule } from '../company/company.module';
-
+import { Message, MessageSchema } from './message/message.schema';
+import { NotificationModule } from '../notification/notification.module';
 @Module({
     imports: [
         MongooseModule.forFeature([
@@ -19,9 +20,10 @@ import { CompanyModule } from '../company/company.module';
             { name: Message.name, schema: MessageSchema },
         ]),
         forwardRef(() => CompanyModule),
+        NotificationModule,
     ],
     controllers: [ForumController],
     providers: [ForumService, TopicService, MessageService, PaginationService, GeoService],
-    exports: [ForumService],
+    exports: [ForumService, MessageService, TopicService],
 })
 export class ForumModule {}

@@ -27,7 +27,8 @@ export class TopicDto {
     /**
      * List of message IDs associated with the topic.
      */
-    @Transform(({ value }) => value?.map((item) => item.obj._id) || [])
+
+    @Transform(({ value }) => value?.map((item) => item.obj?._id || item) || [])
     @Expose()
     messages: string[];
 

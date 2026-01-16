@@ -1,35 +1,34 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { User } from '../../user/user.schema';
-import { Topic } from '../topic/topic.schema';
-
-export type MessageDocument = Message & Document;
-
-/**
- * Schema representing a forum message.
- */
 @Schema({ timestamps: true })
 export class Message {
-    /** Unique identifier for the message */
-    _id: Types.ObjectId;
+    /**
+     * sender of the message
+     */
+    @Prop({ type: Types.ObjectId, ref: 'User' })
+    authorId: Types.ObjectId;
 
-    /** Content of the message */
+    /**
+     * Content of the message
+     */
     @Prop({ required: true })
     content: string;
 
-    /** Author ID of the message creator */
-    @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-    author: Types.ObjectId;
-
-    /** Topic ID that this message belongs to */
-    @Prop({ type: Types.ObjectId, ref: 'Topic', required: true })
+    /**
+     * Topic to which the message belongs
+     */
+    @Prop({ type: Types.ObjectId, ref: 'Topic' })
     topicId: Types.ObjectId;
 
-    /** Creation timestamp */
-    createdAt: Date;
+    /**
+     * Reply to another message in the same topic
+     */
+    @Prop({ type: Types.ObjectId, ref: 'Message' })
+    parentMessageId: Types.ObjectId;
 
-    /** Last update timestamp */
-    updatedAt: Date;
+    createdAt: Date;
 }
+
+export type MessageDocument = Message & Document;
 
 export const MessageSchema = SchemaFactory.createForClass(Message);
