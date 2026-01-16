@@ -71,7 +71,6 @@ function App() {
                 { path: 'cookies', element: <CookiePolicy /> },
                 { path: 'safety', element: <SafetyCompliance /> },
                 { index: true, element: <LandingPage />, handle: { title: 'Accueil - Stagora' } },
-                { path: 'home', element: <InternshipPage />, handle: { title: 'Accueil' } },
                 {
                     loader: notAuthMiddleWare,
                     children: [
@@ -93,6 +92,8 @@ function App() {
                     element: <AuthRoutes />,
                     children: [
                         { path: 'verify', element: <VerifyEmail />, handle: { title: 'Vérifier votre mail' } },
+                        { path: 'home', element: <InternshipPage />, handle: { title: 'Accueil' } },
+
                         {
                             path: 'complete-profil',
                             element: <CompleteProfil />,
