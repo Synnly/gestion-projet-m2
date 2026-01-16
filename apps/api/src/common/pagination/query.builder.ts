@@ -139,7 +139,7 @@ export class QueryBuilder<T> {
         const city = toStringOrUndefined(this.params.city);
 
         if (city && radiusKm != null && radiusKm > 0) {
-            const coo = await this.geoService.geocodeAddress(city);
+            const coo = await this.geoService?.geocodeAddress(city);
             if (coo) {
                 mutableFilter.location = {
                     $geoWithin: {
