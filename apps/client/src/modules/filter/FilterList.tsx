@@ -6,10 +6,14 @@ import { useInternshipStore } from '../../store/useInternshipStore';
 import SortSelect from './SortSelect';
 import CityRadiusModal from '../../components/CityRadius/CityRadiusModal';
 import SalaryRangeSelector from '../../components/inputs/range/SalaryRangeSelector';
+import { userStore } from '../../store/userStore.ts';
 
 export function FilterList() {
     const filters = useInternshipStore((s) => s.filters);
     const setFilters = useInternshipStore((s) => s.setFilters);
+    const toggleShowMyApplicationsOnly = useInternshipStore((s) => s.toggleShowMyApplicationsOnly);
+    const access = userStore((state) => state.access);
+    const get = userStore((state) => state.get);
     const [minimal, setMinimal] = useState<boolean>(true);
     const [mapOpen, setMapOpen] = useState(false);
     const [_, setSalaryRange] = useState<{ min: number; max: number }>({
@@ -39,10 +43,20 @@ export function FilterList() {
 
     return (
         <div className="w-full space-y-2 pb-4">
-            <div className="card bg-base-100 shadow-md">
+            <div className="card bg-base-100 shadow-md shadow-base-300">
                 <div className="card-body p-3">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
+                            {get(access)?.role === 'STUDENT' && (
+                                <label className="swap btn">
+                                    <input type="checkbox" defaultChecked onClick={toggleShowMyApplicationsOnly} />
+                                    <div className="swap-off">Toutes les annonces</div>
+                                    <div className="swap-on"
+                                        onClick={toggleShowMyApplicationsOnly} >
+                                        Mes candidatures
+                                    </div>
+                                </label>
+                            )}
                             <button
                                 type="button"
                                 className="btn btn-xs btn-ghost flex items-center"
@@ -53,7 +67,7 @@ export function FilterList() {
                                 Réinitialiser
                             </button>
 
-                            <div className="btn btn-xs btn-ghost ml-2">
+                            <div className="ml-2">
                                 <SortSelect />
                             </div>
                         </div>

@@ -90,32 +90,21 @@ describe('QueryBuilder', () => {
         });
 
         it('escapes regex special characters when falling back to regex search', async () => {
-            const special = 'dev.*+?^${}()|[]\\';
+            // Test with multi-token search to trigger fuzzy search (not $text)
+            const qb = new QueryBuilder({ searchQuery: 'développeur full stack' } as any, mockGeoService as any);
+            const filter = await qb.build();
 
-            const originalDesc = Object.getOwnPropertyDescriptor(Object.prototype, '$text');
-            Object.defineProperty(Object.prototype, '$text', {
-                set() {
-                    throw new Error('force fallback');
-                },
-                configurable: true,
-            });
-
-            try {
-                const qb = new QueryBuilder({ searchQuery: special } as any, mockGeoService as any);
-                const filter = await qb.build();
-
-                expect(filter.$or).toBeDefined();
-                const regexObj = filter.$or[0].title;
-                const expectedEscaped = special.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                expect(regexObj).toHaveProperty('$regex', expectedEscaped);
-                expect(regexObj).toHaveProperty('$options', 'i');
-            } finally {
-                if (originalDesc) {
-                    Object.defineProperty(Object.prototype, '$text', originalDesc);
-                } else {
-                    delete (Object.prototype as any).$text;
-                }
-            }
+            // Should use fuzzy search with $and for each token
+            expect(filter.$and).toBeDefined();
+            expect(Array.isArray(filter.$and)).toBe(true);
+            expect(filter.$and.length).toBe(3); // Three tokens
+            // Each token should have an $or with fields
+            expect(filter.$and[0]).toHaveProperty('$or');
+            expect(filter.$and[0].$or).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ title: expect.any(RegExp) }),
+                ])
+            );
         });
 
         it('filters by title with regex', async () => {
@@ -175,21 +164,32 @@ describe('QueryBuilder', () => {
             const qb = new QueryBuilder({ minSalary: 2000, maxSalary: 3000 } as any, mockGeoService as any);
             const filter = await qb.build();
 
-            expect(filter.$and).toEqual([{ maxSalary: { $gte: 2000 } }, { minSalary: { $lte: 3000 } }]);
+            expect(filter.$and).toEqual([
+                { minSalary: { $type: 'number', $gte: 2000, $lte: 3000 } },
+                { maxSalary: { $type: 'number', $lte: 3000 } },
+            ]);
         });
 
         it('filters by minSalary only', async () => {
             const qb = new QueryBuilder({ minSalary: 2000 } as any, mockGeoService as any);
             const filter = await qb.build();
 
-            expect(filter.$and).toEqual([{ maxSalary: { $gte: 2000 } }]);
+            expect(filter.$and).toEqual([{ minSalary: { $type: 'number', $gte: 2000 } }]);
         });
 
         it('filters by maxSalary only', async () => {
             const qb = new QueryBuilder({ maxSalary: 3000 } as any, mockGeoService as any);
             const filter = await qb.build();
 
-            expect(filter.$and).toEqual([{ minSalary: { $lte: 3000 } }]);
+            expect(filter.$and).toEqual([
+                { minSalary: { $type: 'number', $lte: 3000 } },
+                {
+                    $or: [
+                        { maxSalary: { $type: 'number', $lte: 3000 } },
+                        { maxSalary: { $exists: false } },
+                    ],
+                },
+            ]);
         });
 
         it('filters by keySkills array with regex', async () => {

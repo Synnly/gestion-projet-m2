@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import { Company } from '../company/company.schema';
+import { Topic } from './topic/topic.schema';
 
 @Schema({ timestamps: true })
 export class Forum {
@@ -21,10 +22,11 @@ export class Forum {
     @Prop()
     companyName?: string;
 
-    /*
-    @Prop({ type: Types.ObjectId, ref: 'Topic' })
-    topics: Topic[];
+    /**
+     * Array of topics in the forum
      */
+    @Prop({ type: [Types.ObjectId], ref: 'Topic', default: [] })
+    topics: Topic[];
 
     /**
      * Number of topics in the forum

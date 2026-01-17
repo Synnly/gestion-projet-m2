@@ -1,134 +1,123 @@
 import { useCreatePostStore } from '../../store/CreatePostStore';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-markdown-preview/markdown.css';
+import type { CompanyInInternship } from '../../types/internship.types.ts';
+import { fetchPublicSignedUrl } from '../../hooks/useBlob.tsx';
+import { useEffect, useState } from 'react';
 
 type PostPreviewProps = {
-    companyName: string;
+    company: CompanyInInternship;
 };
 
-export function PostPreview({ companyName }: PostPreviewProps) {
+export function PostPreview({ company }: PostPreviewProps) {
+    const [logoUrl, setLogoUrl] = useState<string | undefined>(company.logoUrl);
     const {
         title,
         description,
-        location,
-        addressLine,
-        city,
-        postalCode,
+        location: adress,
         duration,
         sector,
         startDate,
         minSalary,
         maxSalary,
-        isVisibleToStudents,
-        skills,
-        workMode,
+        skills: keySkills,
+        type,
     } = useCreatePostStore();
 
-    const workModeMap: Record<string, string> = {
-        presentiel: 'Présentiel',
-        teletravail: 'Télétravail',
-        hybride: 'Hybride',
+    const formatSalary = (min?: number, max?: number) => {
+        if (!min && !max) return null;
+        if (min && max) return `${min}€ - ${max}€`;
+        if (min) return `À partir de ${min}€`;
+        if (max) return `Jusqu'à ${max}€`;
+        return null;
     };
 
-    const formatDate = (iso?: string) => {
-        if (!iso) return '';
-        const d = new Date(iso);
-        if (Number.isNaN(d.getTime())) return iso;
-        return new Intl.DateTimeFormat('fr-FR', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-        }).format(d);
-    };
+    const salary = formatSalary(minSalary, maxSalary);
 
-    const addressParts = [addressLine || location || '', postalCode, city]
-        .filter((part) => part && part.trim())
-        .join(', ');
+    useEffect(() => {
+        if (company.logo) {
+            fetchPublicSignedUrl(company.logo).then((r) => {
+                if (r) setLogoUrl(r);
+            });
+        }
+    }, [company.logoUrl]);
 
     return (
-        <div className="rounded-2xl bg-base-100 p-5 shadow-sm ring-1 ring-base-300">
-            {/* Header */}
-            <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
-                    {companyName.charAt(0).toUpperCase()}
+        <div className="flex flex-col flex-1">
+            <div className="card bg-base-100 rounded-xl">
+                <div className="card-body p-6">
+                    <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-4">
+                            <div className="avatar flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-neutral-300">
+                                {logoUrl ? (
+                                    <img alt={`${company.name} logo`} className="rounded" src={logoUrl} />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-lg font-bold text-base-content">
+                                        {company.name.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <h3 className="text-xl font-bold text-base-content">{title}</h3>
+                                <p className="mt-1 text-base-content">
+                                    {company.name} • {adress}
+                                </p>
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                    <span className="badge badge-primary text-content-primary">{type}</span>
+                                    {sector && <span className="badge">{sector}</span>}
+                                    {duration && <span className="badge">{duration}</span>}
+                                    {salary && <span className="badge badge-accent">{salary}</span>}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-4 border-t border-base-300! pt-6">
+                        <h4 className="text-lg font-bold">Description du stage</h4>
+                        <div className="mt-4 space-y-4 text-sm text-base-content">
+                            <div className="prose max-w-none bg-transparent text-base-content shadow-none border-0">
+                                <MDEditor.Markdown
+                                    source={description ?? ''}
+                                    className="bg-transparent! text-base-content!"
+                                />
+                            </div>
+
+                            {keySkills && keySkills.length > 0 && (
+                                <>
+                                    <h5 className="font-bold text-base-content">Compétences clés</h5>
+                                    <div className="flex flex-wrap gap-2">
+                                        {keySkills.map((skill, index) => (
+                                            <span key={index} className="badge badge-outline">
+                                                {skill}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+
+                            {startDate && (
+                                <>
+                                    <h5 className="font-bold text-base-content">Date de début</h5>
+                                    <p>{new Date(startDate).toLocaleDateString('fr-FR')}</p>
+                                </>
+                            )}
+
+                            <div className="mt-6">
+                                <h5 className="font-bold text-base-content">À propos de l'entreprise</h5>
+                                <p className="mt-2">{company.name}</p>
+                                {company.email && (
+                                    <p className="mt-1 text-sm text-base-content/70">Contact: {company.email}</p>
+                                )}
+                                {company.city && company.country && (
+                                    <p className="mt-1 text-sm text-base-content/70">
+                                        {company.city}, {company.country}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    {title && <h3 className="text-sm font-semibold text-base-content">{title}</h3>}
-                    <p className="text-xs text-base-content/70">{companyName}</p>
-                </div>
-            </div>
-
-            {/* Duration and sector badges */}
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-base-content/70">
-                {duration && <span className="rounded-full bg-base-200 px-2 py-0.5">{duration}</span>}
-                {sector && <span className="rounded-full bg-base-200 px-2 py-0.5">{sector}</span>}
-                {workMode && (
-                    <span className="rounded-full bg-base-200 px-2 py-0.5">{workModeMap[workMode] ?? workMode}</span>
-                )}
-            </div>
-
-            {/* Location, start date, and salary */}
-            <div className="mb-3 space-y-1 text-xs text-base-content/70">
-                {addressParts && <p>📍 {addressParts}</p>}
-                {startDate && <p>📅 Début : {formatDate(startDate)}</p>}
-                {(minSalary || maxSalary) && (
-                    <p>
-                        💶{' '}
-                        {minSalary && maxSalary
-                            ? `${minSalary} € - ${maxSalary} €`
-                            : minSalary
-                              ? `${minSalary} €`
-                              : `${maxSalary} €`}
-                    </p>
-                )}
-            </div>
-
-            {/* Description */}
-            {description && (
-                <article className="prose prose-sm max-w-none text-left text-base-content prose-headings:text-base-content">
-                    <MDEditor.Markdown
-                        source={description}
-                        className={'!bg-transparent !text-base-content'}
-                        components={
-                            {
-                                code: ({ inline, className, children, ...props }: any) => {
-                                    if (inline)
-                                        return (
-                                            <code className="code-highlight" {...props}>
-                                                {children}
-                                            </code>
-                                        );
-                                    return (
-                                        <pre className="code-hitext-whiteghlight text-white">
-                                            <code {...props}>{children}</code>
-                                        </pre>
-                                    );
-                                },
-                            } as any
-                        }
-                    />
-                </article>
-            )}
-
-            {/* Skills */}
-            {skills.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                    {skills.map((skill) => (
-                        <span
-                            key={skill}
-                            className="rounded-full bg-base-200 px-2 py-0.5 text-[11px] text-base-content/80"
-                        >
-                            {skill}
-                        </span>
-                    ))}
-                </div>
-            )}
-
-            {/* Visibility */}
-            <div className="mt-4 border-t border-base-200 pt-3">
-                <p className="text-[11px] text-base-content/70">
-                    {isVisibleToStudents ? 'Visible aux étudiants' : 'Non visible aux étudiants'}
-                </p>
             </div>
         </div>
     );

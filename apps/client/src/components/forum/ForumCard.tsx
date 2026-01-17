@@ -8,7 +8,7 @@ type Props = {
 
 export function ForumCard({ forum }: Props) {
     return (
-        <div className="w-99/300 h-fit card bg-base-100 shadow-sm shadow-base-300 hover:shadow-md hover:bg-base-200 transition-all duration-100 ease-out cursor-pointer">
+        <div className=" h-fit card bg-base-100 shadow-sm shadow-base-300 hover:shadow-md hover:bg-base-200 w-fit transition-all duration-100 ease-out cursor-pointer">
             <a href={`/forums/${forum.company?._id}`}>
                 <div className="card-body flex flex-row justify-between items-center">
                     <div className="flex flex-row items-center gap-4">

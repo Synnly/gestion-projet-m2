@@ -59,9 +59,6 @@ export const LoginForm = () => {
                 <NavLink to="/company/signup" className="mt-4 text-sm text-center text-gray-500 underline">
                     Créer un compte entreprise
                 </NavLink>
-                <NavLink to="" className="mt-4 text-sm text-center text-gray-500 underline">
-                    Créer un compte étudiant
-                </NavLink>
             </div>
         </div>
     );

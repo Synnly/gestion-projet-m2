@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-
-export type WorkMode = 'presentiel' | 'teletravail' | 'hybride';
+import type { PostType } from '../types/internship.types.ts';
 
 export interface CreatePostState {
     title: string;
@@ -12,10 +11,10 @@ export interface CreatePostState {
     duration: string;
     sector: string;
     startDate: string;
-    minSalary: string;
-    maxSalary: string;
+    minSalary?: number;
+    maxSalary?: number;
     isVisibleToStudents: boolean;
-    workMode: WorkMode;
+    type: PostType;
     skills: string[];
     isCoverLetterRequired: boolean;
     setSkills: (skills: string[]) => void;
@@ -28,12 +27,12 @@ export interface CreatePostState {
     setDuration: (value: string) => void;
     setSector: (value: string) => void;
     setStartDate: (value: string) => void;
-    setMinSalary: (value: string) => void;
-    setMaxSalary: (value: string) => void;
+    setMinSalary: (value?: number) => void;
+    setMaxSalary: (value?: number) => void;
     setIsVisibleToStudents: (value: boolean) => void;
     addSkill: (skill: string) => void;
     removeSkill: (skill: string) => void;
-    setWorkMode: (mode: WorkMode) => void;
+    setPostType: (mode: PostType) => void;
     setIsCoverLetterRequired: (value: boolean) => void;
     reset: () => void;
 }
@@ -48,11 +47,9 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
     duration: '',
     sector: '',
     startDate: '',
-    minSalary: '',
-    maxSalary: '',
     isVisibleToStudents: true,
     isCoverLetterRequired: false,
-    workMode: 'presentiel',
+    type: 'Présentiel',
     skills: [],
     setSkills: (skills: string[]) => set({ skills }),
 
@@ -65,8 +62,8 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
     setDuration: (value: string) => set({ duration: value }),
     setSector: (value: string) => set({ sector: value }),
     setStartDate: (value: string) => set({ startDate: value }),
-    setMinSalary: (value: string) => set({ minSalary: value }),
-    setMaxSalary: (value: string) => set({ maxSalary: value }),
+    setMinSalary: (value?: number) => set({ minSalary: value }),
+    setMaxSalary: (value?: number) => set({ maxSalary: value }),
     setIsVisibleToStudents: (value: boolean) => set({ isVisibleToStudents: value }),
     setIsCoverLetterRequired: (value: boolean) => set({ isCoverLetterRequired: value }),
     // Prevent duplicates and cap the skill list to five entries.
@@ -83,7 +80,7 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
         set((state) => ({
             skills: state.skills.filter((s) => s !== skill),
         })),
-    setWorkMode: (mode: WorkMode) => set({ workMode: mode }),
+    setPostType: (type: PostType) => set({ type: type }),
     reset: () =>
         set({
             title: '',
@@ -95,10 +92,10 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
             duration: '',
             sector: '',
             startDate: '',
-            minSalary: '',
-            maxSalary: '',
+            minSalary: undefined,
+            maxSalary: undefined,
             isVisibleToStudents: true,
-            workMode: 'presentiel',
+            type: 'Présentiel',
             skills: [],
         }),
 }));

@@ -17,7 +17,17 @@ export const FormSubmit = ({ isPending, isError, title, pendingTitle, error, cla
                 {...rest}
             />
             {isError && error && error.message && (
-                <p className="text-error">{error.message.charAt(0).toUpperCase() + error.message.slice(1)}</p>
+                <p className="text-error text-center">
+                    {(() => {
+                        const lines = error.message.split('\n');
+                        return lines.map((line, index) => (
+                            <span key={index}>
+                                {line.charAt(0).toUpperCase() + line.slice(1)}
+                                {index < lines.length - 1 && <br />}
+                            </span>
+                        ));
+                    })()}
+                </p>
             )}
         </>
     );
