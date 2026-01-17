@@ -25,7 +25,7 @@ export default function ImportStudent() {
 
     // Allowed extensions + MIME types (match backend pipes)
     const ALLOWED_EXTENSIONS = ['.json', '.csv'];
-    const ALLOWED_MIME_TYPES = ['application/json', 'text/csv'];
+    const ALLOWED_MIME_TYPES = ['application/json', 'text/csv', 'application/vnd.ms-excel'];
 
     const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB (match FileSizeValidationPipe)
 
@@ -129,9 +129,10 @@ export default function ImportStudent() {
         }
     };
 
+    const s = (n: number) => (n > 1 ? 's' : '');
     return (
         <div className="container mx-auto p-6">
-            <h1 className="text-3xl font-bold mb-6">Import des Étudiants</h1>
+            <h1 className="text-3xl font-bold mb-6">Import de comptes étudiants</h1>
 
             <div className="card bg-base-200 shadow-xl mb-6">
                 <div className="card-body">
@@ -145,7 +146,7 @@ export default function ImportStudent() {
                     <div className="flex gap-4 items-center">
                         <input
                             type="file"
-                            accept=".json,.csv,application/json,text/csv"
+                            accept=".json,.csv,application/json,text/csv,application/vnd.ms-excel"
                             onChange={handleFileChange}
                             className="file-input file-input-bordered file-input-primary flex-1"
                             disabled={isLoading}
@@ -173,9 +174,12 @@ export default function ImportStudent() {
                                         onChange={(e) => setSkipExisting(e.target.checked)}
                                     />
                                     <span className="label-text">
-                                        Ignorer les enregistrements existants (emails et numéros étudiants en doublon)
+                                        Ignorer les comptes existants
                                     </span>
                                 </label>
+                                <div className="mt-5 text-sm italic">
+                                    <strong>Astuce:</strong> Cochez l'option "Ignorer les comptes existants" pour ignorer automatiquement les doublons (autrement, si vous essayez de créer un compte étudiant qui existe déjà, vous aurez une erreur).
+                                </div>
                             </div>
                         </div>
                     )}
@@ -210,8 +214,7 @@ export default function ImportStudent() {
                         </ul>
                         {duplicatesDetected && (
                             <div className="mt-2 text-sm">
-                                <strong>Astuce:</strong> Cochez l'option "Ignorer les enregistrements existants" pour
-                                Ignorer automatiquement les doublons.
+                                <strong>Astuce:</strong> Cochez l'option "Ignorer les comptes existants" pour ignorer automatiquement les doublons (autrement, si vous essayez de créer un compte étudiant qui existe déjà, vous aurez une erreur).
                             </div>
                         )}
                     </div>
@@ -234,11 +237,11 @@ export default function ImportStudent() {
                         />
                     </svg>
                     <div>
-                        <span className="font-bold">Import réussi!</span>
+                        <span className="font-bold">Import réussi !</span>
                         <ul className="mt-2 text-sm">
-                            <li>{importResult.added} étudiants ajoutés</li>
+                            <li>{importResult.added} étudiant{s(importResult.added)} ajouté{s(importResult.added)}</li>
                             {importResult.skipped > 0 && (
-                                <li>{importResult.skipped} enregistrements ignorés (doublons)</li>
+                                <li>{importResult.skipped} enregistrement{s(importResult.skipped)} ignoré{s(importResult.skipped)} (doublon{s(importResult.skipped)} ou mal formé{s(importResult.skipped)})</li>
                             )}
                         </ul>
                     </div>

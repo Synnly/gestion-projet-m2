@@ -1,7 +1,8 @@
-import { ArrowUpRight, Eye } from 'lucide-react';
+import { ArrowUpRight, Eye, Share2 } from 'lucide-react';
 import { formatDate } from '../../../company/applicationList/component/ApplicationTable.tsx';
 import { type Application } from '../../../types/application.types.ts';
 import { PdfModal } from '../../../company/applicationList/component/PdfModal.tsx';
+import { toast } from 'react-toastify';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
@@ -33,6 +34,18 @@ export const ApplicationStatusChecker = ({
         navigate(`/internship/apply/${postId}`);
     };
 
+    const share = async () => {
+        try {
+            const internshipUrl = `${window.location.origin}/internship/detail/${postId}`;
+            await navigator.clipboard.writeText(internshipUrl);
+            
+            toast.success('Lien copié !', { toastId: 'post-success' });
+        } catch (err) {
+            console.error('Erreur lors de la copie du lien:', err);
+            toast.error("Impossible de copier le lien (votre navigateur n'est pas supporté).", { toastId: 'post-error' });
+        }
+    };
+
     function previewFile(type: 'cv' | 'lm') {
         setFileType(type);
         setModalOpen(true);
@@ -48,6 +61,12 @@ export const ApplicationStatusChecker = ({
                     >
                         <ArrowUpRight size={20} />
                         <span>Candidater</span>
+                    </button>
+                    <button
+                        onClick={share}
+                        className="btn btn-ghost flex h-11 items-center justify-center gap-2">
+                        <Share2 size={20} />
+                        <span>Partager</span>
                     </button>
                 </>
             ) : (

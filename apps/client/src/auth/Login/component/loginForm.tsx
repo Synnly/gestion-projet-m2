@@ -51,7 +51,7 @@ export const LoginForm = () => {
                     isError={isError}
                     error={error}
                     title="Se connecter"
-                    pendingTitle="connexion..."
+                    pendingTitle="Connexion en cours..."
                     className="bg-primary rounded-lg cursor-pointer w-full text-black"
                 />
             </CustomForm>

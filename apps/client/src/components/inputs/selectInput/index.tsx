@@ -4,7 +4,7 @@ export const FilterInput: React.FC<SelectInputProps> = ({ options, label, value,
     return (
         <div className="flex">
             <select
-                className="select select-sm bg-base-200 max-w-[140px]"
+                className="select select-sm bg-base-200 max-w-[160px]"
                 value={value ?? ''}
                 onChange={(e) => onChange && onChange(e.target.value)}
                 aria-label={label}

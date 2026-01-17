@@ -11,17 +11,17 @@ export const ApplicationStatus = ({ application }: { application: Application })
             badgeIcon = <Clock width={16} />;
             break;
         case 'Read':
-            status = 'Lu';
+            status = 'Lue';
             badgeColorClass = 'badge-info';
             badgeIcon = <Eye width={16} />;
             break;
         case 'Accepted':
-            status = 'Accepté';
+            status = 'Acceptée';
             badgeColorClass = 'badge-success';
             badgeIcon = <Check width={16} />;
             break;
         case 'Rejected':
-            status = 'Refusé';
+            status = 'Refusée';
             badgeColorClass = 'badge-error';
             badgeIcon = <X width={16} />;
             break;

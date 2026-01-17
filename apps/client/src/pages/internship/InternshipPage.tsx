@@ -66,7 +66,7 @@ export function InternshipPage() {
                             </div>
                         ) : (
                             <div className="col-span-12 lg:col-span-7 h-full flex items-center justify-center text-base-content/60">
-                                Select an internship to see details
+                                Sélectionnez une offre de stage pour voir son contenu
                             </div>
                         )}
                     </div>

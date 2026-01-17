@@ -8,7 +8,27 @@ export const centerNavItems: NavItem[] = [
         type: 'link',
         role: ['ADMIN', 'STUDENT', 'COMPANY'],
     },
-
+    {
+        key: 'info-company',
+        title: 'MA PAGE',
+        to: '/company/my-page',
+        type: 'link',
+        role: ['COMPANY'],
+    },
+    {
+        key: 'home-student',
+        title: 'OFFRES DE STAGE',
+        to: '/',
+        type: 'link',
+        role: ['STUDENT'],
+    },
+    {
+        key: 'home-admin',
+        title: 'ADMINISTRATION',
+        to: '/admin/dashboard',
+        type: 'link',
+        role: ['ADMIN'],
+    },
     /*{
         key: 'offers',
         title: 'Annonces',

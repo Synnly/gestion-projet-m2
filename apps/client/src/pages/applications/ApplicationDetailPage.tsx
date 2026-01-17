@@ -15,9 +15,9 @@ const statusStyles: Record<ApplicationStatus | string, string> = {
 
 const statusLabels: Record<ApplicationStatus, string> = {
     Pending: 'En attente',
-    Read: 'Lu',
-    Accepted: 'Accepté',
-    Rejected: 'Refusé',
+    Read: 'Lue',
+    Accepted: 'Acceptée',
+    Rejected: 'Refusée',
 };
 
 export default function ApplicationDetailPage() {
@@ -76,7 +76,7 @@ export default function ApplicationDetailPage() {
                                         {data.post?.company?.name ?? 'Entreprise'}
                                     </p>
                                     <p className="text-sm text-base-content/60">
-                                        {data.post?.type ?? ''} - {data.post?.duration ?? ''}
+                                        {[data.post?.type, data.post?.duration].filter(Boolean).join(' - ')}
                                     </p>
                                 </div>
                                 <span
