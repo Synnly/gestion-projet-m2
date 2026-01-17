@@ -16,7 +16,6 @@ import { AdminModule } from './admin/admin.module';
 import { ForumModule } from './forum/forum.module';
 import { NotificationModule } from './notification/notification.module';
 import { UsersModule } from './user/user.module';
-import { ReportModule } from './forum/message/report/report.module';
 
 
 @Module({
@@ -40,7 +39,6 @@ import { ReportModule } from './forum/message/report/report.module';
         StudentModule,
         AdminModule,
         ForumModule,
-        ReportModule,
         SeedModule,
         ApplicationModule,
         NotificationModule,

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
 import { MailerService } from '../mailer/mailer.service';
 import { RefreshToken, RefreshTokenDocument } from 'src/auth/refreshToken.schema';
@@ -60,7 +60,7 @@ export class UserService {
             const messageIds = userMessages.map(msg => msg._id);
             
             // Update all reports related to this user's messages to "resolved"
-            const updateResult = await this.reportModel.updateMany(
+            await this.reportModel.updateMany(
                 { 
                     messageId: { $in: messageIds },
                     status: { $ne: 'resolved' }

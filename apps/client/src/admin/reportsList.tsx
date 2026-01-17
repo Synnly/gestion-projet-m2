@@ -31,7 +31,7 @@ export default function ReportsList() {
     const [banModalOpen, setBanModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<{ id: string; email: string } | null>(null);
     const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
-    const limit = 100; // Augmenter pour récupérer plus de signalements
+    const limit = 100; // Reports per page
 
     const fetchReports = async () => {
         try {
@@ -51,7 +51,7 @@ export default function ReportsList() {
         fetchReports();
     }, [page, statusFilter]);
 
-    // Grouper les signalements par utilisateur
+    // Group reports by reported user
     const groupedReports = useMemo(() => {
         const grouped = new Map<string, GroupedReport>();
 
@@ -133,17 +133,6 @@ export default function ReportsList() {
         }
     };
 
-    const handleDelete = async (reportId: string) => {
-        if (!confirm('Êtes-vous sûr de vouloir supprimer ce signalement ?')) return;
-
-        try {
-            await deleteReport(reportId);
-            fetchReports();
-        } catch (err) {
-            alert('Erreur lors de la suppression du signalement');
-        }
-    };
-
     const handleBanUser = (userId: string, userEmail: string) => {
         setSelectedUser({ id: userId, email: userEmail });
         setBanModalOpen(true);
@@ -166,19 +155,6 @@ export default function ReportsList() {
         }
     };
 
-    const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'pending':
-                return 'En attente';
-            case 'resolved':
-                return 'Résolu';
-            case 'rejected':
-                return 'Rejeté';
-            default:
-                return status;
-        }
-    };
-
     const SortIcon = ({ field }: { field: SortField }) => {
         if (sortField !== field) {
             return <span className="text-gray-400">⇅</span>;
@@ -196,9 +172,6 @@ export default function ReportsList() {
 
     return (
         <div className="container mx-auto p-6">
-            <h2 className="text-2xl font-bold mb-6">Signalements de messages</h2>
-
-            {/* Filtre par statut */}
             <div className="mb-4 flex gap-2 items-center">
                 <label className="label">
                     <span className="label-text font-semibold">Filtrer par statut:</span>
@@ -383,6 +356,39 @@ export default function ReportsList() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-2 mt-6">
+                            <button
+                                className="btn btn-sm"
+                                onClick={() => setPage(page - 1)}
+                                disabled={page === 1}
+                            >
+                                ← Précédent
+                            </button>
+                            
+                            <div className="flex gap-1">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
+                                    <button
+                                        key={pageNumber}
+                                        className={`btn btn-sm ${page === pageNumber ? 'btn-primary' : 'btn-ghost'}`}
+                                        onClick={() => setPage(pageNumber)}
+                                    >
+                                        {pageNumber}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button
+                                className="btn btn-sm"
+                                onClick={() => setPage(page + 1)}
+                                disabled={page === totalPages}
+                            >
+                                Suivant →
+                            </button>
+                        </div>
+                    )}
                 </>
             )}
 

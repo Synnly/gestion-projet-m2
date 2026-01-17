@@ -1,6 +1,6 @@
 import { Navbar } from '../components/navbar/Navbar';
 import ImportStudent from './importStudent';
-import Moderation from './moderation';
+import ReportsList from './reportsList';
 
 export function AdminDashboard() {
     return (
@@ -11,12 +11,12 @@ export function AdminDashboard() {
                     <h1 className="text-3xl font-bold mb-6">Administration</h1>
                     <div className="space-y-8">
                         <div className="bg-base-100 rounded-lg shadow p-6">
-                            <h2 className="text-2xl font-bold mb-6">Import des Étudiants</h2>
+                            <h2 className="text-2xl font-bold mb-6">Import des étudiants</h2>
                             <ImportStudent />
                         </div>
                         <div className="bg-base-100 rounded-lg shadow p-6">
-                            <h2 className="text-xl font-bold mb-6">Modération</h2>
-                            <Moderation />
+                            <h2 className="text-2xl font-bold mb-6">Signalements de messages</h2>
+                            <ReportsList />            
                         </div>
                     </div>
                 </div>

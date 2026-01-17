@@ -38,32 +38,29 @@ export default function TopicDetailPage() {
     const { forumId, topicId, companyId } = useParams<{ forumId: string; topicId: string; companyId: string }>();
     const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
 
-    // Récupérer l'utilisateur actuel
+    // Get user access and info from the user store
     const access = userStore((state) => state.access);
     const getUserInfo = userStore((state) => state.get);
     const currentUser = access ? getUserInfo(access) : null;
 
-    // Récupérer les signalements de l'utilisateur
+    // Get the user's reports
     const { data: myReports } = useQuery({
         queryKey: ['myReports'],
         queryFn: getMyReports,
         enabled: !!currentUser,
-        staleTime: 5 * 60 * 1000, // Cache pendant 5 minutes
+        staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     });
 
-    // Créer un Set des IDs de messages déjà signalés pour une vérification rapide
+    // Create a Set of already reported message IDs for quick lookup
     const reportedMessageIds = useMemo(() => {
         if (!myReports) return new Set<string>();
-        console.log('myReports:', myReports);
         const ids = myReports.map((report) => {
-            // Gérer le cas où messageId peut être soit un objet, soit une chaîne
+            // Handle the case where messageId can be either an object or a string
             const messageId = typeof report.messageId === 'string' 
                 ? report.messageId 
                 : report.messageId._id;
-            console.log('Reported messageId:', messageId);
             return messageId;
         });
-        console.log('All reported message IDs:', ids);
         return new Set(ids);
     }, [myReports]);
 
@@ -138,14 +135,14 @@ export default function TopicDetailPage() {
 
     const [reply, setReply] = useState<{ id: string; name: string } | null>(null);
 
-    // Gérer le hash pour highlight et scroll vers un message spécifique
+    // Handle the hash to highlight and scroll to a specific message
     useEffect(() => {
         const hash = location.hash;
         if (hash.startsWith('#message-')) {
             const messageId = hash.replace('#message-', '');
             setHighlightedMessageId(messageId);
             
-            // Attendre que le DOM soit prêt avant de scroller
+            // Wait for the DOM to be ready before scrolling
             setTimeout(() => {
                 const element = document.getElementById(hash.substring(1));
                 if (element) {

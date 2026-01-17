@@ -89,6 +89,17 @@ export class ReportController {
     }
 
     /**
+     * Get report statistics (admin only)
+     * @returns Object with counts for each status
+     */
+    @Get('stats/summary')
+    @UseGuards(RolesGuard)
+    @Roles(Role.ADMIN)
+    async getReportStats() {
+        return this.reportService.getReportStats();
+    }
+
+    /**
      * Get a specific report by ID (admin only)
      * @param reportId - The ID of the report
      * @returns The report
@@ -126,16 +137,5 @@ export class ReportController {
     @HttpCode(HttpStatus.NO_CONTENT)
     async deleteReport(@Param('id', ParseObjectIdPipe) reportId: string) {
         return this.reportService.deleteReport(reportId);
-    }
-
-    /**
-     * Get report statistics (admin only)
-     * @returns Object with counts for each status
-     */
-    @Get('stats/summary')
-    @UseGuards(RolesGuard)
-    @Roles(Role.ADMIN)
-    async getReportStats() {
-        return this.reportService.getReportStats();
     }
 }

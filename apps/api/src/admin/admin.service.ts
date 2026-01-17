@@ -5,7 +5,7 @@ import { CreateAdminDto } from './dto/createAdminDto';
 import { Model } from 'mongoose';
 import { Role } from '../common/roles/roles.enum';
 import { AdminUserDocument } from '../user/user.schema';
-import { Report, ReportDocument } from '../forum/message/report/report.schema';
+import { Report, ReportDocument } from '../forum/report/report.schema';
 
 @Injectable()
 export class AdminService {
@@ -47,23 +47,5 @@ export class AdminService {
     async create(dto: CreateAdminDto): Promise<void> {
         const createdAdmin = new this.adminModel({ role: Role.ADMIN, ...dto, isValid: true, isVerified: true });
         await createdAdmin.save();
-    }
-
-    /**
-     * Retrieve all report records from the database.
-     * @returns A promise that resolves to an array of Report documents.
-     */
-    async findAllReports(): Promise<Report[]> {
-        return this.reportModel.find().exec();
-    }
-
-    /**
-     * Create a new report record in the database.
-     * @param report - The report data.
-     * @returns A promise that resolves to the created Report document.
-     */
-    async createReport(report: Partial<Report>): Promise<Report> {
-        const createdReport = new this.reportModel(report);
-        return createdReport.save();
     }
 }

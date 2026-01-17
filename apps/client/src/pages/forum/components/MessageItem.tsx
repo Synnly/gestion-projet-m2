@@ -9,7 +9,6 @@ import { ReplyMessage } from './replyMessage';
 import { AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { ReportMessageModal } from './ReportMessageModal';
-import { userStore } from '../../../store/userStore';
 
 export const MessageItem = ({
     message,
@@ -26,24 +25,20 @@ export const MessageItem = ({
 }) => {
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const { authorId } = message;
-    
-    // Vérifier si l'utilisateur est banni
+
+    // Check if the author is banned
     const isAuthorBanned = !!authorId.ban;
     
-    // Vérifier si c'est le propre message de l'utilisateur
+    // Check if it's the user's own message
     const isOwnMessage = currentUserId && authorId._id === currentUserId;
     
-    // Vérifier si le message a déjà été signalé par l'utilisateur
+    // Check if the message has already been reported by the user
     const isAlreadyReported = reportedMessageIds?.has(message._id);
     
-    console.log('MessageItem - message._id:', message._id);
-    console.log('MessageItem - isAlreadyReported:', isAlreadyReported);
-    console.log('MessageItem - reportedMessageIds:', reportedMessageIds);
-    
-    // Le bouton de signalement ne s'affiche que si :
-    // - L'auteur n'est pas banni
-    // - Ce n'est pas le propre message de l'utilisateur
-    // - Le message n'a pas déjà été signalé par l'utilisateur
+    // The report button is shown only if:
+    // - The author is not banned
+    // - It's not the user's own message
+    // - The message has not already been reported by the user
     const showReportButton = !isAuthorBanned && !isOwnMessage && !isAlreadyReported;
     
     const displayName = isAuthorBanned
@@ -67,7 +62,7 @@ export const MessageItem = ({
             }`}
         >
             <div className="flex items-start gap-3 h-full">
-                <div className="h-10 w-10 rounded-full  flex-shrink-0 overflow-hidden">
+                <div className="h-10 w-10 rounded-full shrink-0 overflow-hidden">
                     {message.authorId.logo ? (
                         <div className="h-full w-full flex items-center justify-center  font-bold text-primary-content ">
                             <img

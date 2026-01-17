@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { UseAuthFetch } from '../hooks/useAuthFetch';
-import ReportsList from './reportsList';
 
 interface ImportError {
     row?: number;
@@ -132,8 +131,6 @@ export default function ImportStudent() {
 
     return (
         <div className="container mx-auto p-6">
-            <h1 className="text-2xl font-bold mb-6">Import des étudiants</h1>
-
             <div className="card bg-base-200 shadow-xl mb-6">
                 <div className="card-body">
                     <h2 className="card-title">Sélectionner un fichier</h2>
@@ -266,10 +263,6 @@ export default function ImportStudent() {
                     <p className="text-sm">Sélectionnez un fichier pour commencer l'import</p>
                 </div>
             )}
-
-            {/* Section des signalements */}
-            <div className="divider my-12"></div>
-            <ReportsList />
         </div>
     );
 }
