@@ -3,7 +3,7 @@
  * Represents the structure of post data for their creation
  */
 import { Types } from 'mongoose';
-import { Post, PostType } from '../post.schema';
+import { Post, PostDocument, PostType } from '../post.schema';
 import { CompanyDto } from '../../company/dto/company.dto';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 import { ValidateNested } from 'class-validator';
@@ -11,7 +11,7 @@ import { ValidateNested } from 'class-validator';
 @Exclude()
 export class PostDto {
     /** Unique identifier of the company */
-    @Transform((params) => params.obj._id)
+    @Transform((params: { obj: PostDocument }) => params.obj._id)
     @Expose()
     _id: Types.ObjectId;
 

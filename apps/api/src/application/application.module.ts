@@ -8,12 +8,14 @@ import { Application, ApplicationSchema } from './application.schema';
 import { S3Module } from '../s3/s3.module';
 import { StorageProviderType } from '../s3/s3.constants';
 import { PaginationService } from '../common/pagination/pagination.service';
+import { NotificationModule } from 'src/notification/notification.module';
 
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Application.name, schema: ApplicationSchema }]),
         forwardRef(() => PostModule),
         StudentModule,
+        NotificationModule,
         S3Module.register({ provider: StorageProviderType.MINIO }),
     ],
     controllers: [ApplicationController],
