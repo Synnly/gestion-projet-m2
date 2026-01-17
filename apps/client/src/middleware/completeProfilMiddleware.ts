@@ -56,6 +56,18 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
         const newProfile: companyProfileStoreType = profileStore.getState();
 
         const isComplete = isProfilComplete(newProfile.profile);
+        const isRejected = newProfile.profile?.rejected?.isRejected || false;
+
+        // If account is rejected, redirect to complete-profil to show rejection message
+        if (isRejected && pathname !== '/complete-profil') {
+            throw redirect('/complete-profil');
+        }
+
+        // If on complete-profil page and rejected, allow to stay to see message
+        if (isRejected && pathname === '/complete-profil') {
+            return;
+        }
+
         if (!isComplete && pathname === '/complete-profil') {
             return;
         }
@@ -64,8 +76,6 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
         }
 
         if (isComplete) {
-            const validationRes = await authFetch(`${API_URL}/api/companies/${payload.id}/is-valid`, {
-                method: 'GET',
             try {
                 const validationRes = await authFetch(`${API_URL}/api/companies/${payload.id}/is-valid`, {
                     method: 'GET',
@@ -83,6 +93,11 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
                 if (!isValid && pathname !== '/pending-validation') {
                     throw redirect('/pending-validation');
                 }
+
+                // If company has become valid while on the pending page, redirect to dashboard.
+                if (isValid && pathname === '/pending-validation') {
+                    throw redirect(`/${payload.role.toLowerCase()}/dashboard`);
+                }
             } catch (error) {
                 console.error(
                     `Error while checking company validation status for company ${payload.id}:`,
@@ -90,14 +105,10 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
                 );
                 // Allow navigation to continue to avoid degrading UX on transient failures.
                 return;
-
-                // If company has become valid while on the pending page, redirect to dashboard.
-                if (isValid && pathname === '/pending-validation') {
-                    throw redirect(`/${payload.role.toLowerCase()}/dashboard`);
-                }
             }
         }
-        if (isComplete && pathname === '/complete-profil') {
+        
+        if (isComplete && pathname === '/complete-profil' && !isRejected) {
             throw redirect(`/${payload.role.toLowerCase()}/dashboard`);
         }
     }

@@ -13,6 +13,12 @@ export interface Company {
     legalStatus?: string;
     isValid: boolean;
     createdAt: string;
+    updatedAt?: string;
+    rejected?: {
+        isRejected: boolean;
+        rejectionReason?: string;
+        rejectedAt?: string;
+    };
 }
 
 export interface PaginatedCompanyResponse {
@@ -48,9 +54,19 @@ export const fetchPendingCompanies = async (
     return response.json();
 };
 
-export const validateCompany = async (authFetch: ReturnType<typeof UseAuthFetch>, companyId: string): Promise<void> => {
+export const validateCompany = async (
+    authFetch: ReturnType<typeof UseAuthFetch>,
+    companyId: string,
+    rejectionReason?: string,
+): Promise<void> => {
     const response = await authFetch(`${API_URL}/api/companies/${companyId}/validate`, {
         method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        data: JSON.stringify({
+            rejectionReason: rejectionReason || undefined,
+        }),
     });
 
     if (!response.ok) {
@@ -58,9 +74,19 @@ export const validateCompany = async (authFetch: ReturnType<typeof UseAuthFetch>
     }
 };
 
-export const rejectCompany = async (authFetch: ReturnType<typeof UseAuthFetch>, companyId: string): Promise<void> => {
+export const rejectCompany = async (
+    authFetch: ReturnType<typeof UseAuthFetch>,
+    companyId: string,
+    rejectionReason: string,
+): Promise<void> => {
     const response = await authFetch(`${API_URL}/api/companies/${companyId}/reject`, {
         method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        data: JSON.stringify({
+            rejectionReason,
+        }),
     });
 
     if (!response.ok) {

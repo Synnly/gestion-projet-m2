@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
+import { RejectedDto } from './dto/rejection.dto';
 import { CompanyService } from './company.service';
 import { CompanyDto } from './dto/company.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
@@ -89,8 +90,15 @@ export class CompanyController {
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
-    async validateCompany(@Param('companyId', ParseObjectIdPipe) companyId: string) {
-        await this.companyService.update(companyId, { isValid: true });
+    async validateCompany(
+        @Param('companyId', ParseObjectIdPipe) companyId: string,
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        dto: RejectedDto,
+    ) {
+        await this.companyService.update(companyId, {
+            isValid: true,
+            rejected: { isRejected: false, rejectionReason: dto.rejectionReason, rejectedAt: undefined },
+        });
     }
 
     /**
@@ -102,8 +110,15 @@ export class CompanyController {
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
-    async rejectCompany(@Param('companyId', ParseObjectIdPipe) companyId: string) {
-        await this.companyService.update(companyId, { isValid: false });
+    async rejectCompany(
+        @Param('companyId', ParseObjectIdPipe) companyId: string,
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        dto: RejectedDto,
+    ) {
+        await this.companyService.update(companyId, {
+            isValid: false,
+            rejected: { isRejected: true, rejectionReason: dto.rejectionReason, rejectedAt: new Date() },
+        });
     }
 
     /**
@@ -112,6 +127,8 @@ export class CompanyController {
      * @returns An object indicating whether the company is valid
      */
     @Get('/:companyId/is-valid')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.OK)
     async isValid(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<{ isValid: boolean }> {
         const isValid = await this.companyService.isValid(companyId);
@@ -195,6 +212,10 @@ export class CompanyController {
         const posts = company.posts ?? [];
         return new CompanyDto({
             ...company,
+            rejected: company.rejected ? {
+                ...company.rejected,
+                rejectionReason: company.rejected.rejectionReason ?? '',
+            } : { isRejected: false, rejectionReason: undefined, rejectedAt: undefined },
             posts: posts.map((post: PostDocument) => new PostDto(post)),
         });
     }

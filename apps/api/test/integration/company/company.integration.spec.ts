@@ -1340,6 +1340,7 @@ describe('Company Integration Tests', () => {
 
             const response = await request(app.getHttpServer())
                 .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
                 .expect(200);
 
             expect(response.body).toEqual({ isValid: true });
@@ -1356,6 +1357,7 @@ describe('Company Integration Tests', () => {
 
             const response = await request(app.getHttpServer())
                 .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
                 .expect(200);
 
             expect(response.body).toEqual({ isValid: false });
@@ -1372,6 +1374,7 @@ describe('Company Integration Tests', () => {
 
             const response = await request(app.getHttpServer())
                 .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
                 .expect(200);
 
             expect(response.body).toEqual({ isValid: false });
@@ -1387,6 +1390,7 @@ describe('Company Integration Tests', () => {
 
             const response = await request(app.getHttpServer())
                 .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
                 .expect(200);
 
             expect(response.body).toEqual({ isValid: false });
@@ -1397,6 +1401,7 @@ describe('Company Integration Tests', () => {
 
             const response = await request(app.getHttpServer())
                 .get(`/api/companies/${fakeId}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, fakeId.toString())}`)
                 .expect(404);
 
             expect(response.body.message).toContain('Company with id');
@@ -1406,6 +1411,7 @@ describe('Company Integration Tests', () => {
         it('should return 400 when companyId is invalid ObjectId', async () => {
             await request(app.getHttpServer())
                 .get('/api/companies/invalid-id/is-valid')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
                 .expect(400);
         });
 
@@ -1421,6 +1427,7 @@ describe('Company Integration Tests', () => {
 
             const response = await request(app.getHttpServer())
                 .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
                 .expect(404);
 
             expect(response.body.message).toContain('Company with id');
@@ -1439,6 +1446,7 @@ describe('Company Integration Tests', () => {
             for (let i = 0; i < 3; i++) {
                 const response = await request(app.getHttpServer())
                     .get(`/api/companies/${company._id}/is-valid`)
+                    .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
                     .expect(200);
 
                 expect(response.body).toEqual({ isValid: true });
@@ -1457,6 +1465,7 @@ describe('Company Integration Tests', () => {
             // Check initial state
             let response = await request(app.getHttpServer())
                 .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
                 .expect(200);
 
             expect(response.body).toEqual({ isValid: false });
@@ -1467,6 +1476,7 @@ describe('Company Integration Tests', () => {
             // Check new state
             response = await request(app.getHttpServer())
                 .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
                 .expect(200);
 
             expect(response.body).toEqual({ isValid: true });

@@ -81,6 +81,17 @@ export class CompanyDto {
     @Expose()
     createdAt: Date;
 
+    @Expose()
+    updatedAt: Date;
+
+    /** Rejection status and reason for the company */
+    @Expose()
+    rejected: {
+        isRejected: boolean;
+        rejectionReason?: string;
+        rejectedAt?: Date;
+    };
+
     /**
      * Constructs a CompanyDto instance
      * @param company Partial company data to initialize the DTO

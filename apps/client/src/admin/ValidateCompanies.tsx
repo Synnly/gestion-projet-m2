@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { UseAuthFetch } from '../hooks/useAuthFetch';
 import { toast } from 'react-toastify';
 import { CheckCircle2, Eye, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import RejectCompanyModal from './RejectCompanyModal';
 import {
     fetchPendingCompanies,
     validateCompany as validateCompanyAPI,
@@ -16,6 +17,7 @@ export default function ValidateCompanies() {
     const [total, setTotal] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+    const [companyToReject, setCompanyToReject] = useState<Company | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const itemsPerPage = 10;
 
@@ -35,11 +37,12 @@ export default function ValidateCompanies() {
         } finally {
             setIsLoading(false);
         }
-    }, [authFetch, itemsPerPage]);
+    }, [authFetch]);
 
     useEffect(() => {
         loadPendingCompanies(currentPage);
-    }, [currentPage, loadPendingCompanies]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentPage]);
 
     const handleValidate = async (companyId: string) => {
         setActionLoading(companyId);
@@ -56,13 +59,14 @@ export default function ValidateCompanies() {
         }
     };
 
-    const handleReject = async (companyId: string) => {
+    const handleReject = async (companyId: string, rejectionReason: string) => {
         setActionLoading(companyId);
         try {
-            await rejectCompanyAPI(authFetch, companyId);
+            await rejectCompanyAPI(authFetch, companyId, rejectionReason);
             toast.success('Entreprise rejetée');
             loadPendingCompanies(currentPage);
             setSelectedCompany(null);
+            setCompanyToReject(null);
         } catch (error) {
             toast.error("Erreur lors du rejet de l'entreprise");
             console.error(error);
@@ -87,7 +91,7 @@ export default function ValidateCompanies() {
             setCurrentPage(newPage);
         }
     };
-
+    console.log(companies);
     return (
         <div className="container mx-auto p-6">
             <h1 className="text-3xl font-bold mb-6">Validation des Entreprises</h1>
@@ -117,6 +121,8 @@ export default function ValidateCompanies() {
                                     <th>Ville</th>
                                     <th>Type</th>
                                     <th>Date d'inscription</th>
+                                    <th>Dernière modification</th>
+                                    <th>Date de refus</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -135,6 +141,18 @@ export default function ValidateCompanies() {
                                             <span className="badge badge-outline">{company.structureType || '-'}</span>
                                         </td>
                                         <td className="text-sm">{formatDate(company.createdAt)}</td>
+                                        <td className="text-sm">
+                                            {company.updatedAt && company.updatedAt !== company.createdAt ? formatDate(company.updatedAt) : '-'}
+                                        </td>
+                                        <td className="text-sm">
+                                            {company.rejected?.isRejected && company.rejected.rejectedAt ? (
+                                                <>
+                                                    {formatDate(company.rejected.rejectedAt)}
+                                                </>
+                                            ) : (
+                                                '-'
+                                            )}
+                                        </td>
                                         <td>
                                             <div className="flex gap-2">
                                                 <button
@@ -156,7 +174,7 @@ export default function ValidateCompanies() {
                                                 </button>
                                                 <button
                                                     className="btn btn-sm btn-error"
-                                                    onClick={() => handleReject(company._id)}
+                                                    onClick={() => setCompanyToReject(company)}
                                                     disabled={actionLoading === company._id}
                                                 >
                                                     {actionLoading === company._id ? (
@@ -234,6 +252,29 @@ export default function ValidateCompanies() {
                                 <p className="text-sm text-gray-500">Date d'inscription</p>
                                 <p className="font-semibold">{formatDate(selectedCompany.createdAt)}</p>
                             </div>
+                            {selectedCompany.updatedAt && (
+                                <div>
+                                    <p className="text-sm text-gray-500">Dernière modification</p>
+                                    <p className="font-semibold">{formatDate(selectedCompany.updatedAt)}</p>
+                                </div>
+                            )}
+                            {selectedCompany.rejected?.isRejected && selectedCompany.rejected.rejectedAt && (
+                                <div className="col-span-2">
+                                    <div className="alert alert-warning">
+                                        <div>
+                                            <p className="text-sm font-semibold">Compte précédemment rejeté</p>
+                                            <p className="text-xs">
+                                                Date de refus : {formatDate(selectedCompany.rejected.rejectedAt)}
+                                            </p>
+                                            {selectedCompany.rejected.rejectionReason && (
+                                                <p className="text-xs mt-1 whitespace-pre-line">
+                                                    Raison : {selectedCompany.rejected.rejectionReason}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div className="modal-action">
                             <button
@@ -249,7 +290,10 @@ export default function ValidateCompanies() {
                             </button>
                             <button
                                 className="btn btn-error"
-                                onClick={() => handleReject(selectedCompany._id)}
+                                onClick={() => {
+                                    setCompanyToReject(selectedCompany);
+                                    setSelectedCompany(null);
+                                }}
                                 disabled={actionLoading === selectedCompany._id}
                             >
                                 {actionLoading === selectedCompany._id ? (
@@ -265,6 +309,15 @@ export default function ValidateCompanies() {
                     </div>
                     <div className="modal-backdrop" onClick={() => setSelectedCompany(null)}></div>
                 </div>
+            )}
+
+            {companyToReject && (
+                <RejectCompanyModal
+                    companyName={companyToReject.name}
+                    onReject={(rejectionReason) => handleReject(companyToReject._id, rejectionReason)}
+                    onCancel={() => setCompanyToReject(null)}
+                    isLoading={actionLoading === companyToReject._id}
+                />
             )}
         </div>
     );

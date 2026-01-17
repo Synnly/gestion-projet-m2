@@ -3,6 +3,12 @@ import { Document, Types } from 'mongoose';
 import { NafCode } from './nafCodes.enum';
 import { Post } from '../post/post.schema';
 
+export type RejectionStatus = {
+    isRejected: boolean;
+    rejectionReason?: string;
+    rejectedAt?: Date;
+};
+
 /**
  * Enumeration of organizational structure types
  * Defines the different types of organizations that can register as companies
@@ -119,6 +125,18 @@ export class Company {
         default: [],
     })
     posts: Post[];
+
+    /**
+     * Rejection status of the user account
+     *
+     * - Defaults to false for new accounts
+     * - Set to true if the account is rejected during review
+     */
+    @Prop({
+        type: Object,
+        default: { isRejected: false, rejectionReason: undefined, rejectedAt: undefined },
+    })
+    rejected: RejectionStatus;
 }
 
 /**

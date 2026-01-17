@@ -1363,50 +1363,69 @@ describe('CompanyController', () => {
     describe('validateCompany', () => {
         it('should call service.update with isValid=true when validateCompany is called', async () => {
             const companyId = '507f1f77bcf86cd799439011';
+            const dto = { rejectionReason: 'Test reason' };
             mockCompanyService.update.mockResolvedValue(undefined);
 
-            await controller.validateCompany(companyId);
+            await controller.validateCompany(companyId, dto);
 
-            expect(service.update).toHaveBeenCalledWith(companyId, { isValid: true });
+            expect(service.update).toHaveBeenCalledWith(companyId, {
+                isValid: true,
+                rejected: { isRejected: false, rejectionReason: 'Test reason', rejectedAt: undefined },
+            });
         });
 
         it('should not throw error when company exists', async () => {
             const companyId = '507f1f77bcf86cd799439011';
+            const dto = { rejectionReason: undefined };
             mockCompanyService.update.mockResolvedValue(undefined);
 
-            await expect(controller.validateCompany(companyId)).resolves.not.toThrow();
+            await expect(controller.validateCompany(companyId, dto)).resolves.not.toThrow();
         });
 
         it('should propagate errors from service', async () => {
             const companyId = '507f1f77bcf86cd799439011';
+            const dto = { rejectionReason: undefined };
             mockCompanyService.update.mockRejectedValue(new NotFoundException('Company not found'));
 
-            await expect(controller.validateCompany(companyId)).rejects.toThrow(NotFoundException);
+            await expect(controller.validateCompany(companyId, dto)).rejects.toThrow(NotFoundException);
         });
     });
 
     describe('rejectCompany', () => {
         it('should call service.update with isValid=false when rejectCompany is called', async () => {
             const companyId = '507f1f77bcf86cd799439011';
+            const dto = { rejectionReason: 'Invalid SIRET' };
             mockCompanyService.update.mockResolvedValue(undefined);
 
-            await controller.rejectCompany(companyId);
+            await controller.rejectCompany(companyId, dto);
 
-            expect(service.update).toHaveBeenCalledWith(companyId, { isValid: false });
+            expect(service.update).toHaveBeenCalledWith(companyId, expect.objectContaining({
+                isValid: false,
+                rejected: expect.objectContaining({
+                    isRejected: true,
+                    rejectionReason: 'Invalid SIRET',
+                }),
+            }));
+            
+            // Verify rejectedAt is a Date
+            const callArgs = (service.update as jest.Mock).mock.calls[0][1];
+            expect(callArgs.rejected.rejectedAt).toBeInstanceOf(Date);
         });
 
         it('should not throw error when company exists', async () => {
             const companyId = '507f1f77bcf86cd799439011';
+            const dto = { rejectionReason: 'Test rejection' };
             mockCompanyService.update.mockResolvedValue(undefined);
 
-            await expect(controller.rejectCompany(companyId)).resolves.not.toThrow();
+            await expect(controller.rejectCompany(companyId, dto)).resolves.not.toThrow();
         });
 
         it('should propagate errors from service', async () => {
             const companyId = '507f1f77bcf86cd799439011';
+            const dto = { rejectionReason: 'Test rejection' };
             mockCompanyService.update.mockRejectedValue(new NotFoundException('Company not found'));
 
-            await expect(controller.rejectCompany(companyId)).rejects.toThrow(NotFoundException);
+            await expect(controller.rejectCompany(companyId, dto)).rejects.toThrow(NotFoundException);
         });
     });
 

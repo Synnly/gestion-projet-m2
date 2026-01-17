@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
+import { XCircle } from 'lucide-react';
 import {
     type completeProfilFormType,
     nafCode,
@@ -144,6 +145,38 @@ export const CompleteProfil = () => {
                     Ces informations nous aiderons à valider votre entreprise. elles ne seront pas toutes affichées
                     publiquement.
                 </p>
+
+                {profil?.rejected?.isRejected && profil?.rejected?.rejectionReason && (
+                    <div className="alert alert-error shadow-lg mt-6 w-full max-w-3xl">
+                        <div className="flex flex-col gap-2 w-full">
+                            <div className="flex items-center gap-2">
+                                <XCircle className="shrink-0 h-6 w-6" />
+                                <span className="font-bold">Votre compte a été rejeté</span>
+                            </div>
+                            {profil.rejected.rejectedAt && (
+                                <div className="pl-8 text-sm text-error-content">
+                                    <span className="italic">
+                                        Date de refus :{' '}
+                                        {new Date(profil.rejected.rejectedAt).toLocaleDateString('fr-FR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })}
+                                    </span>
+                                </div>
+                            )}
+                            <div className="pl-8">
+                                <p className="text-sm whitespace-pre-line">{profil.rejected.rejectionReason}</p>
+                            </div>
+                            <p className="text-sm pl-8 mt-2 italic">
+                                Veuillez corriger les informations signalées et soumettre à nouveau votre profil.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 <form
                     className="mt-8 w-full max-w-3xl flex flex-col flex-1 "
                     onSubmit={handleSubmit(onSubmit)}
