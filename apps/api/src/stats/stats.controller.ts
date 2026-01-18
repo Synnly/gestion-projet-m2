@@ -34,7 +34,7 @@ export class StatsController {
      */
     @Get('/public')
     @HttpCode(HttpStatus.OK)
-    async getPublicStats(): Promise<{ totalPosts: number; totalCompanies: number; totalStudents: number }> {
+    async getPublicStats(): Promise<{ totalPosts: string; totalCompanies: string; totalStudents: string }> {
         return this.statsService.getPublicStats();
     }
 
@@ -46,9 +46,7 @@ export class StatsController {
      */
     @Get('/public/posts')
     @HttpCode(HttpStatus.OK)
-    async getLatestPublicPosts(
-        @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-    ): Promise<Post[]> {
+    async getLatestPublicPosts(@Query('limit', new ParseIntPipe({ optional: true })) limit?: number): Promise<Post[]> {
         const validLimit = Math.min(limit || 6, 20);
         return this.statsService.getLatestPublicPosts(validLimit);
     }

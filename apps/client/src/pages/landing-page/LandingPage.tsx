@@ -214,7 +214,7 @@ export default function LandingPage() {
                             className="text-4xl md:text-5xl font-bold mb-4"
                             viewport={{ once: true }}
                         >
-                            Offres de stage populaires
+                            Dernières offres de stage
                         </motion.h2>
                         <motion.p
                             initial={{ opacity: 0, y: 20 }}
@@ -223,7 +223,7 @@ export default function LandingPage() {
                             viewport={{ once: true }}
                             className="text-xl text-base-content/70 max-w-2xl mx-auto"
                         >
-                            Découvrez les opportunités les plus consultées par les étudiants
+                            Découvrez les opportunités les plus récentes proposées par nos entreprises partenaires
                         </motion.p>
                     </div>
 

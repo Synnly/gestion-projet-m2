@@ -165,17 +165,42 @@ export class StatsService {
      * Returns basic counts without authentication
      * @returns An object containing public stats (posts, companies, students)
      */
-    async getPublicStats(): Promise<{ totalPosts: number; totalCompanies: number; totalStudents: number }> {
+    async getPublicStats(): Promise<{ totalPosts: string; totalCompanies: string; totalStudents: string }> {
         const [totalPosts, totalCompanies, totalStudents] = await Promise.all([
             this.postModel.countDocuments({ isVisible: true }),
             this.companyModel.countDocuments({ deletedAt: { $exists: false }, isValid: true }),
             this.studentModel.countDocuments({ deletedAt: { $exists: false } }),
         ]);
 
+        const formatCount = (n: number): number | string => {
+            if (n < 10) return n;
+
+            if (n < 100) {
+                // 10 - 99: round to nearest 10 (no decimal)
+                return Math.round(n / 10) * 10;
+            }
+
+            // 10 - 9_999: round to nearest 10 (last digit 0)
+            if (n < 1_000) {
+                const rounded = Math.round(n / 10) * 10;
+                const k = rounded / 1000;
+                return k % 1 === 0 ? `${k}k` : `${k.toFixed(1)}k`;
+            }
+            // 10k - 999_999: round to nearest 100
+            if (n < 1_000_000) {
+                const rounded = Math.round(n / 100) * 100;
+                const k = rounded / 1000;
+                return k % 1 === 0 ? `${k}k` : `${k.toFixed(1)}k`;
+            }
+            // >= 1_000_000: show in M with one decimal when needed
+            const roundedM = Math.round(n / 100_000) / 10; // e.g. 1.2M
+            return roundedM % 1 === 0 ? `${roundedM.toFixed(0)}M` : `${roundedM.toFixed(1)}M`;
+        };
+
         return {
-            totalPosts,
-            totalCompanies,
-            totalStudents,
+            totalPosts: formatCount(totalPosts).toString(),
+            totalCompanies: formatCount(totalCompanies).toString(),
+            totalStudents: formatCount(totalStudents).toString(),
         };
     }
 
