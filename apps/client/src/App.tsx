@@ -42,7 +42,6 @@ import TopicDetailPage from './pages/forum/TopicDetailPage';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
 import { ForumPage } from './pages/forums/ForumPage.tsx';
 import { PendingValidation } from './pages/PendingValidation.tsx';
-import { StatsPage } from './admin/stats';
 import ImportStudent from './admin/importStudent.tsx';
 
 function App() {
@@ -185,11 +184,6 @@ function App() {
                                     children: [
                                         { index: true, element: <ImportStudent /> },
                                     ],
-                                },
-                                {
-                                    path: 'stats',
-                                    element: <StatsPage />,
-                                    handle: { title: 'Statistiques' },
                                 },
                             ],
                         },

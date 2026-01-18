@@ -1,6 +1,7 @@
 import { Navbar } from '../components/navbar/Navbar';
 import { AdminTabs } from './AdminTabs';
 import ImportStudent from './importStudent';
+import { StatsPage } from './stats';
 import ValidateCompanies from './ValidateCompanies';
 
 export function AdminDashboard() {
@@ -15,6 +16,11 @@ export function AdminDashboard() {
             label: 'Validation Entreprises',
             content: <ValidateCompanies />,
         },
+        {
+            id: 'stats',
+            label: 'Statistiques',
+            content: <StatsPage />,
+        }
     ];
 
     return (
