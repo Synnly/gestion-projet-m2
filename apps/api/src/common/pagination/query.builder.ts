@@ -58,7 +58,7 @@ export class QueryBuilder<T> {
                 if (isSingleSimpleToken) {
                     // Use text index when available; keeps query fast and index-backed.
                     // Fuzzy search will still be used for multi-word/complex queries below.
-                    (mutableFilter.$text = { $search: globalSearch });
+                    mutableFilter.$text = { $search: globalSearch };
                 } else {
                     const andConditions = (mutableFilter.$and ??= []) as Array<Record<string, unknown>>;
                     for (const token of tokens) {
@@ -139,7 +139,7 @@ export class QueryBuilder<T> {
         const city = toStringOrUndefined(this.params.city);
 
         if (city && radiusKm != null && radiusKm > 0) {
-            const coo = await this.geoService.geocodeAddress(city);
+            const coo = await this.geoService?.geocodeAddress(city);
             if (coo) {
                 mutableFilter.location = {
                     $geoWithin: {

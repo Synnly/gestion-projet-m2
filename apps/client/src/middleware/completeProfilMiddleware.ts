@@ -26,6 +26,9 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
     const authFetch = UseAuthFetch();
     const pathname = new URL(request.url).pathname;
     const { setProfil, profile } = profileStore.getState();
+    if (pathname === '/logout') {
+        return;
+    }
     if (!payload.isVerified && pathname === '/verify') {
         return;
     }
@@ -68,9 +71,7 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
     }
     if (payload.role === 'STUDENT') {
         // Fetch student profile to check isFirstTime
-        const studentRes = await authFetch(`${API_URL}/api/students/${payload.id}`, {
-            
-        });
+        const studentRes = await authFetch(`${API_URL}/api/students/${payload.id}`, {});
 
         if (!studentRes.ok) {
             return redirect('/signin');

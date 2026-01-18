@@ -1,4 +1,4 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
 import { User, UserDocument } from '../user/user.schema';
+import { MailerService } from 'src/mailer/mailer.service';
 
 /**
  * Service handling authentication logic
@@ -34,6 +35,7 @@ export class AuthService {
         private readonly jwtService: JwtService, // For access tokens
         @Inject('REFRESH_JWT_SERVICE') private readonly refreshJwtService: JwtService, // For refresh tokens
         private readonly configService: ConfigService,
+        private readonly mailerService: MailerService,
     ) {
         let lifespan: number | undefined;
 
@@ -65,7 +67,10 @@ export class AuthService {
         // Generating tokens
         const { token, rti } = await this.generateRefreshToken(user._id, user.role);
         const accessToken = await this.generateAccessToken(user._id, user.email, rti);
-
+        if (!user.isVerified) {
+            await this.mailerService.sendVerificationEmail(email);
+            Logger.log(`Sent verification email to unverified user: ${email}`);
+        }
         return { access: accessToken, refresh: token };
     }
 

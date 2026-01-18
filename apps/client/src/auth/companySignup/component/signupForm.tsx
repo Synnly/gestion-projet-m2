@@ -65,11 +65,6 @@ export const SignupForm = () => {
             if (loginRes) {
                 const accessToken = await loginRes.text();
                 setAccess(accessToken);
-                //send code mail to verify
-                await mutateAsync({
-                    url: `${API_URL}/api/mailer/auth/send-verification`,
-                    data: { email: registerData.email },
-                });
                 navigate('/verify');
             }
         }
