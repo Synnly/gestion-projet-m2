@@ -40,6 +40,7 @@ describe('ForumService', () => {
         // Add chainable methods if needed, returning 'this'
         populate: jest.fn().mockReturnThis(),
         sort: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
     });
 
     // Mock constructor for new this.forumModel(...)
@@ -114,7 +115,7 @@ describe('ForumService', () => {
 
             expect(mockForumModel.findOne).toHaveBeenCalledWith({ company: companyId });
             expect(mockCompanyService.findOne).toHaveBeenCalledWith(companyId.toString());
-            expect(result).toEqual({ company: companyId, companyName });
+            expect(result).toEqual({ company: companyId, companyName, topics: [] });
         });
 
         it('should create a general forum when it does not exist', async () => {
@@ -124,7 +125,7 @@ describe('ForumService', () => {
             const result = await service.create();
 
             expect(mockForumModel.findOne).toHaveBeenCalledWith({ company: undefined });
-            expect(result).toEqual({ company: undefined });
+            expect(result).toEqual({ topics: [] });
         });
 
         it('should throw BadRequestException when forum for company already exists', async () => {
@@ -193,6 +194,10 @@ describe('ForumService', () => {
             {
                 path: 'company',
                 select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            },
+            {
+                path: 'topics',
+                select: '_id author title description',
             },
         ];
 

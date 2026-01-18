@@ -4,9 +4,13 @@ describe('main bootstrap (import)', () => {
             const listenMock = jest.fn().mockResolvedValue(undefined);
             const useMock = jest.fn();
             const enableCorsMock = jest.fn();
-            const createMock = jest
-                .fn()
-                .mockResolvedValue({ use: useMock, listen: listenMock, enableCors: enableCorsMock });
+            const getMock = jest.fn().mockReturnValue({ run: jest.fn() });
+            const createMock = jest.fn().mockResolvedValue({
+                use: useMock,
+                listen: listenMock,
+                enableCors: enableCorsMock,
+                get: getMock,
+            });
 
             jest.doMock('@nestjs/core', () => ({ NestFactory: { create: createMock } }));
             jest.doMock('cookie-parser', () => jest.fn());

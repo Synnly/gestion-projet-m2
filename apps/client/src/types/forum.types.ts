@@ -16,8 +16,9 @@ export interface CompanyForum {
 
 export interface UserForum {
     _id: string;
-    firstName: string;
-    lastName: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
 }
 
 export interface Forum {
@@ -33,7 +34,7 @@ export interface Topic {
     title: string;
     description: string;
     author: UserForum;
-    nbMessages: number;
+    messages: string[];
 }
 
 export interface ForumFilters {

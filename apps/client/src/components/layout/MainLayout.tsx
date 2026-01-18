@@ -15,10 +15,8 @@ export default function MainLayout() {
         }
     }, [matches]);
     return (
-        <div className="min-h-screen flex flex-col">
-            <main className="flex-1">
-                <Outlet />
-            </main>
+        <div className="min-h-screen ">
+            <Outlet />
             <Footer />
         </div>
     );

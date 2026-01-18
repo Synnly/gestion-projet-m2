@@ -4,6 +4,21 @@ import * as bcrypt from 'bcrypt';
 import { Role } from '../common/roles/roles.enum';
 import { Company } from '../company/company.schema';
 import { Student } from '../student/student.schema';
+import { Admin } from '../admin/admin.schema';
+
+/**
+ * Mongoose document type for Ban object
+ * Is used only for banned user
+ */
+@Schema()
+export class BanInfo {
+  @Prop({ required: true })
+  date: Date;
+
+  @Prop({ required: true })
+  reason: string;
+}
+export const BanInfoSchema = SchemaFactory.createForClass(BanInfo);
 
 /**
  * Mongoose document type for User entities
@@ -28,6 +43,13 @@ export type CompanyUserDocument = UserDocument & Company & Document;
  * Merges User base fields with Student-specific fields due to discriminator pattern.
  */
 export type StudentUserDocument = UserDocument & Student & Document;
+
+/**
+ * Combined document type for Admin users
+ *
+ * Merges User base fields with Admin-specific fields due to discriminator pattern.
+ */
+export type AdminUserDocument = UserDocument & Admin & Document;
 
 /**
  * Base User schema for the authentication system
@@ -176,6 +198,13 @@ export class User {
      */
     @Prop({ required: true, type: String, enum: Role })
     role: Role;
+
+    /**
+     * User's ban info
+     * Is only filled if the user has been banned by an admin.
+     */
+    @Prop({ type: BanInfoSchema }) 
+    ban: BanInfo;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

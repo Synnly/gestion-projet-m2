@@ -33,6 +33,8 @@ export class StudentDto {
     @Expose()
     isFirstTime: boolean;
 
+    @Expose()
+    role: 'STUDENT';
     /**
      * Create a partial `StudentDto` instance.
      * @param partial Optional partial data to assign to the DTO.

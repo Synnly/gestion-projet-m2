@@ -2,20 +2,21 @@ import React, { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router';
 import { useInternshipStore } from '../../store/useInternshipStore';
 import type { Internship } from '../../types/internship.types';
-import { Bookmark } from 'lucide-react';
+import { Eye, Pen } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import { userStore } from '../../store/userStore';
 import { ApplicationStatusChecker } from '../../pages/internship/component/InternshipApplyChecker';
+import { ApplicationStatus } from '../../pages/internship/component/ApplicationStatus.tsx';
+import { useQuery } from '@tanstack/react-query';
+import { UseAuthFetch } from '../../hooks/useAuthFetch.tsx';
 const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }> = ({
     internship,
     applyable = true,
 }) => {
-    const savedInternships = useInternshipStore((state) => state.savedInternships);
-    const toggleSaveInternship = useInternshipStore((state) => state.toggleSaveInternship);
+    const authFetch = UseAuthFetch();
     const setDetailHeight = useInternshipStore((s) => s.setDetailHeight);
     const rootRef = useRef<HTMLDivElement | null>(null);
-    const isSaved = savedInternships.includes(internship._id);
     const access = userStore((state) => state.access);
     const get = userStore((state) => state.get);
     const payload = get(access);
@@ -48,6 +49,35 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
         return () => window.removeEventListener('resize', update);
     }, [setDetailHeight]);
 
+    const studentId = payload?.id;
+
+    const { data: application, isLoading } = useQuery({
+        queryKey: ['application', studentId, internship._id],
+
+        queryFn: async () => {
+            const url = `${import.meta.env.VITE_APIURL}/api/application/check?studentId=${studentId}&postId=${internship._id}`;
+
+            const res = await authFetch(url, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (res.ok) {
+                try {
+                    const responseData = await res.json();
+                    return responseData;
+                } catch (e) {
+                    return null;
+                }
+            }
+            const errorMessage = `Erreur HTTP ${res.status}`;
+            throw new Error(errorMessage);
+        },
+
+        enabled: !!studentId && !!internship._id,
+        staleTime: 1 * 60 * 1000, // 1 minute
+    });
+
     return (
         <div className="flex flex-col flex-1">
             <div ref={rootRef}>
@@ -55,11 +85,11 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                     <div className="card-body p-6">
                         <div className="flex items-start justify-between">
                             <div className="flex items-start gap-4">
-                                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-neutral-300">
+                                <div className="avatar flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-neutral-300">
                                     {internship.company.logoUrl ? (
                                         <img
                                             alt={`${internship.company.name} logo`}
-                                            className="h-9 w-9"
+                                            className="rounded"
                                             src={internship.company.logoUrl}
                                         />
                                     ) : (
@@ -77,7 +107,7 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                                         {internship.company.name} • {internship.adress}
                                     </p>
                                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                                        <span className="badge badge-success text-content-primary">
+                                        <span className="badge badge-primary text-content-primary">
                                             {internship.type}
                                         </span>
                                         {internship.sector && <span className="badge">{internship.sector}</span>}
@@ -86,17 +116,31 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                                     </div>
                                 </div>
                             </div>
-                            {applyable && (
-                                <button className="text-primary" onClick={() => toggleSaveInternship(internship._id)}>
-                                    <Bookmark size={20} fill={isSaved ? 'currentColor' : 'none'} />
-                                </button>
+                            {applyable && ((payload && payload.role === 'STUDENT') || !payload) && application && (
+                                <ApplicationStatus application={application} />
                             )}
                         </div>
 
                         {applyable && ((payload && payload.role === 'STUDENT') || !payload) && (
-                            <ApplicationStatusChecker studentId={payload?.id} adId={internship._id} />
+                            <ApplicationStatusChecker
+                                application={application}
+                                isLoading={isLoading}
+                                postId={internship._id}
+                            />
                         )}
-                        <div className="mt-8 border-t border-base-300! pt-6">
+
+                        {get(access)?.role === 'COMPANY' && (
+                            <div className="flex justify-between gap-8 mt-4">
+                                <a className="btn grow" href={`/internship/${internship._id}/edit`}>
+                                    Modifier <Pen />
+                                </a>
+                                <a className="btn grow" href={`/internship/${internship._id}/applications`}>
+                                    Consulter les candidatures <Eye />
+                                </a>
+                            </div>
+                        )}
+
+                        <div className="mt-4 border-t border-base-300! pt-6">
                             <h4 className="text-lg font-bold">Description du stage</h4>
                             <div className="mt-4 space-y-4 text-sm text-base-content">
                                 <div className="prose max-w-none bg-transparent text-base-content shadow-none border-0">
