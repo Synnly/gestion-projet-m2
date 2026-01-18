@@ -33,6 +33,8 @@ export class StudentDto {
     @Expose()
     isFirstTime: boolean;
 
+    @Expose()
+    role: 'STUDENT';
     /**
      * A short tagline or motto for the student.
      */

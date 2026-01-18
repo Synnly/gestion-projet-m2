@@ -78,6 +78,22 @@ export class CompanyDto {
     @Type(() => PostDto)
     posts: PostDto[];
 
+    @Expose()
+    createdAt: Date;
+
+    @Expose()
+    updatedAt: Date;
+
+    /** Rejection status and reason for the company */
+    @Expose()
+    rejected: {
+        isRejected: boolean;
+        rejectionReason?: string;
+        rejectedAt?: Date;
+        modifiedAt?: Date;
+    };
+    role: 'COMPANY';
+
     /**
      * Constructs a CompanyDto instance
      * @param company Partial company data to initialize the DTO
