@@ -29,6 +29,7 @@ import { Student, StudentDocument } from '../../../src/student/student.schema';
 import { PaginationService } from 'src/common/pagination/pagination.service';
 import { ForumModule } from '../../../src/forum/forum.module';
 import { Forum, ForumDocument } from '../../../src/forum/forum.schema';
+import { NotificationService } from '../../../src/notification/notification.service';
 
 describe('Application Integration Tests', () => {
     let app: INestApplication;
@@ -53,6 +54,17 @@ describe('Application Integration Tests', () => {
                 uploadUrl: `https://uploads.test/${userId}/${fileType}/${fileName}`,
             }),
         ),
+    };
+
+    const mockNotificationService: Partial<NotificationService> = {
+        create: jest.fn(),
+        findAll: jest.fn(),
+        getUserNotifications: jest.fn(),
+        getUnreadCount: jest.fn(),
+        markAsRead: jest.fn(),
+        markAllAsRead: jest.fn(),
+        delete: jest.fn(),
+        deleteAllUserNotifications: jest.fn(),
     };
 
     const tokenFor = (role: Role, id: Types.ObjectId | string = new Types.ObjectId()) =>
@@ -138,6 +150,7 @@ describe('Application Integration Tests', () => {
                 ApplicationService,
                 ApplicationOwnerGuard,
                 { provide: S3Service, useValue: mockS3Service },
+                { provide: NotificationService, useValue: mockNotificationService },
                 PaginationService,
             ],
         })

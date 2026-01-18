@@ -43,6 +43,9 @@ import TopicDetailPage from './pages/forum/TopicDetailPage';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
 import { ForumPage } from './pages/forums/ForumPage.tsx';
 import LandingPage from './pages/landing-page/LandingPage.tsx';
+import { StatsPage } from './admin/stats';
+
+const VITE_API = import.meta.env.VITE_APIURL;
 
 function App() {
     userStore.persist.rehydrate();
@@ -56,8 +59,9 @@ function App() {
             children: [
                 {
                     path: 'logout',
-                    loader: () => {
+                    loader: async () => {
                         userStore.getState().logout();
+                        await fetch(`${VITE_API}/api/auth/logout`, { method: 'POST', credentials: 'include' });
                         return redirect('/signin');
                     },
                 },
@@ -178,7 +182,14 @@ function App() {
                                     path: 'dashboard',
                                     element: <AdminDashboard />,
                                     handle: { title: 'Tableau de bord admin' },
-                                    children: [{ index: true, element: <ImportStudent /> }],
+                                    children: [
+                                        { index: true, element: <ImportStudent /> },
+                                    ],
+                                },
+                                {
+                                    path: 'stats',
+                                    element: <StatsPage />,
+                                    handle: { title: 'Statistiques' },
                                 },
                             ],
                         },

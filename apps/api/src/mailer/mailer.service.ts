@@ -250,6 +250,30 @@ export class MailerService {
     }
 
     /**
+     * Send account ban email with reason
+     * @param email User's email
+     * @param reason The reason of the ban
+     */
+    async sendAccountBanEmail(email: string, reason: string = '') {
+        const normalized = email.toLowerCase();
+        const { from, name } = this.getFromAddress();
+
+        await this.mailerProvider.sendMail({
+            to: normalized,
+            subject: `Vous avez été banni de ${name} !`,
+            template: 'accountBan',
+            from,
+            context: {
+                email: normalized,
+                banReason: reason,
+                fromName: name,
+            },
+        });
+
+        return true;
+    }
+
+    /**
      * Update user password after successful OTP verification
      * @param email Email address of the user
      * @param newPassword New password to set for the user

@@ -19,19 +19,25 @@ interface FetchOptions<TData = unknown> {
  *not need to set Authorization header and credentials, it's handled automatically
  */
 export const UseAuthFetch = () => {
-    const accessToken = userStore.getState().access;
+    
     const setUserToken = userStore.getState().set;
 
     const authFetch = async <TData = unknown,>(url: string, options?: FetchOptions<TData>): Promise<Response> => {
         const doFetch = async (): Promise<Response> => {
+            const accessToken = userStore.getState().access;
             try {
+                const headers: Record<string, string> = {
+                    ...(options?.headers || {}),
+                    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+                };
+
+                if (!(options?.data instanceof FormData)) {
+                    headers['Content-Type'] = 'application/json';
+                }
+
                 const res = await fetch(url, {
                     method: options?.method || 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(options?.headers || {}),
-                        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-                    },
+                    headers: headers,
                     body: options?.data,
                     credentials: 'include',
                 });
@@ -63,6 +69,7 @@ export const UseAuthFetch = () => {
                     });
 
                     if (!refreshRes.ok) {
+                        setUserToken(''); // empty the token locally
                         redirect('/signin');
                         throw new Error('Redirection vers signin');
                     }

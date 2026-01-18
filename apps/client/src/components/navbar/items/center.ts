@@ -9,6 +9,13 @@ export const centerNavItems: NavItem[] = [
         role: ['ADMIN', 'STUDENT', 'COMPANY'],
     },
 
+     {
+        key: 'admin-stats-link', 
+        title: 'Statistiques', 
+        to: '/admin/stats',
+        type: 'link',
+        role: ['ADMIN'],
+    },
     /*{
         key: 'offers',
         title: 'Annonces',
