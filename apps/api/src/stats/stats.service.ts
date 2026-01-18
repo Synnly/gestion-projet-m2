@@ -178,4 +178,19 @@ export class StatsService {
             totalStudents,
         };
     }
+
+    /**
+     * Retrieves the latest public posts for the landing page
+     * Returns only visible posts with populated company information
+     * @param limit - Number of posts to return (default: 6)
+     * @returns Array of posts with company details
+     */
+    async getLatestPublicPosts(limit: number = 6): Promise<Post[]> {
+        return this.postModel
+            .find({ isVisible: true })
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .populate('company', 'name email logo city country')
+            .exec();
+    }
 }

@@ -3,18 +3,20 @@ import { Briefcase, Building2, ArrowRight } from 'lucide-react';
 import { motion, useInView } from 'motion/react';
 import { useState, useEffect, useRef } from 'react';
 import { Navbar } from '../../components/navbar/Navbar';
-import { mockInternships } from './mockInternships.data';
 import { features } from './mockFeatures.data';
 import FeatureCard from './components/FeatureCard';
 import InternshipGrid from './components/InternshipGrid';
 import { userStore } from '../../store/userStore';
-import { fetchPublicStats, type PublicStats } from '../../api/stats';
+import { fetchPublicStats, fetchLatestPosts, type PublicStats } from '../../api/stats';
+import type { Internship } from '../../types/internship.types';
 
 export default function LandingPage() {
     const user = userStore((state) => state.access);
     const [activeStep, setActiveStep] = useState(0);
     const [stats, setStats] = useState<PublicStats | null>(null);
     const [isLoadingStats, setIsLoadingStats] = useState(true);
+    const [internships, setInternships] = useState<Internship[]>([]);
+    const [isLoadingInternships, setIsLoadingInternships] = useState(true);
     const stepsRef = useRef<HTMLDivElement>(null);
     const isInView = useInView(stepsRef, { once: true });
 
@@ -30,12 +32,24 @@ export default function LandingPage() {
             }
         };
 
+        const loadInternships = async () => {
+            try {
+                const data = await fetchLatestPosts(6);
+                setInternships(data);
+            } catch (error) {
+                console.error('Erreur lors du chargement des offres:', error);
+            } finally {
+                setIsLoadingInternships(false);
+            }
+        };
+
         loadStats();
+        loadInternships();
     }, []);
 
     useEffect(() => {
         if (!isInView) return;
-        
+
         const sequence = [
             { step: 1, delay: 500 },
             { step: 2, delay: 1500 },
@@ -44,11 +58,9 @@ export default function LandingPage() {
             { step: 1, delay: 4500 },
         ];
 
-        const timers = sequence.map(({ step, delay }) =>
-            setTimeout(() => setActiveStep(step), delay)
-        );
+        const timers = sequence.map(({ step, delay }) => setTimeout(() => setActiveStep(step), delay));
 
-        return () => timers.forEach(timer => clearTimeout(timer));
+        return () => timers.forEach((timer) => clearTimeout(timer));
     }, [isInView]);
 
     return (
@@ -161,33 +173,25 @@ export default function LandingPage() {
 
                     <div className="max-w-6xl mx-auto" ref={stepsRef}>
                         <ul className="steps steps-vertical lg:steps-horizontal w-full">
-                            <motion.li 
-                                className={`step ${activeStep >= 1 ? 'step-primary' : ''}`}
-                            >
+                            <motion.li className={`step ${activeStep >= 1 ? 'step-primary' : ''}`}>
                                 <div className="text-left mt-4">
                                     <h3 className="font-bold text-lg">1. Créez votre compte</h3>
                                     <p className="text-base-content/70">Inscription rapide et gratuite</p>
                                 </div>
                             </motion.li>
-                            <motion.li 
-                                className={`step ${activeStep >= 2 ? 'step-primary' : ''}`}
-                            >
+                            <motion.li className={`step ${activeStep >= 2 ? 'step-primary' : ''}`}>
                                 <div className="text-left mt-4">
                                     <h3 className="font-bold text-lg">2. Complétez votre profil</h3>
                                     <p className="text-base-content/70">Ajoutez vos compétences et expériences</p>
                                 </div>
                             </motion.li>
-                            <motion.li 
-                                className={`step ${activeStep >= 3 ? 'step-primary' : ''}`}
-                            >
+                            <motion.li className={`step ${activeStep >= 3 ? 'step-primary' : ''}`}>
                                 <div className="text-left mt-4">
                                     <h3 className="font-bold text-lg">3. Postulez</h3>
                                     <p className="text-base-content/70">Candidatez aux offres qui vous intéressent</p>
                                 </div>
                             </motion.li>
-                            <motion.li 
-                                className={`step ${activeStep >= 4 ? 'step-primary' : ''}`}
-                            >
+                            <motion.li className={`step ${activeStep >= 4 ? 'step-primary' : ''}`}>
                                 <div className="text-left mt-4">
                                     <h3 className="font-bold text-lg">4. Décrochez votre stage</h3>
                                     <p className="text-base-content/70">
@@ -223,7 +227,17 @@ export default function LandingPage() {
                         </motion.p>
                     </div>
 
-                    <InternshipGrid internships={mockInternships} />
+                    {isLoadingInternships ? (
+                        <div className="flex justify-center items-center py-16">
+                            <span className="loading loading-spinner loading-lg"></span>
+                        </div>
+                    ) : internships.length > 0 ? (
+                        <InternshipGrid internships={internships} />
+                    ) : (
+                        <div className="text-center py-16">
+                            <p className="text-base-content/70">Aucune offre disponible pour le moment</p>
+                        </div>
+                    )}
 
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
