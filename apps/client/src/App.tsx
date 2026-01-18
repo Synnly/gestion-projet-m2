@@ -75,10 +75,11 @@ function App() {
                 { path: 'privacy', element: <PrivacyPolicy /> },
                 { path: 'cookies', element: <CookiePolicy /> },
                 { path: 'safety', element: <SafetyCompliance /> },
-                { index: true, element: <LandingPage />, handle: { title: 'Accueil - Stagora' } },
+                
                 {
                     loader: notAuthMiddleWare,
                     children: [
+                        { index: true, element: <LandingPage />, handle: { title: 'Accueil - Stagora' } },
                         { path: 'signin', element: <Login />, handle: { title: 'Connectez-vous' } },
                         {
                             path: 'forgot-password',
