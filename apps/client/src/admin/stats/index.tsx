@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { useFetchStats } from '../../hooks/useFetchStats';
-import { Navbar } from '../../components/navbar/Navbar';
-
 import { StatCard } from '../../components/stats/statCard';
 import { TabButton } from '../../components/stats/tabButton';
 import { ApplicationsTab } from './ApplicationsTab';
@@ -67,11 +65,8 @@ export function StatsPage() {
     if (error) {
         return (
             <div className="min-h-screen">
-                <Navbar />
-                <div className="p-6">
-                    <div className="alert alert-error">
-                        <span>Erreur lors du chargement des statistiques.</span>
-                    </div>
+                <div className="alert alert-error">
+                    <span>Erreur lors du chargement des statistiques.</span>
                 </div>
             </div>
         );
@@ -79,9 +74,7 @@ export function StatsPage() {
 
     return (
         <div className="min-h-screen bg-base-100">
-            <Navbar />
-
-            <div className="max-w-7xl mx-auto p-6">
+            <div className="max-w-7xl mx-auto">
                 <h2 className="text-2xl font-bold mb-6 text-base-content">Statistiques du système</h2>
 
                 <div className="stats stats-vertical lg:stats-horizontal shadow shadow-base-300 w-full bg-base-100">
