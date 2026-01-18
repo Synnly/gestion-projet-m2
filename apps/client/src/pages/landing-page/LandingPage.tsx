@@ -67,7 +67,7 @@ export default function LandingPage() {
         <div className="min-h-screen bg-base-100">
             <Navbar minimal={!user} />
 
-            <section className="hero min-h-[90vh] bg-base-100">
+            <section className="hero min-h-screen bg-base-100">
                 <div className="hero-content text-center max-w-5xl px-4">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -87,7 +87,7 @@ export default function LandingPage() {
                                 <Briefcase className="w-5 h-5" />
                                 Découvrir les offres
                             </Link>
-                            <Link to="/signup/company" className="btn btn-outline btn-lg gap-2">
+                            <Link to="/company/signup" className="btn btn-outline btn-lg gap-2">
                                 <Building2 className="w-5 h-5" />
                                 Espace entreprise
                             </Link>
