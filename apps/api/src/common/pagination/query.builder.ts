@@ -26,7 +26,7 @@ export class QueryBuilder<T> {
      */
     constructor(
         private readonly params: Partial<Record<keyof T | string, any>>,
-        private readonly geoService: GeoService,
+        private readonly geoService?: GeoService,
     ) {}
 
     /**
@@ -139,7 +139,7 @@ export class QueryBuilder<T> {
         const city = toStringOrUndefined(this.params.city);
 
         if (city && radiusKm != null && radiusKm > 0) {
-            const coo = await this.geoService.geocodeAddress(city);
+            const coo = await this.geoService?.geocodeAddress(city);
             if (coo) {
                 mutableFilter.location = {
                     $geoWithin: {
@@ -156,7 +156,13 @@ export class QueryBuilder<T> {
 
         return mutableFilter as FilterQuery<T>;
     }
-
+    buildMessageFilter(): FilterQuery<T> {
+        const mutableFilter: Record<string, unknown> = {};
+        if (this.params.topicId) {
+            mutableFilter.topicId = new Types.ObjectId(this.params.topicId);
+        }
+        return mutableFilter as FilterQuery<T>;
+    }
     buildSort(sortParam: string | undefined): string {
         // return string acceptable by Mongoose `sort()`
         switch (sortParam) {

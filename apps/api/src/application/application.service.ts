@@ -10,6 +10,7 @@ import { PaginationService } from '../common/pagination/pagination.service';
 import { ApplicationQueryBuilder } from '../common/pagination/applicationQuery.builder';
 import { ApplicationPaginationDto } from 'src/common/pagination/dto/applicationPagination.dto';
 import { Post } from '../post/post.schema';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class ApplicationService {
@@ -27,6 +28,7 @@ export class ApplicationService {
         private readonly studentService: StudentService,
         private readonly s3Service: S3Service,
         private readonly paginationService: PaginationService,
+        private readonly notificationService: NotificationService,
     ) {}
 
     /** Fields to populate when retrieving related Post documents */
@@ -69,12 +71,14 @@ export class ApplicationService {
     /**
      * Create a new application for a student applying to a post.
      * Generates presigned URLs for uploading CV and optional cover letter.
+     * Send a notification to the post's company about the new application.
      * @param studentId The ID of the student applying
      * @param postId The ID of the post being applied to
      * @param dto Data transfer object containing CV and cover letter extensions
      * @returns An object containing presigned upload URLs for CV and cover letter
      * @throws NotFoundException if the student or post does not exist
      * @throws ConflictException if an application already exists for the student and post
+     * @throws ConflictException if the post is not visible
      */
     async create(
         studentId: Types.ObjectId,
@@ -88,6 +92,11 @@ export class ApplicationService {
         // Validate existence of post
         const post = await this.postService.findOne(postId.toString());
         if (!post) throw new NotFoundException(`Post with id ${postId.toString()} not found`);
+
+        // Validate that the post is visible
+        if (!post.isVisible) {
+            throw new ConflictException('Cannot apply to a post that is not visible');
+        }
 
         // Check for existing application to prevent duplicates
         const application = await this.applicationModel
@@ -122,22 +131,49 @@ export class ApplicationService {
             coverLetter: lm?.fileName,
         }).save();
         await this.postService.addApplication(postId.toString(), newApplication._id.toString());
+
+        try {
+            await this.notificationService.create({
+                userId: post.company._id,
+                message: `Vous avez reçu une nouvelle candidature pour le poste : ${post.title}`,
+                returnLink: `/internship/${post._id}/applications`,
+            });
+        } catch (error) {
+            console.error('Failed to send notification for new application:', error);
+        }
+
         return { cvUrl: cv.uploadUrl, lmUrl: lm?.uploadUrl };
     }
 
     /**
      * Update the status of an existing application.
+     * Send a notification to the student about the status update.
      * @param id The unique identifier of the application
      * @param status The new status to set for the application
      * @returns A promise that resolves when the update is complete
      * @throws NotFoundException if the application does not exist
      */
     async updateStatus(id: Types.ObjectId, status: ApplicationStatus): Promise<void> {
-        const application = await this.applicationModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
+        const application = await this.applicationModel
+            .findOne({ _id: id, deletedAt: { $exists: false } })
+            .populate([
+                { path: 'post', select: 'title _id' },
+                { path: 'student', select: '_id' },
+            ])
+            .exec();
         if (!application) throw new NotFoundException(`Application with id ${id} not found`);
 
         application.status = status;
         await application.save();
+
+        try {
+            await this.notificationService.create({
+                userId: application.student._id,
+                message: `Le statut de votre candidature pour le poste : ${application.post.title} a été mis à jour.`
+            });
+        } catch (error) {
+            console.error('Failed to send notification for application status update:', error);
+        }
     }
 
     /**

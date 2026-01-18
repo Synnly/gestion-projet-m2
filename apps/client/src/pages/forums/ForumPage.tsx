@@ -11,7 +11,7 @@ import Pagination from '../../components/ui/pagination/Pagination.tsx';
 import { SearchBar } from '../../components/inputs/searchBar';
 import { CreateTopicModal } from '../forum/components/CreateTopicModal.tsx';
 import type { Topic } from '../../types/forum.types.ts';
-import type { PaginationResult } from '../../api/fetch_topic.ts';
+import type { PaginationResult } from '../../types/internship.types.ts';
 
 type Props = {
     isGeneral?: boolean;
@@ -54,11 +54,11 @@ export function ForumPage({ isGeneral = false }: Props) {
     };
 
     return (
-        <div className="flex flex-col h-screen">
+        <div className="flex flex-col h-screen items-center">
             <Navbar minimal={false} />
             <Spinner show={navigation.state === 'loading'} />
             {!isLoadingForum && (
-                <div className="flex flex-col justify-center p-8 px-80">
+                <div className="flex flex-col justify-center p-8 w-full xl:max-w-5xl">
                     <div className="breadcrumbs text-sm">
                         <ul>
                             <li>
