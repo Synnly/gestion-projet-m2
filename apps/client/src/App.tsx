@@ -41,6 +41,9 @@ import { ApplicationList } from './company/applicationList/ApplicationList.tsx';
 import TopicDetailPage from './pages/forum/TopicDetailPage';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
 import { ForumPage } from './pages/forums/ForumPage.tsx';
+import { EditStudentProfile } from './student/profile/EditStudentProfile.tsx';
+import { StudentProfile } from './student/profile/StudentProfile.tsx';
+import { PublicStudentProfile } from './student/profile/PublicStudentProfile.tsx';
 import { PendingValidation } from './pages/PendingValidation.tsx';
 import ImportStudent from './admin/importStudent.tsx';
 
@@ -134,6 +137,32 @@ function App() {
                                     handle: { title: 'Créer une offre' },
                                 },
                             ],
+                        },
+                        {
+                            path: 'student',
+                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} />,
+                            children: [
+                                {
+                                    path: 'profile',
+                                    children: [
+                                        {
+                                            index: true,
+                                            element: <StudentProfile />,
+                                            handle: { title: 'Profil étudiant' },
+                                        },
+                                        {
+                                            path: 'edit',
+                                            element: <EditStudentProfile />,
+                                            handle: { title: 'Éditer le profil' },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            path: 'student/public/:studentId',
+                            element: <PublicStudentProfile />,
+                            handle: { title: 'Profil étudiant' },
                         },
                         {
                             path: 'internship',
