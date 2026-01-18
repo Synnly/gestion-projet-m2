@@ -7,7 +7,8 @@ import { TopicRow } from '../../components/forum/TopicRow.tsx';
 import { SearchBar } from '../../components/inputs/searchBar';
 import { formatNumber } from '../../utils/format.ts';
 import { forumStore } from '../../store/forumStore.ts';
-import { useFetchForums, useFetchGeneralForum } from '../../hooks/useFetchForum.ts';
+import { useFetchForumByCompanyId, useFetchForums, useFetchGeneralForum } from '../../hooks/useFetchForum.ts';
+import { userStore } from '../../store/userStore.ts';
 
 export function MainForumPage() {
     const navigation = useNavigation();
@@ -15,26 +16,27 @@ export function MainForumPage() {
     const setFilters = forumStore((state) => state.setFilters);
     const { isError: isErrorForums } = useFetchForums();
     const { isError: isErrorGeneral } = useFetchGeneralForum();
-
+    const access = userStore((state) => state.access);
+    const get = userStore((state) => state.get);
+    const { id, role } = get(access)!;
     const forums: Forum[] = forumStore((state) => state.forums);
     const generalForum: Forum = forumStore((state) => state.generalForum)!;
-
     const handleSearchChange = (query: string) => {
         setFilters({ companyName: query || undefined, page: 1, limit: 12 });
     };
-
+    const companyForum = useFetchForumByCompanyId(id);
     return (
         <div className="flex flex-col h-screen">
             <Navbar minimal={false} />
             <Spinner show={navigation.state === 'loading'} />
-            <div className="flex flex-col justify-center gap-8 p-8">
+            <div className="flex flex-col flex-1 justify-center gap-8 p-8">
                 <div className="flex flex-col items-center">
                     <div className="flex w-fit text-4xl font-bold">Forums</div>
                     <div className="flex w-fit">Échangez, posez vos questions et partagez vos expériences.</div>
                 </div>
 
                 {!isErrorGeneral && generalForum && (
-                    <div>
+                    <div className=" flex-1 overflow-auto">
                         <div className="card bg-base-100 shadow-sm shadow-base-300 hover:shadow-md hover:bg-base-200 transition-all duration-100 ease-out cursor-pointer">
                             <a href="/forums/general">
                                 <div className="card-body flex flex-row justify-between items-center">
@@ -72,7 +74,7 @@ export function MainForumPage() {
                     </div>
                 )}
 
-                {!isErrorForums && (
+                {!isErrorForums && role !== 'COMPANY' ? (
                     <div className="w-full flex flex-col gap-2 justify-center">
                         <SearchBar
                             searchQuery={filters.companyName || ''}
@@ -87,6 +89,12 @@ export function MainForumPage() {
                             ))}
                         </ul>
                     </div>
+                ) : (
+                    <ul className="w-full space-y-2 flex flex-wrap justify-between">
+                        {!companyForum.isLoading && companyForum.data && (
+                            <ForumCard forum={companyForum.data} key={companyForum.data._id} />
+                        )}
+                    </ul>
                 )}
             </div>
         </div>

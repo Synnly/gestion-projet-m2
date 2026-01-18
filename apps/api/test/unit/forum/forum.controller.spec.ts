@@ -8,12 +8,14 @@ import { Types } from 'mongoose';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { getModelToken } from '@nestjs/mongoose';
 import { Forum } from '../../../src/forum/forum.schema';
+import { MessageService } from '../../../src/forum/message/message.service';
+import { MessageDto } from '../../../src/forum/message/dto/messageDto';
 
 describe('ForumController', () => {
     let controller: ForumController;
     let service: ForumService;
     let topicService: TopicService;
-
+    let messageService: MessageService;
     const mockForumService = {
         findAll: jest.fn(),
         findOneByCompanyId: jest.fn(),
@@ -25,7 +27,10 @@ describe('ForumController', () => {
         create: jest.fn(),
         update: jest.fn(),
     };
-
+    const mockMessageService = {
+        findAll: jest.fn(),
+        sendMessage: jest.fn(),
+    };
     const mockForumModel = {
         findById: jest.fn(),
     };
@@ -39,6 +44,13 @@ describe('ForumController', () => {
             return this;
         },
     };
+    const createMessageDto = (topicId: Types.ObjectId) => ({
+        _id: new Types.ObjectId(),
+        content: 'This is a test message',
+        topicId: topicId,
+        authorId: new Types.ObjectId(),
+        parentMessageId: new Types.ObjectId(),
+    });
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -53,6 +65,10 @@ describe('ForumController', () => {
                     useValue: mockTopicService,
                 },
                 {
+                    provide: MessageService,
+                    useValue: mockMessageService,
+                },
+                {
                     provide: getModelToken(Forum.name),
                     useValue: mockForumModel,
                 },
@@ -65,7 +81,7 @@ describe('ForumController', () => {
         controller = module.get<ForumController>(ForumController);
         service = module.get<ForumService>(ForumService);
         topicService = module.get<TopicService>(TopicService);
-
+        messageService = module.get<MessageService>(MessageService);
         jest.clearAllMocks();
     });
 
@@ -375,6 +391,111 @@ describe('ForumController', () => {
             await controller.update(forumId, topicId, createDto as any, req);
 
             expect(topicService.update).toHaveBeenCalledWith(forumId, topicId, createDto);
+        });
+    });
+    describe('findAll (messages)', () => {
+        it('should return a paginated result of forums when findAll is called', async () => {
+            const topicId = new Types.ObjectId();
+            const msg1 = createMessageDto(topicId);
+            const msg2 = createMessageDto(topicId);
+            const paginationResult = {
+                data: [msg1, msg2],
+                total: 2,
+                page: 1,
+                limit: 2,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            messageService.findAll.mockResolvedValue(paginationResult);
+
+            const query: PaginationDto = { page: 1, limit: 2 };
+            const result = await controller.getMessages(query, topicId.toString());
+
+            expect(result.data).toHaveLength(2);
+            expect(result.data[0]).toBeInstanceOf(MessageDto);
+            expect(result.data[0]._id).toEqual(msg1._id);
+            expect(result.data[1]._id).toEqual(msg2._id);
+            expect(result.total).toBe(2);
+            expect(messageService.findAll).toHaveBeenCalledWith(query, topicId.toString());
+            expect(messageService.findAll).toHaveBeenCalledTimes(1);
+        });
+
+        it("should return a paginated result of forums when findAllForums is called with message total's not exceeding the number of message ", async () => {
+            const topicId = new Types.ObjectId();
+            const msg1 = createMessageDto(topicId);
+            const paginationResult = {
+                data: [msg1],
+                total: 1,
+                page: 1,
+                limit: 2,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            messageService.findAll.mockResolvedValue(paginationResult);
+
+            const query: PaginationDto = { page: 1, limit: 2 };
+            const result = await controller.getMessages(query, topicId.toString());
+
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0]).toBeInstanceOf(MessageDto);
+            expect(result.data[0]._id).toEqual(msg1._id);
+            expect(result.total).toBe(1);
+            expect(result.limit).toBe(2);
+            expect(messageService.findAll).toHaveBeenCalledWith(query, topicId.toString());
+            expect(messageService.findAll).toHaveBeenCalledTimes(1);
+        });
+        it('should return an empty paginated result of forums when findAllForums is called and no messages exist', async () => {
+            const topicId = new Types.ObjectId();
+            const paginationResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 2,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            };
+            messageService.findAll.mockResolvedValue(paginationResult);
+            const query: PaginationDto = { page: 1, limit: 2 };
+            const result = await controller.getMessages(query, topicId.toString());
+            expect(result.data).toHaveLength(0);
+            expect(result.total).toBe(0);
+            expect(messageService.findAll).toHaveBeenCalledWith(query, topicId.toString());
+            expect(messageService.findAll).toHaveBeenCalledTimes(1);
+        });
+    });
+    describe('sendMessage', () => {
+        it('should send a message to a topic without reply', async () => {
+            const topicId = new Types.ObjectId().toString();
+            const userId = new Types.ObjectId();
+            const createDto = {
+                authorId: userId.toString(),
+                content: 'This is a test message',
+            };
+            messageService.sendMessage.mockResolvedValue(undefined);
+            await controller.sendMessage(topicId, createDto as any);
+            expect(messageService.sendMessage).toHaveBeenCalledWith(topicId, {
+                ...createDto,
+            });
+            expect(messageService.sendMessage).toHaveBeenCalledTimes(1);
+        });
+        it('should send a message to a topic with reply', async () => {
+            const topicId = new Types.ObjectId().toString();
+            const userId = new Types.ObjectId();
+            const parentMessageId = new Types.ObjectId();
+            const createDto = {
+                authorId: userId.toString(),
+                content: 'This is a reply message',
+                parentMessageId: parentMessageId.toString(),
+            };
+            messageService.sendMessage.mockResolvedValue(undefined);
+            await controller.sendMessage(topicId, createDto as any);
+            expect(messageService.sendMessage).toHaveBeenCalledWith(topicId, {
+                ...createDto,
+            });
+            expect(messageService.sendMessage).toHaveBeenCalledTimes(1);
         });
     });
 });

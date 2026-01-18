@@ -63,6 +63,7 @@ export const UseAuthFetch = () => {
                     });
 
                     if (!refreshRes.ok) {
+                        setUserToken(''); // empty the token locally
                         redirect('/signin');
                         throw new Error('Redirection vers signin');
                     }

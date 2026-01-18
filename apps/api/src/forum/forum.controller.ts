@@ -4,13 +4,14 @@ import {
     Get,
     HttpCode,
     HttpStatus,
+    Logger,
     Param,
     Post,
-    Put,
     Query,
-    Req,
     UseGuards,
     ValidationPipe,
+    Put,
+    Req,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import type { Request } from 'express';
@@ -23,6 +24,10 @@ import { Role } from '../common/roles/roles.enum';
 import { PaginationDto } from '../common/pagination/dto/pagination.dto';
 import { PaginationResult } from '../common/pagination/dto/paginationResult';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
+import { MessageDto } from './message/dto/messageDto';
+import { CreateMessageDto } from './message/dto/createMessageDto';
+import { MessageService } from './message/message.service';
+import { MessagePaginationDto } from '../common/pagination/dto/messagePagination.dto';
 
 import { ForumService } from './forum.service';
 import { ForumDto } from './dto/forum.dto';
@@ -37,6 +42,7 @@ import { UpdateTopicDto } from './topic/dto/updateTopic.dto';
 export class ForumController {
     constructor(
         private readonly forumService: ForumService,
+        private readonly messageService: MessageService,
         private readonly topicService: TopicService,
     ) {}
 
@@ -66,7 +72,8 @@ export class ForumController {
     @Get('general')
     @HttpCode(HttpStatus.OK)
     async getGeneralForum(): Promise<ForumDto | null> {
-        return plainToInstance(ForumDto, await this.forumService.findOneByCompanyId());
+        const general = await this.forumService.findOneByCompanyId();
+        return plainToInstance(ForumDto, general);
     }
 
     /**
@@ -77,9 +84,34 @@ export class ForumController {
     @Get('by-company-id/:companyId')
     @HttpCode(HttpStatus.OK)
     async findOneByCompanyId(@Param('companyId', ParseObjectIdPipe) companyId?: string): Promise<ForumDto | null> {
-        return plainToInstance(ForumDto, await this.forumService.findOneByCompanyId(companyId));
+        const forum = await this.forumService.findOneByCompanyId(companyId);
+        return plainToInstance(ForumDto, forum);
     }
 
+    @Post(':forumId/topic/:topicId/message')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(AuthGuard, ForumAccessGuard)
+    async sendMessage(
+        @Param('topicId', ParseObjectIdPipe) topicId: string,
+        @Body() messageDto: CreateMessageDto,
+    ): Promise<MessageDto> {
+        const message = await this.messageService.sendMessage(topicId, messageDto);
+        return plainToInstance(MessageDto, message);
+    }
+
+    @Get(':forumId/topic/:topicId/message')
+    @UseGuards(AuthGuard, ForumAccessGuard)
+    async getMessages(
+        @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        query: MessagePaginationDto,
+        @Param('topicId', ParseObjectIdPipe) topicId: string,
+    ): Promise<PaginationResult<MessageDto>> {
+        const messages = await this.messageService.findAll(query, topicId);
+        return {
+            ...messages,
+            data: messages.data.map((message) => plainToInstance(MessageDto, message)),
+        };
+    }
     /**
      * Find all topics in a forum with pagination.
      * @param forumId - The forum id
