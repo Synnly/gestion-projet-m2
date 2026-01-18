@@ -12,11 +12,11 @@ import { Admin } from '../admin/admin.schema';
  */
 @Schema()
 export class BanInfo {
-  @Prop({ required: true })
-  date: Date;
+    @Prop({ required: true })
+    date: Date;
 
-  @Prop({ required: true })
-  reason: string;
+    @Prop({ required: true })
+    reason: string;
 }
 export const BanInfoSchema = SchemaFactory.createForClass(BanInfo);
 
@@ -203,7 +203,7 @@ export class User {
      * User's ban info
      * Is only filled if the user has been banned by an admin.
      */
-    @Prop({ type: BanInfoSchema }) 
+    @Prop({ type: BanInfoSchema })
     ban: BanInfo;
 }
 

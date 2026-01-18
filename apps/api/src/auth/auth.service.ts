@@ -69,7 +69,6 @@ export class AuthService {
         const accessToken = await this.generateAccessToken(user._id, user.email, rti);
         if (!user.isVerified) {
             await this.mailerService.sendVerificationEmail(email);
-            Logger.log(`Sent verification email to unverified user: ${email}`);
         }
         return { access: accessToken, refresh: token };
     }

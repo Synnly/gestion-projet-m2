@@ -154,8 +154,8 @@ export class StudentService {
 
         if (student) {
             // Partial update: only the provided fields are assigned
-            Object.assign(student, dto);
             // Triggers pre-save hooks (hashing), but disables full validation
+            student.set(dto);
             await student.save({ validateBeforeSave: false });
             return;
         }
@@ -239,7 +239,7 @@ export class StudentService {
 
         // We found duplicates and skipExistingRecords is false (we add every student or none if there's any error)
         if ((conflictedEmailsInFile.length > 0 || conflictedNumbersInFile.length > 0) && !skipExistingRecords) {
-            let message: string[] = ['Import failed. Some data already exists in the database:'];
+            const message: string[] = ['Import failed. Some data already exists in the database:'];
             if (conflictedEmailsInFile.length > 0) {
                 message.push(`=> Existing emails: ${[...new Set(conflictedEmailsInFile)].join(', ')}`);
             }
