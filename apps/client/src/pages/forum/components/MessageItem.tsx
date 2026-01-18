@@ -1,0 +1,94 @@
+import MDEditor from '@uiw/react-md-editor';
+import '@uiw/react-md-editor/markdown-editor.css';
+import '@uiw/react-markdown-preview/markdown.css';
+import { cn } from '../../../utils/cn';
+import type { MessageType, Role } from '../TopicDetailPage';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { ReplyMessage } from './replyMessage';
+export const MessageItem = ({
+    message,
+    onReply,
+}: {
+    message: MessageType;
+    onReply?: (id: string, name: string) => void;
+}) => {
+    const { authorId } = message;
+    const displayName =
+        authorId.role === 'ADMIN'
+            ? { name: 'Administrateur' }
+            : 'firstName' in authorId
+              ? { firstName: authorId.firstName, lastName: authorId.lastName }
+              : { name: authorId.name };
+
+    const variant: Record<Role, { tag: string; style: string }> = {
+        ADMIN: { tag: 'Administrateur', style: 'badge-error' },
+        STUDENT: { tag: 'Étudiant', style: 'badge-primary' },
+        COMPANY: { tag: 'Entreprise', style: 'badge-secondary' },
+    };
+    return (
+        <div className="bg-base-100 border border-base-300 rounded-xl p-4 mb-2 shadow-lg shadow-base-300 w-full ">
+            <div className="flex items-start gap-3 h-full">
+                <div className="h-10 w-10 rounded-full  flex-shrink-0 overflow-hidden">
+                    {message.authorId.logo ? (
+                        <div className="h-full w-full flex items-center justify-center  font-bold text-primary-content ">
+                            <img
+                                src={message.authorId.logo}
+                                alt={displayName.name || `${displayName.firstName} ${displayName.lastName}`}
+                            />
+                        </div>
+                    ) : displayName.name ? (
+                        <div className="h-full w-full flex items-center justify-center bg-base-200  font-bold text-primary-content ">
+                            {displayName.name?.[0]}
+                        </div>
+                    ) : (
+                        <div className="h-full w-full flex items-center justify-center bg-base-200 text-primary-content font-bold">
+                            {displayName.firstName?.[0]}
+                            {displayName.lastName?.[0]}
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex-1 flex flex-col justify-around h-full">
+                    <div className="flex justify-between items-center mb-1">
+                        <h4 className="font-bold text-primary text-sm">
+                            {displayName.name ? displayName.name : `${displayName.firstName} ${displayName.lastName}`}
+                        </h4>
+                        <span className="text-xs text-secondary">
+                            {formatDistanceToNow(new Date(message.createdAt), {
+                                addSuffix: true,
+                                locale: fr,
+                            })}{' '}
+                        </span>
+                    </div>
+
+                    {message.parentMessageId && <ReplyMessage replyMessage={message.parentMessageId} />}
+
+                    <MDEditor.Markdown
+                        source={message.content}
+                        className="!bg-transparent !text-base-content !text-sm leading-relaxed"
+                        style={{ fontFamily: 'inherit' }}
+                    />
+                    <div className="flex flex-row gap-2 p-2 justify-between items-center">
+                        <button
+                            className="btn btn-soft btn-sm"
+                            onClick={() =>
+                                onReply?.(
+                                    message._id,
+                                    displayName.name
+                                        ? displayName.name
+                                        : `${displayName.firstName} ${displayName.lastName}`,
+                                )
+                            }
+                        >
+                            <span className="text-lg leading-none mt-1">“</span> Citer
+                        </button>
+                        <span className={cn('badge', variant[`${message.authorId.role}`].style)}>
+                            {variant[`${message.authorId.role}`].tag}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};

@@ -51,8 +51,8 @@ export function FilterList() {
                                 <label className="swap btn">
                                     <input type="checkbox" defaultChecked onClick={toggleShowMyApplicationsOnly} />
                                     <div className="swap-off">Toutes les annonces</div>
-                                    <div className="swap-on">
-                                        onClick={toggleShowMyApplicationsOnly}
+                                    <div className="swap-on"
+                                        onClick={toggleShowMyApplicationsOnly} >
                                         Mes candidatures
                                     </div>
                                 </label>

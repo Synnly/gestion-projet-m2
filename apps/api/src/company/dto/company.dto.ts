@@ -91,6 +91,7 @@ export class CompanyDto {
         rejectionReason?: string;
         rejectedAt?: Date;
     };
+    role: 'COMPANY';
 
     /**
      * Constructs a CompanyDto instance

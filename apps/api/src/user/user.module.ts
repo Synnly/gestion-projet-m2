@@ -6,9 +6,20 @@ import { Company, CompanySchema } from '../company/company.schema';
 import { Student, StudentSchema } from '../student/student.schema';
 import { Role } from '../common/roles/roles.enum';
 import { Admin, AdminSchema } from '../admin/admin.schema';
+import { UserController } from './user.controller';
+import { UserService } from './user.service';
+import { MailerModule } from '../mailer/mailer.module';
+import { RefreshToken, RefreshTokenSchema } from '../auth/refreshToken.schema';
 
 @Module({
-    imports: [MongooseModule.forFeature([{ name: User.name, schema: UserSchema }])],
+    imports: [
+        MongooseModule.forFeature([
+            { name: User.name, schema: UserSchema },
+            { name: RefreshToken.name, schema: RefreshTokenSchema }
+        ]),
+        MailerModule.register(),
+    ],
+    controllers: [UserController],
     providers: [
         {
             provide: getModelToken(Company.name),
@@ -39,6 +50,7 @@ import { Admin, AdminSchema } from '../admin/admin.schema';
             },
             inject: [getConnectionToken()],
         },
+        UserService,
         {
             provide: getModelToken(Admin.name),
             useFactory: (connection: Connection) => {
@@ -53,6 +65,6 @@ import { Admin, AdminSchema } from '../admin/admin.schema';
             inject: [getConnectionToken()],
         },
     ],
-    exports: [MongooseModule, getModelToken(Company.name), getModelToken(Student.name), getModelToken(Admin.name)],
+    exports: [MongooseModule, getModelToken(Company.name), getModelToken(Student.name), UserService, getModelToken(Admin.name)],
 })
 export class UsersModule {}

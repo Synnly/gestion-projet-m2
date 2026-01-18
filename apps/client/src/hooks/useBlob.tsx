@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { userStore } from '../store/userStore';
 import { UseAuthFetch } from './useAuthFetch';
 
-
 /**
  * Fetch signed download URL from backend
  */
@@ -46,7 +45,7 @@ export const fetchFileFromSignedUrl = async (signedUrl: string): Promise<Blob | 
  * Fetch public signed URL (for company logos)
  * No ownership verification on backend
  */
-export const fetchPublicSignedUrl = async (fileName: string): Promise<string | null> => {
+export const fetchPublicSignedUrl = async (fileName: string | null | undefined): Promise<string | null> => {
     if (!fileName) return null;
     const url = `${import.meta.env.VITE_APIURL}/api/files/signed/public/${fileName}`;
     const authFetch = UseAuthFetch();
@@ -57,7 +56,6 @@ export const fetchPublicSignedUrl = async (fileName: string): Promise<string | n
         });
 
         const data = await res.json();
-
         return data.downloadUrl || null;
     } catch (error) {
         return null;
