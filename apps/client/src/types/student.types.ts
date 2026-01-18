@@ -47,56 +47,39 @@ export const editProfilForm = z.object({
             .nullable(),
     ),
     profilePicture: z
-        .custom<File | null | undefined>()
+        .custom<FileList | null | undefined>()
         .refine(
             (file) => {
-                if (!(file instanceof File)) return true;
-                return !file || file instanceof File;
-            },
-            { message: 'Format invalide' },
-        )
-        .refine(
-            (file) => {
-                if (!(file instanceof File)) return true;
-                return !file || file.size <= IMAGE_SIZE_MAX;
+                if (!file || !(file[0] instanceof File)) return false;
+                return file[0].size <= IMAGE_SIZE_MAX;
             },
             { message: 'Le fichier doit faire moins de 5MB' },
         )
         .refine(
             (file) => {
-                if (!(file instanceof File)) return true;
-                return !file || ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'].includes(file.type);
+                if (!file || !(file[0] instanceof File)) return false;
+                return ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'].includes(file[0].type);
             },
             { message: 'Format non supporté : PNG, JPG, JPEG uniquement' },
         )
         .nullable(),
     defaultCv: z
-        .custom<File | null | undefined>()
+        .custom<FileList | null | undefined>()
         .refine(
             (file) => {
-                if (!(file instanceof File)) return true;
-                return !file || file instanceof File;
-            },
-            { message: 'Format invalide' },
-        )
-        .refine(
-            (file) => {
-                if (!(file instanceof File)) return true;
-                return !file || file.size <= IMAGE_SIZE_MAX;
+                if (!file || !(file[0] instanceof File)) return false;
+                return file[0].size <= IMAGE_SIZE_MAX;
             },
             { message: 'Le fichier doit faire moins de 5MB' },
         )
         .refine(
             (file) => {
-                if (!(file instanceof File)) return true;
-                return (
-                    !file ||
-                    [
-                        'application/pdf',
-                        'application/msword',
-                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // C'est quoi ce bordel Microsoft ? C'est quoi ce type MIME de con pour les fichiers .docx ?
-                    ].includes(file.type)
-                );
+                if (!file || !(file[0] instanceof File)) return false;
+                return [
+                    'application/pdf',
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // C'est quoi ce bordel Microsoft ? C'est quoi ce type MIME de con pour les fichiers .docx ?
+                ].includes(file[0].type);
             },
             { message: 'Format non supporté : PDF, DOC, DOCX uniquement' },
         )

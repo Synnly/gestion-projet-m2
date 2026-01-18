@@ -73,6 +73,7 @@ export const EditStudentProfile = () => {
         reset,
     } = useForm<editProfilFormType>({
         resolver: zodResolver(editProfilForm) as Resolver<editProfilFormType>,
+        mode: 'onChange',
     });
 
     // Réinitialiser le formulaire avec les données du profil
