@@ -7,6 +7,20 @@ import { Student } from '../student/student.schema';
 import { Admin } from '../admin/admin.schema';
 
 /**
+ * Mongoose document type for Ban object
+ * Is used only for banned user
+ */
+@Schema()
+export class BanInfo {
+  @Prop({ required: true })
+  date: Date;
+
+  @Prop({ required: true })
+  reason: string;
+}
+export const BanInfoSchema = SchemaFactory.createForClass(BanInfo);
+
+/**
  * Mongoose document type for User entities
  * Combines the User class with Mongoose Document functionality
  */
@@ -184,6 +198,13 @@ export class User {
      */
     @Prop({ required: true, type: String, enum: Role })
     role: Role;
+
+    /**
+     * User's ban info
+     * Is only filled if the user has been banned by an admin.
+     */
+    @Prop({ type: BanInfoSchema }) 
+    ban: BanInfo;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

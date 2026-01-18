@@ -80,6 +80,7 @@
             "json",
             "ts"
         ],
+        "testEnvironment": "node",
         "rootDir": "./",
         "modulePaths": [
             "<rootDir>"
