@@ -12,9 +12,11 @@ import {
     ValidationPipe,
     UseGuards,
     ConflictException,
+    Query,
 } from '@nestjs/common';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
+import { RejectedDto } from './dto/rejection.dto';
 import { CompanyService } from './company.service';
 import { CompanyDto } from './dto/company.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
@@ -27,6 +29,8 @@ import { plainToInstance } from 'class-transformer';
 import { PostDto } from '../post/dto/post.dto';
 import { PostDocument } from '../post/post.schema';
 import { Company } from './company.schema';
+import { PaginationDto } from '../common/pagination/dto/pagination.dto';
+import { PaginationResult } from '../common/pagination/dto/paginationResult';
 
 /**
  * Controller handling company-related HTTP requests
@@ -50,6 +54,85 @@ export class CompanyController {
                 excludeExtraneousValues: true,
             }),
         );
+    }
+
+
+    /**
+     * Retrieves companies pending validation with pagination
+     * Requires ADMIN role
+     * @returns Paginated list of companies awaiting validation
+     */
+    @Get('/pending-validation')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    @HttpCode(HttpStatus.OK)
+    async findPendingValidation(
+        @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        query: PaginationDto,
+    ): Promise<PaginationResult<CompanyDto>> {
+        const result = await this.companyService.findPendingValidation(query);
+        return {
+            ...result,
+            data: result.data.map((company) =>
+                plainToInstance(CompanyDto, company, {
+                    excludeExtraneousValues: true,
+                }),
+            ),
+        };
+    }
+
+    /**
+     * Validates a company (sets isValid to true)
+     * Requires ADMIN role
+     * @param companyId The company identifier to validate
+     */
+    @Put('/:companyId/validate')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async validateCompany(
+        @Param('companyId', ParseObjectIdPipe) companyId: string,
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        dto: RejectedDto,
+    ) {
+        await this.companyService.update(companyId, {
+            isValid: true,
+            rejected: { isRejected: false, rejectionReason: undefined, rejectedAt: undefined, modifiedAt: undefined },
+        });
+    }
+
+    /**
+     * Rejects a company validation
+     * Requires ADMIN role
+     * @param companyId The company identifier to reject
+     */
+    @Put('/:companyId/reject')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async rejectCompany(
+        @Param('companyId', ParseObjectIdPipe) companyId: string,
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        dto: RejectedDto,
+    ) {
+        await this.companyService.update(companyId, {
+            isValid: false,
+            rejected: { isRejected: true, rejectionReason: dto.rejectionReason, rejectedAt: new Date(), modifiedAt: undefined },
+        });
+    }
+
+    /**
+     * Checks if a company is valid
+     * @param companyId The company identifier
+     * @returns An object indicating whether the company is valid
+     */
+    @Get('/:companyId/is-valid')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.OK)
+    async isValid(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<{ isValid: boolean }> {
+        const isValid = await this.companyService.isValid(companyId);
+        return { isValid };
     }
 
     /**
@@ -129,7 +212,12 @@ export class CompanyController {
         const posts = company.posts ?? [];
         return new CompanyDto({
             ...company,
+            rejected: company.rejected ? {
+                ...company.rejected,
+                rejectionReason: company.rejected.rejectionReason ?? '',
+            } : { isRejected: false, rejectionReason: undefined, rejectedAt: undefined },
             posts: posts.map((post: PostDocument) => new PostDto(post)),
         });
     }
+
 }

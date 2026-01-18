@@ -42,10 +42,16 @@ import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
 import { StudentDashboard } from './student/dashboard';
 import { ChangePassword as StudentChangePassword } from './student/changePassword';
 import { ApplicationList } from './company/applicationList/ApplicationList.tsx';
-import ImportStudent from './admin/importStudent.tsx';
 import TopicDetailPage from './pages/forum/TopicDetailPage';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
 import { ForumPage } from './pages/forums/ForumPage.tsx';
+import { EditStudentProfile } from './student/profile/EditStudentProfile.tsx';
+import { StudentProfile } from './student/profile/StudentProfile.tsx';
+import { PublicStudentProfile } from './student/profile/PublicStudentProfile.tsx';
+import { PendingValidation } from './pages/PendingValidation.tsx';
+import ImportStudent from './admin/importStudent.tsx';
+
+const VITE_API = import.meta.env.VITE_APIURL;
 
 function App() {
     userStore.persist.rehydrate();
@@ -59,8 +65,9 @@ function App() {
             children: [
                 {
                     path: 'logout',
-                    loader: () => {
+                    loader: async () => {
                         userStore.getState().logout();
+                        await fetch(`${VITE_API}/api/auth/logout`, { method: 'POST', credentials: 'include' });
                         return redirect('/signin');
                     },
                 },
@@ -95,6 +102,11 @@ function App() {
                     element: <AuthRoutes />,
                     children: [
                         { path: 'verify', element: <VerifyEmail />, handle: { title: 'Vérifier votre mail' } },
+                        { 
+                            path: 'pending-validation', 
+                            element: <PendingValidation />, 
+                            handle: { title: 'Compte en cours de validation' } 
+                        },
                         {
                             path: 'complete-profil',
                             element: <CompleteProfil />,
@@ -129,6 +141,32 @@ function App() {
                                     handle: { title: 'Créer une offre' },
                                 },
                             ],
+                        },
+                        {
+                            path: 'student',
+                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} />,
+                            children: [
+                                {
+                                    path: 'profile',
+                                    children: [
+                                        {
+                                            index: true,
+                                            element: <StudentProfile />,
+                                            handle: { title: 'Profil étudiant' },
+                                        },
+                                        {
+                                            path: 'edit',
+                                            element: <EditStudentProfile />,
+                                            handle: { title: 'Éditer le profil' },
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            path: 'student/public/:studentId',
+                            element: <PublicStudentProfile />,
+                            handle: { title: 'Profil étudiant' },
                         },
                         {
                             path: 'internship',
@@ -179,7 +217,9 @@ function App() {
                                     path: 'dashboard',
                                     element: <AdminDashboard />,
                                     handle: { title: 'Tableau de bord admin' },
-                                    children: [{ index: true, element: <ImportStudent /> }],
+                                    children: [
+                                        { index: true, element: <ImportStudent /> },
+                                    ],
                                 },
                             ],
                         },

@@ -21,13 +21,13 @@ export const rightNavItems: NavItem[] = [
                 type: 'link',
                 role: ['COMPANY'],
             },
-            // {
-            //     key: 'profile',
-            //     title: 'Profil',
-            //     to: '/student/profile',
-            //     type: 'link',
-            //     role: ['STUDENT'],
-            // },
+            {
+                key: 'profile',
+                title: 'Profil',
+                to: '/student/profile',
+                type: 'link',
+                role: ['STUDENT'],
+            },
             {
                 key: 'logout',
                 title: 'Se déconnecter',
