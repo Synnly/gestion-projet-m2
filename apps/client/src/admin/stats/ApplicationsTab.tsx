@@ -9,7 +9,7 @@ interface ApplicationsTabProps {
 export function ApplicationsTab({ stats }: ApplicationsTabProps) {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="card bg-base-100 shadow-sm border border-base-200 p-4">
+            <div className="card bg-base-100 shadow-sm shadow-base-300 border border-base-200 p-4">
                 <h3 className="text-lg font-semibold mb-4 text-base-content">État des candidatures</h3>
                 <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
