@@ -156,11 +156,9 @@ export class StudentService {
             // Partial update: only the provided fields are assigned
             Object.assign(student, dto);
             // Triggers pre-save hooks (hashing), but disables full validation
-            await student.save({ validateModifiedOnly: true });
+            await student.save({ validateBeforeSave: false });
             return;
         }
-
-        await this.studentModel.create({ ...(dto as CreateStudentDto), role: Role.STUDENT });
         return;
     }
 
