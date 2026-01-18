@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { UseAuthFetch } from '../hooks/useAuthFetch';
 import { toast } from 'react-toastify';
-import { CheckCircle2, Eye, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle2, Eye, Loader2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import RejectCompanyModal from './RejectCompanyModal';
+import ValidateCompanyModal from './ValidateCompanyModal';
 import {
     fetchPendingCompanies,
     validateCompany as validateCompanyAPI,
@@ -18,6 +19,7 @@ export default function ValidateCompanies() {
     const [isLoading, setIsLoading] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
     const [companyToReject, setCompanyToReject] = useState<Company | null>(null);
+    const [companyToValidate, setCompanyToValidate] = useState<Company | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const itemsPerPage = 10;
 
@@ -51,6 +53,7 @@ export default function ValidateCompanies() {
             toast.success('Entreprise validée avec succès');
             loadPendingCompanies(currentPage);
             setSelectedCompany(null);
+            setCompanyToValidate(null);
         } catch (error) {
             toast.error("Erreur lors de la validation de l'entreprise");
             console.error(error);
@@ -91,7 +94,7 @@ export default function ValidateCompanies() {
             setCurrentPage(newPage);
         }
     };
-    console.log(companies);
+    
     return (
         <div className="container mx-auto p-6">
             <h1 className="text-3xl font-bold mb-6">Validation des Entreprises</h1>
@@ -163,7 +166,7 @@ export default function ValidateCompanies() {
                                                 </button>
                                                 <button
                                                     className="btn btn-sm btn-success"
-                                                    onClick={() => handleValidate(company._id)}
+                                                    onClick={() => setCompanyToValidate(company)}
                                                     disabled={actionLoading === company._id}
                                                 >
                                                     {actionLoading === company._id ? (
@@ -218,7 +221,12 @@ export default function ValidateCompanies() {
             {selectedCompany && (
                 <div className="modal modal-open">
                     <div className="modal-box max-w-2xl">
-                        <h3 className="font-bold text-lg mb-4">Détails de l'entreprise</h3>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-lg">Détails de l'entreprise</h3>
+                            <button onClick={() => setSelectedCompany(null)} className="btn btn-sm btn-circle btn-ghost">
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-sm text-gray-500">Nom</p>
@@ -279,7 +287,10 @@ export default function ValidateCompanies() {
                         <div className="modal-action">
                             <button
                                 className="btn btn-success"
-                                onClick={() => handleValidate(selectedCompany._id)}
+                                onClick={() => {
+                                    setCompanyToValidate(selectedCompany);
+                                    setSelectedCompany(null);
+                                }}
                                 disabled={actionLoading === selectedCompany._id}
                             >
                                 {actionLoading === selectedCompany._id ? (
@@ -302,13 +313,19 @@ export default function ValidateCompanies() {
                                     'Rejeter'
                                 )}
                             </button>
-                            <button className="btn" onClick={() => setSelectedCompany(null)}>
-                                Fermer
-                            </button>
                         </div>
                     </div>
                     <div className="modal-backdrop" onClick={() => setSelectedCompany(null)}></div>
                 </div>
+            )}
+
+            {companyToValidate && (
+                <ValidateCompanyModal
+                    companyName={companyToValidate.name}
+                    onValidate={() => handleValidate(companyToValidate._id)}
+                    onCancel={() => setCompanyToValidate(null)}
+                    isLoading={actionLoading === companyToValidate._id}
+                />
             )}
 
             {companyToReject && (
