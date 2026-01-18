@@ -208,4 +208,151 @@ describe('StatsService (Integration)', () => {
         expect(totalInChart).toBe(1);
     });
   });
+
+  describe('getPublicStats', () => {
+    it('should count only visible posts', async () => {
+      const company = await companyModel.create({
+        email: 'pub@test.com',
+        password: 'pwd',
+        name: 'Public Corp',
+        isValid: true,
+      });
+
+      // Create 3 active posts
+      await postModel.create({ 
+        title: 'Post 1', 
+        description: 'Desc 1', 
+        company: company._id, 
+        type: PostType.Teletravail 
+      });
+      await postModel.create({ 
+        title: 'Post 2', 
+        description: 'Desc 2', 
+        company: company._id, 
+        type: PostType.Teletravail 
+      });
+      await postModel.create({ 
+        title: 'Post 3', 
+        description: 'Desc 3', 
+        company: company._id, 
+        type: PostType.Teletravail 
+      });
+
+      // Create 1 invisible post
+      await postModel.create({ 
+        title: 'Invisible Post', 
+        description: 'Desc', 
+        company: company._id, 
+        type: PostType.Teletravail,
+        isVisible: false,
+      });
+
+      const stats = await service.getPublicStats();
+
+      expect(stats.totalPosts).toBe(3);
+    });
+
+    it('should count only valid and non-deleted companies', async () => {
+      // Valid company
+      await companyModel.create({
+        email: 'valid@test.com',
+        password: 'pwd',
+        name: 'Valid Corp',
+        isValid: true,
+      });
+
+      // Invalid company (not validated yet)
+      await companyModel.create({
+        email: 'invalid@test.com',
+        password: 'pwd',
+        name: 'Invalid Corp',
+        isValid: false,
+      });
+
+      // Deleted company
+      await companyModel.create({
+        email: 'deleted@test.com',
+        password: 'pwd',
+        name: 'Deleted Corp',
+        isValid: true,
+        deletedAt: new Date(),
+      });
+
+      const stats = await service.getPublicStats();
+
+      expect(stats.totalCompanies).toBe(1);
+    });
+
+    it('should count only non-deleted students', async () => {
+      // Active students
+      await studentModel.create({ 
+        email: 'student1@test.com', 
+        password: 'pwd',
+        firstName: 'John', 
+        lastName: 'Doe', 
+        studentNumber: 'S1' 
+      });
+      await studentModel.create({ 
+        email: 'student2@test.com', 
+        password: 'pwd',
+        firstName: 'Jane', 
+        lastName: 'Doe', 
+        studentNumber: 'S2' 
+      });
+
+      // Deleted student
+      await studentModel.create({ 
+        email: 'deleted@test.com', 
+        password: 'pwd',
+        firstName: 'Deleted', 
+        lastName: 'User', 
+        studentNumber: 'S3',
+        deletedAt: new Date(),
+      });
+
+      const stats = await service.getPublicStats();
+
+      expect(stats.totalStudents).toBe(2);
+    });
+
+    it('should return correct stats for empty database', async () => {
+      const stats = await service.getPublicStats();
+
+      expect(stats.totalPosts).toBe(0);
+      expect(stats.totalCompanies).toBe(0);
+      expect(stats.totalStudents).toBe(0);
+    });
+
+    it('should return all counts simultaneously', async () => {
+      const company = await companyModel.create({
+        email: 'multi@test.com',
+        password: 'pwd',
+        name: 'Multi Corp',
+        isValid: true,
+      });
+
+      await postModel.create({ 
+        title: 'Post', 
+        description: 'Desc', 
+        company: company._id, 
+        type: PostType.Teletravail 
+      });
+
+      await studentModel.create({ 
+        email: 'multi-student@test.com', 
+        password: 'pwd',
+        firstName: 'Multi', 
+        lastName: 'Student', 
+        studentNumber: 'MS1' 
+      });
+
+      const stats = await service.getPublicStats();
+
+      expect(stats).toEqual({
+        totalPosts: 1,
+        totalCompanies: 1,
+        totalStudents: 1,
+      });
+    });
+  });
 });

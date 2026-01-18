@@ -25,4 +25,15 @@ export class StatsController {
     async getStats(): Promise<StatsDto> {
         return this.statsService.getStats();
     }
+
+    /**
+     * Retrieves public statistics for the landing page
+     * No authentication required
+     * @returns An object containing public stats
+     */
+    @Get('/public')
+    @HttpCode(HttpStatus.OK)
+    async getPublicStats(): Promise<{ totalPosts: number; totalCompanies: number; totalStudents: number }> {
+        return this.statsService.getPublicStats();
+    }
 }

@@ -5,15 +5,33 @@ import { useState, useEffect, useRef } from 'react';
 import { Navbar } from '../../components/navbar/Navbar';
 import { mockInternships } from './mockInternships.data';
 import { features } from './mockFeatures.data';
-import { stats } from './mockStats';
 import FeatureCard from './components/FeatureCard';
 import InternshipGrid from './components/InternshipGrid';
 import { userStore } from '../../store/userStore';
+import { fetchPublicStats, type PublicStats } from '../../api/stats';
+
 export default function LandingPage() {
     const user = userStore((state) => state.access);
     const [activeStep, setActiveStep] = useState(0);
+    const [stats, setStats] = useState<PublicStats | null>(null);
+    const [isLoadingStats, setIsLoadingStats] = useState(true);
     const stepsRef = useRef<HTMLDivElement>(null);
     const isInView = useInView(stepsRef, { once: true });
+
+    useEffect(() => {
+        const loadStats = async () => {
+            try {
+                const data = await fetchPublicStats();
+                setStats(data);
+            } catch (error) {
+                console.error('Erreur lors du chargement des statistiques:', error);
+            } finally {
+                setIsLoadingStats(false);
+            }
+        };
+
+        loadStats();
+    }, []);
 
     useEffect(() => {
         if (!isInView) return;
@@ -64,19 +82,52 @@ export default function LandingPage() {
                         </div>
 
                         <div className="stats stats-vertical lg:stats-horizontal shadow-xl mt-12 bg-base-200">
-                            {stats.map((stat, index) => (
-                                <motion.div
-                                    key={index}
-                                    className="stat"
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.6, delay: 0.1 * index }}
-                                    viewport={{ once: true }}
-                                >
-                                    <div className="stat-value text-primary">{stat.value}</div>
-                                    <div className="stat-desc text-base-content/70">{stat.label}</div>
-                                </motion.div>
-                            ))}
+                            {isLoadingStats ? (
+                                <div className="stat">
+                                    <div className="stat-value">
+                                        <span className="loading loading-spinner loading-md"></span>
+                                    </div>
+                                    <div className="stat-desc">Chargement...</div>
+                                </div>
+                            ) : stats ? (
+                                <>
+                                    <motion.div
+                                        className="stat"
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.6, delay: 0.1 }}
+                                        viewport={{ once: true }}
+                                    >
+                                        <div className="stat-value text-primary">{stats.totalPosts}+</div>
+                                        <div className="stat-desc text-base-content/70">Offres de stage</div>
+                                    </motion.div>
+                                    <motion.div
+                                        className="stat"
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.6, delay: 0.2 }}
+                                        viewport={{ once: true }}
+                                    >
+                                        <div className="stat-value text-primary">{stats.totalCompanies}+</div>
+                                        <div className="stat-desc text-base-content/70">Entreprises partenaires</div>
+                                    </motion.div>
+                                    <motion.div
+                                        className="stat"
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.6, delay: 0.3 }}
+                                        viewport={{ once: true }}
+                                    >
+                                        <div className="stat-value text-primary">{stats.totalStudents}+</div>
+                                        <div className="stat-desc text-base-content/70">Étudiants inscrits</div>
+                                    </motion.div>
+                                </>
+                            ) : (
+                                <div className="stat">
+                                    <div className="stat-value text-error">-</div>
+                                    <div className="stat-desc">Erreur de chargement</div>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
                 </div>

@@ -22,6 +22,11 @@ describe('StatsController', () => {
 
   const mockStatsService = {
     getStats: jest.fn().mockResolvedValue(mockStatsResult),
+    getPublicStats: jest.fn().mockResolvedValue({
+      totalPosts: 20,
+      totalCompanies: 10,
+      totalStudents: 90,
+    }),
   };
 
   beforeEach(async () => {
@@ -51,6 +56,24 @@ describe('StatsController', () => {
       const result = await controller.getStats();
       expect(result).toEqual(mockStatsResult);
       expect(service.getStats).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getPublicStats', () => {
+    it('should return public stats from service', async () => {
+      const result = await controller.getPublicStats();
+      expect(result).toEqual({
+        totalPosts: 20,
+        totalCompanies: 10,
+        totalStudents: 90,
+      });
+      expect(service.getPublicStats).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not require authentication', async () => {
+      // This test verifies that getPublicStats doesn't have guards
+      const result = await controller.getPublicStats();
+      expect(result).toBeDefined();
     });
   });
 });
