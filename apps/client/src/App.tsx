@@ -43,6 +43,8 @@ import TopicDetailPage from './pages/forum/TopicDetailPage';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
 import { ForumPage } from './pages/forums/ForumPage.tsx';
 
+const VITE_API = import.meta.env.VITE_APIURL;
+
 function App() {
     userStore.persist.rehydrate();
     const queryClient = new QueryClient();
@@ -55,8 +57,9 @@ function App() {
             children: [
                 {
                     path: 'logout',
-                    loader: () => {
+                    loader: async () => {
                         userStore.getState().logout();
+                        await fetch(`${VITE_API}/api/auth/logout`, { method: 'POST', credentials: 'include' });
                         return redirect('/signin');
                     },
                 },
