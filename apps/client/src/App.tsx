@@ -42,6 +42,7 @@ import ImportStudent from './admin/importStudent.tsx';
 import TopicDetailPage from './pages/forum/TopicDetailPage';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
 import { ForumPage } from './pages/forums/ForumPage.tsx';
+import { StatsPage } from './admin/stats';
 
 function App() {
     userStore.persist.rehydrate();
@@ -175,7 +176,14 @@ function App() {
                                     path: 'dashboard',
                                     element: <AdminDashboard />,
                                     handle: { title: 'Tableau de bord admin' },
-                                    children: [{ index: true, element: <ImportStudent /> }],
+                                    children: [
+                                        { index: true, element: <ImportStudent /> },
+                                    ],
+                                },
+                                {
+                                    path: 'stats',
+                                    element: <StatsPage />,
+                                    handle: { title: 'Statistiques' },
                                 },
                             ],
                         },
