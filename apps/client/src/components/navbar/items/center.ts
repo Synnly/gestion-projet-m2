@@ -3,7 +3,7 @@ import type { NavItem } from './types';
 export const centerNavItems: NavItem[] = [
     {
         key: 'forums',
-        title: 'FORUMS',
+        title: 'Forums',
         to: '/forums',
         type: 'link',
         role: ['ADMIN', 'STUDENT', 'COMPANY'],
