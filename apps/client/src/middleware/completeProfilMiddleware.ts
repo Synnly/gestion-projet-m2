@@ -57,14 +57,28 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
 
         const isComplete = isProfilComplete(newProfile.profile);
         const isRejected = newProfile.profile?.rejected?.isRejected || false;
+        const rejectedAt = newProfile.profile?.rejected?.rejectedAt;
+        const modifiedAt = newProfile.profile?.rejected?.modifiedAt;
+        
+        // Vérifier si l'entreprise a modifié son profil après le rejet
+        console.log('isRejected:', isRejected, 'rejectedAt:', rejectedAt, 'modifiedAt:', modifiedAt);
+        const hasModifiedAfterRejection = isRejected && rejectedAt && modifiedAt && new Date(modifiedAt) > new Date(rejectedAt);
+        console.log('hasModifiedAfterRejection:', hasModifiedAfterRejection);
+        // Si rejeté mais modifié après rejet et profil complet, considérer comme en attente de validation
+        if (hasModifiedAfterRejection && isComplete) {
+            if (pathname !== '/pending-validation') {
+                throw redirect('/pending-validation');
+            }
+            return;
+        }
 
-        // If account is rejected, redirect to complete-profil to show rejection message
-        if (isRejected && pathname !== '/complete-profil') {
+        // Si rejeté et pas encore modifié, redirect vers complete-profil
+        if (isRejected && !hasModifiedAfterRejection && pathname !== '/complete-profil') {
             throw redirect('/complete-profil');
         }
 
-        // If on complete-profil page and rejected, allow to stay to see message
-        if (isRejected && pathname === '/complete-profil') {
+        // Si sur complete-profil page et rejeté (sans modification récente), permettre de rester
+        if (isRejected && !hasModifiedAfterRejection && pathname === '/complete-profil') {
             return;
         }
 

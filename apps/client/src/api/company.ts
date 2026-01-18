@@ -18,6 +18,7 @@ export interface Company {
         isRejected: boolean;
         rejectionReason?: string;
         rejectedAt?: string;
+        modifiedAt?: string;
     };
 }
 

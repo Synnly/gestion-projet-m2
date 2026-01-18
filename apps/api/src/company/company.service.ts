@@ -207,12 +207,25 @@ export class CompanyService {
     /**
      * Retrieves companies pending validation with pagination
      * Uses PaginationService for standardized pagination
+     * Includes companies that are:
+     * - Not valid (isValid: false)
+     * - Either not rejected OR rejected but modified after rejection (modifiedAt exists)
      * @param query - Pagination parameters (page, limit)
      * @returns Promise resolving to paginated result with companies and metadata
      */
     async findPendingValidation(query: PaginationDto): Promise<PaginationResult<Company>> {
         const { page, limit } = query;
-        const filter = { deletedAt: { $exists: false }, isValid: false };
+        const filter = {
+            deletedAt: { $exists: false },
+            isValid: false,
+            $or: [
+                { 'rejected.isRejected': { $ne: true } },
+                { 
+                    'rejected.isRejected': true,
+                    'rejected.modifiedAt': { $exists: true }
+                },
+            ],
+        };
 
         return this.paginationService.paginate(this.companyModel, filter, page, limit, undefined, '-1');
     }

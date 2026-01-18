@@ -984,7 +984,17 @@ describe('CompanyService', () => {
 
             expect(mockPaginationService.paginate).toHaveBeenCalledWith(
                 model,
-                { deletedAt: { $exists: false }, isValid: false },
+                {
+                    deletedAt: { $exists: false },
+                    isValid: false,
+                    $or: [
+                        { 'rejected.isRejected': { $ne: true } },
+                        {
+                            'rejected.isRejected': true,
+                            'rejected.modifiedAt': { $exists: true },
+                        },
+                    ],
+                },
                 1,
                 10,
                 undefined,
@@ -1011,7 +1021,17 @@ describe('CompanyService', () => {
 
             expect(mockPaginationService.paginate).toHaveBeenCalledWith(
                 model,
-                { deletedAt: { $exists: false }, isValid: false },
+                {
+                    deletedAt: { $exists: false },
+                    isValid: false,
+                    $or: [
+                        { 'rejected.isRejected': { $ne: true } },
+                        {
+                            'rejected.isRejected': true,
+                            'rejected.modifiedAt': { $exists: true },
+                        },
+                    ],
+                },
                 undefined,
                 undefined,
                 undefined,

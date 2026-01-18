@@ -111,7 +111,7 @@ export const CompleteProfil = () => {
         const { logo: fileLogo, ...rest } = data;
 
         const base: Omit<completeProfilFormType, 'logo'> = rest;
-        const dataToSend: Omit<completeProfilFormType, 'logo'> & { logo?: string } = { ...base };
+        const dataToSend: Omit<completeProfilFormType, 'logo'> & { logo?: string; rejected?: { isRejected: boolean; rejectionReason?: string; rejectedAt?: Date; modifiedAt?: Date } } = { ...base };
 
         if (fileLogo instanceof FileList && fileLogo.length > 0) {
             const file = fileLogo[0];
@@ -134,8 +134,25 @@ export const CompleteProfil = () => {
         } else if (typeof fileLogo === 'string' && fileLogo) {
             dataToSend.logo = fileLogo;
         }
+
+        // Si le compte était rejeté, définir modifiedAt pour signaler une modification
+        if (profil?.rejected?.isRejected) {
+            dataToSend.rejected = {
+                isRejected: true,
+                rejectionReason: profil.rejected.rejectionReason,
+                rejectedAt: profil.rejected.rejectedAt ? new Date(profil.rejected.rejectedAt) : undefined,
+                modifiedAt: new Date(),
+            };
+        }
+
         await mutateAsync(dataToSend);
-        navigate(`/${payload.role.toLowerCase()}/dashboard`);
+        
+        // Si le compte était rejeté, rediriger vers pending-validation au lieu du dashboard
+        if (profil?.rejected?.isRejected) {
+            navigate('/pending-validation');
+        } else {
+            navigate(`/${payload.role.toLowerCase()}/dashboard`);
+        }
     };
     return (
         <div className="flex flex-col w-full min-h-screen flex-grow items-start bg-(--color-base-200)">

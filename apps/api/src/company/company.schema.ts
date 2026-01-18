@@ -7,6 +7,7 @@ export type RejectionStatus = {
     isRejected: boolean;
     rejectionReason?: string;
     rejectedAt?: Date;
+    modifiedAt?: Date;
 };
 
 /**
@@ -134,7 +135,7 @@ export class Company {
      */
     @Prop({
         type: Object,
-        default: { isRejected: false, rejectionReason: undefined, rejectedAt: undefined },
+        default: { isRejected: false, rejectionReason: undefined, rejectedAt: undefined, modifiedAt: undefined },
     })
     rejected: RejectionStatus;
 }

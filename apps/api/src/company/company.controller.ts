@@ -97,7 +97,7 @@ export class CompanyController {
     ) {
         await this.companyService.update(companyId, {
             isValid: true,
-            rejected: { isRejected: false, rejectionReason: dto.rejectionReason, rejectedAt: undefined },
+            rejected: { isRejected: false, rejectionReason: undefined, rejectedAt: undefined, modifiedAt: undefined },
         });
     }
 
@@ -117,7 +117,7 @@ export class CompanyController {
     ) {
         await this.companyService.update(companyId, {
             isValid: false,
-            rejected: { isRejected: true, rejectionReason: dto.rejectionReason, rejectedAt: new Date() },
+            rejected: { isRejected: true, rejectionReason: dto.rejectionReason, rejectedAt: new Date(), modifiedAt: undefined },
         });
     }
 

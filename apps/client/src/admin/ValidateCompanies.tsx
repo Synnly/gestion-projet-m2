@@ -94,7 +94,7 @@ export default function ValidateCompanies() {
             setCurrentPage(newPage);
         }
     };
-    
+
     return (
         <div className="container mx-auto p-6">
             <h1 className="text-3xl font-bold mb-6">Validation des Entreprises</h1>
@@ -124,8 +124,6 @@ export default function ValidateCompanies() {
                                     <th>Ville</th>
                                     <th>Type</th>
                                     <th>Date d'inscription</th>
-                                    <th>Dernière modification</th>
-                                    <th>Date de refus</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -144,18 +142,6 @@ export default function ValidateCompanies() {
                                             <span className="badge badge-outline">{company.structureType || '-'}</span>
                                         </td>
                                         <td className="text-sm">{formatDate(company.createdAt)}</td>
-                                        <td className="text-sm">
-                                            {company.updatedAt && company.updatedAt !== company.createdAt ? formatDate(company.updatedAt) : '-'}
-                                        </td>
-                                        <td className="text-sm">
-                                            {company.rejected?.isRejected && company.rejected.rejectedAt ? (
-                                                <>
-                                                    {formatDate(company.rejected.rejectedAt)}
-                                                </>
-                                            ) : (
-                                                '-'
-                                            )}
-                                        </td>
                                         <td>
                                             <div className="flex gap-2">
                                                 <button
@@ -268,19 +254,39 @@ export default function ValidateCompanies() {
                             )}
                             {selectedCompany.rejected?.isRejected && selectedCompany.rejected.rejectedAt && (
                                 <div className="col-span-2">
-                                    <div className="alert alert-warning">
-                                        <div>
-                                            <p className="text-sm font-semibold">Compte précédemment rejeté</p>
-                                            <p className="text-xs">
-                                                Date de refus : {formatDate(selectedCompany.rejected.rejectedAt)}
-                                            </p>
-                                            {selectedCompany.rejected.rejectionReason && (
-                                                <p className="text-xs mt-1 whitespace-pre-line">
-                                                    Raison : {selectedCompany.rejected.rejectionReason}
+                                    {selectedCompany.rejected.modifiedAt && 
+                                     new Date(selectedCompany.rejected.modifiedAt) > new Date(selectedCompany.rejected.rejectedAt) ? (
+                                        <div className="alert alert-success">
+                                            <div>
+                                                <p className="text-sm font-semibold">✓ Profil modifié après rejet - En attente de re-validation</p>
+                                                <p className="text-xs">
+                                                    Date de refus initial : {formatDate(selectedCompany.rejected.rejectedAt)}
                                                 </p>
-                                            )}
+                                                <p className="text-xs">
+                                                    Date de modification : {formatDate(selectedCompany.rejected.modifiedAt)}
+                                                </p>
+                                                {selectedCompany.rejected.rejectionReason && (
+                                                    <p className="text-xs mt-1 whitespace-pre-line">
+                                                        Raison du rejet précédent : {selectedCompany.rejected.rejectionReason}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <div className="alert alert-warning">
+                                            <div>
+                                                <p className="text-sm font-semibold">Compte précédemment rejeté</p>
+                                                <p className="text-xs">
+                                                    Date de refus : {formatDate(selectedCompany.rejected.rejectedAt)}
+                                                </p>
+                                                {selectedCompany.rejected.rejectionReason && (
+                                                    <p className="text-xs mt-1 whitespace-pre-line">
+                                                        Raison : {selectedCompany.rejected.rejectionReason}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

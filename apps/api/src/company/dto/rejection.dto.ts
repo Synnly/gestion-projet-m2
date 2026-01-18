@@ -23,4 +23,10 @@ export class RejectedDto {
      */
     @IsOptional()
     rejectedAt?: Date;
+
+    /**
+     * Date when the company modified its profile after rejection
+     */
+    @IsOptional()
+    modifiedAt?: Date;
 }

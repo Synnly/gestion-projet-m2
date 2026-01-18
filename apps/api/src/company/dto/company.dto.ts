@@ -90,6 +90,7 @@ export class CompanyDto {
         isRejected: boolean;
         rejectionReason?: string;
         rejectedAt?: Date;
+        modifiedAt?: Date;
     };
     role: 'COMPANY';
 

@@ -49,6 +49,7 @@ export type companyProfile = {
         isRejected: boolean;
         rejectionReason?: string;
         rejectedAt?: string;
+        modifiedAt?: string;
     };
 
     /** Date when the profile was last updated */

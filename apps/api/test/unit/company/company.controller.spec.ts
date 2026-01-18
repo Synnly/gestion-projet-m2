@@ -1370,7 +1370,7 @@ describe('CompanyController', () => {
 
             expect(service.update).toHaveBeenCalledWith(companyId, {
                 isValid: true,
-                rejected: { isRejected: false, rejectionReason: 'Test reason', rejectedAt: undefined },
+                rejected: { isRejected: false, rejectionReason: undefined, rejectedAt: undefined, modifiedAt: undefined },
             });
         });
 
