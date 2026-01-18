@@ -19,9 +19,7 @@ export function ForumCard({ forum }: Props) {
                         </div>
                         <div className="flex flex-col">
                             <div className="text-xl font-bold">{forum.company?.name}</div>
-                            <div className="flex items-center">
-                                {forum.company?.city}, {forum.company?.country}
-                            </div>
+                            <div className="flex items-center">{forum.company?.address}</div>
                         </div>
                     </div>
 

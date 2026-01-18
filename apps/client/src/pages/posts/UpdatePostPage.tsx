@@ -26,10 +26,7 @@ export default function UpdatePostPage() {
     const initialData = {
         title: post.title,
         description: post.description,
-        location: post.adress ?? '',
-        addressLine: parsedAddress.addressLine,
-        city: parsedAddress.city,
-        postalCode: parsedAddress.postalCode,
+        adress: post.adress ?? '',
         duration: post.duration ?? '',
         sector: post.sector ?? '',
         startDate: post.startDate ?? '',

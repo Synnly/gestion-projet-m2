@@ -23,7 +23,7 @@ export function InternshipPage() {
     };
 
     const access = userStore((s) => s.access);
-
+    const get = userStore((s) => s.get);
     return (
         <div className="flex flex-col h-screen">
             <Navbar minimal={!access} />
@@ -59,7 +59,7 @@ export function InternshipPage() {
                                 <InternshipList />
                             </ToastProvider>
                         </div>
-
+                    
                         {selectedInternship ? (
                             <div className="flex flex-1 h-full overflow-y-auto">
                                 <InternshipDetail internship={selectedInternship} />

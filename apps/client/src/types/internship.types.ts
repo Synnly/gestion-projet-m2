@@ -15,8 +15,7 @@ export interface CompanyInInternship {
     name: string;
     email: string;
     logo?: string;
-    city?: string;
-    country?: string;
+    address: string;
     logoUrl?: string;
 }
 

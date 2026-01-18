@@ -590,6 +590,7 @@ describe('Post Integration Tests', () => {
                 title: 'Poste Présentiel',
                 description: 'Description',
                 keySkills: ['Skill1'],
+                adress: 'toto',
                 type: PostType.Presentiel,
                 isCoverLetterRequired: false,
             };

@@ -40,29 +40,13 @@ export class CompanyDto {
     @Expose()
     legalStatus?: LegalStatus;
 
-    /** Street number of the company address */
-    @Expose()
-    streetNumber?: string;
-
-    /** Street name of the company address */
-    @Expose()
-    streetName?: string;
-
-    /** Postal code of the company address */
-    @Expose()
-    postalCode?: string;
-
-    /** City of the company address */
-    @Expose()
-    city?: string;
-
-    /** Country of the company address */
-    @Expose()
-    country?: string;
-
     /** Whether the company account is validated */
     @Expose()
     isValid?: boolean;
+
+    /** Physical address of the company */
+    @Expose()
+    address: string;
 
     /** Whether the company email is verified */
     @Expose()

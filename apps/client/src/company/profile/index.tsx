@@ -70,20 +70,18 @@ export function CompanyProfile() {
                                         <p className="text-base-600">{profile.email}</p>
                                         <div className="flex gap-4 mt-3">
                                             <span
-                                                className={`px-3 py-1 rounded-full text-sm ${
-                                                    profile.isVerified
+                                                className={`px-3 py-1 rounded-full text-sm ${profile.isVerified
                                                         ? 'bg-success text-success-content'
                                                         : 'bg-warning text-warning-content'
-                                                }`}
+                                                    }`}
                                             >
                                                 {profile.isVerified ? '✓ Email vérifié' : 'Email non vérifié'}
                                             </span>
                                             <span
-                                                className={`px-3 py-1 rounded-full text-sm ${
-                                                    profile.isValid
+                                                className={`px-3 py-1 rounded-full text-sm ${profile.isValid
                                                         ? 'bg-success text-success-content'
                                                         : 'bg-error text-error-content'
-                                                }`}
+                                                    }`}
                                             >
                                                 {profile.isValid ? '✓ Compte validé' : 'Compte en attente'}
                                             </span>
@@ -124,25 +122,11 @@ export function CompanyProfile() {
                             </div>
 
                             {/* Adresse */}
-                            {(profile.streetNumber ||
-                                profile.streetName ||
-                                profile.postalCode ||
-                                profile.city ||
-                                profile.country) && (
+                            {profile.address && (
                                 <div className="bg-base-200 rounded-lg shadow p-6">
                                     <h3 className="text-lg font-semibold text-base-900 mb-4">Adresse</h3>
                                     <div className="text-base-700 space-y-1">
-                                        {profile.streetNumber || profile.streetName ? (
-                                            <p>
-                                                {profile.streetNumber} {profile.streetName}
-                                            </p>
-                                        ) : null}
-                                        {profile.postalCode || profile.city ? (
-                                            <p>
-                                                {profile.postalCode} {profile.city}
-                                            </p>
-                                        ) : null}
-                                        {profile.country && <p>{profile.country}</p>}
+                                        <p>{profile.address}</p>
                                     </div>
                                 </div>
                             )}

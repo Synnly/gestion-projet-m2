@@ -38,11 +38,7 @@ describe('PostModule', () => {
 
     const mockCompanyService = {
         findOne: jest.fn().mockResolvedValue({
-            streetNumber: '10',
-            streetName: 'Rue de Test',
-            postalCode: '75001',
-            city: 'Paris',
-            country: 'France',
+            address: '10 Rue de Test',
         }),
     };
 

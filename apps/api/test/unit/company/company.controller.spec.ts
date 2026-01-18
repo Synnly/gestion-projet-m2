@@ -12,6 +12,7 @@ import { Role } from '../../../src/common/roles/roles.enum';
 import { ExecutionContext } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { NafCode } from '../../../src/company/nafCodes.enum';
 
 describe('CompanyController', () => {
     let controller: CompanyController;
@@ -157,11 +158,7 @@ describe('CompanyController', () => {
                     nafCode: '6202A',
                     structureType: StructureType.PrivateCompany,
                     legalStatus: LegalStatus.SARL,
-                    streetNumber: '10',
-                    streetName: 'Rue de Test',
-                    postalCode: '75001',
-                    city: 'Paris',
-                    country: 'France',
+                    address: '10 Rue de Test, 75001 Paris, France',
                     isValid: true,
                 },
             ];
@@ -175,11 +172,7 @@ describe('CompanyController', () => {
             expect(result[0].nafCode).toBe('6202A');
             expect(result[0].structureType).toBe(StructureType.PrivateCompany);
             expect(result[0].legalStatus).toBe(LegalStatus.SARL);
-            expect(result[0].streetNumber).toBe('10');
-            expect(result[0].streetName).toBe('Rue de Test');
-            expect(result[0].postalCode).toBe('75001');
-            expect(result[0].city).toBe('Paris');
-            expect(result[0].country).toBe('France');
+            expect(result[0].address).toBe('10 Rue de Test, 75001 Paris, France');
             expect(result[0].isValid).toBe(true);
         });
 
@@ -269,11 +262,7 @@ describe('CompanyController', () => {
                 nafCode: '6202A',
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '10 Rue de Test, 75001 Paris, France',
                 isValid: true,
             };
 
@@ -320,7 +309,6 @@ describe('CompanyController', () => {
                 email: 'test@example.com',
                 password: 'Password123!',
                 name: 'Test Company',
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -337,15 +325,10 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Test Company',
                 siretNumber: '12345678901234',
-                nafCode: '6202A',
+                nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
-                isValid: true,
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -362,7 +345,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Admin Company',
                 structureType: StructureType.Administration,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -378,7 +360,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Association',
                 structureType: StructureType.Association,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -394,7 +375,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Public Company',
                 structureType: StructureType.PublicCompanyOrSEM,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -410,7 +390,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Cooperative',
                 structureType: StructureType.MutualCooperative,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -426,7 +405,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'NGO',
                 structureType: StructureType.NGO,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -442,7 +420,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'EURL Company',
                 legalStatus: LegalStatus.EURL,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -458,7 +435,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'SA Company',
                 legalStatus: LegalStatus.SA,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -474,7 +450,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'SAS Company',
                 legalStatus: LegalStatus.SAS,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -490,7 +465,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'SNC Company',
                 legalStatus: LegalStatus.SNC,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -506,7 +480,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'SCP Company',
                 legalStatus: LegalStatus.SCP,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -522,7 +495,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'SASU Company',
                 legalStatus: LegalStatus.SASU,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -538,22 +510,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Other Company',
                 legalStatus: LegalStatus.OTHER,
-                isValid: false,
-            });
-
-            mockCompanyService.create.mockResolvedValue(undefined);
-
-            await controller.create(createDto);
-
-            expect(service.create).toHaveBeenCalledWith(createDto);
-        });
-
-        it('should create company successfully when create is called with isValid set to true', async () => {
-            const createDto = new CreateCompanyDto({
-                email: 'valid@example.com',
-                password: 'Password123!',
-                name: 'Valid Company',
-                isValid: true,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -568,12 +524,7 @@ describe('CompanyController', () => {
                 email: 'address@example.com',
                 password: 'Password123!',
                 name: 'Address Company',
-                streetNumber: '123',
-                streetName: 'Main Street',
-                postalCode: '12345',
-                city: 'Test City',
-                country: 'Test Country',
-                isValid: false,
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -588,8 +539,6 @@ describe('CompanyController', () => {
                 email: 'partial@example.com',
                 password: 'Password123!',
                 name: 'Partial Address Company',
-                city: 'Test City',
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -617,21 +566,7 @@ describe('CompanyController', () => {
         it('should update company successfully when update is called with multiple fields', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
-                email: 'updated@example.com',
-                siretNumber: '98765432109876',
                 isValid: true,
-            });
-
-            mockCompanyService.update.mockResolvedValue(undefined);
-
-            await controller.update('507f1f77bcf86cd799439011', updateDto);
-
-            expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
-        });
-
-        it('should update company email successfully when update is called with new email', async () => {
-            const updateDto = new UpdateCompanyDto({
-                email: 'newemail@example.com',
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -691,23 +626,7 @@ describe('CompanyController', () => {
 
         it('should update company address fields successfully when update is called with new address fields', async () => {
             const updateDto = new UpdateCompanyDto({
-                streetNumber: '456',
-                streetName: 'New Street',
-                postalCode: '54321',
-                city: 'New City',
-                country: 'New Country',
-            });
-
-            mockCompanyService.update.mockResolvedValue(undefined);
-
-            await controller.update('507f1f77bcf86cd799439011', updateDto);
-
-            expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
-        });
-
-        it('should update company siretNumber successfully when update is called with new siretNumber', async () => {
-            const updateDto = new UpdateCompanyDto({
-                siretNumber: '11111111111111',
+                address: '456 New Street, 54321 New City, New Country',
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -719,7 +638,7 @@ describe('CompanyController', () => {
 
         it('should update company nafCode successfully when update is called with new nafCode', async () => {
             const updateDto = new UpdateCompanyDto({
-                nafCode: '1234Z',
+                nafCode: NafCode.NAF_70_22Z,
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -731,18 +650,12 @@ describe('CompanyController', () => {
 
         it('should update all company fields successfully when update is called with complete update data', async () => {
             const updateDto = new UpdateCompanyDto({
-                email: 'fullupdate@example.com',
                 password: 'NewPassword123!',
                 name: 'Fully Updated Company',
-                siretNumber: '11111111111111',
-                nafCode: '9999Z',
+                nafCode: NafCode.NAF_62_01Z,
                 structureType: StructureType.NGO,
                 legalStatus: LegalStatus.OTHER,
-                streetNumber: '999',
-                streetName: 'Complete Street',
-                postalCode: '99999',
-                city: 'Complete City',
-                country: 'Complete Country',
+                address: '999 Complete Ave, 99999 Complete City, Complete Country',
                 isValid: true,
             });
 
@@ -944,7 +857,6 @@ describe('CompanyController', () => {
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 mockCompanyService.create.mockRejectedValue(new Error('Creation failed'));
@@ -975,11 +887,7 @@ describe('CompanyController', () => {
                     name: 'Empty Fields Company',
                     siretNumber: '',
                     nafCode: '',
-                    streetNumber: '',
-                    streetName: '',
-                    postalCode: '',
-                    city: '',
-                    country: '',
+                    address: '',
                     isValid: false,
                 });
 
@@ -1050,11 +958,7 @@ describe('CompanyController', () => {
                         nafCode: undefined,
                         structureType: undefined,
                         legalStatus: undefined,
-                        streetNumber: undefined,
-                        streetName: undefined,
-                        postalCode: undefined,
-                        city: undefined,
-                        country: undefined,
+                        address: undefined,
                         isValid: undefined,
                     },
                 ];
@@ -1076,14 +980,12 @@ describe('CompanyController', () => {
                 email: 'integration@example.com',
                 password: 'Password123!',
                 name: 'Integration Company',
-                isValid: true,
             });
 
             const createdCompany = {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'integration@example.com',
                 name: 'Integration Company',
-                isValid: true,
             };
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -1101,12 +1003,10 @@ describe('CompanyController', () => {
                 email: 'update-test@example.com',
                 password: 'Password123!',
                 name: 'Update Test Company',
-                isValid: false,
             });
 
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Test Company',
-                isValid: true,
             });
 
             const updatedCompany = {
@@ -1184,7 +1084,6 @@ describe('CompanyController', () => {
                     password: 'Password123!',
                     name: `Test ${structureType}`,
                     structureType: structureType,
-                    isValid: false,
                 });
 
                 mockCompanyService.create.mockResolvedValue(undefined);
@@ -1202,7 +1101,6 @@ describe('CompanyController', () => {
                     password: 'Password123!',
                     name: `Test ${legalStatus}`,
                     legalStatus: legalStatus,
-                    isValid: false,
                 });
 
                 mockCompanyService.create.mockResolvedValue(undefined);
