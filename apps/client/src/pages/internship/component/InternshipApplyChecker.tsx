@@ -9,10 +9,12 @@ export const ApplicationStatusChecker = ({
     application,
     isLoading,
     postId,
+    isPostVisible = true,
 }: {
     application: Application;
     isLoading: boolean;
     postId: string;
+    isPostVisible?: boolean;
 }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [fileType, setFileType] = useState<'cv' | 'lm'>('cv');
@@ -45,9 +47,11 @@ export const ApplicationStatusChecker = ({
                     <button
                         onClick={handleApply}
                         className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2"
+                        disabled={!isPostVisible}
+                        title={!isPostVisible ? 'Cette offre n\'est plus disponible' : ''}
                     >
                         <ArrowUpRight size={20} />
-                        <span>Candidater</span>
+                        <span>{isPostVisible ? 'Candidater' : 'Offre non disponible'}</span>
                     </button>
                 </>
             ) : (
