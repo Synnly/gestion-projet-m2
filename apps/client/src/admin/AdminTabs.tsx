@@ -24,7 +24,7 @@ export function AdminTabs({ tabs, defaultTabId }: AdminTabsProps) {
 
     return (
         <div className="w-full">
-            <div role="tablist" className="tabs tabs-bordered mb-4">
+            <div role="tablist" className="tabs tabs-lift mb-4">
                 {tabs.map((tab) => (
                     <button
                         key={tab.id}
