@@ -41,6 +41,7 @@ import { ApplicationList } from './company/applicationList/ApplicationList.tsx';
 import TopicDetailPage from './pages/forum/TopicDetailPage';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
 import { ForumPage } from './pages/forums/ForumPage.tsx';
+import LandingPage from './pages/landing-page/LandingPage.tsx';
 import { EditStudentProfile } from './student/profile/EditStudentProfile.tsx';
 import { StudentProfile } from './student/profile/StudentProfile.tsx';
 import { PublicStudentProfile } from './student/profile/PublicStudentProfile.tsx';
@@ -76,10 +77,11 @@ function App() {
                 { path: 'privacy', element: <PrivacyPolicy /> },
                 { path: 'cookies', element: <CookiePolicy /> },
                 { path: 'safety', element: <SafetyCompliance /> },
-                { index: true, element: <InternshipPage />, handle: { title: 'Accueil' } },
+                
                 {
                     loader: notAuthMiddleWare,
                     children: [
+                        { index: true, element: <LandingPage />, handle: { title: 'Accueil - Stagora' } },
                         { path: 'signin', element: <Login />, handle: { title: 'Connectez-vous' } },
                         {
                             path: 'forgot-password',
@@ -98,6 +100,8 @@ function App() {
                     element: <AuthRoutes />,
                     children: [
                         { path: 'verify', element: <VerifyEmail />, handle: { title: 'Vérifier votre mail' } },
+                        { path: 'home', element: <InternshipPage />, handle: { title: 'Accueil' } },
+
                         { 
                             path: 'pending-validation', 
                             element: <PendingValidation />, 
@@ -169,7 +173,7 @@ function App() {
                             children: [
                                 {
                                     index: true,
-                                    element: <VerifiedRoutes redirectPath="/" />,
+                                    element: <VerifiedRoutes redirectPath="/home" />,
                                 },
                                 {
                                     path: 'detail/:id',
@@ -192,7 +196,7 @@ function App() {
                                     children: [
                                         {
                                             index: true,
-                                            element: <VerifiedRoutes redirectPath="/" />,
+                                            element: <VerifiedRoutes redirectPath="/home" />,
                                         },
                                         { path: 'applications', element: <ApplicationList /> },
                                         {

@@ -59,10 +59,11 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
         const isRejected = newProfile.profile?.rejected?.isRejected || false;
         const rejectedAt = newProfile.profile?.rejected?.rejectedAt;
         const modifiedAt = newProfile.profile?.rejected?.modifiedAt;
-        
+
         // Vérifier si l'entreprise a modifié son profil après le rejet
         console.log('isRejected:', isRejected, 'rejectedAt:', rejectedAt, 'modifiedAt:', modifiedAt);
-        const hasModifiedAfterRejection = isRejected && rejectedAt && modifiedAt && new Date(modifiedAt) > new Date(rejectedAt);
+        const hasModifiedAfterRejection =
+            isRejected && rejectedAt && modifiedAt && new Date(modifiedAt) > new Date(rejectedAt);
         console.log('hasModifiedAfterRejection:', hasModifiedAfterRejection);
         // Si rejeté mais modifié après rejet et profil complet, considérer comme en attente de validation
         if (hasModifiedAfterRejection && isComplete) {
@@ -97,7 +98,7 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
 
                 if (!validationRes.ok) {
                     console.error(
-                        `Failed to check company validation status: received HTTP ${validationRes.status} for company ${payload.id}`
+                        `Failed to check company validation status: received HTTP ${validationRes.status} for company ${payload.id}`,
                     );
                     // Allow navigation to continue to avoid degrading UX on transient failures.
                     return;
@@ -110,20 +111,17 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
 
                 // If company has become valid while on the pending page, redirect to dashboard.
                 if (isValid && pathname === '/pending-validation') {
-                    throw redirect(`/${payload.role.toLowerCase()}/dashboard`);
+                    throw redirect(`/home`);
                 }
             } catch (error) {
-                console.error(
-                    `Error while checking company validation status for company ${payload.id}:`,
-                    error
-                );
+                console.error(`Error while checking company validation status for company ${payload.id}:`, error);
                 // Allow navigation to continue to avoid degrading UX on transient failures.
                 return;
             }
         }
-        
+
         if (isComplete && pathname === '/complete-profil' && !isRejected) {
-            throw redirect(`/${payload.role.toLowerCase()}/dashboard`);
+            throw redirect(`/home`);
         }
     }
 };
