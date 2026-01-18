@@ -42,7 +42,6 @@ import TopicDetailPage from './pages/forum/TopicDetailPage';
 import { MainForumPage } from './pages/forums/MainForumPage.tsx';
 import { ForumPage } from './pages/forums/ForumPage.tsx';
 import LandingPage from './pages/landing-page/LandingPage.tsx';
-import { StatsPage } from './admin/stats';
 import { PendingValidation } from './pages/PendingValidation.tsx';
 import ImportStudent from './admin/importStudent.tsx';
 
