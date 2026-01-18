@@ -25,8 +25,8 @@ export class StudentService {
     constructor(
         @InjectModel(Student.name) private readonly studentModel: Model<StudentUserDocument>,
         private readonly mailerService: MailerService,
-        private readonly configService: ConfigService
-    ) { }
+        private readonly configService: ConfigService,
+    ) {}
 
     /**
      * Find all students that are not soft-deleted.
@@ -66,7 +66,7 @@ export class StudentService {
                 newStudent.email,
                 rawPassword,
                 newStudent.firstName,
-                "Vous pouvez désormais accéder à la plateforme de gestion des stages."
+                'Vous pouvez désormais accéder à la plateforme de gestion des stages.',
             );
         } catch (error) {
             console.error(`Failed to send welcome email to ${newStudent.email}:`, error);
@@ -80,7 +80,10 @@ export class StudentService {
      * @param skipExistingRecords Boolean option to ignore already existing records (if true), and only create new students accounts.
      * @returns A response with the error or validation message, containing the number of students created (and skipped if skipExistingRecords is true).
      */
-    async createMany(dtos: CreateStudentDto[], skipExistingRecords: boolean): Promise<{ added: number; skipped: number }> {
+    async createMany(
+        dtos: CreateStudentDto[],
+        skipExistingRecords: boolean,
+    ): Promise<{ added: number; skipped: number }> {
         const newStudentsToCreateDtos = await this.checkConflicts(dtos, skipExistingRecords);
 
         const studentsLogin: StudentLoginInfo[] = [];
@@ -94,7 +97,7 @@ export class StudentService {
                         email: dto.email,
                         rawPassword: rawPassword,
                         firstName: dto.firstName,
-                        lastName: dto.lastName
+                        lastName: dto.lastName,
                     });
                     const salt = await bcrypt.genSalt(10);
                     const hashedPassword = await bcrypt.hash(rawPassword, salt);
@@ -103,9 +106,9 @@ export class StudentService {
                         ...dto,
                         role: Role.STUDENT,
                         password: hashedPassword,
-                        isFirstTime: true // optionnal, default is true anyway
+                        isFirstTime: true, // optionnal, default is true anyway
                     };
-                })
+                }),
             );
 
             try {
@@ -122,9 +125,9 @@ export class StudentService {
                         loginMailInfo.rawPassword,
                         loginMailInfo.firstName,
                         loginMailInfo.lastName,
-                        "Vous pouvez désormais accéder à la plateforme de gestion des stages."
+                        'Vous pouvez désormais accéder à la plateforme de gestion des stages.',
                     );
-                })
+                }),
             );
 
             // Logging eventual sending errors (silent in prod)
@@ -141,7 +144,6 @@ export class StudentService {
         };
     }
 
-
     /**
      * Update an existing student. If the student does not exist, create it.
      * @param id The student's id.
@@ -154,11 +156,10 @@ export class StudentService {
             // Partial update: only the provided fields are assigned
             Object.assign(student, dto);
             // Triggers pre-save hooks (hashing), but disables full validation
-            await student.save({ validateModifiedOnly: true });
+            await student.save({ validateBeforeSave: false });
             return;
         }
 
-        await this.studentModel.create({ ...(dto as CreateStudentDto), role: Role.STUDENT });
         return;
     }
 
@@ -176,11 +177,9 @@ export class StudentService {
         return;
     }
 
-
-
     /**
      * Parse a JSON or CSV file, then return raw data.
-     * 
+     *
      * @param file The JSON or CSV file
      * @throws {BadRequestException} When the file is not uploaded or in the wrong format.
      * @returns The raw data of the file.
@@ -211,7 +210,7 @@ export class StudentService {
             }
             if (rawData.length > maxRows) {
                 throw new BadRequestException(
-                    `File contains too many records (${rawData.length}). Please upload a file with maximum ${maxRows} students to avoid server timeout.`
+                    `File contains too many records (${rawData.length}). Please upload a file with maximum ${maxRows} students to avoid server timeout.`,
                 );
             }
         } catch (e) {
@@ -225,24 +224,19 @@ export class StudentService {
         return rawData;
     }
 
-
-
     async checkConflicts(dtos: CreateStudentDto[], skipExistingRecords: boolean): Promise<CreateStudentDto[]> {
         const incomingEmails = dtos.map((dto) => dto.email);
         const incomingStudentNumbers = dtos.map((dto) => dto.studentNumber);
         // Check for already existing records in the database
         const conflicts = await this.studentModel.find({
-            $or: [
-                { email: { $in: incomingEmails } },
-                { studentNumber: { $in: incomingStudentNumbers } }
-            ]
+            $or: [{ email: { $in: incomingEmails } }, { studentNumber: { $in: incomingStudentNumbers } }],
         });
 
         const existingEmails = new Set(conflicts.map((s) => s.email));
         const existingStudentNumbers = new Set(conflicts.map((s) => s.studentNumber));
 
-        const conflictedEmailsInFile = incomingEmails.filter(email => existingEmails.has(email));
-        const conflictedNumbersInFile = incomingStudentNumbers.filter(sn => existingStudentNumbers.has(sn));
+        const conflictedEmailsInFile = incomingEmails.filter((email) => existingEmails.has(email));
+        const conflictedNumbersInFile = incomingStudentNumbers.filter((sn) => existingStudentNumbers.has(sn));
 
         // We found duplicates and skipExistingRecords is false (we add every student or none if there's any error)
         if ((conflictedEmailsInFile.length > 0 || conflictedNumbersInFile.length > 0) && !skipExistingRecords) {

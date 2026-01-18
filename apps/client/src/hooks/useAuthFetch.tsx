@@ -22,7 +22,10 @@ export const UseAuthFetch = () => {
     const accessToken = userStore.getState().access;
     const setUserToken = userStore.getState().set;
 
-    const authFetch = async <TData extends BodyInit | null | undefined = BodyInit | null | undefined>(url: string, options?: FetchOptions<TData>): Promise<Response> => {
+    const authFetch = async <TData extends BodyInit | null | undefined = BodyInit | null | undefined>(
+        url: string,
+        options?: FetchOptions<TData>,
+    ): Promise<Response> => {
         const doFetch = async (): Promise<Response> => {
             try {
                 const res = await fetch(url, {

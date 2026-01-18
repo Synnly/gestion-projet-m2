@@ -210,7 +210,7 @@ export const UserSchema = SchemaFactory.createForClass(User);
  *
  * @throws Passes any bcrypt errors to the next middleware
  */
-UserSchema.pre('save', async function (next) {
+UserSchema.pre(['save'], async function (next) {
     // Skip if password hasn't been modified
     if (!this.isModified('password')) {
         return next();

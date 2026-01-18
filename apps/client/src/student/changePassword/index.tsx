@@ -47,14 +47,20 @@ export function ChangePassword() {
         resolver: zodResolver(changePasswordSchema) as Resolver<ChangePasswordFormType>,
     });
 
-    const { mutateAsync, isPending, isError, error, reset: resetMutation } = useMutation({
+    const {
+        mutateAsync,
+        isPending,
+        isError,
+        error,
+        reset: resetMutation,
+    } = useMutation({
         mutationFn: async (data: ChangePasswordFormType) => {
             if (!userInfo) throw new Error('Utilisateur non connecté');
             const res = await authFetch(`${API_URL}/api/students/${userInfo.id}/profile`, {
                 method: 'PUT',
                 data: JSON.stringify({
                     password: data.newPassword,
-                    isFirstTime: false
+                    isFirstTime: false,
                 }),
             });
             if (!res.ok) {
@@ -69,19 +75,21 @@ export function ChangePassword() {
     });
 
     const onSubmit = async (data: ChangePasswordFormType): Promise<void> => {
+        console.log;
         await mutateAsync(data);
     };
 
     const formInputStyle = 'input input-primary w-full rounded-xl';
 
     return (
-        <div className="min-h-screen bg-base-200">
+        <div className="min-h-screen bg-base-100">
             <Navbar />
             <div className="p-8">
-                <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center bg-base-100 rounded-lg shadow">
+                <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center bg-base-100 rounded-lg shadow shadow-base-300">
                     <h1 className="text-3xl font-bold text-base-content text-center">Changer votre mot de passe</h1>
                     <p className="text-sm mt-2 italic text-base-content mb-4">
-                        Pour des raisons de sécurité, vous devez changer votre mot de passe lors de votre première connexion.
+                        Pour des raisons de sécurité, vous devez changer votre mot de passe lors de votre première
+                        connexion.
                     </p>
                     <form
                         onSubmit={handleSubmit(onSubmit)}
@@ -91,10 +99,7 @@ export function ChangePassword() {
                             resetMutation();
                         }}
                     >
-                        <FormSection
-                            title="Nouveau mot de passe"
-                            className="mb-8 space-y-4"
-                        >
+                        <FormSection title="Nouveau mot de passe" className="mb-8 space-y-4">
                             <FormInputEdit<ChangePasswordFormType>
                                 className={formInputStyle}
                                 register={register('newPassword')}
