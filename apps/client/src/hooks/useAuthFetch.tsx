@@ -37,7 +37,7 @@ export const UseAuthFetch = () => {
                 const res = await fetch(url, {
                     method: options?.method || 'GET',
                     headers: headers,
-                    body: options?.data,
+                    body: options?.data as any,
                     credentials: 'include',
                 });
 

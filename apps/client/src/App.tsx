@@ -1,5 +1,5 @@
 import './App.css';
-import { createBrowserRouter, redirect, RouterProvider, Navigate } from 'react-router';
+import { createBrowserRouter, redirect, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CompanySignup } from './auth/companySignup/index';
 import { Login } from './auth/Login/index';
@@ -37,9 +37,6 @@ import FAQ from './pages/legal/FAQ';
 import Help from './pages/legal/Help';
 import { internshipLoader } from './loaders/intershipLoader';
 import { AdminDashboard } from './admin/dashboard';
-import ApplicationPage from './pages/applications/ApplicationPage';
-import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
-import { StudentDashboard } from './student/dashboard';
 import { ChangePassword as StudentChangePassword } from './student/changePassword';
 import { ApplicationList } from './company/applicationList/ApplicationList.tsx';
 import TopicDetailPage from './pages/forum/TopicDetailPage';
@@ -81,7 +78,7 @@ function App() {
                 { path: 'privacy', element: <PrivacyPolicy /> },
                 { path: 'cookies', element: <CookiePolicy /> },
                 { path: 'safety', element: <SafetyCompliance /> },
-                
+
                 {
                     loader: notAuthMiddleWare,
                     children: [
@@ -106,10 +103,10 @@ function App() {
                         { path: 'verify', element: <VerifyEmail />, handle: { title: 'Vérifier votre mail' } },
                         { path: 'home', element: <InternshipPage />, handle: { title: 'Accueil' } },
 
-                        { 
-                            path: 'pending-validation', 
-                            element: <PendingValidation />, 
-                            handle: { title: 'Compte en cours de validation' } 
+                        {
+                            path: 'pending-validation',
+                            element: <PendingValidation />,
+                            handle: { title: 'Compte en cours de validation' },
                         },
                         {
                             path: 'complete-profil',
@@ -134,10 +131,6 @@ function App() {
                                     path: 'profile/change-password',
                                     element: <ChangePassword />,
                                     handle: { title: 'Changer le mot de passe' },
-                                },
-                                {
-                                    element: <VerifiedRoutes redirectPath="/company/dashboard" />,
-                                    children: [],
                                 },
                                 {
                                     path: 'offers/add',
@@ -221,9 +214,7 @@ function App() {
                                     path: 'dashboard',
                                     element: <AdminDashboard />,
                                     handle: { title: 'Tableau de bord admin' },
-                                    children: [
-                                        { index: true, element: <ImportStudent /> },
-                                    ],
+                                    children: [{ index: true, element: <ImportStudent /> }],
                                 },
                             ],
                         },
@@ -236,19 +227,7 @@ function App() {
                                     element: <StudentChangePassword />,
                                     handle: { title: 'Changer le mot de passe' },
                                 },
-                                {
-                                    path: 'dashboard',
-                                    element: <StudentDashboard />,
-                                    children: [
-                                        { index: true, element: <ApplicationPage /> },
-                                        { path: ':applicationId', element: <ApplicationDetailPage /> },
-                                    ],
-                                },
                             ],
-                        },
-                        {
-                            path: 'applications',
-                            element: <Navigate to="/student/dashboard" replace />,
                         },
                         {
                             path: 'forums',

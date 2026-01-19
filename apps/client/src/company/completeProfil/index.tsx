@@ -111,7 +111,10 @@ export const CompleteProfil = () => {
         const { logo: fileLogo, ...rest } = data;
 
         const base: Omit<completeProfilFormType, 'logo'> = rest;
-        const dataToSend: Omit<completeProfilFormType, 'logo'> & { logo?: string; rejected?: { isRejected: boolean; rejectionReason?: string; rejectedAt?: Date; modifiedAt?: Date } } = { ...base };
+        const dataToSend: Omit<completeProfilFormType, 'logo'> & {
+            logo?: string;
+            rejected?: { isRejected: boolean; rejectionReason?: string; rejectedAt?: Date; modifiedAt?: Date };
+        } = { ...base };
 
         if (fileLogo instanceof FileList && fileLogo.length > 0) {
             const file = fileLogo[0];
@@ -146,12 +149,12 @@ export const CompleteProfil = () => {
         }
 
         await mutateAsync(dataToSend);
-        
+
         // Si le compte était rejeté, rediriger vers pending-validation au lieu du dashboard
         if (profil?.rejected?.isRejected) {
             navigate('/pending-validation');
         } else {
-            navigate(`/${payload.role.toLowerCase()}/dashboard`);
+            navigate(`/home`);
         }
     };
     return (

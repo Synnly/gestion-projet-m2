@@ -34,7 +34,7 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
     }
     //if user try to access verify and already verified redirect to dashboard
     if (payload.isVerified && pathname === '/verify') {
-        throw redirect(`/${payload.role.toLowerCase()}/dashboard`);
+        throw redirect(`/home`);
     }
 
     //if user is not verified and is not already on verify page redirect to verify
@@ -145,7 +145,7 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
             throw redirect('/student/changePassword');
         }
         if (!isFirstTime && pathname === '/student/changePassword') {
-            throw redirect('/student/dashboard');
+            throw redirect('/home');
         }
     }
 };
