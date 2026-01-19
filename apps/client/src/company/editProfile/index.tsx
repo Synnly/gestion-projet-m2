@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, type Resolver } from 'react-hook-form';
+import { Controller, useForm, type Resolver } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { userStore } from '../../store/userStore';
@@ -25,6 +25,8 @@ import {
 } from '../completeProfil/type';
 import type { companyProfile } from '../../types';
 import { UseAuthFetch } from '../../hooks/useAuthFetch';
+import type { NominatimAddress } from '../../api/autoCompleteAddress';
+import { GenericAutocomplete } from '../../components/inputs/autoComplete/genericAutoComplete';
 
 export function EditCompanyProfile() {
     const navigate = useNavigate();
@@ -60,6 +62,7 @@ export function EditCompanyProfile() {
 
     const {
         register,
+        control,
         handleSubmit,
         formState: { errors },
         clearErrors,
@@ -72,14 +75,10 @@ export function EditCompanyProfile() {
     useEffect(() => {
         if (profile) {
             reset({
-                streetNumber: profile.streetNumber ?? '',
+                address: profile.address,
                 nafCode: profile.nafCode,
                 structureType: profile.structureType,
                 legalStatus: profile.legalStatus,
-                postalCode: profile.postalCode ?? '',
-                country: profile.country ?? '',
-                city: profile.city ?? '',
-                streetName: profile.streetName ?? '',
                 logo: logoFile ?? undefined,
             });
         }
@@ -106,11 +105,7 @@ export function EditCompanyProfile() {
                 nafCode: variables.nafCode ?? undefined,
                 structureType: variables.structureType ?? undefined,
                 legalStatus: variables.legalStatus ?? undefined,
-                streetNumber: variables.streetNumber ?? undefined,
-                streetName: variables.streetName ?? undefined,
-                postalCode: variables.postalCode ?? undefined,
-                city: variables.city ?? undefined,
-                country: variables.country ?? undefined,
+                address: variables.address ?? undefined,
             };
             updateProfileStore(payload);
             navigate('/company/profile');
@@ -249,58 +244,19 @@ export function EditCompanyProfile() {
                         </FormSection>
 
                         <FormSection title="Adresse" className="mb-8 space-y-4">
-                            <div className="flex gap-4">
-                                <FormInputEdit<editProfilFormType>
-                                    label="Numéro"
-                                    type="text"
-                                    placeholder="Numéro"
-                                    register={register('streetNumber', {
-                                        onChange: () => clearErrors('streetNumber'),
-                                    })}
-                                    error={errors.streetNumber}
-                                    className="input input-primary"
-                                />
-                                <FormInputEdit<editProfilFormType>
-                                    label="Rue"
-                                    type="text"
-                                    placeholder="Rue"
-                                    register={register('streetName', {
-                                        onChange: () => clearErrors('streetName'),
-                                    })}
-                                    error={errors.streetName}
-                                    className="input input-primary"
-                                />
-                            </div>
-                            <div className="flex gap-4">
-                                <FormInputEdit<editProfilFormType>
-                                    label="Code postal"
-                                    type="text"
-                                    placeholder="Code postal"
-                                    register={register('postalCode', {
-                                        onChange: () => clearErrors('postalCode'),
-                                    })}
-                                    error={errors.postalCode}
-                                    className="input input-primary"
-                                />
-                                <FormInputEdit<editProfilFormType>
-                                    label="Ville"
-                                    type="text"
-                                    placeholder="Ville"
-                                    register={register('city', {
-                                        onChange: () => clearErrors('city'),
-                                    })}
-                                    error={errors.city}
-                                    className="input input-primary"
-                                />
-                                <FormInputEdit<editProfilFormType>
-                                    label="Pays"
-                                    type="text"
-                                    placeholder="Pays"
-                                    register={register('country', {
-                                        onChange: () => clearErrors('country'),
-                                    })}
-                                    error={errors.country}
-                                    className="input input-primary"
+                            <div className="flex-1">
+                                <Controller
+                                    name="address"
+                                    control={control}
+                                    render={({ field, fieldState }) => (
+                                        <GenericAutocomplete<NominatimAddress>
+                                            {...field}
+                                            label="Adresse complète"
+                                            placeholder="Tapez votre adresse..."
+                                            isAutocompleteEnabled={false}
+                                            error={fieldState.error?.message}
+                                        />
+                                    )}
                                 />
                             </div>
                         </FormSection>

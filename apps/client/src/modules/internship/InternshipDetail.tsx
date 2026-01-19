@@ -179,9 +179,9 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                                             Contact: {internship.company.email}
                                         </p>
                                     )}
-                                    {internship.company.city && internship.company.country && (
+                                    {internship.company.address && (
                                         <p className="mt-1 text-sm text-base-content/70">
-                                            {internship.company.city}, {internship.company.country}
+                                            {internship.company.address}
                                         </p>
                                     )}
                                 </div>

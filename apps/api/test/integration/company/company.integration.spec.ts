@@ -121,11 +121,7 @@ describe('Company Integration Tests', () => {
                 nafCode: NafCode.NAF_62_01Z,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SAS,
-                streetNumber: '123',
-                streetName: 'Main Street',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '123 Main Street,75001 Paris France',
             };
 
             await request(app.getHttpServer())
@@ -140,8 +136,7 @@ describe('Company Integration Tests', () => {
             expect(created?.nafCode).toBe(dto.nafCode);
             expect(created?.structureType).toBe(dto.structureType);
             expect(created?.legalStatus).toBe(dto.legalStatus);
-            expect(created?.streetNumber).toBe(dto.streetNumber);
-            expect(created?.city).toBe(dto.city);
+            expect(created?.address).toBe(dto.address);
         });
 
         it('should fail when email is missing', async () => {
@@ -359,11 +354,7 @@ describe('Company Integration Tests', () => {
                 nafCode: NafCode.NAF_62_01Z,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SAS,
-                streetNumber: '123',
-                streetName: 'Main Street',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '123 Main Street,75001 Paris France',
             });
 
             const res = await request(app.getHttpServer()).get('/api/companies').expect(200);
@@ -411,11 +402,7 @@ describe('Company Integration Tests', () => {
                 nafCode: NafCode.NAF_62_01Z,
                 structureType: StructureType.Association,
                 legalStatus: LegalStatus.SARL,
-                streetNumber: '456',
-                streetName: 'Oak Avenue',
-                postalCode: '69001',
-                city: 'Lyon',
-                country: 'France',
+                address: '456 Oak Avenue,69001 Lyon France',
             });
 
             const res = await request(app.getHttpServer()).get(`/api/companies/${company._id}`).expect(200);
@@ -482,7 +469,7 @@ describe('Company Integration Tests', () => {
 
             const updateDto = {
                 name: 'New Name',
-                city: 'Marseille',
+                address: '789 Pine Road,13000 Marseille France',
                 structureType: StructureType.NGO,
             };
 
@@ -494,7 +481,7 @@ describe('Company Integration Tests', () => {
 
             const updated = await companyModel.findById(company._id).lean();
             expect(updated?.name).toBe('New Name');
-            expect(updated?.city).toBe('Marseille');
+            expect(updated?.address).toBe('789 Pine Road,13000 Marseille France');
             expect(updated?.structureType).toBe(StructureType.NGO);
         });
 
@@ -1040,11 +1027,7 @@ describe('Company Integration Tests', () => {
             });
 
             const addressUpdate = {
-                streetNumber: '789',
-                streetName: 'New Avenue',
-                postalCode: '13001',
-                city: 'Marseille',
-                country: 'France',
+                address: '789 New Avenue,13001 Marseille France',
             };
 
             await request(app.getHttpServer())
@@ -1054,11 +1037,7 @@ describe('Company Integration Tests', () => {
                 .expect(204);
 
             const updated = await companyModel.findById(company._id).lean();
-            expect(updated?.streetNumber).toBe('789');
-            expect(updated?.streetName).toBe('New Avenue');
-            expect(updated?.postalCode).toBe('13001');
-            expect(updated?.city).toBe('Marseille');
-            expect(updated?.country).toBe('France');
+            expect(updated?.address).toBe(addressUpdate.address);
         });
 
         it('should reject attempt to update siretNumber (immutable field)', async () => {
@@ -1116,7 +1095,6 @@ describe('Company Integration Tests', () => {
                 name: 'Integrity Company',
             };
 
-            // Create
             await request(app.getHttpServer())
                 .post('/api/companies')
                 .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
@@ -1249,7 +1227,6 @@ describe('Company Integration Tests', () => {
                 password: 'StrongP@ss1',
                 role: 'COMPANY' as any,
                 name: 'Whitespace Company',
-                city: 'Paris',
             };
 
             await request(app.getHttpServer())
@@ -1261,7 +1238,6 @@ describe('Company Integration Tests', () => {
             const created = await companyModel.findOne({ email: 'whitespace@test.com' }).lean();
             expect(created?.email).toBe('whitespace@test.com');
             expect(created?.name).toBe('Whitespace Company');
-            expect(created?.city).toBe('Paris');
         });
 
         it('should convert email to lowercase', async () => {

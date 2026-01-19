@@ -12,7 +12,7 @@ export type CreatePostPayload = {
         maxSalary?: number;
         sector?: string;
         keySkills?: string[];
-        adress?: string;
+        address?: string;
         type?: string;
         isVisible?: boolean;
         isCoverLetterRequired: boolean;

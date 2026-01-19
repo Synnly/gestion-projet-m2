@@ -25,11 +25,7 @@ describe('CreateCompanyDto - decorator branches', () => {
             password: 'Password123!',
             role: 'COMPANY' as any,
             name: 'Company',
-            streetNumber: '10',
-            streetName: 'Rue Test',
-            postalCode: '75001',
-            city: 'Paris',
-            country: 'France',
+            address: '123 Main St',
             logo: 'http://example.com/logo.png',
         });
 
@@ -102,11 +98,7 @@ describe('CreateCompanyDto', () => {
                 nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '10 Rue de Test, 75001 Paris, France',
             };
 
             const dto = new CreateCompanyDto(data);
@@ -118,11 +110,7 @@ describe('CreateCompanyDto', () => {
             expect(dto.nafCode).toBe(NafCode.NAF_62_02A);
             expect(dto.structureType).toBe(StructureType.PrivateCompany);
             expect(dto.legalStatus).toBe(LegalStatus.SARL);
-            expect(dto.streetNumber).toBe('10');
-            expect(dto.streetName).toBe('Rue de Test');
-            expect(dto.postalCode).toBe('75001');
-            expect(dto.city).toBe('Paris');
-            expect(dto.country).toBe('France');
+            expect(dto.address).toBe('10 Rue de Test, 75001 Paris, France');
         });
 
         it('should create instance successfully when constructor is called with minimal required fields', () => {
@@ -510,11 +498,7 @@ describe('CreateCompanyDto', () => {
                     role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
-                    streetNumber: '10',
-                    streetName: 'Rue de Test',
-                    postalCode: '75001',
-                    city: 'Paris',
-                    country: 'France',
+                    address: '10 Rue de Test, 75001 Paris, France',
                 });
 
                 const errors = await validate(dto);
@@ -527,13 +511,13 @@ describe('CreateCompanyDto', () => {
                     role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
-                    streetNumber: 10 as any,
+                    address: 10 as any,
                 });
 
                 const errors = await validate(dto);
                 expect(errors.length).toBeGreaterThan(0);
-                const streetNumberError = errors.find((e) => e.property === 'streetNumber');
-                expect(streetNumberError).toBeDefined();
+                const addressError = errors.find((e) => e.property === 'address');
+                expect(addressError).toBeDefined();
             });
         });
 
@@ -686,11 +670,7 @@ describe('CreateCompanyDto', () => {
                     nafCode: NafCode.NAF_62_02A,
                     structureType: StructureType.PrivateCompany,
                     legalStatus: LegalStatus.SARL,
-                    streetNumber: '10',
-                    streetName: 'Rue Complete',
-                    postalCode: '75001',
-                    city: 'Paris',
-                    country: 'France',
+                    address: '10 Rue Complete, 75001 Paris, France',
                 });
 
                 const errors = await validate(dto);

@@ -17,11 +17,7 @@ describe('UpdateCompanyDto - decorator branches', () => {
 
     it('should validate all optional string address fields when provided', async () => {
         const dto = new UpdateCompanyDto({
-            streetNumber: '42',
-            streetName: 'Avenue Test',
-            postalCode: '69000',
-            city: 'Lyon',
-            country: 'France',
+            address: '42 Avenue Test, 69000 Lyon, France',
             logo: 'http://example.com/new-logo.png',
         });
 
@@ -66,11 +62,7 @@ describe('UpdateCompanyDto', () => {
                 nafCode: NafCode.NAF_62_01Z,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SAS,
-                streetNumber: '123',
-                streetName: 'Valid Street',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '42 Valid St, 75001 Paris, France',
                 isValid: true,
                 logo: 'https://example.com/logo.png',
             });
@@ -273,69 +265,16 @@ describe('UpdateCompanyDto', () => {
     describe('Address validation', () => {
         it('should pass validation when all address fields are valid', async () => {
             const dto = new UpdateCompanyDto({
-                streetNumber: '123',
-                streetName: 'Main Street',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '123 Main Street, 75001 Paris, France',
             });
 
             const errors = await validate(dto);
             expect(errors.length).toBe(0);
         });
 
-        it('should pass validation when partial address fields are provided', async () => {
+        it('should pass validation when address is empty string as field is optional', async () => {
             const dto = new UpdateCompanyDto({
-                city: 'Paris',
-            });
-
-            const errors = await validate(dto);
-            expect(errors.length).toBe(0);
-        });
-
-        it('should pass validation when streetNumber is empty string as field is optional', async () => {
-            const dto = new UpdateCompanyDto({
-                streetNumber: '',
-            });
-
-            // Empty strings pass validation for optional @IsString() fields without @IsNotEmpty()
-            const errors = await validate(dto);
-            expect(errors.length).toBe(0);
-        });
-
-        it('should pass validation when streetName is empty string as field is optional', async () => {
-            const dto = new UpdateCompanyDto({
-                streetName: '',
-            });
-
-            // Empty strings pass validation for optional @IsString() fields without @IsNotEmpty()
-            const errors = await validate(dto);
-            expect(errors.length).toBe(0);
-        });
-
-        it('should pass validation when postalCode is empty string as field is optional', async () => {
-            const dto = new UpdateCompanyDto({
-                postalCode: '',
-            });
-
-            // Empty strings pass validation for optional @IsString() fields without @IsNotEmpty()
-            const errors = await validate(dto);
-            expect(errors.length).toBe(0);
-        });
-
-        it('should pass validation when city is empty string as field is optional', async () => {
-            const dto = new UpdateCompanyDto({
-                city: '',
-            });
-
-            // Empty strings pass validation for optional @IsString() fields without @IsNotEmpty()
-            const errors = await validate(dto);
-            expect(errors.length).toBe(0);
-        });
-
-        it('should pass validation when country is empty string as field is optional', async () => {
-            const dto = new UpdateCompanyDto({
-                country: '',
+                address: '',
             });
 
             // Empty strings pass validation for optional @IsString() fields without @IsNotEmpty()

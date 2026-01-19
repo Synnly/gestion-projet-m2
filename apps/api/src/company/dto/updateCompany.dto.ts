@@ -67,45 +67,9 @@ export class UpdateCompanyDto {
     @IsEnum(LegalStatus)
     legalStatus?: LegalStatus;
 
-    /**
-     * Street number of the company's physical address
-     * Example: "123", "45 bis"
-     */
     @IsOptional()
     @IsString()
-    streetNumber?: string;
-
-    /**
-     * Street name of the company's physical address
-     * Example: "Avenue des Champs-Élysées", "Rue de la Paix"
-     */
-    @IsOptional()
-    @IsString()
-    streetName?: string;
-
-    /**
-     * Postal code of the company's physical address
-     * Example: "75008", "69001"
-     */
-    @IsOptional()
-    @IsString()
-    postalCode?: string;
-
-    /**
-     * City where the company is located
-     * Example: "Paris", "Lyon", "Marseille"
-     */
-    @IsOptional()
-    @IsString()
-    city?: string;
-
-    /**
-     * Country where the company is located
-     * Example: "France", "Belgique"
-     */
-    @IsOptional()
-    @IsString()
-    country?: string;
+    address?: string;
 
     /**
      * Account validation status

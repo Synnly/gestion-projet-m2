@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, type Resolver } from 'react-hook-form';
+import { Controller, useForm, type Resolver } from 'react-hook-form';
 import { XCircle } from 'lucide-react';
 import {
     type completeProfilFormType,
@@ -24,6 +24,8 @@ import type { userContext } from '../../protectedRoutes/type';
 import { useUploadFile } from '../../hooks/useUploadFile';
 import { useEffect, useState } from 'react';
 import { UseAuthFetch } from '../../hooks/useAuthFetch';
+import { GenericAutocomplete } from '../../components/inputs/autoComplete/genericAutoComplete';
+import { type NominatimAddress, addressFetcher, getAddressLabel } from '../../api/autoCompleteAddress.tsx';
 export const CompleteProfil = () => {
     const formInputStyle = 'p-3';
     const navigate = useNavigate();
@@ -52,6 +54,7 @@ export const CompleteProfil = () => {
     const upload = useUploadFile();
     const {
         register,
+        control,
         handleSubmit,
         formState: { errors },
         clearErrors,
@@ -60,14 +63,10 @@ export const CompleteProfil = () => {
         resolver: zodResolver(completeProfilForm) as Resolver<completeProfilFormType>,
         defaultValues: {
             siretNumber: profil?.siretNumber ?? '',
-            streetNumber: profil?.streetNumber ?? '',
             nafCode: profil?.nafCode,
             structureType: profil?.structureType,
             legalStatus: profil?.legalStatus,
-            postalCode: profil?.postalCode ?? '',
-            country: profil?.country ?? '',
-            city: profil?.city ?? '',
-            streetName: profil?.streetName ?? '',
+            address: profil?.address ?? '',
             logo: logoFile,
         },
     });
@@ -98,11 +97,7 @@ export const CompleteProfil = () => {
                 nafCode: variables.nafCode ?? undefined,
                 structureType: variables.structureType ?? undefined,
                 legalStatus: variables.legalStatus ?? undefined,
-                streetNumber: variables.streetNumber ?? undefined,
-                streetName: variables.streetName ?? undefined,
-                postalCode: variables.postalCode ?? undefined,
-                city: variables.city ?? undefined,
-                country: variables.country ?? undefined,
+                address: variables.address ?? undefined,
             };
             updateProfil(payload);
         },
@@ -149,6 +144,7 @@ export const CompleteProfil = () => {
         }
 
         await mutateAsync(dataToSend);
+        navigate(`/`);
 
         // Si le compte était rejeté, rediriger vers pending-validation au lieu du dashboard
         if (profil?.rejected?.isRejected) {
@@ -275,63 +271,24 @@ export const CompleteProfil = () => {
                         className=" bg-base-100 p-6 shadow-md mb-6 flex flex-col gap-4"
                     >
                         <div className="flex w-full flex-row gap-6">
-                            <div className="w-1/2">
-                                <FormInput<completeProfilFormType>
-                                    type="text"
-                                    label="Numéro de rue"
-                                    placeholder="ex: 12B"
-                                    className={`${formInputStyle}`}
-                                    register={register('streetNumber')}
-                                    onChange={() => clearErrors('streetNumber')}
-                                    error={errors.streetNumber}
-                                />
-                            </div>
-                            <div className="w-1/2">
-                                <FormInput<completeProfilFormType>
-                                    type="text"
-                                    label="Nom de rue"
-                                    placeholder="ex: Avenue des champs-élysées"
-                                    className={`${formInputStyle}`}
-                                    register={register('streetName')}
-                                    onChange={() => clearErrors('streetName')}
-                                    error={errors.streetName}
+                            <div className="flex-1">
+                                <Controller
+                                    name="address"
+                                    control={control}
+                                    render={({ field, fieldState }) => (
+                                        <GenericAutocomplete<NominatimAddress>
+                                            {...field}
+                                            label="Adresse complète"
+                                            placeholder="Tapez votre adresse..."
+                                            isAutocompleteEnabled={false}
+                                            fetcher={addressFetcher}
+                                            getLabel={getAddressLabel}
+                                            error={fieldState.error?.message}
+                                        />
+                                    )}
                                 />
                             </div>
                         </div>
-                        <div className="w-full flex flex-row gap-6">
-                            <div className="w-1/2">
-                                <FormInput<completeProfilFormType>
-                                    type="text"
-                                    label="Code postal"
-                                    placeholder="ex: 75008"
-                                    className={`${formInputStyle}`}
-                                    register={register('postalCode')}
-                                    onChange={() => clearErrors('postalCode')}
-                                    error={errors.postalCode}
-                                />
-                            </div>
-                            <div className="w-1/2">
-                                <FormInput<completeProfilFormType>
-                                    type="text"
-                                    label="Ville"
-                                    placeholder="ex: Paris"
-                                    className={`${formInputStyle}`}
-                                    register={register('city')}
-                                    onChange={() => clearErrors('city')}
-                                    error={errors.city}
-                                />
-                            </div>
-                        </div>
-
-                        <FormInput<completeProfilFormType>
-                            type="text"
-                            label="Pays"
-                            placeholder="ex: France"
-                            className={`${formInputStyle}`}
-                            register={register('country')}
-                            onChange={() => clearErrors('country')}
-                            error={errors.country}
-                        />
                     </FormSection>
                     <FormSubmit
                         className="btn-primary w-min self-end font-bold"

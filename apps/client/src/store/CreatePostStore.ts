@@ -4,10 +4,7 @@ import type { PostType } from '../types/internship.types.ts';
 export interface CreatePostState {
     title: string;
     description: string;
-    location: string;
-    addressLine: string;
-    city: string;
-    postalCode: string;
+    adress: string;
     duration: string;
     sector: string;
     startDate: string;
@@ -17,13 +14,10 @@ export interface CreatePostState {
     type: PostType;
     skills: string[];
     isCoverLetterRequired: boolean;
+    setAdress(value: string): void;
     setSkills: (skills: string[]) => void;
     setTitle: (value: string) => void;
     setDescription: (value: string) => void;
-    setLocation: (value: string) => void;
-    setAddressLine: (value: string) => void;
-    setCity: (value: string) => void;
-    setPostalCode: (value: string) => void;
     setDuration: (value: string) => void;
     setSector: (value: string) => void;
     setStartDate: (value: string) => void;
@@ -40,10 +34,7 @@ export interface CreatePostState {
 export const useCreatePostStore = create<CreatePostState>((set) => ({
     title: '',
     description: '',
-    location: '',
-    addressLine: '',
-    city: '',
-    postalCode: '',
+    adress: '',
     duration: '',
     sector: '',
     startDate: '',
@@ -52,13 +43,9 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
     type: 'Présentiel',
     skills: [],
     setSkills: (skills: string[]) => set({ skills }),
-
     setTitle: (value: string) => set({ title: value }),
     setDescription: (value: string) => set({ description: value }),
-    setLocation: (value: string) => set({ location: value }),
-    setAddressLine: (value: string) => set({ addressLine: value }),
-    setCity: (value: string) => set({ city: value }),
-    setPostalCode: (value: string) => set({ postalCode: value }),
+    setAdress: (value: string) => set({ adress: value }),
     setDuration: (value: string) => set({ duration: value }),
     setSector: (value: string) => set({ sector: value }),
     setStartDate: (value: string) => set({ startDate: value }),
@@ -66,7 +53,6 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
     setMaxSalary: (value?: number) => set({ maxSalary: value }),
     setIsVisibleToStudents: (value: boolean) => set({ isVisibleToStudents: value }),
     setIsCoverLetterRequired: (value: boolean) => set({ isCoverLetterRequired: value }),
-    // Prevent duplicates and cap the skill list to five entries.
     addSkill: (skill) =>
         set((state) => {
             const trimmed = skill.trim();
@@ -75,7 +61,6 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
             if (state.skills.length >= 5) return state;
             return { skills: [...state.skills, trimmed] };
         }),
-    // Remove a skill tag when the user clicks the chip.
     removeSkill: (skill) =>
         set((state) => ({
             skills: state.skills.filter((s) => s !== skill),
@@ -85,10 +70,7 @@ export const useCreatePostStore = create<CreatePostState>((set) => ({
         set({
             title: '',
             description: '',
-            location: '',
-            addressLine: '',
-            city: '',
-            postalCode: '',
+            adress: '',
             duration: '',
             sector: '',
             startDate: '',
