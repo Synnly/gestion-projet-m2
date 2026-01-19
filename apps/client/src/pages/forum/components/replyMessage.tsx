@@ -14,9 +14,13 @@ export const ReplyMessage = ({ replyMessage }: replyMessageProps) => {
                 <Reply size={14} className="transform rotate-180" />
                 <span>
                     Réponse à{' '}
-                    {replyMessage.authorId.name
-                        ? replyMessage.authorId.name
-                        : `${replyMessage.authorId.firstName} ${replyMessage.authorId.lastName} `}
+                    {replyMessage.authorId
+                        ? 'name' in replyMessage.authorId && replyMessage.authorId.name
+                            ? replyMessage.authorId.name
+                            : 'firstName' in replyMessage.authorId && 'lastName' in replyMessage.authorId
+                              ? `${replyMessage.authorId.firstName} ${replyMessage.authorId.lastName}`.trim()
+                              : ''
+                        : ''}
                 </span>
                 <span className="text-gray-400 ml-1">•</span>
                 <span className="text-gray-500 font-normal">
