@@ -30,18 +30,18 @@ export const Card: React.FC<CardProps> = ({
             <div className="card-body p-3">
                 <div className="flex items-center gap-4">
                     <div className="avatar">
-                        <div className="w-12 rounded-lg bg-neutral-300 flex items-center justify-center">
+                        <div className="w-12 flex items-center justify-center">
                             <img
                                 src={imageSrc ?? logoPlaceholder}
                                 alt={imageAlt ?? title}
-                                className="h-7 w-7 object-cover"
+                                className="object-cover rounded"
                             />
                         </div>
                     </div>
                     <div className="flex-1">
                         <div className="flex items-center justify-between">
                             <p className="text-base font-bold text-base-content">{title}</p>
-                            {meta ? <div className="text-xs text-base-content/60">{meta}</div> : null}
+                            {meta ? <div className="text-xs text-base-content/60 text-nowrap">{meta}</div> : null}
                         </div>
                         {subtitle ? <p className="text-sm text-base-content/70">{subtitle}</p> : null}
                     </div>

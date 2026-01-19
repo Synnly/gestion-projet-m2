@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
+import { XCircle } from 'lucide-react';
 import {
     type completeProfilFormType,
     nafCode,
@@ -22,6 +23,7 @@ import { useBlob } from '../../hooks/useBlob';
 import type { userContext } from '../../protectedRoutes/type';
 import { useUploadFile } from '../../hooks/useUploadFile';
 import { useEffect, useState } from 'react';
+import { UseAuthFetch } from '../../hooks/useAuthFetch';
 export const CompleteProfil = () => {
     const formInputStyle = 'p-3';
     const navigate = useNavigate();
@@ -33,6 +35,7 @@ export const CompleteProfil = () => {
     const logoBlob = useBlob(profil?.logo ?? '');
     const logoFile = useFile(logoBlob, profil?.logo);
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const authFetch = UseAuthFetch();
     useEffect(() => {
         if (!logoBlob) {
             setLogoUrl(null);
@@ -72,14 +75,13 @@ export const CompleteProfil = () => {
     const { isPending, isError, error, mutateAsync } = useMutation({
         mutationFn: async (data: Omit<completeProfilFormType, 'logo'> & { logo?: string }) => {
             try {
-                const res = await fetch(`${API_URL}/api/companies/${payload.id}`, {
+                const res = await authFetch(`${API_URL}/api/companies/${payload.id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${user.accessToken}`,
                     },
-                    credentials: 'include',
-                    body: JSON.stringify(data),
+                    data: JSON.stringify(data),
                 });
                 return res;
             } catch (err) {
@@ -109,16 +111,15 @@ export const CompleteProfil = () => {
         const { logo: fileLogo, ...rest } = data;
 
         const base: Omit<completeProfilFormType, 'logo'> = rest;
-        const dataToSend: Omit<completeProfilFormType, 'logo'> & { logo?: string } = { ...base };
+        const dataToSend: Omit<completeProfilFormType, 'logo'> & { logo?: string; rejected?: { isRejected: boolean; rejectionReason?: string; rejectedAt?: Date; modifiedAt?: Date } } = { ...base };
 
         if (fileLogo instanceof FileList && fileLogo.length > 0) {
             const file = fileLogo[0];
 
-            const response = await fetch(`${API_URL}/api/files/signed/logo`, {
+            const response = await authFetch(`${API_URL}/api/files/signed/logo`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ originalFilename: file.name }),
+                data: JSON.stringify({ originalFilename: file.name }),
             });
 
             if (!response.ok) {
@@ -133,8 +134,25 @@ export const CompleteProfil = () => {
         } else if (typeof fileLogo === 'string' && fileLogo) {
             dataToSend.logo = fileLogo;
         }
+
+        // Si le compte était rejeté, définir modifiedAt pour signaler une modification
+        if (profil?.rejected?.isRejected) {
+            dataToSend.rejected = {
+                isRejected: true,
+                rejectionReason: profil.rejected.rejectionReason,
+                rejectedAt: profil.rejected.rejectedAt ? new Date(profil.rejected.rejectedAt) : undefined,
+                modifiedAt: new Date(),
+            };
+        }
+
         await mutateAsync(dataToSend);
-        navigate(`/${payload.role.toLowerCase()}/dashboard`);
+        
+        // Si le compte était rejeté, rediriger vers pending-validation au lieu du dashboard
+        if (profil?.rejected?.isRejected) {
+            navigate('/pending-validation');
+        } else {
+            navigate(`/${payload.role.toLowerCase()}/dashboard`);
+        }
     };
     return (
         <div className="flex flex-col w-full min-h-screen flex-grow items-start bg-(--color-base-200)">
@@ -144,6 +162,38 @@ export const CompleteProfil = () => {
                     Ces informations nous aiderons à valider votre entreprise. elles ne seront pas toutes affichées
                     publiquement.
                 </p>
+
+                {profil?.rejected?.isRejected && profil?.rejected?.rejectionReason && (
+                    <div className="alert alert-error shadow-lg mt-6 w-full max-w-3xl">
+                        <div className="flex flex-col gap-2 w-full">
+                            <div className="flex items-center gap-2">
+                                <XCircle className="shrink-0 h-6 w-6" />
+                                <span className="font-bold">Votre compte a été rejeté</span>
+                            </div>
+                            {profil.rejected.rejectedAt && (
+                                <div className="pl-8 text-sm text-error-content">
+                                    <span className="italic">
+                                        Date de refus :{' '}
+                                        {new Date(profil.rejected.rejectedAt).toLocaleDateString('fr-FR', {
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })}
+                                    </span>
+                                </div>
+                            )}
+                            <div className="pl-8">
+                                <p className="text-sm whitespace-pre-line">{profil.rejected.rejectionReason}</p>
+                            </div>
+                            <p className="text-sm pl-8 mt-2 italic">
+                                Veuillez corriger les informations signalées et soumettre à nouveau votre profil.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 <form
                     className="mt-8 w-full max-w-3xl flex flex-col flex-1 "
                     onSubmit={handleSubmit(onSubmit)}

@@ -3,11 +3,13 @@ import { CompanyController } from './company.controller';
 import { CompanyService } from './company.service';
 import { UsersModule } from '../user/user.module';
 import { PostModule } from '../post/post.module';
+import { ForumModule } from '../forum/forum.module';
+import { PaginationService } from 'src/common/pagination/pagination.service';
 
 @Module({
-    imports: [UsersModule, forwardRef(() => PostModule)],
+    imports: [UsersModule, forwardRef(() => PostModule), forwardRef(() => ForumModule)],
     controllers: [CompanyController],
-    providers: [CompanyService],
+    providers: [CompanyService, PaginationService],
     exports: [CompanyService],
 })
 export class CompanyModule {}

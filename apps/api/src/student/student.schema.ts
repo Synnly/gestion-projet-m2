@@ -33,6 +33,30 @@ export class Student {
     isFirstTime: boolean;
 
     /**
+     * A short tagline or motto for the student.
+     */
+    @Prop({ required: false, trim: true })
+    tagLine?: string;
+
+    /**
+     * A detailed biography or description of the student.
+     */
+    @Prop({ required: false, trim: true })
+    biography?: string;
+
+    /**
+     * Storage key or file name for the student's profile picture in the storage service.
+     */
+    @Prop({ required: false, trim: true })
+    profilePicture?: string;
+
+    /**
+     * Storage object key or file name for the student's default CV document.
+     */
+    @Prop({ required: false, trim: true })
+    defaultCv?: string;
+
+    /**
      * Timestamp indicating when the student was soft-deleted.
      * When present, the record should be considered deleted.
      */

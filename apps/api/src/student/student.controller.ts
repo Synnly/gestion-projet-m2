@@ -1,22 +1,22 @@
 import {
-    Controller,
-    Get,
-    Post,
+    BadRequestException,
     Body,
-    Param,
+    ConflictException,
+    Controller,
     Delete,
+    Get,
     HttpCode,
     HttpStatus,
-    Put,
     NotFoundException,
-    ValidationPipe,
-    UseGuards,
-    ConflictException,
-    UseInterceptors,
-    UploadedFile,
-    BadRequestException,
-    Query,
+    Param,
     ParseBoolPipe,
+    Post,
+    Put,
+    Query,
+    UploadedFile,
+    UseGuards,
+    UseInterceptors,
+    ValidationPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateStudentDto } from './dto/createStudent.dto';
@@ -32,6 +32,7 @@ import { UpdateStudentDto } from './dto/updateStudent.dto';
 import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
 import { FileSizeValidationPipe } from '../common/pipes/file-size-validation.pipe';
 import { FileTypeValidationPipe } from '../common/pipes/file-type-validation.pipe';
+import { StudentEditGuard } from '../common/roles/studentEdit.guard';
 
 @Controller('/api/students')
 /**
@@ -40,9 +41,7 @@ import { FileTypeValidationPipe } from '../common/pipes/file-type-validation.pip
  * Exposes REST endpoints to create, read, update and delete student resources.
  */
 export class StudentController {
-    constructor(
-        private readonly studentService: StudentService
-    ) {}
+    constructor(private readonly studentService: StudentService) {}
 
     /**
      * Return a list of all students.
@@ -111,9 +110,9 @@ export class StudentController {
     @HttpCode(HttpStatus.CREATED)
     async import(
         @UploadedFile(FileSizeValidationPipe, FileTypeValidationPipe) file: Express.Multer.File,
-        @Query('skipExistingRecords', new ParseBoolPipe({ optional: true })) 
+        @Query('skipExistingRecords', new ParseBoolPipe({ optional: true }))
         skipExistingRecords: boolean = false,
-    ) : Promise<{ added: number; skipped: number }> {
+    ): Promise<{ added: number; skipped: number }> {
         const rawData = await this.studentService.parseFileContent(file);
         const validStudentDtos: CreateStudentDto[] = [];
         let skippedByController = 0;
@@ -124,7 +123,7 @@ export class StudentController {
         const validationPipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });
 
         for (const item of rawData) {
-        // Checking for duplicate records inside the file
+            // Checking for duplicate records inside the file
             const email = item.email ? String(item.email).toLowerCase().trim() : null;
             const studentNumber = item.studentNumber ? String(item.studentNumber).trim() : null;
 
@@ -136,10 +135,10 @@ export class StudentController {
             const dto = plainToInstance(CreateStudentDto, item);
             try {
                 await validationPipe.transform(dto, { type: 'body', metatype: CreateStudentDto });
-                
+
                 if (email) emailSet.add(email);
                 if (studentNumber) studentNumberSet.add(studentNumber);
-                
+
                 validStudentDtos.push(dto);
             } catch (e) {
                 // Failed verification
@@ -156,7 +155,6 @@ export class StudentController {
         };
     }
 
-
     /**
      * Update an existing student or create it if it does not exist.
      * Requires admin role.
@@ -164,13 +162,31 @@ export class StudentController {
      * @param dto The update payload.
      */
     @Put('/:studentId')
-    @UseGuards(AuthGuard, RolesGuard)
-    @Roles(Role.ADMIN)
+    @UseGuards(AuthGuard, RolesGuard, StudentEditGuard)
+    @Roles(Role.ADMIN, Role.STUDENT)
     @HttpCode(HttpStatus.NO_CONTENT)
     async update(
         @Param('studentId', ParseObjectIdPipe) studentId: string,
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
         dto: UpdateStudentDto | CreateStudentDto,
+    ) {
+        await this.studentService.update(studentId, dto);
+    }
+
+    /**
+     * Update the current student's profile.
+     * Requires student role and ownership.
+     * @param studentId The id of the student to update.
+     * @param dto The update payload.
+     */
+    @Put('/:studentId/profile')
+    @UseGuards(AuthGuard, RolesGuard, StudentOwnerGuard)
+    @Roles(Role.STUDENT)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async updateProfile(
+        @Param('studentId', ParseObjectIdPipe) studentId: string,
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        dto: UpdateStudentDto,
     ) {
         await this.studentService.update(studentId, dto);
     }

@@ -27,6 +27,9 @@ import { Company, CompanyDocument } from '../../../src/company/company.schema';
 import { User, UserDocument } from '../../../src/user/user.schema';
 import { Student, StudentDocument } from '../../../src/student/student.schema';
 import { PaginationService } from 'src/common/pagination/pagination.service';
+import { ForumModule } from '../../../src/forum/forum.module';
+import { Forum, ForumDocument } from '../../../src/forum/forum.schema';
+import { NotificationService } from '../../../src/notification/notification.service';
 
 describe('Application Integration Tests', () => {
     let app: INestApplication;
@@ -37,6 +40,7 @@ describe('Application Integration Tests', () => {
     let companyModel: Model<CompanyDocument>;
     let studentModel: Model<StudentDocument>;
     let userModel: Model<UserDocument>;
+    let forumModel: Model<ForumDocument>;
 
     const ACCESS_TOKEN_SECRET = 'test-access-secret';
     const REFRESH_TOKEN_SECRET = 'test-refresh-secret';
@@ -52,13 +56,26 @@ describe('Application Integration Tests', () => {
         ),
     };
 
+    const mockNotificationService: Partial<NotificationService> = {
+        create: jest.fn(),
+        findAll: jest.fn(),
+        getUserNotifications: jest.fn(),
+        getUnreadCount: jest.fn(),
+        markAsRead: jest.fn(),
+        markAllAsRead: jest.fn(),
+        delete: jest.fn(),
+        deleteAllUserNotifications: jest.fn(),
+    };
+
     const tokenFor = (role: Role, id: Types.ObjectId | string = new Types.ObjectId()) =>
         jwtService.sign({ sub: id.toString(), role }, { secret: ACCESS_TOKEN_SECRET });
 
     const createCompany = async (attrs: Partial<CompanyDocument> = {}) => {
         const unique = new Types.ObjectId().toString();
         return companyModel.create({
+            // @ts-ignore
             email: attrs.email || `company-${unique}@test.com`,
+            // @ts-ignore
             password: attrs.password || 'TestP@ss123',
             role: Role.COMPANY,
             name: (attrs as any).name || 'Test Company',
@@ -70,7 +87,9 @@ describe('Application Integration Tests', () => {
     const createStudent = async (attrs: Partial<StudentDocument> = {}) => {
         const unique = new Types.ObjectId().toString();
         return studentModel.create({
+            // @ts-ignore
             email: (attrs.email as any) || `student-${unique}@test.com`,
+            // @ts-ignore
             password: attrs.password || 'TestP@ss123',
             studentNumber: (attrs as any).studentNumber || `SN-${unique}`,
             role: Role.STUDENT,
@@ -128,12 +147,14 @@ describe('Application Integration Tests', () => {
                 UsersModule,
                 PostModule,
                 StudentModule,
+                ForumModule,
             ],
             controllers: [ApplicationController],
             providers: [
                 ApplicationService,
                 ApplicationOwnerGuard,
                 { provide: S3Service, useValue: mockS3Service },
+                { provide: NotificationService, useValue: mockNotificationService },
                 PaginationService,
             ],
         })
@@ -156,6 +177,7 @@ describe('Application Integration Tests', () => {
         companyModel = moduleRef.get<Model<CompanyDocument>>(getModelToken(Company.name));
         studentModel = moduleRef.get<Model<StudentDocument>>(getModelToken(Student.name));
         userModel = moduleRef.get<Model<UserDocument>>(getModelToken(User.name));
+        forumModel = moduleRef.get<Model<ForumDocument>>(getModelToken(Forum.name));
 
         app = moduleRef.createNestApplication();
         app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
@@ -251,6 +273,7 @@ describe('Application Integration Tests', () => {
             const company = await createCompany();
             // @ts-ignore
             const studentOwner = await createStudent({ email: 'owner@test.com' });
+            // @ts-ignore
             const otherStudent = await createStudent({ email: 'other@test.com' });
             const post = await createPostForCompany(company._id);
             const created = await createApplicationDoc(studentOwner._id, post._id);
@@ -385,6 +408,31 @@ describe('Application Integration Tests', () => {
                     cvExtension: 'pdf',
                 })
                 .expect(409);
+        });
+
+        it('should return 409 when post is not visible', async () => {
+            const company = await createCompany();
+            const student = await createStudent();
+            const post = await postModel.create({
+                title: 'Hidden Internship',
+                description: 'This post is not visible',
+                type: PostType.Presentiel,
+                keySkills: ['Skill1'],
+                company: company._id,
+                isVisible: false,
+            });
+
+            const res = await request(app.getHttpServer())
+                .post('/api/application')
+                .set('Authorization', `Bearer ${tokenFor(Role.STUDENT, student._id)}`)
+                .send({
+                    studentId: student._id.toString(),
+                    postId: post._id.toString(),
+                    cvExtension: 'pdf',
+                })
+                .expect(409);
+
+            expect(res.body.message).toBe('Cannot apply to a post that is not visible');
         });
 
         it('should return 400 when identifiers are not valid ObjectIds', async () => {

@@ -1,9 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { companyInternshipStore } from '../store/companyInternshipStore';
 import type { Internship, InternshipFilters, PaginationResult } from '../types/internship.types';
 import { userStore } from '../store/userStore';
 import { toast } from 'react-toastify';
 import { useEffect } from 'react';
+import { UseAuthFetch } from './useAuthFetch';
 
 const API_URL = import.meta.env.VITE_APIURL;
 export function buildQueryParams(filters: InternshipFilters, companyId: string) {
@@ -20,10 +21,10 @@ export function buildQueryParams(filters: InternshipFilters, companyId: string) 
     return params;
 }
 export async function fetchPosts(API_URL: string, params: URLSearchParams, companyId: string) {
-    const res = await fetch(`${API_URL}/api/company/${companyId}/posts?${params}`, {
+    const authFetch = UseAuthFetch();
+    const res = await authFetch(`${API_URL}/api/company/${companyId}/posts?${params}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
     });
 
     if (!res.ok) {
@@ -66,7 +67,7 @@ export function useFetchCompanyInternships() {
 
             return paginationResult;
         },
-
+        placeholderData:keepPreviousData,
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
         retry: 2,

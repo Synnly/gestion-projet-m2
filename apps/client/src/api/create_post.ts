@@ -1,3 +1,5 @@
+import { UseAuthFetch } from '../hooks/useAuthFetch';
+
 // API helper used by the annonce creation flow.
 export type CreatePostPayload = {
     companyId: string;
@@ -20,13 +22,13 @@ export type CreatePostPayload = {
 const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
 
 export async function createPost({ companyId, data }: CreatePostPayload) {
-    const response = await fetch(`${API_URL}/api/company/${companyId}/posts`, {
+    const authFetch = UseAuthFetch();
+    const response = await authFetch(`${API_URL}/api/company/${companyId}/posts`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        credentials: 'include',
-        body: JSON.stringify(data),
+        data: JSON.stringify(data),
     });
 
     if (!response.ok) {

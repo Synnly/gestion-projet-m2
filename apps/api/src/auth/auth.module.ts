@@ -9,6 +9,9 @@ import { AuthGuard } from './auth.guard';
 import { StringValue } from 'ms';
 import { CompanyModule } from '../company/company.module';
 import { UsersModule } from '../user/user.module';
+import { MailerModule } from 'src/mailer/mailer.module';
+import { MailerService } from 'src/mailer/mailer.service';
+import { MailerProviderType } from 'src/mailer/constants';
 
 /**
  * Global module for authentication.
@@ -20,6 +23,7 @@ import { UsersModule } from '../user/user.module';
         ConfigModule,
         CompanyModule,
         UsersModule,
+        MailerModule.register(MailerProviderType.gmail),
         MongooseModule.forFeature([{ name: RefreshToken.name, schema: RefreshTokenSchema }]),
         JwtModule.registerAsync({
             imports: [ConfigModule],
@@ -47,6 +51,7 @@ import { UsersModule } from '../user/user.module';
         },
         AuthGuard,
         AuthService,
+        MailerService,
     ],
     exports: [AuthGuard, JwtModule, AuthService],
 })

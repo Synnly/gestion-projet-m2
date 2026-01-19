@@ -1,6 +1,8 @@
-import { IsOptional, IsString, IsEnum, IsBoolean, IsStrongPassword, IsMongoId } from 'class-validator';
-import { StructureType, LegalStatus } from '../company.schema';
+import { IsOptional, IsString, IsEnum, IsBoolean, IsStrongPassword, IsMongoId, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { StructureType, LegalStatus, type RejectionStatus } from '../company.schema';
 import { NafCode } from '../nafCodes.enum';
+import { RejectedDto } from './rejection.dto';
 
 /**
  * Data Transfer Object for updating an existing company
@@ -132,6 +134,15 @@ export class UpdateCompanyDto {
     @IsOptional()
     @IsString()
     description?: string;
+
+    /**
+     * Rejection status object containing whether the company is rejected
+     * and an optional reason string. Used by admin validation endpoints.
+     */
+    @IsOptional()
+    @ValidateNested()
+    @Type(() => RejectedDto)
+    rejected?: RejectedDto;
 
     /**
      * Constructs an UpdateCompanyDto instance

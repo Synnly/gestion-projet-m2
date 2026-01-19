@@ -6,6 +6,7 @@ import { User } from 'lucide-react';
 import { centerNavItems, rightNavItems, ItemLink } from './items';
 import { userStore } from '../../store/userStore';
 import { ToggleDarkMode } from '../darkMode/darkModeToggle';
+import { NotificationBell } from '../notifications/NotificationBell';
 interface NavbarProps {
     appName?: string;
     /** If true, render only the logo/link */
@@ -39,7 +40,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
             <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-base-content px-8 py-2">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <ItemLink
-                        item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
+                        item={{ key: 'home', title: <Logo className="text-primary" />, to: '/home' }}
                         className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                     />
                     <div className="flex flex-row gap-2">
@@ -58,7 +59,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
         <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-base-content px-8 py-2 border-b-2 border-base-200">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <ItemLink
-                    item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
+                    item={{ key: 'home', title: <Logo className="text-primary" />, to: '/home' }}
                     className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                 />
 
@@ -119,6 +120,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
                         // Fallback for any plain link-type item
                         return <ItemLink key={item.key} item={item} />;
                     })}
+                    <NotificationBell />
                     <ToggleDarkMode />
                 </div>
             </div>

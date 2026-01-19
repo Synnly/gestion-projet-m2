@@ -9,6 +9,7 @@ import { PostService } from '../../../src/post/post.service';
 import { StudentService } from '../../../src/student/student.service';
 import { PaginationService } from '../../../src/common/pagination/pagination.service';
 import { S3Service } from '../../../src/s3/s3.service';
+import { NotificationService } from '../../../src/notification/notification.service';
 
 describe('ApplicationService', () => {
     let service: ApplicationService;
@@ -31,6 +32,17 @@ describe('ApplicationService', () => {
 
     const mockPaginationService = {
         paginate: jest.fn(),
+    };
+
+    const mockNotificationService = {
+        create: jest.fn(),
+        findAll: jest.fn(),
+        getUserNotifications: jest.fn(),
+        getUnreadCount: jest.fn(),
+        markAsRead: jest.fn(),
+        markAllAsRead: jest.fn(),
+        delete: jest.fn(),
+        deleteAllUserNotifications: jest.fn(),
     };
 
     const studentId = new Types.ObjectId('507f1f77bcf86cd799439011');
@@ -59,6 +71,10 @@ describe('ApplicationService', () => {
                 {
                     provide: PaginationService,
                     useValue: mockPaginationService,
+                },
+                {
+                    provide: NotificationService,
+                    useValue: mockNotificationService,
                 },
             ],
         }).compile();
@@ -157,8 +173,9 @@ describe('ApplicationService', () => {
     });
 
     describe('create', () => {
+        const companyId = new Types.ObjectId('507f1f77bcf86cd799439013');
         const student = { _id: studentId, firstName: 'John', lastName: 'Doe' };
-        const post = { _id: postId, title: 'Internship' };
+        const post = { _id: postId, title: 'Internship', isVisible: true, company: { _id: companyId } };
         const dto: CreateApplicationDto = { cvExtension: 'pdf', lmExtension: 'docx' };
 
         it('should throw NotFoundException when the student does not exist', async () => {
@@ -174,6 +191,17 @@ describe('ApplicationService', () => {
             mockPostService.findOne.mockResolvedValue(null);
 
             await expect(service.create(studentId, postId, dto)).rejects.toThrow(NotFoundException);
+            expect(mockApplicationModel.findOne).not.toHaveBeenCalled();
+        });
+
+        it('should throw ConflictException when the post is not visible', async () => {
+            mockStudentService.findOne.mockResolvedValue(student);
+            mockPostService.findOne.mockResolvedValue({ ...post, isVisible: false });
+
+            await expect(service.create(studentId, postId, dto)).rejects.toThrow(ConflictException);
+            await expect(service.create(studentId, postId, dto)).rejects.toThrow(
+                'Cannot apply to a post that is not visible',
+            );
             expect(mockApplicationModel.findOne).not.toHaveBeenCalled();
         });
 
@@ -256,11 +284,14 @@ describe('ApplicationService', () => {
         it('should update the application status when a valid id is provided', async () => {
             const application = {
                 _id: postId,
+                post: { _id: postId, title: 'Test Post' } as any,
+                student: { _id: studentId } as any,
                 status: ApplicationStatus.Pending,
                 save: jest.fn().mockResolvedValue(true),
             };
             const exec = jest.fn().mockResolvedValue(application);
-            mockApplicationModel.findOne.mockReturnValue({ exec });
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
 
             await service.updateStatus(postId, ApplicationStatus.Accepted);
 
@@ -268,13 +299,18 @@ describe('ApplicationService', () => {
                 _id: postId,
                 deletedAt: { $exists: false },
             });
+            expect(populate).toHaveBeenCalledWith([
+                { path: 'post', select: 'title _id' },
+                { path: 'student', select: '_id' },
+            ]);
             expect(application.status).toBe(ApplicationStatus.Accepted);
             expect(application.save).toHaveBeenCalledTimes(1);
         });
 
         it('should throw NotFoundException when the application does not exist', async () => {
             const exec = jest.fn().mockResolvedValue(null);
-            mockApplicationModel.findOne.mockReturnValue({ exec });
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
 
             await expect(service.updateStatus(postId, ApplicationStatus.Rejected)).rejects.toThrow(NotFoundException);
             expect(exec).toHaveBeenCalledTimes(1);
@@ -350,7 +386,7 @@ describe('ApplicationService', () => {
 
             mockPaginationService.paginate.mockResolvedValue(emptyResult);
 
-            const result = await service.findByPostPaginated(postId, {});
+            const result = await service.findByPostPaginated(postId, { page: 1, limit: 20 });
 
             expect(result).toEqual(emptyResult);
             expect(result.data).toHaveLength(0);
@@ -475,6 +511,76 @@ describe('ApplicationService', () => {
                     expect.objectContaining({ 'post.company.name': expect.any(Object) }),
                 ]),
             );
+        });
+    });
+
+    describe('getPostIdsByStudent', () => {
+        it('should return an array of post IDs when the student has applications', async () => {
+            const postIds = [
+                new Types.ObjectId('507f1f77bcf86cd799439020'),
+                new Types.ObjectId('507f1f77bcf86cd799439021'),
+                new Types.ObjectId('507f1f77bcf86cd799439022'),
+            ];
+
+            const exec = jest.fn().mockResolvedValue(postIds);
+            const distinct = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.find.mockReturnValue({ distinct });
+
+            const result = await service.getPostIdsByStudent(studentId.toString());
+
+            expect(mockApplicationModel.find).toHaveBeenCalledWith({
+                student: studentId,
+            });
+            expect(distinct).toHaveBeenCalledWith('post');
+            expect(exec).toHaveBeenCalledTimes(1);
+            expect(result).toEqual(postIds);
+            expect(result).toHaveLength(3);
+        });
+
+        it('should return an empty array when the student has no applications', async () => {
+            const exec = jest.fn().mockResolvedValue([]);
+            const distinct = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.find.mockReturnValue({ distinct });
+
+            const result = await service.getPostIdsByStudent(studentId.toString());
+
+            expect(mockApplicationModel.find).toHaveBeenCalledWith({
+                student: studentId,
+            });
+            expect(distinct).toHaveBeenCalledWith('post');
+            expect(exec).toHaveBeenCalledTimes(1);
+            expect(result).toEqual([]);
+            expect(result).toHaveLength(0);
+        });
+
+        it('should convert string studentId to ObjectId correctly', async () => {
+            const studentIdString = '507f1f77bcf86cd799439011';
+            const expectedObjectId = new Types.ObjectId(studentIdString);
+
+            const exec = jest.fn().mockResolvedValue([]);
+            const distinct = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.find.mockReturnValue({ distinct });
+
+            await service.getPostIdsByStudent(studentIdString);
+
+            expect(mockApplicationModel.find).toHaveBeenCalledWith({
+                student: expectedObjectId,
+            });
+        });
+
+        it('should return unique post IDs when student has multiple applications to the same post', async () => {
+            const duplicatePostIds = [
+                new Types.ObjectId('507f1f77bcf86cd799439020'),
+                new Types.ObjectId('507f1f77bcf86cd799439020'),
+            ];
+
+            const exec = jest.fn().mockResolvedValue(duplicatePostIds);
+            const distinct = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.find.mockReturnValue({ distinct });
+
+            const result = await service.getPostIdsByStudent(studentId.toString());
+
+            expect(result).toEqual(duplicatePostIds);
         });
     });
 });

@@ -3,29 +3,23 @@ import { JwtService } from '@nestjs/jwt';
 import { NextFunction, Request, Response } from 'express';
 import { InvalidConfigurationException } from '../exceptions/invalidConfiguration.exception';
 import { ConfigService } from '@nestjs/config';
-import { AccessTokenPayload, RefreshTokenPayload } from '../../auth/refreshToken.schema';
-import { AuthService } from '../../auth/auth.service';
+import { AccessTokenPayload } from '../../auth/refreshToken.schema';
 
 @Injectable()
 export class TokensMiddleware implements NestMiddleware {
     private readonly ACCESS_TOKEN_SECRET: string;
-    private readonly REFRESH_TOKEN_SECRET: string;
 
     constructor(
         private readonly jwtService: JwtService,
         private configService: ConfigService,
-        private authService: AuthService,
     ) {
         let secret: string | undefined;
 
-        // Load and validate refresh token secret
-        secret = this.configService.get<string>('REFRESH_TOKEN_SECRET');
-        if (!secret) throw new InvalidConfigurationException('Refresh token secret is not configured');
-        this.REFRESH_TOKEN_SECRET = secret;
-
         // Load and validate access token secret
         secret = this.configService.get<string>('ACCESS_TOKEN_SECRET');
-        if (!secret) throw new InvalidConfigurationException('Access token secret is not configured');
+        if (!secret) {
+            throw new InvalidConfigurationException('Access token secret is not configured');
+        }
         this.ACCESS_TOKEN_SECRET = secret;
     }
 
@@ -36,62 +30,21 @@ export class TokensMiddleware implements NestMiddleware {
      * @param next Next middleware function
      */
     async use(req: Request, res: Response, next: NextFunction) {
-        try {
-            const token = this.extractTokenFromHeader(req);
+        const token = this.extractTokenFromHeader(req);
+        if (token) {
+            try {
+                const accessPayload = this.jwtService.verify<AccessTokenPayload>(token, {
+                    secret: this.ACCESS_TOKEN_SECRET,
+                });
 
-            // Access token found
-            if (token) {
-                try {
-                    const accessPayload = this.jwtService.verify<AccessTokenPayload>(token, {
-                        secret: this.ACCESS_TOKEN_SECRET,
-                    });
-                    this.setUser(req, accessPayload);
-                    return;
-                } catch {
-                    // Access token invalid, try refresh token now
-                }
+                req['accessToken'] = token;
+                this.setUser(req, accessPayload);
+            } catch {
+                // Access token invalid, no user set
             }
-
-            // Access token missing or invalid, try refresh token
-            const refreshToken = req.cookies?.refreshToken;
-            if (refreshToken) {
-                let refreshPayload: RefreshTokenPayload | null;
-                try {
-                    refreshPayload = this.jwtService.verify<RefreshTokenPayload>(refreshToken, {
-                        secret: this.REFRESH_TOKEN_SECRET,
-                    });
-                } catch {
-                    // Refresh token invalid, nothing more to do
-                    return;
-                }
-
-                // Verify expiration of refresh token
-
-                if (refreshPayload.expiresAt! < Date.now()) return;
-
-                // Refresh the access token
-                try {
-                    const newAccess = await this.authService.refreshAccessToken(refreshToken);
-                    if (newAccess) {
-                        res.setHeader('authorization', `Bearer ${newAccess}`);
-                        try {
-                            const accessPayload = this.jwtService.verify<AccessTokenPayload>(newAccess, {
-                                secret: this.ACCESS_TOKEN_SECRET,
-                            });
-                            this.setUser(req, accessPayload);
-                        } catch {
-                            // Verify failed, continue without user
-                        }
-                    }
-                } catch {
-                    // Refresh failed, continue without user
-                }
-            }
-        } catch {
-        } finally {
-            // Security : always continue the request even on error
-            next();
         }
+        // always continue the request even on error
+        next();
     }
 
     /**
@@ -100,12 +53,14 @@ export class TokensMiddleware implements NestMiddleware {
      * @returns The extracted token or undefined if not found or invalid format
      */
     private extractTokenFromHeader(request: Request): string | undefined {
-        const authorization = request.headers.authorization;
+        const authorization = request?.headers?.authorization;
+
         if (!authorization) {
             return undefined;
         }
 
         const [type, token] = authorization.split(' ');
+
         return type === 'Bearer' ? token : undefined;
     }
 

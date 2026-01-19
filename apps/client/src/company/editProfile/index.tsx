@@ -24,6 +24,7 @@ import {
     type SignedUrlResponse,
 } from '../completeProfil/type';
 import type { companyProfile } from '../../types';
+import { UseAuthFetch } from '../../hooks/useAuthFetch';
 
 export function EditCompanyProfile() {
     const navigate = useNavigate();
@@ -43,6 +44,7 @@ export function EditCompanyProfile() {
     const logoFile = useFile(logoBlob, profile?.logo);
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const upload = useUploadFile();
+    const authFetch = UseAuthFetch();
 
     useEffect(() => {
         if (!logoBlob) {
@@ -85,14 +87,13 @@ export function EditCompanyProfile() {
 
     const { isPending, isError, error, mutateAsync } = useMutation({
         mutationFn: async (data: Omit<editProfilFormType, 'logo'> & { logo?: string }) => {
-            const res = await fetch(`${API_URL}/api/companies/${userInfo?.id}`, {
+            const res = await authFetch(`${API_URL}/api/companies/${userInfo?.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${access}`,
                 },
-                credentials: 'include',
-                body: JSON.stringify(data),
+                data: JSON.stringify(data),
             });
             if (!res.ok) {
                 throw new Error('Erreur lors de la mise à jour du profil');
@@ -123,11 +124,10 @@ export function EditCompanyProfile() {
 
         if (fileLogo instanceof FileList && fileLogo.length > 0) {
             const file = fileLogo[0];
-            const response = await fetch(`${API_URL}/api/files/signed/logo`, {
+            const response = await authFetch(`${API_URL}/api/files/signed/logo`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ originalFilename: file.name }),
+                data: JSON.stringify({ originalFilename: file.name }),
             });
 
             if (!response.ok) {
@@ -312,11 +312,7 @@ export function EditCompanyProfile() {
                         )}
 
                         <div className="flex gap-4 mt-6 justify-end">
-                            <button
-                                type="button"
-                                onClick={() => navigate('/company/profile')}
-                                className="btn btn-base"
-                            >
+                            <button type="button" onClick={() => navigate('/company/profile')} className="btn btn-base">
                                 Annuler
                             </button>
                             <FormSubmit
