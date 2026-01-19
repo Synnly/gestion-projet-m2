@@ -79,6 +79,7 @@ export class CompanyDto {
     posts: PostDto[];
 
     @Expose()
+    description?: string;
     createdAt: Date;
 
     @Expose()

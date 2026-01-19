@@ -205,6 +205,42 @@ export class CompanyService {
     }
 
     /**
+     * Updates the public profile fields of a company
+     *
+     * Allows a company to update their publicly visible profile information. Only the fields
+     * specified in the DTO will be updated; other fields remain unchanged. The update is performed
+     * directly on the database using `updateOne` for efficiency.
+     *
+     * **Updatable Fields:**
+     * - description: Public company description
+     * - emailContact: Public contact email for students
+     * - telephone: Public phone number
+     * - website: Company website URL
+     * - streetNumber, streetName, postalCode, city, country: Address information
+     *
+     * @param companyId - The MongoDB ObjectId of the company as a string
+     * @param dto - Partial DTO containing the fields to update
+     * @returns Promise resolving to void upon successful update
+     * @throws NotFoundException if the company with the provided ID does not exist or update fails
+     *
+     * @example
+     * ```typescript
+     * await companyService.updatePublicProfile('507f1f77bcf86cd799439011', {
+     *   description: 'We are a tech startup focused on AI solutions',
+     *   website: 'https://mycompany.com',
+     *   city: 'Paris'
+     * });
+     * ```
+     */
+    async updatePublicProfile(companyId: string, dto: UpdateCompanyDto): Promise<void> {
+        const result = await this.companyModel.findOne({ _id: companyId });
+        if (!result) {
+            throw new NotFoundException('Company not found');
+        }
+        await this.companyModel.updateOne({ _id: companyId }, { $set: dto }).exec();
+    }
+
+    /**
      * Retrieves companies pending validation with pagination
      * Uses PaginationService for standardized pagination
      * Includes companies that are:
@@ -220,9 +256,9 @@ export class CompanyService {
             isValid: false,
             $or: [
                 { 'rejected.isRejected': { $ne: true } },
-                { 
+                {
                     'rejected.isRejected': true,
-                    'rejected.modifiedAt': { $exists: true }
+                    'rejected.modifiedAt': { $exists: true },
                 },
             ],
         };

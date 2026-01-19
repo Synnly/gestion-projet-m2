@@ -131,6 +131,10 @@ export class UpdateCompanyDto {
     @IsMongoId({ each: true })
     posts?: string[];
 
+    @IsOptional()
+    @IsString()
+    description?: string;
+
     /**
      * Rejection status object containing whether the company is rejected
      * and an optional reason string. Used by admin validation endpoints.

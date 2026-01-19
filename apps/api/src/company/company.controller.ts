@@ -220,4 +220,44 @@ export class CompanyController {
         });
     }
 
+    /**
+     * Gets the public profile of a company
+     * @param companyId The company identifier
+     * @returns The public profile data of the company
+     * @throws {NotFoundException} if no company exists with the given ID
+     */
+    @UseGuards(AuthGuard)
+    @Get('/:companyId/public-profile')
+    @HttpCode(HttpStatus.OK)
+    async getPublicProfile(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyDto> {
+        const company = this.companyService.findOne(companyId);
+        return plainToInstance(CompanyDto, company, {
+            excludeExtraneousValues: true,
+        });
+    }
+
+    /**
+     * Updates the public profile of a company
+     * Requires authentication and COMPANY or ADMIN role
+     * @param companyId The company identifier
+     * @param dto The updated public profile data
+     * @throws {NotFoundException} if no company exists with the given ID
+     */
+    @Put('/:companyId/public-profile')
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async updatePublicProfile(
+        @Param('companyId', ParseObjectIdPipe) companyId: string,
+        @Body(
+            new ValidationPipe({
+                whitelist: true,
+                forbidNonWhitelisted: true,
+                transform: true,
+            }),
+        )
+        dto: UpdateCompanyDto,
+    ) {
+        await this.companyService.updatePublicProfile(companyId, dto);
+    }
 }
