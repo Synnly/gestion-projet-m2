@@ -286,7 +286,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                     />
                 )}
 
-                {confirmModal?.open && (
+                {confirmModal && (
                     <div className="modal modal-open">
                         <div
                             className="modal-box"
