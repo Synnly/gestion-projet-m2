@@ -41,7 +41,7 @@ export const Card: React.FC<CardProps> = ({
                     <div className="flex-1">
                         <div className="flex items-center justify-between">
                             <p className="text-base font-bold text-base-content">{title}</p>
-                            {meta ? <div className="text-xs text-base-content/60">{meta}</div> : null}
+                            {meta ? <div className="text-xs text-base-content/60 text-nowrap">{meta}</div> : null}
                         </div>
                         {subtitle ? <p className="text-sm text-base-content/70">{subtitle}</p> : null}
                     </div>

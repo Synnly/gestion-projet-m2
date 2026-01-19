@@ -61,7 +61,7 @@ export const useLogin = () => {
                 }
             }
             
-            const redirectTo = lastLocationRoute || '/';
+            const redirectTo = lastLocationRoute || '/home';
             navigate(redirectTo);
         }
     };

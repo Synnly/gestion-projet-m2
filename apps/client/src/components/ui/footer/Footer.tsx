@@ -11,7 +11,7 @@ export default function Footer() {
             <div className="container mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-3">
                     <div className="flex items-center gap-3">
-                        <Link to="/">
+                        <Link to="/home">
                             <Logo />
                         </Link>
                     </div>
@@ -29,7 +29,7 @@ export default function Footer() {
 
                 <nav aria-label="Pages" className="space-y-2 flex flex-col">
                     <h6 className="footer-title">Pages</h6>
-                    <Link to="/" className="link link-hover">
+                    <Link to="/home" className="link link-hover">
                         Offres de stage
                     </Link>
                     <Link to="/about" className="link link-hover">
