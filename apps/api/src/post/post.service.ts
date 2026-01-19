@@ -110,7 +110,7 @@ export class PostService {
 
         const companyPopulate = {
             path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+            select: '_id email name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
         };
 
         // Ensure sensible defaults if the DTO omitted values
@@ -147,7 +147,7 @@ export class PostService {
 
         const companyPopulate = {
             path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+            select: '_id email name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
         };
 
         return this.paginationService.paginate(
@@ -199,7 +199,7 @@ export class PostService {
             .findById(id)
             .populate({
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id email name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
             })
             .exec();
     }
