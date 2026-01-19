@@ -89,12 +89,6 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                 data: JSON.stringify({ status: newStatus }),
             });
 
-            if (!res.ok) {
-                console.error('Échec mise à jour statut candidature:', await res.text());
-                alert('Erreur lors de la mise à jour du statut');
-                return;
-            }
-
             // Invalidate all application queries for this post to refresh all tabs
             await queryClient.invalidateQueries({ queryKey: ['applications', postId] });
             closeConfirmModal();
