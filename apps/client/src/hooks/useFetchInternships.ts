@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useInternshipStore } from '../store/useInternshipStore';
 import type { PaginationResult, Internship } from '../types/internship.types';
 import { fetchPublicSignedUrl } from './useBlob';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { UseAuthFetch } from './useAuthFetch';
 import { userStore } from '../store/userStore.ts';
@@ -167,6 +167,7 @@ export function useFetchInternships() {
         staleTime: 5 * 60 * 1000,
         refetchOnWindowFocus: false,
         retry: 2,
+        placeholderData: keepPreviousData,
     });
 
     // Synchroniser le store avec les données retournées par React Query (y compris cache)

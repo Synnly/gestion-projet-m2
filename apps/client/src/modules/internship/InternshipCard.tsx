@@ -16,6 +16,7 @@ const InternshipCard: React.FC<{ internship: Internship; isSelected: boolean }> 
             isSelected={isSelected}
             onClick={(id) => id && setSelectedInternshipId(id)}
             className={`bg-base-100! border-base-300! cursor-pointer`}
+            isVisible={internship.isVisible}
         />
     );
 };

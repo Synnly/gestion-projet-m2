@@ -1303,4 +1303,159 @@ describe('Company Integration Tests', () => {
             expect(all.length).toBe(statuses.length);
         });
     });
+
+    describe('GET /api/companies/:companyId/is-valid - Check Company Validation Status', () => {
+        it('should return { isValid: true } when company is valid', async () => {
+            const company = await companyModel.create({
+                email: 'valid@company.com',
+                password: await bcrypt.hash('StrongP@ss1', 10),
+                role: Role.COMPANY,
+                name: 'Valid Company',
+                isValid: true,
+            });
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
+                .expect(200);
+
+            expect(response.body).toEqual({ isValid: true });
+        });
+
+        it('should return { isValid: false } when company is not valid', async () => {
+            const company = await companyModel.create({
+                email: 'invalid@company.com',
+                password: await bcrypt.hash('StrongP@ss1', 10),
+                role: Role.COMPANY,
+                name: 'Invalid Company',
+                isValid: false,
+            });
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
+                .expect(200);
+
+            expect(response.body).toEqual({ isValid: false });
+        });
+
+        it('should return { isValid: false } when company has null isValid field', async () => {
+            const company = await companyModel.create({
+                email: 'null@company.com',
+                password: await bcrypt.hash('StrongP@ss1', 10),
+                role: Role.COMPANY,
+                name: 'Null Valid Company',
+                isValid: null,
+            });
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
+                .expect(200);
+
+            expect(response.body).toEqual({ isValid: false });
+        });
+
+        it('should return { isValid: false } when company has undefined isValid field', async () => {
+            const company = await companyModel.create({
+                email: 'undefined@company.com',
+                password: await bcrypt.hash('StrongP@ss1', 10),
+                role: Role.COMPANY,
+                name: 'Undefined Valid Company',
+            });
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
+                .expect(200);
+
+            expect(response.body).toEqual({ isValid: false });
+        });
+
+        it('should return 404 when company does not exist', async () => {
+            const fakeId = new Types.ObjectId();
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/companies/${fakeId}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, fakeId.toString())}`)
+                .expect(404);
+
+            expect(response.body.message).toContain('Company with id');
+            expect(response.body.message).toContain('not found');
+        });
+
+        it('should return 400 when companyId is invalid ObjectId', async () => {
+            await request(app.getHttpServer())
+                .get('/api/companies/invalid-id/is-valid')
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
+                .expect(400);
+        });
+
+        it('should not return validation status for soft-deleted companies', async () => {
+            const company = await companyModel.create({
+                email: 'deleted@company.com',
+                password: await bcrypt.hash('StrongP@ss1', 10),
+                role: Role.COMPANY,
+                name: 'Deleted Company',
+                isValid: true,
+                deletedAt: new Date(),
+            });
+
+            const response = await request(app.getHttpServer())
+                .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
+                .expect(404);
+
+            expect(response.body.message).toContain('Company with id');
+            expect(response.body.message).toContain('not found');
+        });
+
+        it('should handle multiple sequential requests correctly', async () => {
+            const company = await companyModel.create({
+                email: 'multi@company.com',
+                password: await bcrypt.hash('StrongP@ss1', 10),
+                role: Role.COMPANY,
+                name: 'Multi Company',
+                isValid: true,
+            });
+
+            for (let i = 0; i < 3; i++) {
+                const response = await request(app.getHttpServer())
+                    .get(`/api/companies/${company._id}/is-valid`)
+                    .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
+                    .expect(200);
+
+                expect(response.body).toEqual({ isValid: true });
+            }
+        });
+
+        it('should return correct status after company validation state changes', async () => {
+            const company = await companyModel.create({
+                email: 'changeable@company.com',
+                password: await bcrypt.hash('StrongP@ss1', 10),
+                role: Role.COMPANY,
+                name: 'Changeable Company',
+                isValid: false,
+            });
+
+            // Check initial state
+            let response = await request(app.getHttpServer())
+                .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
+                .expect(200);
+
+            expect(response.body).toEqual({ isValid: false });
+
+            // Change validation state
+            await companyModel.findByIdAndUpdate(company._id, { isValid: true });
+
+            // Check new state
+            response = await request(app.getHttpServer())
+                .get(`/api/companies/${company._id}/is-valid`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
+                .expect(200);
+
+            expect(response.body).toEqual({ isValid: true });
+        });
+    });
 });

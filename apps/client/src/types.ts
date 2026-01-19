@@ -31,4 +31,15 @@ export type companyProfile = {
     isVerified: boolean;
     /** Logo URL or path for the company */
     logo?: string;
+
+    /** Rejection status of the company account */
+    rejected?: {
+        isRejected: boolean;
+        rejectionReason?: string;
+        rejectedAt?: string;
+        modifiedAt?: string;
+    };
+
+    /** Date when the profile was last updated */
+    updatedAt?: string;
 };

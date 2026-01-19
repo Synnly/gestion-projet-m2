@@ -65,7 +65,7 @@ export function CompanyProfile() {
                             <div className="bg-base-200 rounded-lg shadow p-6">
                                 <div className="flex items-start gap-6">
                                     {logoUrl && <img src={logoUrl} alt="Logo" className="w-24 h-24 object-contain" />}
-                                    <div className="flex-1">
+                                    <div className="flex flex-col flex-1 justify-center">
                                         <h2 className="text-2xl font-semibold text-base-900 mb-2">{profile.name}</h2>
                                         <p className="text-base-600">{profile.email}</p>
                                         <div className="flex gap-4 mt-3">

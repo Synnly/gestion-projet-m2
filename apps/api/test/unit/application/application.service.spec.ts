@@ -175,7 +175,7 @@ describe('ApplicationService', () => {
     describe('create', () => {
         const companyId = new Types.ObjectId('507f1f77bcf86cd799439013');
         const student = { _id: studentId, firstName: 'John', lastName: 'Doe' };
-        const post = { _id: postId, title: 'Internship', company: { _id: companyId } };
+        const post = { _id: postId, title: 'Internship', isVisible: true, company: { _id: companyId } };
         const dto: CreateApplicationDto = { cvExtension: 'pdf', lmExtension: 'docx' };
 
         it('should throw NotFoundException when the student does not exist', async () => {
@@ -191,6 +191,17 @@ describe('ApplicationService', () => {
             mockPostService.findOne.mockResolvedValue(null);
 
             await expect(service.create(studentId, postId, dto)).rejects.toThrow(NotFoundException);
+            expect(mockApplicationModel.findOne).not.toHaveBeenCalled();
+        });
+
+        it('should throw ConflictException when the post is not visible', async () => {
+            mockStudentService.findOne.mockResolvedValue(student);
+            mockPostService.findOne.mockResolvedValue({ ...post, isVisible: false });
+
+            await expect(service.create(studentId, postId, dto)).rejects.toThrow(ConflictException);
+            await expect(service.create(studentId, postId, dto)).rejects.toThrow(
+                'Cannot apply to a post that is not visible',
+            );
             expect(mockApplicationModel.findOne).not.toHaveBeenCalled();
         });
 

@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { InvalidCredentialsException } from '../../../src/common/exceptions/invalidCredentials.exception';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { User } from '../../../src/user/user.schema';
+import { MailerService } from '../../../src/mailer/mailer.service';
 
 describe('AuthService', () => {
     let service: AuthService;
@@ -44,6 +45,10 @@ describe('AuthService', () => {
         findOne: jest.fn(),
     };
 
+    const mockMailerService = {
+        sendVerificationEmail: jest.fn(),
+    };
+
     beforeEach(async () => {
         refreshTokenModel = {
             create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }),
@@ -74,6 +79,10 @@ describe('AuthService', () => {
                 {
                     provide: 'REFRESH_JWT_SERVICE',
                     useValue: mockRefreshJwtService,
+                },
+                {
+                    provide: MailerService,
+                    useValue: mockMailerService,
                 },
                 {
                     provide: ConfigService,
@@ -135,6 +144,10 @@ describe('AuthService', () => {
                         {
                             provide: ConfigService,
                             useValue: invalidConfigService,
+                        },
+                        {
+                            provide: MailerService,
+                            useValue: mockMailerService,
                         },
                     ],
                 }).compile(),

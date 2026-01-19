@@ -6,6 +6,7 @@ import * as fs from 'fs';
 
 // Mock fs and crypto modules
 jest.mock('fs', () => ({
+    ...jest.requireActual('fs'),
     writeFileSync: jest.fn(),
 }));
 jest.mock('crypto', () => ({

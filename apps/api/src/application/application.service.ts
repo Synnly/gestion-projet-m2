@@ -78,6 +78,7 @@ export class ApplicationService {
      * @returns An object containing presigned upload URLs for CV and cover letter
      * @throws NotFoundException if the student or post does not exist
      * @throws ConflictException if an application already exists for the student and post
+     * @throws ConflictException if the post is not visible
      */
     async create(
         studentId: Types.ObjectId,
@@ -91,6 +92,11 @@ export class ApplicationService {
         // Validate existence of post
         const post = await this.postService.findOne(postId.toString());
         if (!post) throw new NotFoundException(`Post with id ${postId.toString()} not found`);
+
+        // Validate that the post is visible
+        if (!post.isVisible) {
+            throw new ConflictException('Cannot apply to a post that is not visible');
+        }
 
         // Check for existing application to prevent duplicates
         const application = await this.applicationModel

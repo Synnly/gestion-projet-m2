@@ -4,15 +4,15 @@ import { CompanyService } from '../../../src/company/company.service';
 import { CreateCompanyDto } from '../../../src/company/dto/createCompany.dto';
 import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
 import { CompanyDto } from '../../../src/company/dto/company.dto';
-import { StructureType, LegalStatus } from '../../../src/company/company.schema';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { LegalStatus, StructureType } from '../../../src/company/company.schema';
+import { ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
 import { Reflector } from '@nestjs/core';
 import { Role } from '../../../src/common/roles/roles.enum';
-import { ExecutionContext } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { NafCode } from '../../../src/company/nafCodes.enum';
+import { Types } from 'mongoose';
 
 describe('CompanyController', () => {
     let controller: CompanyController;
@@ -26,6 +26,9 @@ describe('CompanyController', () => {
         create: jest.fn(),
         update: jest.fn(),
         remove: jest.fn(),
+        updatePublicProfile: jest.fn(),
+        findPendingValidation: jest.fn(),
+        isValid: jest.fn(),
     };
 
     const mockReflector = {
@@ -99,13 +102,11 @@ describe('CompanyController', () => {
                     email: 'test@example.com',
                     name: 'Test Company',
                     siretNumber: '12345678901234',
-                    isValid: true,
                 },
                 {
                     _id: '507f1f77bcf86cd799439012',
                     email: 'test2@example.com',
                     name: 'Test Company 2',
-                    isValid: false,
                 },
             ];
 
@@ -192,7 +193,6 @@ describe('CompanyController', () => {
                     _id: '507f1f77bcf86cd799439011',
                     email: 'test@example.com',
                     name: 'Test Company',
-                    isValid: false,
                 },
             ];
 
@@ -215,7 +215,6 @@ describe('CompanyController', () => {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'test@example.com',
                 name: 'Test Company',
-                isValid: true,
             };
 
             mockCompanyService.findOne.mockResolvedValue(company);
@@ -274,7 +273,6 @@ describe('CompanyController', () => {
             expect(result.nafCode).toBe('6202A');
             expect(result.structureType).toBe(StructureType.PrivateCompany);
             expect(result.legalStatus).toBe(LegalStatus.SARL);
-            expect(result.isValid).toBe(true);
         });
 
         it('should return company with only required fields when findOne is called with company containing minimal fields', async () => {
@@ -282,7 +280,6 @@ describe('CompanyController', () => {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'test@example.com',
                 name: 'Test Company',
-                isValid: false,
             };
 
             mockCompanyService.findOne.mockResolvedValue(company);
@@ -293,7 +290,6 @@ describe('CompanyController', () => {
             expect(result.email).toBe('test@example.com');
             expect(result.name).toBe('Test Company');
             expect(result.siretNumber).toBeUndefined();
-            expect(result.isValid).toBe(false);
         });
 
         it('should throw NotFoundException when findOne is called with id returning undefined from service', async () => {
@@ -613,9 +609,7 @@ describe('CompanyController', () => {
         });
 
         it('should update company isValid status successfully when update is called with new isValid value', async () => {
-            const updateDto = new UpdateCompanyDto({
-                isValid: true,
-            });
+            const updateDto = new UpdateCompanyDto({});
 
             mockCompanyService.update.mockResolvedValue(undefined);
 
@@ -921,9 +915,7 @@ describe('CompanyController', () => {
             });
 
             it('should update company isValid to false successfully when update is called with isValid false', async () => {
-                const updateDto = new UpdateCompanyDto({
-                    isValid: false,
-                });
+                const updateDto = new UpdateCompanyDto({});
 
                 mockCompanyService.update.mockResolvedValue(undefined);
 
@@ -1013,7 +1005,6 @@ describe('CompanyController', () => {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'update-test@example.com',
                 name: 'Updated Test Company',
-                isValid: true,
             };
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -1025,7 +1016,6 @@ describe('CompanyController', () => {
             const result = await controller.findOne('507f1f77bcf86cd799439011');
 
             expect(result.name).toBe('Updated Test Company');
-            expect(result.isValid).toBe(true);
         });
 
         it('should verify company is not in list successfully when performing findAll remove findAll operations', async () => {
@@ -1034,13 +1024,11 @@ describe('CompanyController', () => {
                     _id: '507f1f77bcf86cd799439011',
                     email: 'delete-test@example.com',
                     name: 'Delete Test Company',
-                    isValid: false,
                 },
                 {
                     _id: '507f1f77bcf86cd799439012',
                     email: 'keep@example.com',
                     name: 'Keep Company',
-                    isValid: false,
                 },
             ];
 
@@ -1049,7 +1037,6 @@ describe('CompanyController', () => {
                     _id: '507f1f77bcf86cd799439012',
                     email: 'keep@example.com',
                     name: 'Keep Company',
-                    isValid: false,
                 },
             ];
 
@@ -1120,14 +1107,12 @@ describe('CompanyController', () => {
                     email: 'test1@example.com',
                     password: 'hashedPassword1',
                     name: 'Company 1',
-                    isValid: true,
                 },
                 {
                     _id: '507f1f77bcf86cd799439012',
                     email: 'test2@example.com',
                     password: 'hashedPassword2',
                     name: 'Company 2',
-                    isValid: false,
                 },
             ];
 
@@ -1145,7 +1130,6 @@ describe('CompanyController', () => {
                 email: 'test@example.com',
                 password: 'hashedPassword',
                 name: 'Test Company',
-                isValid: true,
             };
 
             mockCompanyService.findOne.mockResolvedValue(company);
@@ -1169,6 +1153,369 @@ describe('CompanyController', () => {
             expect(dto).toBeInstanceOf(CompanyDto);
             expect(dto.posts).toBeDefined();
             expect(dto.posts[0]).toBeDefined();
+        });
+    });
+
+    describe('getPublicProfile', () => {
+        it('should return CompanyDto when getPublicProfile is called with valid company id', async () => {
+            const company = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
+                name: 'Test Company',
+                email: 'email@company.com',
+            };
+            mockCompanyService.findOne.mockResolvedValue(company);
+
+            const result = await controller.getPublicProfile('507f1f77bcf86cd799439011');
+
+            console.log(result);
+            expect(company).toEqual(result);
+            expect(service.findOne).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+            expect(service.findOne).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw NotFoundException when getPublicProfile is called with non-existent company id', async () => {
+            mockCompanyService.findOne.mockRejectedValue(new NotFoundException('Company not found'));
+
+            await expect(controller.getPublicProfile('507f1f77bcf86cd799439999')).rejects.toThrow(NotFoundException);
+            expect(service.findOne).toHaveBeenCalledWith('507f1f77bcf86cd799439999');
+        });
+
+        it('should return public profile with minimal fields when getPublicProfile finds company with only required fields', async () => {
+            const publicProfile: CompanyDto = {
+                name: 'Test Company',
+            } as CompanyDto;
+
+            mockCompanyService.findOne.mockResolvedValue(publicProfile);
+
+            const result = await controller.getPublicProfile('507f1f77bcf86cd799439011');
+
+            expect(result.name).toBe('Test Company');
+        });
+
+        it('should return public profile with all optional fields when getPublicProfile finds company with full data', async () => {
+            const company = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
+                name: 'Test Company',
+                email: 'email@company.com',
+                description: 'A comprehensive test company',
+            };
+
+            mockCompanyService.findOne.mockResolvedValue(company);
+
+            const result = await controller.getPublicProfile('507f1f77bcf86cd799439011');
+
+            expect(result).toEqual(company);
+            expect(result.description).toBe('A comprehensive test company');
+        });
+
+        it('should throw error when getPublicProfile encounters database error', async () => {
+            mockCompanyService.findOne.mockRejectedValue(new Error('Database error'));
+
+            await expect(controller.getPublicProfile('507f1f77bcf86cd799439011')).rejects.toThrow('Database error');
+        });
+    });
+
+    describe('updatePublicProfile', () => {
+        it('should update public profile successfully when updatePublicProfile is called with valid data', async () => {
+            const updateDto = new UpdateCompanyDto({
+                description: 'Updated description',
+            });
+
+            mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
+
+            await controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(service.updatePublicProfile).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
+            expect(service.updatePublicProfile).toHaveBeenCalledTimes(1);
+        });
+
+        it('should update public profile with multiple fields when updatePublicProfile is called with multiple fields', async () => {
+            const updateDto = new UpdateCompanyDto({
+                description: 'Updated description',
+                logo: 'new-logo.png',
+                website: 'https://newwebsite.com',
+            });
+
+            mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
+
+            await controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(service.updatePublicProfile).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
+        });
+
+        it('should update public profile with single field when updatePublicProfile is called with one field', async () => {
+            const updateDto = new UpdateCompanyDto({
+                description: 'Only description update',
+            });
+
+            mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
+
+            await controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(service.updatePublicProfile).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
+        });
+
+        it('should update logo when updatePublicProfile is called with new logo', async () => {
+            const updateDto = new UpdateCompanyDto({
+                logo: 'updated-logo.png',
+            });
+
+            mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
+
+            await controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(service.updatePublicProfile).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
+        });
+
+        it('should update website when updatePublicProfile is called with new website', async () => {
+            const updateDto = new UpdateCompanyDto({
+                website: 'https://company.com',
+            });
+
+            mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
+
+            await controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(service.updatePublicProfile).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
+        });
+
+        it('should throw error when updatePublicProfile encounters database error', async () => {
+            const updateDto = new UpdateCompanyDto({
+                description: 'Updated',
+            });
+
+            mockCompanyService.updatePublicProfile.mockRejectedValue(new Error('Update failed'));
+
+            await expect(controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow(
+                'Update failed',
+            );
+        });
+
+        it('should throw NotFoundException when updatePublicProfile is called with non-existent company id', async () => {
+            const updateDto = new UpdateCompanyDto({
+                description: 'Updated',
+            });
+
+            mockCompanyService.updatePublicProfile.mockRejectedValue(new NotFoundException('Company not found'));
+
+            await expect(controller.updatePublicProfile('507f1f77bcf86cd799439999', updateDto)).rejects.toThrow(
+                NotFoundException,
+            );
+        });
+
+        it('should handle empty update DTO when updatePublicProfile is called with empty data', async () => {
+            const updateDto = new UpdateCompanyDto({});
+
+            mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
+
+            await controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(service.updatePublicProfile).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
+        });
+    });
+
+    describe('findPendingValidation', () => {
+        it('should return paginated pending companies when called with valid query', async () => {
+            const mockPaginatedResult = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439011',
+                        name: 'Pending Company 1',
+                        email: 'pending1@test.com',
+                        isValid: false,
+                    },
+                    {
+                        _id: '507f1f77bcf86cd799439012',
+                        name: 'Pending Company 2',
+                        email: 'pending2@test.com',
+                        isValid: false,
+                    },
+                ],
+                total: 2,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockCompanyService.findPendingValidation.mockResolvedValue(mockPaginatedResult);
+
+            const query = { page: 1, limit: 10 } as any;
+            const result = await controller.findPendingValidation(query);
+
+            expect(service.findPendingValidation).toHaveBeenCalledWith(query);
+            expect(result.data).toHaveLength(2);
+            expect(result.total).toBe(2);
+            expect(result.data[0]).toBeInstanceOf(CompanyDto);
+        });
+
+        it('should transform all companies to CompanyDto', async () => {
+            const mockPaginatedResult = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439011',
+                        name: 'Company 1',
+                        email: 'c1@test.com',
+                        password: 'hashed',
+                        isValid: false,
+                    },
+                ],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockCompanyService.findPendingValidation.mockResolvedValue(mockPaginatedResult);
+
+            const query = { page: 1, limit: 10 } as any;
+            const result = await controller.findPendingValidation(query);
+
+            expect(result.data.every((company) => company instanceof CompanyDto)).toBe(true);
+        });
+
+        it('should handle empty results', async () => {
+            const mockPaginatedResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockCompanyService.findPendingValidation.mockResolvedValue(mockPaginatedResult);
+
+            const query = { page: 1, limit: 10 } as any;
+            const result = await controller.findPendingValidation(query);
+
+            expect(result.data).toEqual([]);
+            expect(result.total).toBe(0);
+        });
+    });
+
+    describe('validateCompany', () => {
+        it('should call service.update with isValid=true when validateCompany is called', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const dto = { rejectionReason: 'Test reason' };
+            mockCompanyService.update.mockResolvedValue(undefined);
+
+            await controller.validateCompany(companyId, dto);
+
+            expect(service.update).toHaveBeenCalledWith(companyId, {
+                isValid: true,
+                rejected: {
+                    isRejected: false,
+                    rejectionReason: undefined,
+                    rejectedAt: undefined,
+                    modifiedAt: undefined,
+                },
+            });
+        });
+
+        it('should not throw error when company exists', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const dto = { rejectionReason: undefined };
+            mockCompanyService.update.mockResolvedValue(undefined);
+
+            await expect(controller.validateCompany(companyId, dto)).resolves.not.toThrow();
+        });
+
+        it('should propagate errors from service', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const dto = { rejectionReason: undefined };
+            mockCompanyService.update.mockRejectedValue(new NotFoundException('Company not found'));
+
+            await expect(controller.validateCompany(companyId, dto)).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('rejectCompany', () => {
+        it('should call service.update with isValid=false when rejectCompany is called', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const dto = { rejectionReason: 'Invalid SIRET' };
+            mockCompanyService.update.mockResolvedValue(undefined);
+
+            await controller.rejectCompany(companyId, dto);
+
+            expect(service.update).toHaveBeenCalledWith(
+                companyId,
+                expect.objectContaining({
+                    isValid: false,
+                    rejected: expect.objectContaining({
+                        isRejected: true,
+                        rejectionReason: 'Invalid SIRET',
+                    }),
+                }),
+            );
+
+            // Verify rejectedAt is a Date
+            const callArgs = (service.update as jest.Mock).mock.calls[0][1];
+            expect(callArgs.rejected.rejectedAt).toBeInstanceOf(Date);
+        });
+
+        it('should not throw error when company exists', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const dto = { rejectionReason: 'Test rejection' };
+            mockCompanyService.update.mockResolvedValue(undefined);
+
+            await expect(controller.rejectCompany(companyId, dto)).resolves.not.toThrow();
+        });
+
+        it('should propagate errors from service', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const dto = { rejectionReason: 'Test rejection' };
+            mockCompanyService.update.mockRejectedValue(new NotFoundException('Company not found'));
+
+            await expect(controller.rejectCompany(companyId, dto)).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('isValid', () => {
+        it('should return { isValid: true } when company is valid', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.isValid.mockResolvedValue(true);
+
+            const result = await controller.isValid(companyId);
+
+            expect(service.isValid).toHaveBeenCalledWith(companyId);
+            expect(result).toEqual({ isValid: true });
+        });
+
+        it('should return { isValid: false } when company is not valid', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.isValid.mockResolvedValue(false);
+
+            const result = await controller.isValid(companyId);
+
+            expect(service.isValid).toHaveBeenCalledWith(companyId);
+            expect(result).toEqual({ isValid: false });
+        });
+
+        it('should propagate NotFoundException when company does not exist', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.isValid.mockRejectedValue(
+                new NotFoundException('Company with id 507f1f77bcf86cd799439011 not found'),
+            );
+
+            await expect(controller.isValid(companyId)).rejects.toThrow(NotFoundException);
+            await expect(controller.isValid(companyId)).rejects.toThrow(
+                'Company with id 507f1f77bcf86cd799439011 not found',
+            );
+        });
+
+        it('should call service with correct companyId', async () => {
+            const companyId = '507f1f77bcf86cd799439012';
+            mockCompanyService.isValid.mockResolvedValue(true);
+
+            await controller.isValid(companyId);
+
+            expect(service.isValid).toHaveBeenCalledTimes(1);
+            expect(service.isValid).toHaveBeenCalledWith(companyId);
         });
     });
 });
