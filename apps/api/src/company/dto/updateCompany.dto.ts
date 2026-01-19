@@ -129,6 +129,10 @@ export class UpdateCompanyDto {
     @IsMongoId({ each: true })
     posts?: string[];
 
+    @IsOptional()
+    @IsString()
+    description?: string;
+
     /**
      * Constructs an UpdateCompanyDto instance
      *

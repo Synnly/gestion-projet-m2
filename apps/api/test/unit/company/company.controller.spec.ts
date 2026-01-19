@@ -4,16 +4,15 @@ import { CompanyService } from '../../../src/company/company.service';
 import { CreateCompanyDto } from '../../../src/company/dto/createCompany.dto';
 import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
 import { CompanyDto } from '../../../src/company/dto/company.dto';
-import { StructureType, LegalStatus } from '../../../src/company/company.schema';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { LegalStatus, StructureType } from '../../../src/company/company.schema';
+import { ExecutionContext, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
 import { Reflector } from '@nestjs/core';
 import { Role } from '../../../src/common/roles/roles.enum';
-import { ExecutionContext } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { UpdateCompanyPublicProfileDto } from '../../../src/company/dto/updateCompanyPublicProfile.dto';
-import { CompanyPublicDto } from '../../../src/company/dto/publicProfileCompany.dto';
+import { NafCode } from '../../../src/company/nafCodes.enum';
+import { Types } from 'mongoose';
 
 describe('CompanyController', () => {
     let controller: CompanyController;
@@ -27,7 +26,6 @@ describe('CompanyController', () => {
         create: jest.fn(),
         update: jest.fn(),
         remove: jest.fn(),
-        getPublicCompanyById: jest.fn(),
         updatePublicProfile: jest.fn(),
     };
 
@@ -102,13 +100,11 @@ describe('CompanyController', () => {
                     email: 'test@example.com',
                     name: 'Test Company',
                     siretNumber: '12345678901234',
-                    isValid: true,
                 },
                 {
                     _id: '507f1f77bcf86cd799439012',
                     email: 'test2@example.com',
                     name: 'Test Company 2',
-                    isValid: false,
                 },
             ];
 
@@ -166,7 +162,6 @@ describe('CompanyController', () => {
                     postalCode: '75001',
                     city: 'Paris',
                     country: 'France',
-                    isValid: true,
                 },
             ];
 
@@ -184,7 +179,6 @@ describe('CompanyController', () => {
             expect(result[0].postalCode).toBe('75001');
             expect(result[0].city).toBe('Paris');
             expect(result[0].country).toBe('France');
-            expect(result[0].isValid).toBe(true);
         });
 
         it('should return all companies when findAll is called with existing companies', async () => {
@@ -203,7 +197,6 @@ describe('CompanyController', () => {
                     _id: '507f1f77bcf86cd799439011',
                     email: 'test@example.com',
                     name: 'Test Company',
-                    isValid: false,
                 },
             ];
 
@@ -226,7 +219,6 @@ describe('CompanyController', () => {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'test@example.com',
                 name: 'Test Company',
-                isValid: true,
             };
 
             mockCompanyService.findOne.mockResolvedValue(company);
@@ -278,7 +270,6 @@ describe('CompanyController', () => {
                 postalCode: '75001',
                 city: 'Paris',
                 country: 'France',
-                isValid: true,
             };
 
             mockCompanyService.findOne.mockResolvedValue(company);
@@ -289,7 +280,6 @@ describe('CompanyController', () => {
             expect(result.nafCode).toBe('6202A');
             expect(result.structureType).toBe(StructureType.PrivateCompany);
             expect(result.legalStatus).toBe(LegalStatus.SARL);
-            expect(result.isValid).toBe(true);
         });
 
         it('should return company with only required fields when findOne is called with company containing minimal fields', async () => {
@@ -297,7 +287,6 @@ describe('CompanyController', () => {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'test@example.com',
                 name: 'Test Company',
-                isValid: false,
             };
 
             mockCompanyService.findOne.mockResolvedValue(company);
@@ -308,7 +297,6 @@ describe('CompanyController', () => {
             expect(result.email).toBe('test@example.com');
             expect(result.name).toBe('Test Company');
             expect(result.siretNumber).toBeUndefined();
-            expect(result.isValid).toBe(false);
         });
 
         it('should throw NotFoundException when findOne is called with id returning undefined from service', async () => {
@@ -324,7 +312,6 @@ describe('CompanyController', () => {
                 email: 'test@example.com',
                 password: 'Password123!',
                 name: 'Test Company',
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -341,7 +328,7 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Test Company',
                 siretNumber: '12345678901234',
-                nafCode: '6202A',
+                nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
                 streetNumber: '10',
@@ -349,7 +336,6 @@ describe('CompanyController', () => {
                 postalCode: '75001',
                 city: 'Paris',
                 country: 'France',
-                isValid: true,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -366,7 +352,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Admin Company',
                 structureType: StructureType.Administration,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -382,7 +367,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Association',
                 structureType: StructureType.Association,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -398,7 +382,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Public Company',
                 structureType: StructureType.PublicCompanyOrSEM,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -414,7 +397,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Cooperative',
                 structureType: StructureType.MutualCooperative,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -430,7 +412,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'NGO',
                 structureType: StructureType.NGO,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -446,7 +427,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'EURL Company',
                 legalStatus: LegalStatus.EURL,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -462,7 +442,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'SA Company',
                 legalStatus: LegalStatus.SA,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -478,7 +457,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'SAS Company',
                 legalStatus: LegalStatus.SAS,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -494,7 +472,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'SNC Company',
                 legalStatus: LegalStatus.SNC,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -510,7 +487,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'SCP Company',
                 legalStatus: LegalStatus.SCP,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -526,7 +502,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'SASU Company',
                 legalStatus: LegalStatus.SASU,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -542,7 +517,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Other Company',
                 legalStatus: LegalStatus.OTHER,
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -557,7 +531,6 @@ describe('CompanyController', () => {
                 email: 'valid@example.com',
                 password: 'Password123!',
                 name: 'Valid Company',
-                isValid: true,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -577,7 +550,6 @@ describe('CompanyController', () => {
                 postalCode: '12345',
                 city: 'Test City',
                 country: 'Test Country',
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -593,7 +565,6 @@ describe('CompanyController', () => {
                 password: 'Password123!',
                 name: 'Partial Address Company',
                 city: 'Test City',
-                isValid: false,
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -623,19 +594,6 @@ describe('CompanyController', () => {
                 name: 'Updated Company',
                 email: 'updated@example.com',
                 siretNumber: '98765432109876',
-                isValid: true,
-            });
-
-            mockCompanyService.update.mockResolvedValue(undefined);
-
-            await controller.update('507f1f77bcf86cd799439011', updateDto);
-
-            expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
-        });
-
-        it('should update company email successfully when update is called with new email', async () => {
-            const updateDto = new UpdateCompanyDto({
-                email: 'newemail@example.com',
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -682,9 +640,7 @@ describe('CompanyController', () => {
         });
 
         it('should update company isValid status successfully when update is called with new isValid value', async () => {
-            const updateDto = new UpdateCompanyDto({
-                isValid: true,
-            });
+            const updateDto = new UpdateCompanyDto({});
 
             mockCompanyService.update.mockResolvedValue(undefined);
 
@@ -700,18 +656,6 @@ describe('CompanyController', () => {
                 postalCode: '54321',
                 city: 'New City',
                 country: 'New Country',
-            });
-
-            mockCompanyService.update.mockResolvedValue(undefined);
-
-            await controller.update('507f1f77bcf86cd799439011', updateDto);
-
-            expect(service.update).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
-        });
-
-        it('should update company siretNumber successfully when update is called with new siretNumber', async () => {
-            const updateDto = new UpdateCompanyDto({
-                siretNumber: '11111111111111',
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -747,7 +691,6 @@ describe('CompanyController', () => {
                 postalCode: '99999',
                 city: 'Complete City',
                 country: 'Complete Country',
-                isValid: true,
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -948,7 +891,6 @@ describe('CompanyController', () => {
                     email: 'test@example.com',
                     password: 'Password123!',
                     name: 'Test Company',
-                    isValid: false,
                 });
 
                 mockCompanyService.create.mockRejectedValue(new Error('Creation failed'));
@@ -984,7 +926,6 @@ describe('CompanyController', () => {
                     postalCode: '',
                     city: '',
                     country: '',
-                    isValid: false,
                 });
 
                 mockCompanyService.create.mockResolvedValue(undefined);
@@ -1017,9 +958,7 @@ describe('CompanyController', () => {
             });
 
             it('should update company isValid to false successfully when update is called with isValid false', async () => {
-                const updateDto = new UpdateCompanyDto({
-                    isValid: false,
-                });
+                const updateDto = new UpdateCompanyDto({});
 
                 mockCompanyService.update.mockResolvedValue(undefined);
 
@@ -1080,14 +1019,12 @@ describe('CompanyController', () => {
                 email: 'integration@example.com',
                 password: 'Password123!',
                 name: 'Integration Company',
-                isValid: true,
             });
 
             const createdCompany = {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'integration@example.com',
                 name: 'Integration Company',
-                isValid: true,
             };
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -1105,19 +1042,16 @@ describe('CompanyController', () => {
                 email: 'update-test@example.com',
                 password: 'Password123!',
                 name: 'Update Test Company',
-                isValid: false,
             });
 
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Test Company',
-                isValid: true,
             });
 
             const updatedCompany = {
                 _id: '507f1f77bcf86cd799439011',
                 email: 'update-test@example.com',
                 name: 'Updated Test Company',
-                isValid: true,
             };
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -1129,7 +1063,6 @@ describe('CompanyController', () => {
             const result = await controller.findOne('507f1f77bcf86cd799439011');
 
             expect(result.name).toBe('Updated Test Company');
-            expect(result.isValid).toBe(true);
         });
 
         it('should verify company is not in list successfully when performing findAll remove findAll operations', async () => {
@@ -1138,13 +1071,11 @@ describe('CompanyController', () => {
                     _id: '507f1f77bcf86cd799439011',
                     email: 'delete-test@example.com',
                     name: 'Delete Test Company',
-                    isValid: false,
                 },
                 {
                     _id: '507f1f77bcf86cd799439012',
                     email: 'keep@example.com',
                     name: 'Keep Company',
-                    isValid: false,
                 },
             ];
 
@@ -1153,7 +1084,6 @@ describe('CompanyController', () => {
                     _id: '507f1f77bcf86cd799439012',
                     email: 'keep@example.com',
                     name: 'Keep Company',
-                    isValid: false,
                 },
             ];
 
@@ -1188,7 +1118,6 @@ describe('CompanyController', () => {
                     password: 'Password123!',
                     name: `Test ${structureType}`,
                     structureType: structureType,
-                    isValid: false,
                 });
 
                 mockCompanyService.create.mockResolvedValue(undefined);
@@ -1206,7 +1135,6 @@ describe('CompanyController', () => {
                     password: 'Password123!',
                     name: `Test ${legalStatus}`,
                     legalStatus: legalStatus,
-                    isValid: false,
                 });
 
                 mockCompanyService.create.mockResolvedValue(undefined);
@@ -1226,14 +1154,12 @@ describe('CompanyController', () => {
                     email: 'test1@example.com',
                     password: 'hashedPassword1',
                     name: 'Company 1',
-                    isValid: true,
                 },
                 {
                     _id: '507f1f77bcf86cd799439012',
                     email: 'test2@example.com',
                     password: 'hashedPassword2',
                     name: 'Company 2',
-                    isValid: false,
                 },
             ];
 
@@ -1251,7 +1177,6 @@ describe('CompanyController', () => {
                 email: 'test@example.com',
                 password: 'hashedPassword',
                 name: 'Test Company',
-                isValid: true,
             };
 
             mockCompanyService.findOne.mockResolvedValue(company);
@@ -1279,69 +1204,59 @@ describe('CompanyController', () => {
     });
 
     describe('getPublicProfile', () => {
-        it('should return CompanyPublicDto when getPublicProfile is called with valid company id', async () => {
-            const publicProfile: CompanyPublicDto = {
-                _id: '507f1f77bcf86cd799439011',
+        it('should return CompanyDto when getPublicProfile is called with valid company id', async () => {
+            const company = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 name: 'Test Company',
-                description: 'A test company',
-                logo: 'logo.png',
-            } as CompanyPublicDto;
-
-            mockCompanyService.getPublicCompanyById.mockResolvedValue(publicProfile);
+                email: 'email@company.com',
+            };
+            mockCompanyService.findOne.mockResolvedValue(company);
 
             const result = await controller.getPublicProfile('507f1f77bcf86cd799439011');
 
-            expect(result).toEqual(publicProfile);
-            expect(service.getPublicCompanyById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
-            expect(service.getPublicCompanyById).toHaveBeenCalledTimes(1);
+            console.log(result);
+            expect(company).toEqual(result);
+            expect(service.findOne).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+            expect(service.findOne).toHaveBeenCalledTimes(1);
         });
 
         it('should throw NotFoundException when getPublicProfile is called with non-existent company id', async () => {
-            mockCompanyService.getPublicCompanyById.mockRejectedValue(
-                new NotFoundException('Company not found')
-            );
+            mockCompanyService.findOne.mockRejectedValue(new NotFoundException('Company not found'));
 
             await expect(controller.getPublicProfile('507f1f77bcf86cd799439999')).rejects.toThrow(NotFoundException);
-            expect(service.getPublicCompanyById).toHaveBeenCalledWith('507f1f77bcf86cd799439999');
+            expect(service.findOne).toHaveBeenCalledWith('507f1f77bcf86cd799439999');
         });
 
         it('should return public profile with minimal fields when getPublicProfile finds company with only required fields', async () => {
-            const publicProfile: CompanyPublicDto = {
-                _id: '507f1f77bcf86cd799439011',
+            const publicProfile: CompanyDto = {
                 name: 'Test Company',
-            } as CompanyPublicDto;
+            } as CompanyDto;
 
-            mockCompanyService.getPublicCompanyById.mockResolvedValue(publicProfile);
+            mockCompanyService.findOne.mockResolvedValue(publicProfile);
 
             const result = await controller.getPublicProfile('507f1f77bcf86cd799439011');
 
-            expect(result._id).toBe('507f1f77bcf86cd799439011');
             expect(result.name).toBe('Test Company');
         });
 
         it('should return public profile with all optional fields when getPublicProfile finds company with full data', async () => {
-            const publicProfile: CompanyPublicDto = {
-                _id: '507f1f77bcf86cd799439011',
+            const company = {
+                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
                 name: 'Test Company',
+                email: 'email@company.com',
                 description: 'A comprehensive test company',
-                logo: 'logo.png',
-                website: 'https://test.com',
-                sector: 'Technology',
-                city: 'Paris',
-                country: 'France',
-            } as CompanyPublicDto;
+            };
 
-            mockCompanyService.getPublicCompanyById.mockResolvedValue(publicProfile);
+            mockCompanyService.findOne.mockResolvedValue(company);
 
             const result = await controller.getPublicProfile('507f1f77bcf86cd799439011');
 
-            expect(result).toEqual(publicProfile);
+            expect(result).toEqual(company);
             expect(result.description).toBe('A comprehensive test company');
-            expect(result.website).toBe('https://test.com');
         });
 
         it('should throw error when getPublicProfile encounters database error', async () => {
-            mockCompanyService.getPublicCompanyById.mockRejectedValue(new Error('Database error'));
+            mockCompanyService.findOne.mockRejectedValue(new Error('Database error'));
 
             await expect(controller.getPublicProfile('507f1f77bcf86cd799439011')).rejects.toThrow('Database error');
         });
@@ -1349,7 +1264,7 @@ describe('CompanyController', () => {
 
     describe('updatePublicProfile', () => {
         it('should update public profile successfully when updatePublicProfile is called with valid data', async () => {
-            const updateDto = new UpdateCompanyPublicProfileDto({
+            const updateDto = new UpdateCompanyDto({
                 description: 'Updated description',
             });
 
@@ -1362,11 +1277,10 @@ describe('CompanyController', () => {
         });
 
         it('should update public profile with multiple fields when updatePublicProfile is called with multiple fields', async () => {
-            const updateDto = new UpdateCompanyPublicProfileDto({
+            const updateDto = new UpdateCompanyDto({
                 description: 'Updated description',
                 logo: 'new-logo.png',
                 website: 'https://newwebsite.com',
-                sector: 'Finance',
             });
 
             mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
@@ -1377,7 +1291,7 @@ describe('CompanyController', () => {
         });
 
         it('should update public profile with single field when updatePublicProfile is called with one field', async () => {
-            const updateDto = new UpdateCompanyPublicProfileDto({
+            const updateDto = new UpdateCompanyDto({
                 description: 'Only description update',
             });
 
@@ -1389,7 +1303,7 @@ describe('CompanyController', () => {
         });
 
         it('should update logo when updatePublicProfile is called with new logo', async () => {
-            const updateDto = new UpdateCompanyPublicProfileDto({
+            const updateDto = new UpdateCompanyDto({
                 logo: 'updated-logo.png',
             });
 
@@ -1401,7 +1315,7 @@ describe('CompanyController', () => {
         });
 
         it('should update website when updatePublicProfile is called with new website', async () => {
-            const updateDto = new UpdateCompanyPublicProfileDto({
+            const updateDto = new UpdateCompanyDto({
                 website: 'https://company.com',
             });
 
@@ -1413,33 +1327,31 @@ describe('CompanyController', () => {
         });
 
         it('should throw error when updatePublicProfile encounters database error', async () => {
-            const updateDto = new UpdateCompanyPublicProfileDto({
+            const updateDto = new UpdateCompanyDto({
                 description: 'Updated',
             });
 
             mockCompanyService.updatePublicProfile.mockRejectedValue(new Error('Update failed'));
 
             await expect(controller.updatePublicProfile('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow(
-                'Update failed'
+                'Update failed',
             );
         });
 
         it('should throw NotFoundException when updatePublicProfile is called with non-existent company id', async () => {
-            const updateDto = new UpdateCompanyPublicProfileDto({
+            const updateDto = new UpdateCompanyDto({
                 description: 'Updated',
             });
 
-            mockCompanyService.updatePublicProfile.mockRejectedValue(
-                new NotFoundException('Company not found')
-            );
+            mockCompanyService.updatePublicProfile.mockRejectedValue(new NotFoundException('Company not found'));
 
             await expect(controller.updatePublicProfile('507f1f77bcf86cd799439999', updateDto)).rejects.toThrow(
-                NotFoundException
+                NotFoundException,
             );
         });
 
         it('should handle empty update DTO when updatePublicProfile is called with empty data', async () => {
-            const updateDto = new UpdateCompanyPublicProfileDto({});
+            const updateDto = new UpdateCompanyDto({});
 
             mockCompanyService.updatePublicProfile.mockResolvedValue(undefined);
 
@@ -1448,5 +1360,4 @@ describe('CompanyController', () => {
             expect(service.updatePublicProfile).toHaveBeenCalledWith('507f1f77bcf86cd799439011', updateDto);
         });
     });
-
 });

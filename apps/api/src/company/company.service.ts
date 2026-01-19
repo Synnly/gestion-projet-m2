@@ -7,8 +7,6 @@ import { Company } from './company.schema';
 import { CompanyUserDocument } from '../user/user.schema';
 import { PostService } from '../post/post.service';
 import { Post } from '../post/post.schema';
-import { UpdateCompanyPublicProfileDto } from './dto/updateCompanyPublicProfile.dto';
-import { CompanyPublicDto } from './dto/publicProfileCompany.dto';
 
 /**
  * Service handling business logic for company operations
@@ -226,37 +224,11 @@ export class CompanyService {
      * });
      * ```
      */
-    async updatePublicProfile(companyId: string, dto: UpdateCompanyPublicProfileDto): Promise<void> {
-        const result = await this.companyModel.updateOne({ _id: companyId }, { $set: dto }).exec();
-
+    async updatePublicProfile(companyId: string, dto: UpdateCompanyDto): Promise<void> {
+        const result = await this.companyModel.findOne({ _id: companyId });
         if (!result) {
             throw new NotFoundException('Company not found');
         }
-    }
-
-    /**
-     * Retrieves the public profile of a company by its ID
-     *
-     * Returns only the publicly visible fields of the company profile that are meant to be displayed to students.
-     * This method does not include sensitive company information like passwords, email, or internal IDs.
-     *
-     * @param companyId - The MongoDB ObjectId of the company as a string
-     * @returns Promise resolving to the public company profile as `CompanyPublicDto`
-     * @throws NotFoundException if the company with the provided ID does not exist
-     *
-     * @example
-     * ```typescript
-     * const publicProfile = await companyService.getPublicCompanyById('507f1f77bcf86cd799439011');
-     * console.log(`Company: ${publicProfile.name}`);
-     * console.log(`Description: ${publicProfile.description}`);
-     * ```
-     */
-    async getPublicCompanyById(companyId: string): Promise<CompanyPublicDto> {
-        const company = await this.companyModel.findById(companyId).exec();
-
-        if (!company) {
-            throw new NotFoundException('Company not found');
-        }
-        return company;
+        await this.companyModel.updateOne({ _id: companyId }, { $set: dto }).exec();
     }
 }

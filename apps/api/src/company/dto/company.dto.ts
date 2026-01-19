@@ -78,6 +78,9 @@ export class CompanyDto {
     @Type(() => PostDto)
     posts: PostDto[];
 
+    @Expose()
+    description?: string;
+
     /**
      * Constructs a CompanyDto instance
      * @param company Partial company data to initialize the DTO

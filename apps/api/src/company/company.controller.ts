@@ -27,9 +27,6 @@ import { plainToInstance } from 'class-transformer';
 import { PostDto } from '../post/dto/post.dto';
 import { PostDocument } from '../post/post.schema';
 import { Company } from './company.schema';
-import { UpdateCompanyPublicProfileDto } from './dto/updateCompanyPublicProfile.dto';
-import { CompanyPublicDto } from './dto/publicProfileCompany.dto';
-
 /**
  * Controller handling company-related HTTP requests
  * Provides CRUD operations for company entities
@@ -135,12 +132,29 @@ export class CompanyController {
         });
     }
 
+    /**
+     * Gets the public profile of a company
+     * @param companyId The company identifier
+     * @returns The public profile data of the company
+     * @throws {NotFoundException} if no company exists with the given ID
+     */
+    @UseGuards(AuthGuard)
     @Get('/:companyId/public-profile')
     @HttpCode(HttpStatus.OK)
-    async getPublicProfile(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyPublicDto> {
-        return this.companyService.getPublicCompanyById(companyId);
+    async getPublicProfile(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyDto> {
+        const company = this.companyService.findOne(companyId);
+        return plainToInstance(CompanyDto, company, {
+            excludeExtraneousValues: true,
+        });
     }
 
+    /**
+     * Updates the public profile of a company
+     * Requires authentication and COMPANY or ADMIN role
+     * @param companyId The company identifier
+     * @param dto The updated public profile data
+     * @throws {NotFoundException} if no company exists with the given ID
+     */
     @Put('/:companyId/public-profile')
     @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
@@ -154,7 +168,7 @@ export class CompanyController {
                 transform: true,
             }),
         )
-        dto: UpdateCompanyPublicProfileDto,
+        dto: UpdateCompanyDto,
     ) {
         await this.companyService.updatePublicProfile(companyId, dto);
     }
