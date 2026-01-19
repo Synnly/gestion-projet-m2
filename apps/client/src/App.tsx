@@ -156,6 +156,16 @@ function App() {
                                             element: <EditStudentProfile />,
                                             handle: { title: 'Éditer le profil' },
                                         },
+                                        {
+                                            path: 'change-password',
+                                            element: (
+                                                <StudentChangePassword
+                                                    subtitle="Choisissez un nouveau mot de passe sécurisé"
+                                                    isFirstTime={false}
+                                                />
+                                            ),
+                                            handle: { title: 'Changer le mot de passe' },
+                                        },
                                     ],
                                 },
                             ],
@@ -224,7 +234,13 @@ function App() {
                             children: [
                                 {
                                     path: 'changePassword',
-                                    element: <StudentChangePassword />,
+                                    element: (
+                                        <StudentChangePassword
+                                            subtitle="Pour des raisons de sécurité, vous devez changer votre mot de passe lors de votre première
+                                                            connexion."
+                                            isFirstTime={true}
+                                        />
+                                    ),
                                     handle: { title: 'Changer le mot de passe' },
                                 },
                             ],

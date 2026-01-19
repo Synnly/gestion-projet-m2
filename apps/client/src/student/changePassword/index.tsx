@@ -29,7 +29,7 @@ const changePasswordSchema = z
 
 type ChangePasswordFormType = z.infer<typeof changePasswordSchema>;
 
-export function ChangePassword() {
+export function ChangePassword({ subtitle, isFirstTime }: { subtitle: string; isFirstTime: boolean }) {
     const navigate = useNavigate();
     const API_URL = import.meta.env.VITE_APIURL;
 
@@ -70,12 +70,11 @@ export function ChangePassword() {
             return res;
         },
         onSuccess: () => {
-            navigate('/');
+            navigate(isFirstTime ? '/home' : '/student/profile');
         },
     });
 
     const onSubmit = async (data: ChangePasswordFormType): Promise<void> => {
-        console.log;
         await mutateAsync(data);
     };
 
@@ -87,10 +86,7 @@ export function ChangePassword() {
             <div className="p-8">
                 <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center bg-base-100 rounded-lg shadow shadow-base-300">
                     <h1 className="text-3xl font-bold text-base-content text-center">Changer votre mot de passe</h1>
-                    <p className="text-sm mt-2 italic text-base-content mb-4">
-                        Pour des raisons de sécurité, vous devez changer votre mot de passe lors de votre première
-                        connexion.
-                    </p>
+                    <p className="text-sm mt-2 italic text-base-content mb-4">{subtitle}</p>
                     <form
                         onSubmit={handleSubmit(onSubmit)}
                         className="mt-4 w-full max-w-md flex flex-col flex-1"
@@ -126,14 +122,23 @@ export function ChangePassword() {
                                 error={errors.confirmPassword}
                                 placeholder="Confirmez votre nouveau mot de passe"
                             />
-                            <FormSubmit
-                                isPending={isPending}
-                                isError={isError}
-                                error={error}
-                                title="Changer le mot de passe"
-                                pendingTitle="Changement en cours..."
-                                className="w-full btn btn-primary text-black rounded-xl"
-                            />
+                            <div className="flex gap-4 mt-6 justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => navigate('/student/profile')}
+                                    className="btn btn-base text-black rounded-xl"
+                                >
+                                    Annuler
+                                </button>
+                                <FormSubmit
+                                    isPending={isPending}
+                                    isError={isError}
+                                    error={error}
+                                    title="Changer le mot de passe"
+                                    pendingTitle="Changement en cours..."
+                                    className={`${isFirstTime && 'w-full'} btn btn-primary text-black rounded-xl`}
+                                />
+                            </div>
                         </FormSection>
                     </form>
                 </div>

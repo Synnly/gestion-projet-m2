@@ -39,6 +39,9 @@ export function StudentProfile() {
                             <NavLink to="/student/profile/edit" className="btn btn-primary rounded-xl">
                                 Modifier le profil
                             </NavLink>
+                            <NavLink to="/student/profile/change-password" className="btn btn-error rounded-xl">
+                                Modifier le mot de passe
+                            </NavLink>
                         </div>
                     </div>
 
