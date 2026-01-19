@@ -810,7 +810,7 @@ export const completeProfilForm = z.object({
     ),
     address: z.preprocess(
         (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
-        z.string().min(1, { message: "l'adresse est requis" }).nullable(),
+        z.string().min(1, { message: "l'adresse est requise" }).nullable(),
     ),
     logo: z
         .custom<File | null | undefined>()
