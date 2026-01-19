@@ -98,11 +98,13 @@ export class PostService {
      *
      * @param query - Pagination and filter parameters provided by the
      *                incoming HTTP request (`PaginationDto`).
+     * @param showHidden
      * @returns A `PaginationResult<Post>` containing paginated posts and
      *          metadata (total, page, limit, etc.).
      */
-    async findAll(query: PaginationDto): Promise<PaginationResult<Post>> {
+    async findAll(query: PaginationDto, showHidden: boolean): Promise<PaginationResult<Post>> {
         const { page, limit, sort, ...filters } = query;
+        filters['showHidden'] = showHidden;
         // Build dynamic Mongo filters
         const qb = new QueryBuilder<Post>(filters as any, this.geoService);
         const filter = await qb.build();
