@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronUp, Eye } from 'lucide-react';
+import { ChevronUp, Eye, SquareArrowOutUpRight } from 'lucide-react';
 import { PdfModal } from './PdfModal.tsx';
 import { ApplicationPagination } from './ApplicationPagination.tsx';
 import {
@@ -138,6 +138,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                     <table className="table table-pin-rows table-zebra">
                                         <thead>
                                             <tr className="bg-base-100">
+                                                <th>Profil</th>
                                                 <th>Prénom</th>
                                                 <th>Nom</th>
                                                 <th>Email</th>
@@ -154,6 +155,15 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                                     key={app._id}
                                                     className="hover:bg-base-300 duration-300 ease-out transition-color"
                                                 >
+                                                    <td className="whitespace-nowrap text-center w-0">
+                                                        <a
+                                                            href={`/student/public/${app.student._id}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                        >
+                                                            <SquareArrowOutUpRight strokeWidth={2} />
+                                                        </a>
+                                                    </td>
                                                     <td>{app.student.firstName}</td>
                                                     <td>{app.student.lastName}</td>
                                                     <td>{app.student.email}</td>

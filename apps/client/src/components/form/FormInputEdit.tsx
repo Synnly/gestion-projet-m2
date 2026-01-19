@@ -37,7 +37,7 @@ export function FormInputEdit<T extends FieldValues>({
                     {...props}
                     type={inputType}
                     className={cn(
-                        'rounded-lg p-4',
+                        'rounded-lg p-4 w-full',
                         error && 'border-red-500',
                         className,
                         props.type === 'password' && 'flex items-center',

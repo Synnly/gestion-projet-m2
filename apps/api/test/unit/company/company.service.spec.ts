@@ -18,9 +18,11 @@ describe('CompanyService', () => {
     const mockCompanyModel = {
         find: jest.fn(),
         findOne: jest.fn(),
+        findById: jest.fn(),
         create: jest.fn(),
         findOneAndUpdate: jest.fn(),
         findOneAndDelete: jest.fn(),
+        updateOne: jest.fn(),
     };
 
     const mockExec = jest.fn();
@@ -959,6 +961,338 @@ describe('CompanyService', () => {
             await Promise.all([service.create(createDto1), service.create(createDto2)]);
 
             expect(mockCompanyModel.create).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    describe('updatePublicProfile', () => {
+        it('should update public profile when updatePublicProfile is called with valid data', async () => {
+            const updateDto = new UpdateCompanyDto({
+                description: 'Updated description',
+                emailContact: 'newemail@test.com',
+            });
+
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 1, acknowledged: true }),
+            });
+
+            await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011' },
+                { $set: updateDto },
+            );
+        });
+
+        it('should return void after successful update when updatePublicProfile resolves', async () => {
+            const updateDto = new UpdateCompanyDto({
+                description: 'Updated',
+            });
+
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 1, acknowledged: true }),
+            });
+
+            const result = await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(result).toBeUndefined();
+        });
+
+        it('should update single field when updatePublicProfile is called with one field', async () => {
+            const updateDto = new UpdateCompanyDto({
+                description: 'Only description update',
+            });
+
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 1, acknowledged: true }),
+            });
+
+            await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011' },
+                { $set: updateDto },
+            );
+        });
+
+        it('should update multiple fields when updatePublicProfile is called with multiple fields', async () => {
+            const updateDto = new UpdateCompanyDto({
+                description: 'Updated description',
+                emailContact: 'newemail@test.com',
+                website: 'https://newsite.com',
+                telephone: '+33123456789',
+                city: 'Lyon',
+                country: 'France',
+            });
+
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 1, acknowledged: true }),
+            });
+
+            await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011' },
+                { $set: updateDto },
+            );
+        });
+
+        it('should throw NotFoundException when no company exists with said id', async () => {
+            const updateDto = new UpdateCompanyDto({
+                description: 'Updated',
+            });
+
+            mockCompanyModel.findOne.mockReturnValue(null);
+
+            await expect(service.updatePublicProfile('507f1f77bcf86cd799439999', updateDto)).rejects.toThrow(
+                NotFoundException,
+            );
+        });
+
+        it('should throw error when updatePublicProfile encounters database error', async () => {
+            const updateDto = new UpdateCompanyDto({
+                description: 'Updated',
+            });
+
+            const error = new Error('Database error');
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockRejectedValue(error),
+            });
+
+            await expect(service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto)).rejects.toThrow(
+                'Company not found',
+            );
+        });
+
+        it('should handle empty update DTO when updatePublicProfile is called with empty data', async () => {
+            const updateDto = new UpdateCompanyDto({});
+
+            mockCompanyModel.findOne.mockReturnValue({ _id: '507f1f77bcf86cd799439011' });
+            mockCompanyModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 0, acknowledged: true }),
+            });
+
+            await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
+                { _id: '507f1f77bcf86cd799439011' },
+                { $set: updateDto },
+            );
+        });
+    });
+
+    describe('findPendingValidation', () => {
+        it('should return paginated companies with isValid=false', async () => {
+            const mockPaginatedResult = {
+                data: [
+                    { _id: '1', name: 'Company 1', isValid: false, email: 'c1@test.com' },
+                    { _id: '2', name: 'Company 2', isValid: false, email: 'c2@test.com' },
+                ],
+                total: 2,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockPaginationService.paginate.mockResolvedValue(mockPaginatedResult);
+
+            const query = { page: 1, limit: 10 } as any;
+            const result = await service.findPendingValidation(query);
+
+            expect(mockPaginationService.paginate).toHaveBeenCalledWith(
+                model,
+                {
+                    deletedAt: { $exists: false },
+                    isValid: false,
+                    $or: [
+                        { 'rejected.isRejected': { $ne: true } },
+                        {
+                            'rejected.isRejected': true,
+                            'rejected.modifiedAt': { $exists: true },
+                        },
+                    ],
+                },
+                1,
+                10,
+                undefined,
+                '-1',
+            );
+            expect(result).toEqual(mockPaginatedResult);
+        });
+
+        it('should use default pagination values when not provided', async () => {
+            const mockPaginatedResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockPaginationService.paginate.mockResolvedValue(mockPaginatedResult);
+
+            const query = {} as any;
+            await service.findPendingValidation(query);
+
+            expect(mockPaginationService.paginate).toHaveBeenCalledWith(
+                model,
+                {
+                    deletedAt: { $exists: false },
+                    isValid: false,
+                    $or: [
+                        { 'rejected.isRejected': { $ne: true } },
+                        {
+                            'rejected.isRejected': true,
+                            'rejected.modifiedAt': { $exists: true },
+                        },
+                    ],
+                },
+                undefined,
+                undefined,
+                undefined,
+                '-1',
+            );
+        });
+
+        it('should handle multiple pages correctly', async () => {
+            const mockPaginatedResult = {
+                data: [{ _id: '3', name: 'Company 3', isValid: false, email: 'c3@test.com' }],
+                total: 15,
+                page: 2,
+                limit: 10,
+                totalPages: 2,
+                hasNext: false,
+                hasPrev: true,
+            };
+
+            mockPaginationService.paginate.mockResolvedValue(mockPaginatedResult);
+
+            const query = { page: 2, limit: 10 } as any;
+            const result = await service.findPendingValidation(query);
+
+            expect(result.page).toBe(2);
+            expect(result.hasNext).toBe(false);
+            expect(result.hasPrev).toBe(true);
+        });
+
+        it('should exclude soft-deleted companies from pending validation', async () => {
+            const mockPaginatedResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockPaginationService.paginate.mockResolvedValue(mockPaginatedResult);
+
+            const query = { page: 1, limit: 10 } as any;
+            await service.findPendingValidation(query);
+
+            const filter = mockPaginationService.paginate.mock.calls[0][1];
+            expect(filter).toHaveProperty('deletedAt');
+            expect(filter.deletedAt).toEqual({ $exists: false });
+            expect(filter.isValid).toBe(false);
+        });
+    });
+
+    describe('isValid', () => {
+        it('should return true when company exists and isValid is true', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockCompany = {
+                _id: companyId,
+                name: 'Valid Company',
+                isValid: true,
+            };
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(mockCompany) });
+
+            const result = await service.isValid(companyId);
+
+            expect(mockCompanyModel.findOne).toHaveBeenCalledWith({
+                _id: companyId,
+                deletedAt: { $exists: false },
+            });
+            expect(result).toBe(true);
+        });
+
+        it('should return false when company exists and isValid is false', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockCompany = {
+                _id: companyId,
+                name: 'Invalid Company',
+                isValid: false,
+            };
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(mockCompany) });
+
+            const result = await service.isValid(companyId);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when company exists and isValid is null', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockCompany = {
+                _id: companyId,
+                name: 'Company Without Validation',
+                isValid: null,
+            };
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(mockCompany) });
+
+            const result = await service.isValid(companyId);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when company exists and isValid is undefined', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockCompany = {
+                _id: companyId,
+                name: 'Company Without Validation',
+            };
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(mockCompany) });
+
+            const result = await service.isValid(companyId);
+
+            expect(result).toBe(false);
+        });
+
+        it('should throw NotFoundException when company does not exist', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+            await expect(service.isValid(companyId)).rejects.toThrow(NotFoundException);
+            await expect(service.isValid(companyId)).rejects.toThrow(`Company with id ${companyId} not found`);
+        });
+
+        it('should throw NotFoundException when company is soft-deleted', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+            await expect(service.isValid(companyId)).rejects.toThrow(NotFoundException);
+        });
+
+        it('should exclude soft-deleted companies from the query', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+            await expect(service.isValid(companyId)).rejects.toThrow();
+
+            expect(mockCompanyModel.findOne).toHaveBeenCalledWith({
+                _id: companyId,
+                deletedAt: { $exists: false },
+            });
         });
     });
 });

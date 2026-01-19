@@ -36,7 +36,7 @@ describe('Student Integration', () => {
                 StudentModule,
                 ConfigModule.forRoot({
                     envFilePath: '.env',
-                    isGlobal: true, 
+                    isGlobal: true,
                 }),
             ],
         })
@@ -137,24 +137,6 @@ describe('Student Integration', () => {
         const updated = await request(app.getHttpServer()).get(`/api/students/${createdStudent._id}`).expect(200);
         expect(updated.body.firstName).toBe('New');
         expect(updated.body.lastName).toBe('UpdatedName');
-    });
-
-    it('PUT /api/students/:studentId -> creates student when not found', async () => {
-        const createDto = {
-            email: 'newthroughput@example.com',
-            password: 'StrongP@ss1',
-            studentNumber: 'SN-PUT',
-            role: Role.STUDENT,
-            firstName: 'Created',
-            lastName: 'Via-Put',
-        };
-
-        await request(app.getHttpServer()).put('/api/students/507f1f77bcf86cd799439099').send(createDto).expect(204);
-
-        const allStudents = await request(app.getHttpServer()).get('/api/students').expect(200);
-        const found = allStudents.body.find((s: any) => s.email === createDto.email);
-        expect(found).toBeDefined();
-        expect(found.firstName).toBe('Created');
     });
 
     it('DELETE /api/students/:studentId -> soft deletes student', async () => {

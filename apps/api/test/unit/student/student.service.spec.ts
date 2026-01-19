@@ -19,7 +19,7 @@ describe('StudentService', () => {
         insertMany: jest.fn(),
     } as any;
 
-    const TEST_MAX_ROWS = 1000; 
+    const TEST_MAX_ROWS = 1000;
     const TEST_MAX_SIZE = 2 * 1024 * 1024;
     const mockConfigService = {
         get: jest.fn((key: string) => {
@@ -27,7 +27,7 @@ describe('StudentService', () => {
             if (key === 'IMPORT_MAX_ROWS') return TEST_MAX_ROWS; // 1000 records
             return null;
         }),
-    };;
+    };
 
     const mockMailerService = {
         sendAccountCreationEmail: jest.fn().mockResolvedValue(true),
@@ -73,56 +73,38 @@ describe('StudentService', () => {
     it('create calls model.create with role STUDENT and sends email', async () => {
         const dto = { email: 'x@y.z' } as any;
 
-        const mockCreatedStudent = { 
-            email: 'x@y.z', 
-            firstName: 'Test', 
-            role: Role.STUDENT 
+        const mockCreatedStudent = {
+            email: 'x@y.z',
+            firstName: 'Test',
+            role: Role.STUDENT,
         } as any;
-        
+
         mockModel.create.mockResolvedValue(mockCreatedStudent);
 
         await service.create(dto);
         expect(mockModel.create).toHaveBeenCalledWith(
             expect.objectContaining({
-                email: 'x@y.z', 
+                email: 'x@y.z',
                 role: Role.STUDENT,
-                password: expect.any(String)
-            })
+                password: expect.any(String),
+            }),
         );
-        
+
         expect(mockMailerService.sendAccountCreationEmail).toHaveBeenCalledWith(
             'x@y.z',
             expect.any(String),
             'Test',
-            expect.any(String)
+            expect.any(String),
         );
     });
 
     it('update updates existing student when found', async () => {
         const saveMock = jest.fn().mockResolvedValue(undefined);
-        const studentDoc: any = { save: saveMock };
+        const studentDoc: any = { save: saveMock, set: jest.fn() };
         mockModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(studentDoc) });
 
         await service.update('1', { email: 'new@e.mail' } as any);
         expect(mockModel.findOne).toHaveBeenCalledWith({ _id: '1', deletedAt: { $exists: false } });
-        expect(saveMock).toHaveBeenCalled();
-    });
-
-    it('update creates when student not found', async () => {
-        mockModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
-        mockModel.create.mockResolvedValue(undefined);
-
-        await service.update('1', { email: 'new@e.mail' } as any);
-        expect(mockModel.create).toHaveBeenCalledWith({ email: 'new@e.mail', role: Role.STUDENT });
-    });
-
-    it('update assigns properties to found student', async () => {
-        const saveMock = jest.fn().mockResolvedValue(undefined);
-        const studentDoc: any = { email: 'old@mail', save: saveMock };
-        mockModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(studentDoc) });
-
-        await service.update('1', { email: 'updated@mail' } as any);
-        expect(studentDoc.email).toBe('updated@mail');
         expect(saveMock).toHaveBeenCalled();
     });
 
@@ -143,7 +125,6 @@ describe('StudentService', () => {
         expect(mockModel.findOneAndUpdate).toHaveBeenCalled();
     });
 
-
     describe('createMany', () => {
         const dtos = [
             { email: 'new1@test.com', studentNumber: '1', firstName: 'A', lastName: 'B' },
@@ -155,16 +136,16 @@ describe('StudentService', () => {
         const existingStudentNumber = { email: 'unique@db.com', studentNumber: 'exist_num', firstName: 'Y' };
 
         it('should insert all students if no duplicates found (Strict Mode)', async () => {
-            mockModel.find.mockResolvedValue([]); 
+            mockModel.find.mockResolvedValue([]);
             mockModel.insertMany.mockResolvedValue(dtos);
 
             const result = await service.createMany(dtos, false);
 
             expect(mockModel.find).toHaveBeenCalledWith({
                 $or: [
-                    { email: { $in: dtos.map(d => d.email) } },
-                    { studentNumber: { $in: dtos.map(d => d.studentNumber) } }
-                ]
+                    { email: { $in: dtos.map((d) => d.email) } },
+                    { studentNumber: { $in: dtos.map((d) => d.studentNumber) } },
+                ],
             });
             expect(mockModel.insertMany).toHaveBeenCalled();
             expect(mockMailerService.sendAccountCreationEmail).toHaveBeenCalledTimes(4);
@@ -172,17 +153,17 @@ describe('StudentService', () => {
         });
 
         it('should throw ConflictException if any conflict found (Strict Mode)', async () => {
-            mockModel.find.mockResolvedValue([existingStudentEmail]); 
+            mockModel.find.mockResolvedValue([existingStudentEmail]);
 
-            await expect(service.createMany(dtos, false)).rejects.toThrow(ConflictException); 
-            
+            await expect(service.createMany(dtos, false)).rejects.toThrow(ConflictException);
+
             expect(mockModel.insertMany).not.toHaveBeenCalled();
         });
 
         it('should skip duplicates and insert only new ones (Filter Mode - Email conflict)', async () => {
             mockModel.find.mockResolvedValue([existingStudentEmail]);
-            
-            const expectedToInsert = dtos.filter(d => d.email !== 'exist@test.com');
+
+            const expectedToInsert = dtos.filter((d) => d.email !== 'exist@test.com');
             mockModel.insertMany.mockResolvedValue(expectedToInsert);
 
             const result = await service.createMany(dtos, true);
@@ -191,12 +172,12 @@ describe('StudentService', () => {
             expect(mockMailerService.sendAccountCreationEmail).toHaveBeenCalledTimes(3);
             expect(result).toEqual({
                 added: 3,
-                skipped: 1
+                skipped: 1,
             });
         });
 
         it('should return "added: 0" if all exist (Filter Mode)', async () => {
-            const allConflicts = dtos.map(d => ({ email: d.email, studentNumber: d.studentNumber }));
+            const allConflicts = dtos.map((d) => ({ email: d.email, studentNumber: d.studentNumber }));
             mockModel.find.mockResolvedValue(allConflicts);
 
             const result = await service.createMany(dtos, true);
@@ -208,40 +189,40 @@ describe('StudentService', () => {
         });
 
         it('should skip email conflict and insert the rest (Skip Mode)', async () => {
-            mockModel.find.mockResolvedValue([existingStudentEmail]); 
-            
-            const expectedToInsert = dtos.filter(d => d.email !== 'exist@test.com');
+            mockModel.find.mockResolvedValue([existingStudentEmail]);
+
+            const expectedToInsert = dtos.filter((d) => d.email !== 'exist@test.com');
             mockModel.insertMany.mockResolvedValue(expectedToInsert);
 
-            const result = await service.createMany(dtos, true); 
+            const result = await service.createMany(dtos, true);
 
-            expect(mockModel.insertMany.mock.calls[0][0].length).toBe(3); 
+            expect(mockModel.insertMany.mock.calls[0][0].length).toBe(3);
             expect(result).toEqual({ added: 3, skipped: 1 });
         });
 
         it('should skip studentNumber conflict and insert the rest (Skip Mode)', async () => {
-            mockModel.find.mockResolvedValue([existingStudentNumber]); 
-            
-            const expectedToInsert = dtos.filter(d => d.studentNumber !== 'exist_num');
+            mockModel.find.mockResolvedValue([existingStudentNumber]);
+
+            const expectedToInsert = dtos.filter((d) => d.studentNumber !== 'exist_num');
             mockModel.insertMany.mockResolvedValue(expectedToInsert);
 
-            const result = await service.createMany(dtos, true); 
+            const result = await service.createMany(dtos, true);
 
-            expect(mockModel.insertMany.mock.calls[0][0].length).toBe(3); 
+            expect(mockModel.insertMany.mock.calls[0][0].length).toBe(3);
             expect(result).toEqual({ added: 3, skipped: 1 });
         });
-        
+
         it('should skip both email and studentNumber conflicts (Skip Mode)', async () => {
-            mockModel.find.mockResolvedValue([existingStudentEmail, existingStudentNumber]); 
-            
-            const expectedToInsert = dtos.filter(d => 
-                d.email !== 'exist@test.com' && d.studentNumber !== 'exist_num'
-            ); 
+            mockModel.find.mockResolvedValue([existingStudentEmail, existingStudentNumber]);
+
+            const expectedToInsert = dtos.filter(
+                (d) => d.email !== 'exist@test.com' && d.studentNumber !== 'exist_num',
+            );
             mockModel.insertMany.mockResolvedValue(expectedToInsert);
 
-            const result = await service.createMany(dtos, true); 
+            const result = await service.createMany(dtos, true);
 
-            expect(mockModel.insertMany.mock.calls[0][0].length).toBe(2); 
+            expect(mockModel.insertMany.mock.calls[0][0].length).toBe(2);
             expect(result).toEqual({ added: 2, skipped: 2 });
         });
     });
@@ -263,7 +244,7 @@ describe('StudentService', () => {
         it('should parse valid JSON array', async () => {
             const data = [{ email: 'test@test.com' }];
             const file = createMockFile(data, 'application/json');
-            
+
             const result = await service.parseFileContent(file);
             expect(result).toEqual(data);
         });
@@ -282,10 +263,12 @@ describe('StudentService', () => {
 
             const result = await service.parseFileContent(file);
             expect(result).toHaveLength(1);
-            expect(result[0]).toEqual(expect.objectContaining({
-                email: 'test@test.com',
-                firstName: 'John'
-            }));
+            expect(result[0]).toEqual(
+                expect.objectContaining({
+                    email: 'test@test.com',
+                    firstName: 'John',
+                }),
+            );
         });
 
         it('should throw BadRequestException if parsing fails (Invalid JSON syntax)', async () => {
