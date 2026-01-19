@@ -174,6 +174,24 @@ export class StudentController {
     }
 
     /**
+     * Update the current student's profile.
+     * Requires student role and ownership.
+     * @param studentId The id of the student to update.
+     * @param dto The update payload.
+     */
+    @Put('/:studentId/profile')
+    @UseGuards(AuthGuard, RolesGuard, StudentOwnerGuard)
+    @Roles(Role.STUDENT)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async updateProfile(
+        @Param('studentId', ParseObjectIdPipe) studentId: string,
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        dto: UpdateStudentDto,
+    ) {
+        await this.studentService.update(studentId, dto);
+    }
+
+    /**
      * Soft-delete a student by id. Requires admin role.
      * @param studentId The id of the student to remove.
      * @throws {NotFoundException} When the student does not exist or is already deleted.

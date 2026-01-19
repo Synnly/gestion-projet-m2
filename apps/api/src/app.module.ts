@@ -18,7 +18,6 @@ import { ForumModule } from './forum/forum.module';
 import { NotificationModule } from './notification/notification.module';
 import { UsersModule } from './user/user.module';
 
-
 @Module({
     imports: [
         ConfigModule.forRoot({

@@ -58,7 +58,7 @@ export class QueryBuilder<T> {
                 if (isSingleSimpleToken) {
                     // Use text index when available; keeps query fast and index-backed.
                     // Fuzzy search will still be used for multi-word/complex queries below.
-                    (mutableFilter.$text = { $search: globalSearch });
+                    mutableFilter.$text = { $search: globalSearch };
                 } else {
                     const andConditions = (mutableFilter.$and ??= []) as Array<Record<string, unknown>>;
                     for (const token of tokens) {

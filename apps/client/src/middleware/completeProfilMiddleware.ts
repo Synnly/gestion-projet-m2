@@ -26,6 +26,9 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
     const authFetch = UseAuthFetch();
     const pathname = new URL(request.url).pathname;
     const { setProfil, profile } = profileStore.getState();
+    if (pathname === '/logout') {
+        return;
+    }
     if (!payload.isVerified && pathname === '/verify') {
         return;
     }
@@ -122,6 +125,27 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
 
         if (isComplete && pathname === '/complete-profil' && !isRejected) {
             throw redirect(`/home`);
+        }
+    }
+    if (payload.role === 'STUDENT') {
+        // Fetch student profile to check isFirstTime
+        const studentRes = await authFetch(`${API_URL}/api/students/${payload.id}`, {});
+
+        if (!studentRes.ok) {
+            return redirect('/signin');
+        }
+
+        const studentProfile = await studentRes.json();
+        const isFirstTime = studentProfile.isFirstTime;
+
+        if (isFirstTime && pathname === '/student/changePassword') {
+            return;
+        }
+        if (isFirstTime && pathname !== '/student/changePassword') {
+            throw redirect('/student/changePassword');
+        }
+        if (!isFirstTime && pathname === '/student/changePassword') {
+            throw redirect('/student/dashboard');
         }
     }
 };

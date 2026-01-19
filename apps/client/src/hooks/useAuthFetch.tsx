@@ -19,7 +19,6 @@ interface FetchOptions<TData = unknown> {
  *not need to set Authorization header and credentials, it's handled automatically
  */
 export const UseAuthFetch = () => {
-    
     const setUserToken = userStore.getState().set;
 
     const authFetch = async <TData = unknown,>(url: string, options?: FetchOptions<TData>): Promise<Response> => {
