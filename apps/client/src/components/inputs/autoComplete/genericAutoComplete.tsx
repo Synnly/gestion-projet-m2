@@ -22,7 +22,7 @@ type AutocompleteDisabledProps<T> = BaseProps & {
 };
 
 type GenericProps<T> = AutocompleteEnabledProps<T> | AutocompleteDisabledProps<T>;
-const inner = <T,>(
+const Inner = <T,>(
     { isAutocompleteEnabled = true, value, onChange, error, label, fetcher, getLabel, ...rest }: GenericProps<T>,
     ref: any,
 ) => {
@@ -101,6 +101,6 @@ const inner = <T,>(
         </div>
     );
 };
-export const GenericAutocomplete = forwardRef(inner) as <T>(
+export const GenericAutocomplete = forwardRef(Inner) as <T>(
     props: GenericProps<T> & { ref?: React.Ref<HTMLInputElement> },
 ) => ReactElement;
