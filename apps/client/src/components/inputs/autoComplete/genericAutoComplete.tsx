@@ -24,7 +24,7 @@ type AutocompleteDisabledProps<T> = BaseProps & {
 type GenericProps<T> = AutocompleteEnabledProps<T> | AutocompleteDisabledProps<T>;
 const Inner = <T,>(
     { isAutocompleteEnabled = true, value, onChange, error, label, fetcher, getLabel, ...rest }: GenericProps<T>,
-    ref: any,
+    ref: React.Ref<HTMLInputElement>,
 ) => {
     const [searchTerm, setSearchTerm] = useState(value || '');
     const [isOpen, setIsOpen] = useState(false);

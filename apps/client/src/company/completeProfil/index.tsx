@@ -24,7 +24,7 @@ import { useUploadFile } from '../../hooks/useUploadFile';
 import { useEffect, useState } from 'react';
 import { UseAuthFetch } from '../../hooks/useAuthFetch';
 import { GenericAutocomplete } from '../../components/inputs/autoComplete/genericAutoComplete';
-import { type NominatimAddress, addressFetcher, getAddressLabel } from '../../api/autoCompleteAdress.tsx';
+import { type NominatimAddress, addressFetcher, getAddressLabel } from '../../api/autoCompleteAddress.tsx';
 export const CompleteProfil = () => {
     const formInputStyle = 'p-3';
     const navigate = useNavigate();

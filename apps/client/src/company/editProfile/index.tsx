@@ -25,7 +25,7 @@ import {
 } from '../completeProfil/type';
 import type { companyProfile } from '../../types';
 import { UseAuthFetch } from '../../hooks/useAuthFetch';
-import type { NominatimAddress } from '../../api/autoCompleteAdress';
+import type { NominatimAddress } from '../../api/autoCompleteAddress';
 import { GenericAutocomplete } from '../../components/inputs/autoComplete/genericAutoComplete';
 
 export function EditCompanyProfile() {

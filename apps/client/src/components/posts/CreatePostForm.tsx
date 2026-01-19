@@ -15,7 +15,7 @@ import { companyInternshipStore } from '../../store/companyInternshipStore';
 import { toast } from 'react-toastify';
 import type { PostType } from '../../types/internship.types.ts';
 import { GenericAutocomplete } from '../inputs/autoComplete/genericAutoComplete.tsx';
-import { type NominatimAddress } from '../../api/autoCompleteAdress.tsx';
+import { type NominatimAddress } from '../../api/autoCompleteAddress.tsx';
 
 type PostFormMode = 'create' | 'edit';
 
@@ -386,30 +386,33 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                 <button
                                     type="button"
                                     onClick={() => setPostType('Présentiel')}
-                                    className={`btn btn-xs sm:btn-sm join-item flex-1 border shadow-none ${type === 'Présentiel'
+                                    className={`btn btn-xs sm:btn-sm join-item flex-1 border shadow-none ${
+                                        type === 'Présentiel'
                                             ? 'bg-base-100 text-base-content border-base-200'
                                             : 'bg-transparent border-0 text-base-400 hover:bg-base-300/60'
-                                        }`}
+                                    }`}
                                 >
                                     Présentiel
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setPostType('Télétravail')}
-                                    className={`btn btn-xs sm:btn-sm join-item flex-1 border shadow-none ${type === 'Télétravail'
+                                    className={`btn btn-xs sm:btn-sm join-item flex-1 border shadow-none ${
+                                        type === 'Télétravail'
                                             ? 'bg-base-100 text-base-content border-base-200'
                                             : 'bg-transparent border-0 text-base-400 hover:bg-base-300/60'
-                                        }`}
+                                    }`}
                                 >
                                     Télétravail
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setPostType('Hybride')}
-                                    className={`btn btn-xs sm:btn-sm join-item flex-1 border shadow-none ${type === 'Hybride'
+                                    className={`btn btn-xs sm:btn-sm join-item flex-1 border shadow-none ${
+                                        type === 'Hybride'
                                             ? 'bg-base-100 text-base-content border-base-200'
                                             : 'bg-transparent border-0 text-base-400 hover:bg-base-300/60'
-                                        }`}
+                                    }`}
                                 >
                                     Hybride
                                 </button>
@@ -456,8 +459,8 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                     ? 'Mise à jour...'
                                     : "Mettre à jour l'offre de stage"
                                 : mutation.isPending
-                                    ? 'Publication en cours...'
-                                    : "Publier l'offre de stage"}
+                                  ? 'Publication en cours...'
+                                  : "Publier l'offre de stage"}
                         </button>
                     </div>
                 </form>
