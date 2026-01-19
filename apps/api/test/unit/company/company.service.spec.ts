@@ -1077,6 +1077,9 @@ describe('CompanyService', () => {
                 { _id: '507f1f77bcf86cd799439011' },
                 { $set: updateDto },
             );
+        });
+    });
+
     describe('findPendingValidation', () => {
         it('should return paginated companies with isValid=false', async () => {
             const mockPaginatedResult = {

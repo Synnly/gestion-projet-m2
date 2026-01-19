@@ -238,6 +238,9 @@ export class CompanyService {
             throw new NotFoundException('Company not found');
         }
         await this.companyModel.updateOne({ _id: companyId }, { $set: dto }).exec();
+    }
+
+    /**
      * Retrieves companies pending validation with pagination
      * Uses PaginationService for standardized pagination
      * Includes companies that are:
@@ -253,9 +256,9 @@ export class CompanyService {
             isValid: false,
             $or: [
                 { 'rejected.isRejected': { $ne: true } },
-                { 
+                {
                     'rejected.isRejected': true,
-                    'rejected.modifiedAt': { $exists: true }
+                    'rejected.modifiedAt': { $exists: true },
                 },
             ],
         };
