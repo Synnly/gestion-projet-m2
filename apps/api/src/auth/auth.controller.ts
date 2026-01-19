@@ -69,8 +69,16 @@ export class AuthController {
      * @throws {InvalidCredentialsException} if the refresh token is invalid
      */
     @Post('logout')
-    async logout(@Req() req: express.Request) {
+    async logout(@Req() req: express.Request, @Res({ passthrough: true }) res: express.Response) {
         const refreshTokenString = req.cookies['refreshToken'];
         await this.authService.logout(refreshTokenString);
+
+        res.cookie('refreshToken', refreshTokenString, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax',
+            path: '/api',
+            maxAge: 0,
+        });
     }
 }

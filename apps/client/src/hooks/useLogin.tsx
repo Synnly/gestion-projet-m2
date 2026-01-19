@@ -3,12 +3,16 @@ import type { companyFormLogin } from '../auth/Login/type';
 import { userStore } from '../store/userStore';
 import { useLocation, useNavigate } from 'react-router';
 function translateMessage(message: string): string {
-    if (message === 'Invalid email or password') {
-        return 'email ou mot de passe invalide.';
-    }
-    const regex = /User with email ([\w.-]+@[\w.-]+\.\w+) not found/i;
-    if (regex.test(message)) {
-        return "Utilisateur avec cet email n'existe pas.";
+    if (message === 'Invalid email or password') return 'email ou mot de passe invalide.';
+
+    const notFoundRegex = /User with email ([\w.-]+@[\w.-]+\.\w+) not found/i;
+    if (notFoundRegex.test(message)) return "Aucun utilisateur avec cet email n'existe.";
+    
+    const bannedRegex = /User with email ([\w.-]+@[\w.-]+\.\w+) is banned(?: for (.+))?/i;
+    const bannedMatch = message.match(bannedRegex);
+    if (bannedMatch) {
+        const reason = bannedMatch[2]?.trim() || 'Raison inconnue';
+        return `L'utilisateur avec cet email a été banni pour le motif suivant :\n${reason}`;
     }
 
     return 'Une erreur est survenue, veuillez réessayer plus tard.';
@@ -44,7 +48,20 @@ export const useLogin = () => {
             setAccess(accessToken);
             const user = getAccess(accessToken);
             if (!user) throw new Error('Erreur lors de la récupération des informations utilisateur.');
-            const redirectTo = lastLocationRoute || '/';
+            
+            // Force verification for students
+            if (user.role === 'STUDENT') {
+                if (!user.isVerified) {
+                    navigate('/verify');
+                    return;
+                }
+                if (user.isFirstTime) {
+                    navigate('/student/changePassword');
+                    return;
+                }
+            }
+            
+            const redirectTo = lastLocationRoute || '/home';
             navigate(redirectTo);
         }
     };

@@ -9,6 +9,7 @@ import { PaginationService } from '../../../src/common/pagination/pagination.ser
 import { GeoService } from '../../../src/common/geography/geo.service';
 import { CompanyService } from '../../../src/company/company.service';
 import { CreationFailedError } from '../../../src/errors/creationFailedError';
+import { ApplicationService } from '../../../src/application/application.service';
 
 const basePost = {
     _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
@@ -23,6 +24,7 @@ const basePost = {
     adress: 'Paris, France',
     type: PostType.Hybride,
     isVisible: true,
+    isCoverLetterRequired: false,
 };
 
 const createMockPost = (overrides: Partial<Post> = {}) => {
@@ -66,6 +68,10 @@ describe('PostService', () => {
         }),
     };
 
+    const mockApplicationService = {
+        getPostIdsByStudent: jest.fn(),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -85,6 +91,10 @@ describe('PostService', () => {
                 {
                     provide: CompanyService,
                     useValue: mockCompanyService,
+                },
+                {
+                    provide: ApplicationService,
+                    useValue: mockApplicationService,
                 },
             ],
         }).compile();
@@ -113,6 +123,7 @@ describe('PostService', () => {
             adress: 'Lyon, France',
             type: PostType.Presentiel,
             isVisible: true,
+            isCoverLetterRequired: false,
         };
 
         it('should create a new post when valid dto is provided and create is called', async () => {
@@ -132,6 +143,7 @@ describe('PostService', () => {
                 mockPaginationService as any,
                 mockGeoService as any,
                 mockCompanyService as any,
+                mockApplicationService as any,
             );
 
             const result = await serviceWithMock.create(validCreatePostDto, companyId);
@@ -147,6 +159,7 @@ describe('PostService', () => {
                 title: 'Titre minimal',
                 description: 'Description minimale',
                 keySkills: ['Compétence1'],
+                isCoverLetterRequired: false,
             };
 
             const mockSave = jest.fn().mockResolvedValue({ ...mockPost, ...minimalDto });
@@ -165,6 +178,7 @@ describe('PostService', () => {
                 mockPaginationService as any,
                 mockGeoService as any,
                 mockCompanyService as any,
+                mockApplicationService as any,
             );
 
             const result = await serviceWithMock.create(minimalDto, companyId);
@@ -191,6 +205,7 @@ describe('PostService', () => {
                 mockPaginationService as any,
                 mockGeoService as any,
                 mockCompanyService as any,
+                mockApplicationService as any,
             );
 
             const result = await serviceWithMock.create(validCreatePostDto, companyId);
@@ -220,6 +235,7 @@ describe('PostService', () => {
                 mockPaginationService as any,
                 mockGeoService as any,
                 mockCompanyService as any,
+                mockApplicationService as any,
             );
 
             await expect(serviceWithMock.create(validCreatePostDto, companyId)).rejects.toThrow(CreationFailedError);
@@ -369,6 +385,183 @@ describe('PostService', () => {
             const dto = { title: 'No Update' } as any;
 
             await expect(service.update(dto, companyId, postId)).rejects.toThrow();
+        });
+    });
+
+    describe('findAllByStudent', () => {
+        const studentId = '507f1f77bcf86cd799439088';
+
+        it('should return paginated posts when student has applications', async () => {
+            const postIds = [
+                new Types.ObjectId('507f1f77bcf86cd799439011'),
+                new Types.ObjectId('507f1f77bcf86cd799439012'),
+            ];
+            const mockPosts = [
+                createMockPost({ _id: postIds[0] }),
+                createMockPost({ _id: postIds[1], title: 'Développeur Backend' }),
+            ];
+            const paginationResult = {
+                data: mockPosts,
+                total: 2,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockApplicationService.getPostIdsByStudent.mockResolvedValue(postIds);
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
+
+            const result = await service.findAllByStudent({ page: 1, limit: 10 } as any, studentId);
+
+            expect(mockApplicationService.getPostIdsByStudent).toHaveBeenCalledWith(studentId);
+            expect(mockApplicationService.getPostIdsByStudent).toHaveBeenCalledTimes(1);
+            expect(result.data).toHaveLength(2);
+            expect(result.data[0]._id).toEqual(postIds[0]);
+            expect(result.data[1]._id).toEqual(postIds[1]);
+            expect(result.total).toBe(2);
+        });
+
+        it('should return empty paginated result when student has no applications', async () => {
+            const paginationResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockApplicationService.getPostIdsByStudent.mockResolvedValue([]);
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
+
+            const result = await service.findAllByStudent({ page: 1, limit: 10 } as any, studentId);
+
+            expect(mockApplicationService.getPostIdsByStudent).toHaveBeenCalledWith(studentId);
+            expect(result.data).toHaveLength(0);
+            expect(result.total).toBe(0);
+        });
+
+        it('should apply additional filters along with post IDs from applications', async () => {
+            const postIds = [new Types.ObjectId('507f1f77bcf86cd799439011')];
+            const mockPosts = [createMockPost({ _id: postIds[0], sector: 'IT' })];
+            const paginationResult = {
+                data: mockPosts,
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockApplicationService.getPostIdsByStudent.mockResolvedValue(postIds);
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
+
+            const query = {
+                page: 1,
+                limit: 10,
+                sector: 'IT',
+            };
+
+            const result = await service.findAllByStudent(query as any, studentId);
+
+            expect(mockApplicationService.getPostIdsByStudent).toHaveBeenCalledWith(studentId);
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0].sector).toBe('IT');
+        });
+
+        it('should handle pagination correctly when there are multiple pages', async () => {
+            const postIds = Array.from(
+                { length: 25 },
+                (_, i) => new Types.ObjectId(`507f1f77bcf86cd7994390${String(i).padStart(2, '0')}`),
+            );
+            const mockPosts = postIds.slice(10, 20).map((id) => createMockPost({ _id: id }));
+            const paginationResult = {
+                data: mockPosts,
+                total: 25,
+                page: 2,
+                limit: 10,
+                totalPages: 3,
+                hasNext: true,
+                hasPrev: true,
+            };
+
+            mockApplicationService.getPostIdsByStudent.mockResolvedValue(postIds);
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
+
+            const result = await service.findAllByStudent({ page: 2, limit: 10 } as any, studentId);
+
+            expect(mockApplicationService.getPostIdsByStudent).toHaveBeenCalledWith(studentId);
+            expect(result.data).toHaveLength(10);
+            expect(result.page).toBe(2);
+            expect(result.totalPages).toBe(3);
+            expect(result.hasNext).toBe(true);
+            expect(result.hasPrev).toBe(true);
+        });
+
+        it('should apply sorting when sort parameter is provided', async () => {
+            const postIds = [
+                new Types.ObjectId('507f1f77bcf86cd799439011'),
+                new Types.ObjectId('507f1f77bcf86cd799439012'),
+            ];
+            const mockPosts = [
+                createMockPost({ _id: postIds[1], title: 'B Post' }),
+                createMockPost({ _id: postIds[0], title: 'A Post' }),
+            ];
+            const paginationResult = {
+                data: mockPosts,
+                total: 2,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockApplicationService.getPostIdsByStudent.mockResolvedValue(postIds);
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
+
+            const result = await service.findAllByStudent({ page: 1, limit: 10, sort: '-title' } as any, studentId);
+
+            expect(mockApplicationService.getPostIdsByStudent).toHaveBeenCalledWith(studentId);
+            expect(mockPaginationService.paginate).toHaveBeenCalledTimes(1);
+            expect(result.data).toHaveLength(2);
+        });
+
+        it('should populate company fields in returned posts', async () => {
+            const postIds = [new Types.ObjectId('507f1f77bcf86cd799439011')];
+            const mockPosts = [createMockPost({ _id: postIds[0] })];
+            const paginationResult = {
+                data: mockPosts,
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockApplicationService.getPostIdsByStudent.mockResolvedValue(postIds);
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
+
+            await service.findAllByStudent({ page: 1, limit: 10 } as any, studentId);
+
+            expect(mockPaginationService.paginate).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.anything(),
+                1,
+                10,
+                [
+                    {
+                        path: 'company',
+                        select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+                    },
+                ],
+                expect.anything(),
+            );
         });
     });
 });

@@ -11,7 +11,7 @@ import {
     UseGuards,
     ValidationPipe,
     Query,
-    Logger,
+    Req,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';
@@ -26,6 +26,7 @@ import { PaginationDto } from 'src/common/pagination/dto/pagination.dto';
 import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
 import { plainToInstance } from 'class-transformer';
 import { UpdatePostDto } from './dto/updatePost';
+import type { Request } from 'express';
 
 /**
  * Controller responsible for handling post-related endpoints.
@@ -35,10 +36,36 @@ export class PostController {
     constructor(private readonly postService: PostService) {}
 
     /**
+     * Returns a paginated list of posts the student applied to.
+     * This endpoint is protected and only accessible to authenticated users
+     * with the `STUDENT` role.
+     * @param query - Pagination parameters (page, limit, student)
+     * @param req - Request object containing authenticated user info
+     * @returns A paginated result containing `PostDto` instances
+     */
+    @Get('/by-student')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(AuthGuard)
+    @Roles(Role.STUDENT)
+    async findAllWithApplications(
+        @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        query: PaginationDto,
+        @Req() req: any,
+    ): Promise<PaginationResult<PostDto>> {
+        const posts = await this.postService.findAllByStudent(query, req.user.sub);
+
+        return {
+            ...posts,
+            data: posts.data.map((post) => plainToInstance(PostDto, post)),
+        };
+    }
+
+    /**
      * Return a paginated list of posts. Query parameters `page` and `limit`
      * are read via `PaginationDto` and validated automatically.
      *
      * @param query - Pagination parameters (page, limit)
+     * @param req
      * @returns A paginated result containing `PostDto` instances
      */
     @Get()
@@ -46,8 +73,14 @@ export class PostController {
     async findAll(
         @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
         query: PaginationDto,
+        @Req() req: Request,
     ): Promise<PaginationResult<PostDto>> {
-        const posts = await this.postService.findAll(query);
+        let showHidden = false;
+
+        if (req.user?.role === Role.COMPANY && req.user?.sub === query.company) {
+            showHidden = true;
+        }
+        const posts = await this.postService.findAll(query, showHidden);
 
         return {
             ...posts,

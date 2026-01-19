@@ -33,6 +33,32 @@ export class StudentDto {
     @Expose()
     isFirstTime: boolean;
 
+    @Expose()
+    role: 'STUDENT';
+    /**
+     * A short tagline or motto for the student.
+     */
+    @Expose()
+    tagLine?: string;
+
+    /**
+     * A detailed biography or description of the student.
+     */
+    @Expose()
+    biography?: string;
+
+    /**
+     * Student's profile picture object in the storage service.
+     */
+    @Expose()
+    profilePicture?: string;
+
+    /**
+     * Student's default cv object in the storage service.
+     */
+    @Expose()
+    defaultCv?: string;
+
     /**
      * Create a partial `StudentDto` instance.
      * @param partial Optional partial data to assign to the DTO.

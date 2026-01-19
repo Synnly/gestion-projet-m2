@@ -1,15 +1,16 @@
 import { useState } from 'react';
+import { UseAuthFetch } from '../../hooks/useAuthFetch';
 
 const API_URL = import.meta.env.VITE_APIURL;
 export const StudentSignup = () => {
-    const [success, setsuccess] = useState<String>('');
+    const [success, setsuccess] = useState<string>('');
+    const authFetch = UseAuthFetch();
     const createStudent = async () => {
         try {
-            await fetch(`${API_URL}/api/students`, {
+            await authFetch(`${API_URL}/api/students`, {
                 method: 'POST',
-                credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
+                data: JSON.stringify({
                     role: 'STUDENT',
                     firstName: 'toto',
                     lastName: 'titi',

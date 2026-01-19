@@ -1,10 +1,9 @@
 import './App.css';
-import { createBrowserRouter, redirect, RouterProvider, Navigate } from 'react-router';
+import { createBrowserRouter, redirect, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CompanySignup } from './auth/companySignup/index';
 import { Login } from './auth/Login/index';
 import { CompleteProfil } from './company/completeProfil/index';
-import { CompanyDashboard } from './company/dashboard/index';
 import { CompanyProfile } from './company/profile/index';
 import { EditCompanyProfile } from './company/editProfile/index';
 import { ChangePassword } from './company/editProfile/changePassword/index';
@@ -17,12 +16,12 @@ import { ForgotPassword } from './user/ForgotPassword';
 import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
 import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
+import { CompanyForumRoute } from './protectedRoutes/companyForumRoute';
 import { InternshipPage } from './pages/internship/InternshipPage';
 import InternshipDetailPage from './pages/internship/InternshipDetailPage';
 import CreatePostPage from './pages/posts/CreatePostPage';
 import UpdatePostPage from './pages/posts/UpdatePostPage';
 import { updatePostLoader } from './loaders/updatePostLoader';
-import { DashboardInternshipList } from './company/dashboard/intershipList/DashboardInternshipList';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { InternshipApply } from './pages/internship/InternshipApply';
@@ -38,11 +37,19 @@ import FAQ from './pages/legal/FAQ';
 import Help from './pages/legal/Help';
 import { internshipLoader } from './loaders/intershipLoader';
 import { AdminDashboard } from './admin/dashboard';
-import ApplicationPage from './pages/applications/ApplicationPage';
-import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
-import { StudentDashboard } from './student/dashboard';
-import { ApplicationList } from './company/dashboard/applicationList/ApplicationList.tsx';
+import { ChangePassword as StudentChangePassword } from './student/changePassword';
+import { ApplicationList } from './company/applicationList/ApplicationList.tsx';
+import TopicDetailPage from './pages/forum/TopicDetailPage';
+import { MainForumPage } from './pages/forums/MainForumPage.tsx';
+import { ForumPage } from './pages/forums/ForumPage.tsx';
+import LandingPage from './pages/landing-page/LandingPage.tsx';
+import { EditStudentProfile } from './student/profile/EditStudentProfile.tsx';
+import { StudentProfile } from './student/profile/StudentProfile.tsx';
+import { PublicStudentProfile } from './student/profile/PublicStudentProfile.tsx';
+import { PendingValidation } from './pages/PendingValidation.tsx';
 import ImportStudent from './admin/importStudent.tsx';
+
+const VITE_API = import.meta.env.VITE_APIURL;
 
 function App() {
     userStore.persist.rehydrate();
@@ -56,13 +63,13 @@ function App() {
             children: [
                 {
                     path: 'logout',
-                    loader: () => {
+                    loader: async () => {
                         userStore.getState().logout();
+                        await fetch(`${VITE_API}/api/auth/logout`, { method: 'POST', credentials: 'include' });
                         return redirect('/signin');
                     },
                 },
 
-                { index: true, element: <InternshipPage /> },
                 { path: 'about', element: <About /> },
                 { path: 'contact', element: <Contact /> },
                 { path: 'faq', element: <FAQ /> },
@@ -71,10 +78,11 @@ function App() {
                 { path: 'privacy', element: <PrivacyPolicy /> },
                 { path: 'cookies', element: <CookiePolicy /> },
                 { path: 'safety', element: <SafetyCompliance /> },
-                { index: true, element: <InternshipPage />, handle: { title: 'Accueil' } },
+
                 {
                     loader: notAuthMiddleWare,
                     children: [
+                        { index: true, element: <LandingPage />, handle: { title: 'Accueil - Stagora' } },
                         { path: 'signin', element: <Login />, handle: { title: 'Connectez-vous' } },
                         {
                             path: 'forgot-password',
@@ -93,6 +101,13 @@ function App() {
                     element: <AuthRoutes />,
                     children: [
                         { path: 'verify', element: <VerifyEmail />, handle: { title: 'Vérifier votre mail' } },
+                        { path: 'home', element: <InternshipPage />, handle: { title: 'Accueil' } },
+
+                        {
+                            path: 'pending-validation',
+                            element: <PendingValidation />,
+                            handle: { title: 'Compte en cours de validation' },
+                        },
                         {
                             path: 'complete-profil',
                             element: <CompleteProfil />,
@@ -102,18 +117,6 @@ function App() {
                             path: 'company',
                             element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
                             children: [
-                                {
-                                    path: 'dashboard',
-                                    handle: { title: 'Tableau de bord entreprise' },
-                                    element: <CompanyDashboard />,
-                                    children: [
-                                        {
-                                            index: true,
-                                            element: <DashboardInternshipList />,
-                                        },
-                                        { path: 'post/:postId/applications', element: <ApplicationList /> },
-                                    ],
-                                },
                                 {
                                     path: 'profile',
                                     element: <CompanyProfile />,
@@ -130,28 +133,54 @@ function App() {
                                     handle: { title: 'Changer le mot de passe' },
                                 },
                                 {
-                                    element: <VerifiedRoutes redirectPath="/company/dashboard" />,
-                                    children: [],
-                                },
-                                {
                                     path: 'offers/add',
                                     element: <CreatePostPage />,
                                     handle: { title: 'Créer une offre' },
                                 },
+                            ],
+                        },
+                        {
+                            path: 'student',
+                            element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} />,
+                            children: [
                                 {
-                                    path: 'offers/:postId/edit',
-                                    loader: updatePostLoader,
-                                    element: <UpdatePostPage />,
-                                    handle: { title: 'Modifier une offre' },
+                                    path: 'profile',
+                                    children: [
+                                        {
+                                            index: true,
+                                            element: <StudentProfile />,
+                                            handle: { title: 'Profil étudiant' },
+                                        },
+                                        {
+                                            path: 'edit',
+                                            element: <EditStudentProfile />,
+                                            handle: { title: 'Éditer le profil' },
+                                        },
+                                        {
+                                            path: 'change-password',
+                                            element: (
+                                                <StudentChangePassword
+                                                    subtitle="Choisissez un nouveau mot de passe sécurisé"
+                                                    isFirstTime={false}
+                                                />
+                                            ),
+                                            handle: { title: 'Changer le mot de passe' },
+                                        },
+                                    ],
                                 },
                             ],
+                        },
+                        {
+                            path: 'student/public/:studentId',
+                            element: <PublicStudentProfile />,
+                            handle: { title: 'Profil étudiant' },
                         },
                         {
                             path: 'internship',
                             children: [
                                 {
-                                    element: <VerifiedRoutes redirectPath="/" />,
-                                    children: [],
+                                    index: true,
+                                    element: <VerifiedRoutes redirectPath="/home" />,
                                 },
                                 {
                                     path: 'detail/:id',
@@ -167,6 +196,23 @@ function App() {
                                         },
                                     ],
                                     handle: { title: 'Postuler à un stage' },
+                                },
+                                {
+                                    path: ':id',
+                                    element: <ProtectedRoutesByRole allowedRoles={['COMPANY']} />,
+                                    children: [
+                                        {
+                                            index: true,
+                                            element: <VerifiedRoutes redirectPath="/home" />,
+                                        },
+                                        { path: 'applications', element: <ApplicationList /> },
+                                        {
+                                            path: 'edit',
+                                            loader: updatePostLoader,
+                                            element: <UpdatePostPage />,
+                                            handle: { title: 'Modifier une offre' },
+                                        },
+                                    ],
                                 },
                             ],
                         },
@@ -187,18 +233,39 @@ function App() {
                             element: <ProtectedRoutesByRole allowedRoles={['STUDENT']} redirectPath="/" />,
                             children: [
                                 {
-                                    path: 'dashboard',
-                                    element: <StudentDashboard />,
-                                    children: [
-                                        { index: true, element: <ApplicationPage /> },
-                                        { path: ':applicationId', element: <ApplicationDetailPage /> },
-                                    ],
+                                    path: 'changePassword',
+                                    element: (
+                                        <StudentChangePassword
+                                            subtitle="Pour des raisons de sécurité, vous devez changer votre mot de passe lors de votre première
+                                                            connexion."
+                                            isFirstTime={true}
+                                        />
+                                    ),
+                                    handle: { title: 'Changer le mot de passe' },
                                 },
                             ],
                         },
                         {
-                            path: 'applications',
-                            element: <Navigate to="/student/dashboard" replace />,
+                            path: 'forums',
+                            children: [
+                                { index: true, element: <MainForumPage /> },
+                                {
+                                    path: 'general',
+
+                                    children: [
+                                        { index: true, element: <ForumPage isGeneral={true} /> },
+                                        { path: 'topics/:forumId/:topicId/', element: <TopicDetailPage /> },
+                                    ],
+                                },
+                                {
+                                    path: ':companyId',
+                                    element: <CompanyForumRoute />,
+                                    children: [
+                                        { index: true, element: <ForumPage /> },
+                                        { path: 'topics/:forumId/:topicId', element: <TopicDetailPage /> },
+                                    ],
+                                },
+                            ],
                         },
                     ],
                 },

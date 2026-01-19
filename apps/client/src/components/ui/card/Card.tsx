@@ -1,5 +1,6 @@
 import React from 'react';
 import logoPlaceholder from '../../../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg';
+import { EyeOff } from 'lucide-react';
 export interface CardProps {
     id?: string;
     title: string;
@@ -10,6 +11,7 @@ export interface CardProps {
     isSelected?: boolean;
     onClick?: (id?: string) => void;
     className?: string;
+    isVisible?: boolean;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -22,6 +24,7 @@ export const Card: React.FC<CardProps> = ({
     isSelected,
     onClick,
     className = '',
+    isVisible,
 }) => {
     const rootClass = `card ${isSelected ? 'shadow-xl ring-4 ring-accent/20' : 'hover:shadow-md'} ${className}`;
 
@@ -30,18 +33,24 @@ export const Card: React.FC<CardProps> = ({
             <div className="card-body p-3">
                 <div className="flex items-center gap-4">
                     <div className="avatar">
-                        <div className="w-12 rounded-lg bg-neutral-300 flex items-center justify-center">
+                        <div className="w-12 flex items-center justify-center">
                             <img
                                 src={imageSrc ?? logoPlaceholder}
                                 alt={imageAlt ?? title}
-                                className="h-7 w-7 object-cover"
+                                className="object-cover rounded"
                             />
                         </div>
                     </div>
                     <div className="flex-1">
                         <div className="flex items-center justify-between">
                             <p className="text-base font-bold text-base-content">{title}</p>
-                            {meta ? <div className="text-xs text-base-content/60">{meta}</div> : null}
+                            {isVisible ? (
+                                meta ? (
+                                    <div className="text-xs text-base-content/60 text-nowrap">{meta}</div>
+                                ) : null
+                            ) : (
+                                <EyeOff size={16} />
+                            )}
                         </div>
                         {subtitle ? <p className="text-sm text-base-content/70">{subtitle}</p> : null}
                     </div>

@@ -9,8 +9,9 @@ import { ConfigService } from '@nestjs/config';
 import { Role } from '../../../src/common/roles/roles.enum';
 import * as bcrypt from 'bcrypt';
 import { InvalidCredentialsException } from '../../../src/common/exceptions/invalidCredentials.exception';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { User } from '../../../src/user/user.schema';
+import { MailerService } from '../../../src/mailer/mailer.service';
 
 describe('AuthService', () => {
     let service: AuthService;
@@ -44,6 +45,10 @@ describe('AuthService', () => {
         findOne: jest.fn(),
     };
 
+    const mockMailerService = {
+        sendVerificationEmail: jest.fn(),
+    };
+
     beforeEach(async () => {
         refreshTokenModel = {
             create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }),
@@ -74,6 +79,10 @@ describe('AuthService', () => {
                 {
                     provide: 'REFRESH_JWT_SERVICE',
                     useValue: mockRefreshJwtService,
+                },
+                {
+                    provide: MailerService,
+                    useValue: mockMailerService,
                 },
                 {
                     provide: ConfigService,
@@ -135,6 +144,10 @@ describe('AuthService', () => {
                         {
                             provide: ConfigService,
                             useValue: invalidConfigService,
+                        },
+                        {
+                            provide: MailerService,
+                            useValue: mockMailerService,
                         },
                     ],
                 }).compile(),
@@ -365,6 +378,51 @@ describe('AuthService', () => {
             expect(refreshTokenModel.deleteOne).toHaveBeenCalledWith({ _id: payload._id });
         });
     });
+
+    describe('login - ban check', () => {
+        it('should throw ForbiddenException when user is banned and login is called', async () => {
+            const company = await createMockCompany();
+            const banReason = 'Inappropriate behavior';
+            company.ban = { reason: banReason };
+            mockUserModel.findOne.mockResolvedValue(company);
+
+            await expect(service.login(company.email, company.plainPassword)).rejects.toThrow(ForbiddenException);
+        });
+
+        it('should throw ForbiddenException with correct ban reason message when user is banned and login is called', async () => {
+            const company = await createMockCompany();
+            const banReason = 'Violation of terms';
+            company.ban = { reason: banReason };
+            mockUserModel.findOne.mockResolvedValue(company);
+
+            try {
+                await service.login(company.email, company.plainPassword);
+                fail('Should have thrown ForbiddenException');
+            } catch (error) {
+                expect(error).toBeInstanceOf(ForbiddenException);
+                expect(error.message).toContain(banReason);
+                expect(error.message).toContain(company.email);
+            }
+        });
+
+        it('should not throw ForbiddenException when user is not banned and login is called with valid credentials', async () => {
+            const company = await createMockCompany();
+            company.ban = null;
+            mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
+
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(company.email, company.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+        });
+    });
 });
 
 const createMockCompany = async (overrides = {}) => {
@@ -375,6 +433,7 @@ const createMockCompany = async (overrides = {}) => {
         email: 'test@company.com',
         password: hashedPassword,
         plainPassword: password,
+        ban: null as any,
         ...overrides,
     };
 };

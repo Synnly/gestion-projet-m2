@@ -8,6 +8,7 @@ import { userStore } from '../../store/userStore';
 import { useUploadFile } from '../../hooks/useUploadFile';
 import { toast } from 'react-toastify';
 import type { Internship } from '../../types/internship.types';
+import { UseAuthFetch } from '../../hooks/useAuthFetch';
 
 const getfileExtension = (file: File | null): string | null => {
     if (!file) return null;
@@ -44,7 +45,7 @@ export const InternshipApply = () => {
                     return null;
                 }
             }
-            let errorMessage = `Erreur HTTP ${res.status}`;
+            const errorMessage = `Erreur HTTP ${res.status}`;
             throw new Error(errorMessage);
         },
 
@@ -54,12 +55,11 @@ export const InternshipApply = () => {
     const { data, isLoading } = useQuery<Internship>({
         queryKey: ['internship', internshipId],
         queryFn: async () => {
-            const res = await fetch(`${import.meta.env.VITE_APIURL}/api/company/0/posts/${internshipId}`, {
+            const res = await authFetch(`${import.meta.env.VITE_APIURL}/api/company/0/posts/${internshipId}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                credentials: 'include',
             });
             if (!res.ok) {
                 throw new Error('Failed to fetch internship data');
@@ -70,21 +70,21 @@ export const InternshipApply = () => {
 
     const [cv, setCv] = useState<File | null>(null);
     const [coverLetter, setCoverLetter] = useState<File | null>(null);
+    const authFetch = UseAuthFetch();
     const mutation = useMutation({
         mutationFn: async () => {
             if (!cv || (data?.isCoverLetterRequired && !coverLetter)) return;
-            const fetchApply = await fetch(`${import.meta.env.VITE_APIURL}/api/application`, {
+            const fetchApply = await authFetch(`${import.meta.env.VITE_APIURL}/api/application`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
+                data: JSON.stringify({
                     studentId: payload?.id,
                     postId: internshipId,
                     cvExtension: getfileExtension(cv),
                     lmExtension: getfileExtension(coverLetter),
                 }),
-                credentials: 'include',
             });
             if (!fetchApply.ok) {
                 return false;
@@ -101,16 +101,29 @@ export const InternshipApply = () => {
         e.preventDefault();
         if (!data) return;
         if (!cv || (data.isCoverLetterRequired && !coverLetter)) return;
+        
+        if (!data.isVisible) {
+            toast.error('Cette offre n\'est plus disponible.', { toastId: 'post-not-visible-error' });
+            navigate('/');
+            return;
+        }
+        
         const result = await mutation.mutateAsync();
         if (result) {
             setCoverLetter(null);
             setCv(null);
             toast.success('Candidature envoyée avec succès.', { toastId: 'application-success' });
-            navigate('/');
+            navigate('/home');
         }
     }
     if (application) {
         toast.error('Vous avez déjà postulé à cette offre.', { toastId: 'already-applied-error' });
+        return <Navigate to="/home" replace={true} />;
+    }
+    
+    // Vérifier que l'annonce est visible
+    if (data && !data.isVisible) {
+        toast.error('Cette offre n\'est plus disponible.', { toastId: 'post-not-visible-error' });
         return <Navigate to="/" replace={true} />;
     }
     return (
