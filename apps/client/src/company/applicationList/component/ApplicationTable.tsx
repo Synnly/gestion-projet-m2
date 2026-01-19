@@ -295,7 +295,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                             aria-labelledby="confirm-modal-title"
                         >
                             <h3 id="confirm-modal-title" className="font-bold text-lg mb-4">
-                                Confirmation de {confirmModal.newStatus === ApplicationStatusEnum.ACCEPTED ? 'l\'acceptation' : 'le rejet'}
+                                Confirmation de {confirmModal.newStatus === ApplicationStatusEnum.ACCEPTED ? 'l\'acceptation' : 'du rejet'}
                             </h3>
                             <p className="py-4">
                                 Voulez-vous vraiment {confirmModal.newStatus === ApplicationStatusEnum.ACCEPTED ? 'accepter' : 'rejeter'} la candidature de{' '}
