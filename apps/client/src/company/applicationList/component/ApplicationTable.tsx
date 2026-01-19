@@ -247,6 +247,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                                                         onClick={() => openConfirmModal(app._id, ApplicationStatusEnum.ACCEPTED, `${app.student.firstName} ${app.student.lastName}`)}
                                                                         disabled={updatingStatus === app._id}
                                                                         title="Accepter"
+                                                                        aria-label="Accepter la candidature"
                                                                     >
                                                                         <Check strokeWidth={2} size={18} />
                                                                     </button>
@@ -255,6 +256,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                                                         onClick={() => openConfirmModal(app._id, ApplicationStatusEnum.REJECTED, `${app.student.firstName} ${app.student.lastName}`)}
                                                                         disabled={updatingStatus === app._id}
                                                                         title="Rejeter"
+                                                                        aria-label="Rejeter la candidature"
                                                                     >
                                                                         <X strokeWidth={2} size={18} />
                                                                     </button>
