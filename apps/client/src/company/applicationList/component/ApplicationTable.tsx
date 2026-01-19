@@ -292,8 +292,13 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
 
                 {confirmModal?.open && (
                     <div className="modal modal-open">
-                        <div className="modal-box">
-                            <h3 className="font-bold text-lg mb-4">
+                        <div
+                            className="modal-box"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="confirm-modal-title"
+                        >
+                            <h3 id="confirm-modal-title" className="font-bold text-lg mb-4">
                                 Confirmation de {confirmModal.newStatus === ApplicationStatusEnum.ACCEPTED ? 'l\'acceptation' : 'le rejet'}
                             </h3>
                             <p className="py-4">
