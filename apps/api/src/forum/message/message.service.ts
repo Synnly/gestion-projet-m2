@@ -45,7 +45,7 @@ export class MessageService {
             { new: true },
         );
         if (message.parentMessageId) {
-            const replyMessage = await this.messageModel.findById(message.parentMessageId).populate('authorId', 'firstName lastName name ban').exec();
+            const replyMessage = await this.messageModel.findById(message.parentMessageId).populate('authorId').exec();
             if (replyMessage && replyMessage.authorId._id.toString() !== createMessageDto.authorId.toString()) {
                 const dto = new CreateNotificationDto();
                 dto.userId = replyMessage.authorId._id;

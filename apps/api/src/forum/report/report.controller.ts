@@ -24,7 +24,6 @@ import { Roles } from '../../common/roles/roles.decorator';
 import { Role } from '../../common/roles/roles.enum';
 import { ParseObjectIdPipe } from '../../validators/parseObjectId.pipe';
 
-@UseGuards(AuthGuard)
 @Controller('/api/reports')
 export class ReportController {
     constructor(private readonly reportService: ReportService) {}
@@ -36,6 +35,7 @@ export class ReportController {
      * @returns The created report
      */
     @Post()
+    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.CREATED)
     async createReport(
         @Body(ValidationPipe) createReportDto: CreateReportDto,
@@ -70,6 +70,7 @@ export class ReportController {
      * @returns List of reports created by the user
      */
     @Get('my-reports')
+    @UseGuards(AuthGuard)
     async getMyReports(@Req() req: Request) {
         const userId = req.user?.sub;
         if (!userId) throw new BadRequestException('User not authenticated');

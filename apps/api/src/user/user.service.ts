@@ -52,7 +52,7 @@ export class UserService {
 
         // Get all messages from this user (using regex for MongoDB compatibility)
         const userMessages = await this.messageModel
-            .find({ authorId: new RegExp(`^${userId}$`) })
+            .find({ authorId: userId.toString() })
             .select('_id')
             .exec();
 
