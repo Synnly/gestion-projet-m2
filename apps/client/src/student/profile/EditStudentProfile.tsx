@@ -82,8 +82,8 @@ export const EditStudentProfile = () => {
             reset({
                 tagLine: profile?.tagLine ?? '',
                 biography: profile?.biography ?? '',
-                profilePicture: profilePictureFile ?? undefined,
-                defaultCv: defaultCvFile ?? undefined,
+                profilePicture: (profilePictureFile as any) ?? undefined,
+                defaultCv: (defaultCvFile as any) ?? undefined,
             });
         }
     }, [profile, reset]);

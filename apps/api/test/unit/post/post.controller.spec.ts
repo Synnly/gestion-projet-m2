@@ -74,6 +74,12 @@ describe('PostController', () => {
     });
 
     describe('findAll', () => {
+        const mockRequest = {
+            user: {
+                sub: 'someUserId',
+            },
+        };
+
         it('should return a paginated result of posts when findAll is called', async () => {
             const paginationResult = {
                 data: [mockPost],
@@ -86,7 +92,7 @@ describe('PostController', () => {
             };
             mockPostService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll({ page: 1, limit: 10 } as any);
+            const result = await controller.findAll({ page: 1, limit: 10 } as any, mockRequest as any);
 
             expect(result.data).toHaveLength(1);
             expect(result.data[0].title).toBe('Développeur Full Stack');
@@ -106,7 +112,7 @@ describe('PostController', () => {
             };
             mockPostService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll({ page: 1, limit: 10 } as any);
+            const result = await controller.findAll({ page: 1, limit: 10 } as any, mockRequest as any);
 
             expect(result.data).toHaveLength(0);
             expect(result.total).toBe(0);
@@ -133,7 +139,7 @@ describe('PostController', () => {
             };
             mockPostService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll({ page: 1, limit: 10 } as any);
+            const result = await controller.findAll({ page: 1, limit: 10 } as any, mockRequest as any);
 
             expect(result.data).toHaveLength(2);
             expect(result.data[0].title).toBe('Développeur Full Stack');
