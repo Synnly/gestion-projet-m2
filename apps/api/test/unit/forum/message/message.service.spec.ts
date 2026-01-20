@@ -124,12 +124,12 @@ describe('MessageService', () => {
 
             expect(result).toEqual(expectedResult);
             expect(paginationService.paginate).toHaveBeenCalledWith(messageModel, { topicId: mockTopic._id }, 1, 10, [
-                { path: 'authorId', select: 'firstName lastName name logo role ' },
+                { path: 'authorId', select: 'firstName lastName name logo role ban' },
                 {
                     path: 'parentMessageId',
                     populate: {
                         path: 'authorId',
-                        select: 'firstName lastName name',
+                        select: 'firstName lastName name ban',
                     },
                 },
             ]);

@@ -5,10 +5,14 @@ import { CreateAdminDto } from './dto/createAdminDto';
 import { Model } from 'mongoose';
 import { Role } from '../common/roles/roles.enum';
 import { AdminUserDocument } from '../user/user.schema';
+import { Report, ReportDocument } from '../forum/report/report.schema';
 
 @Injectable()
 export class AdminService {
-    constructor(@InjectModel(Admin.name) private readonly adminModel: Model<AdminUserDocument>) {}
+    constructor(
+        @InjectModel(Admin.name) private readonly adminModel: Model<AdminUserDocument>,
+        @InjectModel(Report.name) private readonly reportModel: Model<ReportDocument>,
+    ) {}
 
     /**
      * Count the total number of admin records in the database.

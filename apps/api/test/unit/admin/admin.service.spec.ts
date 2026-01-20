@@ -3,6 +3,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { AdminService } from '../../../src/admin/admin.service';
 import { Admin } from '../../../src/admin/admin.schema';
 import { CreateAdminDto } from '../../../src/admin/dto/createAdminDto';
+import { Report } from '../../../src/forum/report/report.schema';
 
 describe('AdminService', () => {
     let service: AdminService;
@@ -27,6 +28,10 @@ describe('AdminService', () => {
                 AdminService,
                 {
                     provide: getModelToken(Admin.name),
+                    useValue: MockAdminModel,
+                },
+                {
+                    provide: getModelToken(Report.name),
                     useValue: MockAdminModel,
                 },
             ],
