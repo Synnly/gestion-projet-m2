@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { getAllReports, REPORT_REASON_LABELS, updateReportStatus, deleteReport } from '../api/reports';
+import { getAllReports, REPORT_REASON_LABELS, updateReportStatus } from '../api/reports';
 import type { Report } from '../api/reports';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -215,6 +215,7 @@ export default function ReportsList() {
 
     return (
         <div className="container mx-auto p-6">
+            <h1 className="text-2xl font-bold mb-6 text-base-content">Signalements</h1>
             <div className="mb-4 flex gap-2 items-center">
                 <label className="label">
                     <span className="label-text font-semibold">Filtrer par statut:</span>

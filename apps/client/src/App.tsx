@@ -47,7 +47,6 @@ import { EditStudentProfile } from './student/profile/EditStudentProfile.tsx';
 import { StudentProfile } from './student/profile/StudentProfile.tsx';
 import { PublicStudentProfile } from './student/profile/PublicStudentProfile.tsx';
 import { PendingValidation } from './pages/PendingValidation.tsx';
-import ImportStudent from './admin/importStudent.tsx';
 
 const VITE_API = import.meta.env.VITE_APIURL;
 

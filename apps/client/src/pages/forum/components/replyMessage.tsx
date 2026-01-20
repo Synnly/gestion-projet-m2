@@ -12,9 +12,11 @@ export const ReplyMessage = ({ replyMessage }: replyMessageProps) => {
     
     const authorName = isAuthorBanned
         ? '[utilisateur supprimé]'
-        : replyMessage.authorId.name
+        : 'name' in replyMessage.authorId && replyMessage.authorId.name
           ? replyMessage.authorId.name
-          : `${replyMessage.authorId.firstName} ${replyMessage.authorId.lastName}`;
+          : 'firstName' in replyMessage.authorId && 'lastName' in replyMessage.authorId
+            ? `${replyMessage.authorId.firstName} ${replyMessage.authorId.lastName}`.trim()
+            : 'Utilisateur';
     
     const messageContent = isAuthorBanned ? '[message supprimé]' : replyMessage.content;
     

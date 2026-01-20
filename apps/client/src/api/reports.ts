@@ -2,15 +2,17 @@ import { UseAuthFetch } from '../hooks/useAuthFetch';
 
 const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
 
-export enum ReportReason {
-    SPAM = 'spam',
-    HARASSMENT = 'harassment',
-    HATE_SPEECH = 'hate_speech',
-    INAPPROPRIATE_CONTENT = 'inappropriate_content',
-    MISINFORMATION = 'misinformation',
-    OFF_TOPIC = 'off_topic',
-    OTHER = 'other',
-}
+export const ReportReason = {
+    SPAM: 'spam',
+    HARASSMENT: 'harassment',
+    HATE_SPEECH: 'hate_speech',
+    INAPPROPRIATE_CONTENT: 'inappropriate_content',
+    MISINFORMATION: 'misinformation',
+    OFF_TOPIC: 'off_topic',
+    OTHER: 'other',
+} as const;
+
+export type ReportReason = (typeof ReportReason)[keyof typeof ReportReason];
 
 export type Report = {
     _id: string;
