@@ -9,16 +9,8 @@ export const centerNavItems: NavItem[] = [
         role: ['ADMIN', 'STUDENT', 'COMPANY'],
     },
     {
-        key: 'admin-dashboard',
-        title: 'ADMINISTRATION',
-        to: '/admin/dashboard',
-        type: 'link',
-        role: ['ADMIN'],
-    },
-
-     {
         key: 'admin-link', 
-        title: 'Dashboard admin', 
+        title: 'Administration', 
         to: '/admin/dashboard',
         type: 'link',
         role: ['ADMIN'],

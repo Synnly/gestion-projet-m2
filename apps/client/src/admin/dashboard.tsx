@@ -10,18 +10,23 @@ export function AdminDashboard() {
     const tabs = [
         {
             id: 'import-students',
-            label: 'Import Étudiants',
+            label: 'Import étudiants',
             content: <ImportStudent />,
         },
         {
             id: 'validate-companies',
-            label: 'Validation Entreprises',
+            label: 'Validation entreprises',
             content: <ValidateCompanies />,
         },
         {
             id: 'stats',
             label: 'Statistiques',
             content: <StatsPage />,
+        },
+        {
+            id: 'moderation',
+            label: 'Modération',
+            content: <ReportsList />,
         }
     ];
 
