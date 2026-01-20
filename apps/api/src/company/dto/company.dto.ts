@@ -79,6 +79,20 @@ export class CompanyDto {
     posts: PostDto[];
 
     @Expose()
+    description?: string;
+    createdAt: Date;
+
+    @Expose()
+    updatedAt: Date;
+
+    /** Rejection status and reason for the company */
+    @Expose()
+    rejected: {
+        isRejected: boolean;
+        rejectionReason?: string;
+        rejectedAt?: Date;
+        modifiedAt?: Date;
+    };
     role: 'COMPANY';
 
     /**

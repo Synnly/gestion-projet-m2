@@ -3,7 +3,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Topic, TopicDocument } from './topic.schema';
 import { Forum, ForumDocument } from '../forum.schema';
-import { MessageService } from '../message/message.service';
 // import { Message } from '../message/message.schema';
 import { CreateTopicDto } from './dto/createTopic.dto';
 import { UpdateTopicDto } from './dto/updateTopic.dto';

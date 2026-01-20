@@ -40,7 +40,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
             <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-base-content px-8 py-2">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <ItemLink
-                        item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
+                        item={{ key: 'home', title: <Logo className="text-primary" />, to: '/home' }}
                         className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                     />
                     <div className="flex flex-row gap-2">
@@ -59,7 +59,7 @@ export const Navbar = ({ minimal = false }: NavbarProps) => {
         <nav className="sticky top-0 z-50 w-full mx-auto bg-base-100 text-base-content px-8 py-2 border-b-2 border-base-200">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <ItemLink
-                    item={{ key: 'home', title: <Logo className="text-primary" />, to: '/' }}
+                    item={{ key: 'home', title: <Logo className="text-primary" />, to: '/home' }}
                     className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                 />
 

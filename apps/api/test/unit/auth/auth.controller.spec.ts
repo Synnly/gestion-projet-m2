@@ -255,9 +255,10 @@ describe('AuthController', () => {
     describe('logout', () => {
         it('should call authService logout when valid refresh token is in cookies and logout is called', async () => {
             const mockReq = createMockRequest({ refreshToken: 'valid-refresh-token' });
+            const mockRes = createMockResponse();
             mockAuthService.logout.mockResolvedValue(undefined);
 
-            await controller.logout(mockReq as any);
+            await controller.logout(mockReq as any, mockRes as any);
 
             expect(authService.logout).toHaveBeenCalledWith('valid-refresh-token');
             expect(authService.logout).toHaveBeenCalledTimes(1);
@@ -281,9 +282,10 @@ describe('AuthController', () => {
 
         it('should return void when logout is successful', async () => {
             const mockReq = createMockRequest({ refreshToken: 'valid-refresh-token' });
+            const mockRes = createMockResponse();
             mockAuthService.logout.mockResolvedValue(undefined);
 
-            const result = await controller.logout(mockReq as any);
+            const result = await controller.logout(mockReq as any, mockRes as any);
 
             expect(result).toBeUndefined();
         });

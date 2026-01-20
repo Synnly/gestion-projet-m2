@@ -18,13 +18,13 @@ export async function updatePostLoader({ params }: { params: { id?: string } }) 
     const companyId = tokenPayload.id;
     const postId = params.id;
     if (!postId) {
-        throw redirect('/');
+        throw redirect('/home');
     }
     const authFetch = UseAuthFetch();
     const res = await authFetch(`${API_URL}/api/company/${companyId}/posts/${postId}`);
 
     if (!res.ok) {
-        throw redirect('/');
+        throw redirect('/home');
     }
     const post: Internship = await res.json();
 

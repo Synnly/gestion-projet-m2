@@ -11,8 +11,8 @@ export const notAuthMiddleWare = () => {
     if (access) {
         const payload = get(access);
         if (!payload) {
-            return redirect('/');
+            return redirect('/logout');
         }
-        return redirect(`/${payload.role.toLowerCase()}/dashboard`);
+        return redirect(`/home`);
     }
 };
