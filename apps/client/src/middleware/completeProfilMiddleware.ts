@@ -66,7 +66,7 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
         // Vérifier si l'entreprise a modifié son profil après le rejet
         console.log('isRejected:', isRejected, 'rejectedAt:', rejectedAt, 'modifiedAt:', modifiedAt);
         const hasModifiedAfterRejection =
-            isRejected && rejectedAt && modifiedAt && new Date(modifiedAt) > new Date(rejectedAt);
+            !isRejected || (rejectedAt && modifiedAt && new Date(modifiedAt) > new Date(rejectedAt));
         console.log('hasModifiedAfterRejection:', hasModifiedAfterRejection);
         // Si rejeté mais modifié après rejet et profil complet, considérer comme en attente de validation
         if (hasModifiedAfterRejection && isComplete) {
