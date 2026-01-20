@@ -42,7 +42,7 @@ export default function ReportsList() {
     const [selectedUser, setSelectedUser] = useState<{ id: string; email: string } | null>(null);
     const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
     const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
-    const limit = 100; // Reports per page
+    const limit = 50; // Reports per page
 
     const fetchReports = async () => {
         try {
@@ -264,20 +264,20 @@ export default function ReportsList() {
                             <thead>
                                 <tr>
                                     <th className="w-10"></th>
-                                    <th>Utilisateur signalé</th>
+                                    <th className="w-1/2">Utilisateur signalé</th>
                                     <th
-                                        className="cursor-pointer hover:bg-base-300"
+                                        className="w-40 cursor-pointer hover:bg-base-300"
                                         onClick={() => handleSort('reportCount')}
                                     >
                                         Nombre de signalements <SortIcon field="reportCount" />
                                     </th>
                                     <th
-                                        className="cursor-pointer hover:bg-base-300"
+                                        className="w-48 cursor-pointer hover:bg-base-300"
                                         onClick={() => handleSort('latestReport')}
                                     >
                                         Dernier signalement <SortIcon field="latestReport" />
                                     </th>
-                                    <th>Actions</th>
+                                    <th className="w-32">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -338,9 +338,9 @@ export default function ReportsList() {
                                                             <thead>
                                                                 <tr>
                                                                     <th className="w-10"></th>
-                                                                    <th>Message</th>
-                                                                    <th>Signalements</th>
-                                                                    <th>Dernier signalement</th>
+                                                                    <th className="w-1/2">Message</th>
+                                                                    <th className="w-32">Signalements</th>
+                                                                    <th className="w-44">Dernier signalement</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
@@ -388,10 +388,10 @@ export default function ReportsList() {
                                                                                         <table className="table table-xs w-full">
                                                                                             <thead>
                                                                                                 <tr>
-                                                                                                    <th>Date</th>
-                                                                                                    <th>Raison</th>
+                                                                                                    <th className="w-40">Date</th>
+                                                                                                    <th className="w-44">Raison</th>
                                                                                                     <th>Explication</th>
-                                                                                                    <th>Statut</th>
+                                                                                                    <th className="w-36">Statut</th>
                                                                                                 </tr>
                                                                                             </thead>
                                                                                             <tbody>

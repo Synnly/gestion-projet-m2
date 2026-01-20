@@ -49,15 +49,17 @@ export class ReportService {
     }
 
     /**
-     * Get all reports with pagination
-     * @param page - Page number
-     * @param limit - Number of items per page
+     * Get all reports grouped by reported user
+     * Note: This loads all reports from the database and paginates in-memory.
+     * The pagination ensures complete user groups are kept together.
+     * @param page - Page number (1-based)
+     * @param limit - Target number of reports per page (actual count may exceed if a user group is larger)
      * @param status - Filter by status (optional)
-     * @returns Paginated list of reports
+     * @returns Paginated list of reports, grouped by reported user
      */
     async getAllReports(
         page: number = 1,
-        limit: number = 10,
+        limit: number = 50,
         status?: string,
     ): Promise<PaginationResult<Report>> {
         const filter: any = {};
@@ -66,28 +68,102 @@ export class ReportService {
             filter.status = status;
         }
 
-        return this.paginationService.paginate(
-            this.reportModel,
-            filter,
-            page,
-            limit,
-            [
-                {
-                    path: 'messageId',
-                    populate: [
-                        {
-                            path: 'topicId',
-                            select: 'forumId title',
-                        },
-                        {
-                            path: 'authorId',
-                            select: 'email firstName lastName ban',
-                        },
-                    ],
-                },
-            ],
-            '-1',
-        );
+        // Load all reports from database (no DB-level pagination)
+        const allReports = await this.reportModel
+            .find(filter)
+            .populate({
+                path: 'messageId',
+                populate: [
+                    {
+                        path: 'topicId',
+                        select: 'forumId title',
+                    },
+                    {
+                        path: 'authorId',
+                        select: 'email firstName lastName ban',
+                    },
+                ],
+            })
+            .exec();
+
+        // Group reports by reported user (message author)
+        const userGroupsMap = new Map<string, { reports: Report[], latestDate: Date }>();
+        
+        allReports.forEach((report: any) => {
+            const author = report.messageId?.authorId;
+            if (!author) return;
+            
+            const userId = author._id ? author._id.toString() : author.toString();
+            
+            if (!userGroupsMap.has(userId)) {
+                userGroupsMap.set(userId, {
+                    reports: [],
+                    latestDate: new Date(report.createdAt),
+                });
+            }
+            const group = userGroupsMap.get(userId);
+            if (!group) return;
+            
+            group.reports.push(report);
+            
+            const reportDate = new Date(report.createdAt);
+            if (reportDate > group.latestDate) {
+                group.latestDate = reportDate;
+            }
+        });
+
+        // Sort user groups by latest report date (newest first)
+        const sortedUserGroups = Array.from(userGroupsMap.values())
+            .sort((a, b) => b.latestDate.getTime() - a.latestDate.getTime());
+        
+        // Build pages by grouping complete user groups
+        // Each page contains user groups until the cumulative report count reaches/exceeds the limit
+        let cumulativeReportCount = 0;
+        const pageGroups: { reports: Report[], latestDate: Date }[][] = [];
+        let currentPageGroups: { reports: Report[], latestDate: Date }[] = [];
+        
+        for (const userGroup of sortedUserGroups) {
+            // Start a new page if we already have groups and reached the limit
+            if (currentPageGroups.length > 0 && cumulativeReportCount >= limit) {
+                pageGroups.push(currentPageGroups);
+                currentPageGroups = [];
+                cumulativeReportCount = 0;
+            }
+            
+            currentPageGroups.push(userGroup);
+            cumulativeReportCount += userGroup.reports.length;
+        }
+        
+        // Add the last page
+        if (currentPageGroups.length > 0) {
+            pageGroups.push(currentPageGroups);
+        }
+        
+        const totalPages = pageGroups.length;
+        
+        // Get groups for the requested page
+        const selectedGroups = pageGroups[page - 1] || [];
+        
+        // Flatten reports from selected user groups
+        const selectedReports: Report[] = [];
+        selectedGroups.forEach((group) => {
+            const sortedReports = group.reports.sort((a, b) => 
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            selectedReports.push(...sortedReports);
+        });
+
+        const totalReports = allReports.length;
+
+        return {
+            data: selectedReports,
+            page: page,
+            limit: limit,
+            total: totalReports,
+            totalPages,
+            hasNext: page < totalPages,
+            hasPrev: page > 1,
+        };
     }
 
     /**
