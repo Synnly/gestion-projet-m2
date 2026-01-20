@@ -14,6 +14,16 @@ type GroupedReport = {
     userEmail: string;
     userName: string | null;
     userBan: { date: string; reason: string } | undefined;
+    messages: MessageGroup[];
+    reportCount: number;
+    latestReport: Date;
+};
+
+type MessageGroup = {
+    messageId: string;
+    messageContent: string;
+    topicId: string;
+    forumId: string;
     reports: Report[];
     reportCount: number;
     latestReport: Date;
@@ -31,6 +41,7 @@ export default function ReportsList() {
     const [banModalOpen, setBanModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<{ id: string; email: string } | null>(null);
     const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
+    const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
     const limit = 100; // Reports per page
 
     const fetchReports = async () => {
@@ -51,12 +62,13 @@ export default function ReportsList() {
         fetchReports();
     }, [page, statusFilter]);
 
-    // Group reports by reported user
+    // Group reports by reported user, then by message
     const groupedReports = useMemo(() => {
         const grouped = new Map<string, GroupedReport>();
 
         reports.forEach((report) => {
             const userId = report.messageId.authorId._id;
+            const messageId = report.messageId._id;
             
             if (!grouped.has(userId)) {
                 const author = report.messageId.authorId;
@@ -67,16 +79,37 @@ export default function ReportsList() {
                         ? `${author.firstName} ${author.lastName}` 
                         : null,
                     userBan: author.ban,
-                    reports: [],
+                    messages: [],
                     reportCount: 0,
                     latestReport: new Date(report.createdAt),
                 });
             }
 
             const group = grouped.get(userId)!;
-            group.reports.push(report);
+            
+            // Find or create message group
+            let messageGroup = group.messages.find(m => m.messageId === messageId);
+            if (!messageGroup) {
+                messageGroup = {
+                    messageId,
+                    messageContent: report.messageId.content,
+                    topicId: report.messageId.topicId._id,
+                    forumId: report.messageId.topicId.forumId,
+                    reports: [],
+                    reportCount: 0,
+                    latestReport: new Date(report.createdAt),
+                };
+                group.messages.push(messageGroup);
+            }
+            
+            messageGroup.reports.push(report);
+            messageGroup.reportCount++;
             group.reportCount++;
+            
             const reportDate = new Date(report.createdAt);
+            if (reportDate > messageGroup.latestReport) {
+                messageGroup.latestReport = reportDate;
+            }
             if (reportDate > group.latestReport) {
                 group.latestReport = reportDate;
             }
@@ -122,6 +155,16 @@ export default function ReportsList() {
             newExpanded.add(userId);
         }
         setExpandedUsers(newExpanded);
+    };
+
+    const toggleMessageExpansion = (messageId: string) => {
+        const newExpanded = new Set(expandedMessages);
+        if (newExpanded.has(messageId)) {
+            newExpanded.delete(messageId);
+        } else {
+            newExpanded.add(messageId);
+        }
+        setExpandedMessages(newExpanded);
     };
 
     const handleStatusChange = async (reportId: string, newStatus: string) => {
@@ -294,56 +337,101 @@ export default function ReportsList() {
                                                         <table className="table table-sm w-full">
                                                             <thead>
                                                                 <tr>
-                                                                    <th>Date</th>
-                                                                    <th>Raison</th>
+                                                                    <th className="w-10"></th>
                                                                     <th>Message</th>
-                                                                    <th>Statut</th>
+                                                                    <th>Signalements</th>
+                                                                    <th>Dernier signalement</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
-                                                                {group.reports.map((report) => (
-                                                                    <tr key={report._id}>
-                                                                        <td className="whitespace-nowrap text-xs">
-                                                                            {format(new Date(report.createdAt), 'dd/MM/yyyy HH:mm', { locale: fr })}
-                                                                        </td>
-                                                                        <td>
-                                                                            <div className="flex flex-col">
-                                                                                <span className="font-semibold text-sm">
-                                                                                    {REPORT_REASON_LABELS[report.reason]}
+                                                                {group.messages.map((messageGroup) => (
+                                                                    <React.Fragment key={messageGroup.messageId}>
+                                                                        <tr className="hover">
+                                                                            <td>
+                                                                                <button
+                                                                                    onClick={() => toggleMessageExpansion(messageGroup.messageId)}
+                                                                                    className="btn btn-ghost btn-xs"
+                                                                                >
+                                                                                    {expandedMessages.has(messageGroup.messageId) ? (
+                                                                                        <ChevronDown size={14} />
+                                                                                    ) : (
+                                                                                        <ChevronRight size={14} />
+                                                                                    )}
+                                                                                </button>
+                                                                            </td>
+                                                                            <td>
+                                                                                <a
+                                                                                    href={`/forums/general/topics/${messageGroup.forumId}/${messageGroup.topicId}#message-${messageGroup.messageId}`}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="link link-primary text-xs"
+                                                                                >
+                                                                                    Voir le message →
+                                                                                </a>
+                                                                                <div className="text-xs text-gray-500 max-w-md truncate">
+                                                                                    {messageGroup.messageContent}
+                                                                                </div>
+                                                                            </td>
+                                                                            <td>
+                                                                                <span className="badge badge-secondary badge-sm">
+                                                                                    {messageGroup.reportCount}
                                                                                 </span>
-                                                                                {report.explanation && (
-                                                                                    <span className="text-xs text-gray-500 italic max-w-xs truncate">
-                                                                                        {report.explanation}
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                        </td>
-                                                                        <td>
-                                                                            <a
-                                                                                href={`/forums/general/topics/${report.messageId.topicId.forumId}/${report.messageId.topicId._id}#message-${report.messageId._id}`}
-                                                                                target="_blank"
-                                                                                rel="noopener noreferrer"
-                                                                                className="link link-primary text-xs max-w-xs truncate block"
-                                                                                title={report.messageId.content}
-                                                                            >
-                                                                                Voir le message →
-                                                                            </a>
-                                                                            <div className="text-xs text-gray-500 max-w-xs truncate">
-                                                                                {report.messageId.content}
-                                                                            </div>
-                                                                        </td>
-                                                                        <td>
-                                                                            <select
-                                                                                className={`select select-sm select-bordered font-semibold ${getStatusBadgeColor(report.status)}`}
-                                                                                value={report.status}
-                                                                                onChange={(e) => handleStatusChange(report._id, e.target.value)}
-                                                                            >
-                                                                                <option value="pending" className="bg-warning text-warning-content">En attente</option>
-                                                                                <option value="resolved" className="bg-success text-success-content">Résolu</option>
-                                                                                <option value="rejected" className="bg-error text-error-content">Rejeté</option>
-                                                                            </select>
-                                                                        </td>
-                                                                    </tr>
+                                                                            </td>
+                                                                            <td className="whitespace-nowrap text-xs">
+                                                                                {format(messageGroup.latestReport, 'dd/MM/yyyy HH:mm', { locale: fr })}
+                                                                            </td>
+                                                                        </tr>
+                                                                        {expandedMessages.has(messageGroup.messageId) && (
+                                                                            <tr>
+                                                                                <td colSpan={4} className="bg-base-300 p-0">
+                                                                                    <div className="p-3">
+                                                                                        <table className="table table-xs w-full">
+                                                                                            <thead>
+                                                                                                <tr>
+                                                                                                    <th>Date</th>
+                                                                                                    <th>Raison</th>
+                                                                                                    <th>Explication</th>
+                                                                                                    <th>Statut</th>
+                                                                                                </tr>
+                                                                                            </thead>
+                                                                                            <tbody>
+                                                                                                {messageGroup.reports.map((report) => (
+                                                                                                    <tr key={report._id}>
+                                                                                                        <td className="whitespace-nowrap text-xs">
+                                                                                                            {format(new Date(report.createdAt), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                                                                                                        </td>
+                                                                                                        <td>
+                                                                                                            <span className="font-semibold text-xs">
+                                                                                                                {REPORT_REASON_LABELS[report.reason]}
+                                                                                                            </span>
+                                                                                                        </td>
+                                                                                                        <td>
+                                                                                                            {report.explanation && (
+                                                                                                                <span className="text-xs text-gray-500 italic max-w-xs truncate block">
+                                                                                                                    {report.explanation}
+                                                                                                                </span>
+                                                                                                            )}
+                                                                                                        </td>
+                                                                                                        <td>
+                                                                                                            <select
+                                                                                                                className={`select select-xs select-bordered font-semibold ${getStatusBadgeColor(report.status)}`}
+                                                                                                                value={report.status}
+                                                                                                                onChange={(e) => handleStatusChange(report._id, e.target.value)}
+                                                                                                            >
+                                                                                                                <option value="pending">En attente</option>
+                                                                                                                <option value="resolved">Résolu</option>
+                                                                                                                <option value="rejected">Rejeté</option>
+                                                                                                            </select>
+                                                                                                        </td>
+                                                                                                    </tr>
+                                                                                                ))}
+                                                                                            </tbody>
+                                                                                        </table>
+                                                                                    </div>
+                                                                                </td>
+                                                                            </tr>
+                                                                        )}
+                                                                    </React.Fragment>
                                                                 ))}
                                                             </tbody>
                                                         </table>
