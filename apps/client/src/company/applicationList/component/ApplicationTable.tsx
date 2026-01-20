@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronUp, Eye, SquareArrowOutUpRight } from 'lucide-react';
+import { ChevronUp, Eye, SquareArrowOutUpRight, Check, X } from 'lucide-react';
 import { PdfModal } from './PdfModal.tsx';
 import { ApplicationPagination } from './ApplicationPagination.tsx';
 import {
@@ -8,7 +8,7 @@ import {
     type ApplicationStatus,
     ApplicationStatusEnum,
 } from '../../../types/application.types.ts';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PaginationResult } from '../../../types/internship.types.ts';
 import { useParams } from 'react-router';
 import { fetchApplicationsByPost } from '../../../hooks/useFetchApplications.tsx';
@@ -37,9 +37,17 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
     const [selectedApplication, setSelectedApplication] = useState<{ id: string; type: 'cv' | 'lm' } | null>(null);
     const [filters, setFilters] = useState<ApplicationFilters>({ page: 1, limit: 5, status });
     const [paginationShown, setPaginationShown] = useState<PaginationResult<Application> | undefined>();
+    const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+    const [confirmModal, setConfirmModal] = useState<{
+        open: boolean;
+        applicationId: string;
+        newStatus: ApplicationStatus;
+        studentName: string;
+    } | null>(null);
 
     const postId = useParams().id as string;
     const authFetch = UseAuthFetch();
+    const queryClient = useQueryClient();
     const { data: applicationsData, isLoading } = useQuery<PaginationResult<Application>, Error>({
         queryKey: ['applications', postId, filters],
         queryFn: async () => {
@@ -60,6 +68,40 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
 
     function handleClickTable() {
         setActiveTab(activeTab === status ? null : status);
+    }
+
+    function openConfirmModal(applicationId: string, newStatus: ApplicationStatus, studentName: string) {
+        setConfirmModal({ open: true, applicationId, newStatus, studentName });
+    }
+
+    function closeConfirmModal() {
+        setConfirmModal(null);
+    }
+
+    async function updateApplicationStatus(applicationId: string, newStatus: ApplicationStatus) {
+        if (updatingStatus) return;
+        setUpdatingStatus(applicationId);
+
+        try {
+            const res = await authFetch(`${API_URL}/api/application/${applicationId}`, {
+                method: 'PUT',
+                data: JSON.stringify({ status: newStatus }),
+            });
+
+            // Invalidate all application queries for this post to refresh all tabs
+            await queryClient.invalidateQueries({ queryKey: ['applications', postId] });
+            closeConfirmModal();
+        } catch (err) {
+            console.error('Erreur lors de la mise à jour du statut:', err);
+            alert('Erreur lors de la mise à jour du statut');
+        } finally {
+            setUpdatingStatus(null);
+        }
+    }
+
+    async function handleConfirmStatusChange() {
+        if (!confirmModal) return;
+        await updateApplicationStatus(confirmModal.applicationId, confirmModal.newStatus);
     }
 
     function previewFile(id: string, type: 'cv' | 'lm') {
@@ -147,6 +189,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                                 <th className="w-px whitespace-nowrap text-center">
                                                     Lettre de motivation
                                                 </th>
+                                                <th className="w-px whitespace-nowrap text-center">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -188,6 +231,35 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                                             </button>
                                                         )}
                                                     </td>
+                                                    <td className="whitespace-nowrap text-center">
+                                                        <div className="flex gap-1 justify-center">
+                                                            {(status === ApplicationStatusEnum.PENDING || status === ApplicationStatusEnum.READ) && (
+                                                                <>
+                                                                    <button
+                                                                        className="btn btn-sm btn-success btn-ghost"
+                                                                        onClick={() => openConfirmModal(app._id, ApplicationStatusEnum.ACCEPTED, `${app.student.firstName} ${app.student.lastName}`)}
+                                                                        disabled={updatingStatus === app._id}
+                                                                        title="Accepter"
+                                                                        aria-label="Accepter la candidature"
+                                                                    >
+                                                                        <Check strokeWidth={2} size={18} />
+                                                                    </button>
+                                                                    <button
+                                                                        className="btn btn-sm btn-error btn-ghost"
+                                                                        onClick={() => openConfirmModal(app._id, ApplicationStatusEnum.REJECTED, `${app.student.firstName} ${app.student.lastName}`)}
+                                                                        disabled={updatingStatus === app._id}
+                                                                        title="Rejeter"
+                                                                        aria-label="Rejeter la candidature"
+                                                                    >
+                                                                        <X strokeWidth={2} size={18} />
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                            {(status === ApplicationStatusEnum.ACCEPTED || status === ApplicationStatusEnum.REJECTED) && (
+                                                                <span className="text-xs text-base-content/50 italic">Finalisé</span>
+                                                            )}
+                                                        </div>
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -211,6 +283,52 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                             setModalOpen(false);
                         }}
                     />
+                )}
+
+                {confirmModal && (
+                    <div className="modal modal-open">
+                        <div
+                            className="modal-box"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="confirm-modal-title"
+                        >
+                            <h3 id="confirm-modal-title" className="font-bold text-lg mb-4">
+                                Confirmation de {confirmModal.newStatus === ApplicationStatusEnum.ACCEPTED ? 'l\'acceptation' : 'du rejet'}
+                            </h3>
+                            <p className="py-4">
+                                Voulez-vous vraiment {confirmModal.newStatus === ApplicationStatusEnum.ACCEPTED ? 'accepter' : 'rejeter'} la candidature de{' '}
+                                <span className="font-semibold">{confirmModal.studentName}</span> ?
+                            </p>
+                            <p className="text-sm text-base-content/70 mb-6">
+                                Cette action est définitive et ne pourra pas être annulée.
+                            </p>
+                            <div className="modal-action">
+                                <button
+                                    className="btn btn-ghost"
+                                    onClick={closeConfirmModal}
+                                    disabled={updatingStatus !== null}
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    className={`btn ${
+                                        confirmModal.newStatus === ApplicationStatusEnum.ACCEPTED
+                                            ? 'btn-success'
+                                            : 'btn-error'
+                                    }`}
+                                    onClick={handleConfirmStatusChange}
+                                    disabled={updatingStatus !== null}
+                                >
+                                    {updatingStatus !== null ? (
+                                        <span className="loading loading-spinner loading-sm"></span>
+                                    ) : (
+                                        'Confirmer'
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </>
         </div>
