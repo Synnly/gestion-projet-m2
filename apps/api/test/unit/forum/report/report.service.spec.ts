@@ -139,69 +139,159 @@ describe('ReportService', () => {
     });
 
     describe('getAllReports', () => {
-        it('should return paginated reports', async () => {
-            const expectedResult = {
-                data: [mockReport],
-                total: 1,
-                page: 1,
-                limit: 10,
-                totalPages: 1,
-                hasNext: false,
-                hasPrev: false,
-            };
-
-            mockPaginationService.paginate.mockResolvedValue(expectedResult);
-
-            const result = await service.getAllReports(1, 10);
-
-            expect(result).toEqual(expectedResult);
-            expect(paginationService.paginate).toHaveBeenCalledWith(
-                reportModel,
-                {},
-                1,
-                10,
-                [
-                    {
-                        path: 'messageId',
-                        populate: [
-                            {
-                                path: 'topicId',
-                                select: 'forumId title',
-                            },
-                            {
-                                path: 'authorId',
-                                select: 'email firstName lastName ban',
-                            },
-                        ],
+        const user1Id = new Types.ObjectId('507f1f77bcf86cd799439020');
+        const user2Id = new Types.ObjectId('507f1f77bcf86cd799439021');
+        
+        const mockReports = [
+            {
+                _id: new Types.ObjectId(),
+                messageId: {
+                    _id: new Types.ObjectId(),
+                    content: 'Message 1',
+                    authorId: {
+                        _id: user1Id,
+                        email: 'user1@test.com',
+                        firstName: 'User',
+                        lastName: 'One',
+                        ban: undefined,
                     },
-                ],
-                '-1',
-            );
+                    topicId: {
+                        _id: new Types.ObjectId(),
+                        forumId: 'forum1',
+                        title: 'Topic 1',
+                    },
+                },
+                reporterId: new Types.ObjectId(),
+                reason: ReportReason.SPAM,
+                status: 'pending',
+                createdAt: new Date('2026-01-20T10:00:00'),
+            },
+            {
+                _id: new Types.ObjectId(),
+                messageId: {
+                    _id: new Types.ObjectId(),
+                    content: 'Message 2',
+                    authorId: {
+                        _id: user1Id,
+                        email: 'user1@test.com',
+                        firstName: 'User',
+                        lastName: 'One',
+                        ban: undefined,
+                    },
+                    topicId: {
+                        _id: new Types.ObjectId(),
+                        forumId: 'forum1',
+                        title: 'Topic 1',
+                    },
+                },
+                reporterId: new Types.ObjectId(),
+                reason: ReportReason.INAPPROPRIATE,
+                status: 'pending',
+                createdAt: new Date('2026-01-20T11:00:00'),
+            },
+            {
+                _id: new Types.ObjectId(),
+                messageId: {
+                    _id: new Types.ObjectId(),
+                    content: 'Message 3',
+                    authorId: {
+                        _id: user2Id,
+                        email: 'user2@test.com',
+                        firstName: 'User',
+                        lastName: 'Two',
+                        ban: undefined,
+                    },
+                    topicId: {
+                        _id: new Types.ObjectId(),
+                        forumId: 'forum1',
+                        title: 'Topic 1',
+                    },
+                },
+                reporterId: new Types.ObjectId(),
+                reason: ReportReason.HATEFUL,
+                status: 'pending',
+                createdAt: new Date('2026-01-20T09:00:00'),
+            },
+        ];
+
+        it('should group reports by user and paginate with complete user groups', async () => {
+            const mockQuery = {
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(mockReports),
+            };
+            mockReportModel.find.mockReturnValue(mockQuery);
+
+            const result = await service.getAllReports(1, 2);
+
+            // Should return user1's reports (2 reports) even though limit is 2
+            // because we keep complete user groups together
+            expect(result.data).toHaveLength(2);
+            expect(result.total).toBe(3);
+            expect(result.totalPages).toBe(2); // Page 1: user1 (2 reports), Page 2: user2 (1 report)
+            expect(result.page).toBe(1);
+            expect(result.hasNext).toBe(true);
+            expect(result.hasPrev).toBe(false);
+            
+            // All reports on page 1 should be from user1
+            expect(result.data.every((r: any) => r.messageId.authorId._id.equals(user1Id))).toBe(true);
+        });
+
+        it('should return second page with remaining user group', async () => {
+            const mockQuery = {
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(mockReports),
+            };
+            mockReportModel.find.mockReturnValue(mockQuery);
+
+            const result = await service.getAllReports(2, 2);
+
+            // Page 2 should have user2's reports
+            expect(result.data).toHaveLength(1);
+            expect(result.page).toBe(2);
+            expect(result.hasNext).toBe(false);
+            expect(result.hasPrev).toBe(true);
+            expect(result.data[0].messageId.authorId._id.equals(user2Id)).toBe(true);
         });
 
         it('should filter reports by status', async () => {
-            const expectedResult = {
-                data: [mockReport],
-                total: 1,
-                page: 1,
-                limit: 10,
-                totalPages: 1,
-                hasNext: false,
-                hasPrev: false,
+            const pendingReports = mockReports.filter(r => r.status === 'pending');
+            const mockQuery = {
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(pendingReports),
             };
-
-            mockPaginationService.paginate.mockResolvedValue(expectedResult);
+            mockReportModel.find.mockReturnValue(mockQuery);
 
             await service.getAllReports(1, 10, 'pending');
 
-            expect(paginationService.paginate).toHaveBeenCalledWith(
-                reportModel,
-                { status: 'pending' },
-                1,
-                10,
-                expect.any(Array),
-                '-1',
-            );
+            expect(mockReportModel.find).toHaveBeenCalledWith({ status: 'pending' });
+        });
+
+        it('should return empty array for page beyond total pages', async () => {
+            const mockQuery = {
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(mockReports),
+            };
+            mockReportModel.find.mockReturnValue(mockQuery);
+
+            const result = await service.getAllReports(10, 2);
+
+            expect(result.data).toHaveLength(0);
+            expect(result.page).toBe(10);
+            expect(result.totalPages).toBe(2);
+        });
+
+        it('should sort user groups by latest report date', async () => {
+            const mockQuery = {
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(mockReports),
+            };
+            mockReportModel.find.mockReturnValue(mockQuery);
+
+            const result = await service.getAllReports(1, 10);
+
+            // user1 has latest report at 11:00, user2 at 09:00
+            // So user1's reports should come first
+            expect(result.data[0].messageId.authorId._id.equals(user1Id)).toBe(true);
         });
     });
 
