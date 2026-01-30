@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { useInternshipStore } from '../store/useInternshipStore';
+import { useInternshipStore } from '../stores/useInternshipStore';
 import type { PaginationResult, Internship } from '../types/internship.types';
 import { fetchPublicSignedUrl } from './useBlob';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { UseAuthFetch } from './useAuthFetch';
-import { userStore } from '../store/userStore.ts';
+import { userStore } from '../stores/userStore';
 
 const API_URL = import.meta.env.VITE_APIURL;
 export type BaseFilterProps = {

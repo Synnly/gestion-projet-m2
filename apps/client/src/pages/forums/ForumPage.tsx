@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { useNavigation } from 'react-router-dom';
 import { useParams } from 'react-router';
-import { Navbar } from '../../components/navbar/Navbar.tsx';
-import Spinner from '../../components/Spinner/Spinner.tsx';
-import { useFetchForumByCompanyId, useFetchGeneralForum } from '../../hooks/useFetchForum.ts';
-import { useFetchTopics } from '../../hooks/useFetchTopics.ts';
-import { ForumHeader } from '../../components/forum/ForumHeader.tsx';
-import { TopicRow } from '../../components/forum/TopicRow.tsx';
-import Pagination from '../../components/ui/pagination/Pagination.tsx';
-import { SearchBar } from '../../components/inputs/searchBar';
-import { CreateTopicModal } from '../forum/components/CreateTopicModal.tsx';
-import type { Topic } from '../../types/forum.types.ts';
-import type { PaginationResult } from '../../types/internship.types.ts';
+import Spinner from '../common/Spinner/Spinner';
+import { useFetchForumByCompanyId, useFetchGeneralForum } from '../../hooks/useFetchForum';
+import { useFetchTopics } from '../../hooks/useFetchTopics';
+import { ForumHeader } from './components/ForumHeader';
+import { TopicRow } from './components/TopicRow';
+import { CreateTopicModal } from './components/CreateTopicModal';
+import type { Topic } from '../../types/forum.types';
+import type { PaginationResult } from '../../types/internship.types';
+import { SearchBar } from '../common/inputs/searchBar';
+import { Navbar } from '../common/navbar/Navbar';
+import Pagination from '../common/ui/pagination/Pagination';
 
 type Props = {
     isGeneral?: boolean;

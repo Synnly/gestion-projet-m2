@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
-import type { companyFormLogin } from '../auth/Login/type';
-import { userStore } from '../store/userStore';
+import { userStore } from '../stores/userStore';
 import { useLocation, useNavigate } from 'react-router';
+import type { companyFormLogin } from '../pages/auth/Login/type';
 function translateMessage(message: string): string {
     if (message === 'Invalid email or password') return 'email ou mot de passe invalide.';
 

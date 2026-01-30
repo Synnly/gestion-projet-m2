@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { userStore } from '../store/userStore';
+import { userStore } from '../stores/userStore';
 import { UseAuthFetch } from './useAuthFetch';
-import type { studentProfile } from '../types/student.types.ts';
+import type { studentProfile } from '../types/student.types';
 
 /**
  * Hook pour récupérer le profil complet d'un étudiant depuis l'API

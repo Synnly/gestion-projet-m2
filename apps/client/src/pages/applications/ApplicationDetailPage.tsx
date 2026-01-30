@@ -2,8 +2,8 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Eye } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useFetchApplicationDetail } from '../../hooks/useFetchApplicationDetail';
-import { type ApplicationStatus } from '../../store/useApplicationStore';
-import { PdfModal } from '../../company/applicationList/component/PdfModal.tsx';
+import { type ApplicationStatus } from '../../stores/useApplicationStore';
+import { PdfModal } from '../../pages/company/applicationList/component/PdfModal';
 import { useState } from 'react';
 
 const statusStyles: Record<ApplicationStatus | string, string> = {

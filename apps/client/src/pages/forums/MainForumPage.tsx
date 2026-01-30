@@ -1,14 +1,14 @@
-import { Navbar } from '../../components/navbar/Navbar.tsx';
-import Spinner from '../../components/Spinner/Spinner.tsx';
+import Spinner from '../common/Spinner/Spinner';
 import { useNavigation } from 'react-router-dom';
-import type { Forum } from '../../types/forum.types.ts';
-import { ForumCard } from '../../components/forum/ForumCard.tsx';
-import { TopicRow } from '../../components/forum/TopicRow.tsx';
-import { SearchBar } from '../../components/inputs/searchBar';
-import { formatNumber } from '../../utils/format.ts';
-import { forumStore } from '../../store/forumStore.ts';
-import { useFetchForumByCompanyId, useFetchForums, useFetchGeneralForum } from '../../hooks/useFetchForum.ts';
-import { userStore } from '../../store/userStore.ts';
+import type { Forum } from '../../types/forum.types';
+import { ForumCard } from './components/ForumCard';
+import { TopicRow } from './components/TopicRow';
+import { formatNumber } from '../../utils/format';
+import { useFetchForumByCompanyId, useFetchForums, useFetchGeneralForum } from '../../hooks/useFetchForum';
+import { forumStore } from '../../stores/forumStore';
+import { userStore } from '../../stores/userStore';
+import { SearchBar } from '../common/inputs/searchBar';
+import { Navbar } from '../common/navbar/Navbar';
 
 export function MainForumPage() {
     const navigation = useNavigation();

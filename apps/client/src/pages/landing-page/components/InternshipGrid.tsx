@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
-import InternshipCard from '../../../modules/internship/InternshipCard';
 import type { Internship } from '../../../types/internship.types';
+import InternshipCard from '../../internships/components/InternshipCard';
 
 type Props = {
     internships: Internship[];
