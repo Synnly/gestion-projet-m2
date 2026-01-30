@@ -16,7 +16,7 @@ import { UseAuthFetch } from '../../hooks/useAuthFetch';
 import { buildQueryParams } from '../../hooks/useFetchInternships';
 import type { PaginationResult } from '../../types/internship.types';
 import { fetchPublicSignedUrl } from '../../hooks/useBlob';
-import type { companyProfile } from '../../types';
+import type { companyProfile } from '../../types/types';
 import { Navbar } from '../common/navbar/Navbar';
 import { DataPagination } from '../common/ui/pagination/DataPagination';
 export type Role = 'ADMIN' | 'STUDENT' | 'COMPANY';

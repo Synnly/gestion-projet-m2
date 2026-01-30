@@ -19,7 +19,7 @@ import { useGetCompanyProfile } from '../../../hooks/useGetCompanyProfile';
 import { useUploadFile } from '../../../hooks/useUploadFile';
 import { profileStore } from '../../../stores/profileStore';
 import { userStore } from '../../../stores/userStore';
-import type { companyProfile } from '../../../types';
+import type { companyProfile } from '../../../types/types';
 import { FormInputEdit } from '../../common/form/FormInputEdit';
 import { FormSection } from '../../common/form/FormSection';
 import { FormSubmit } from '../../common/form/FormSubmit';

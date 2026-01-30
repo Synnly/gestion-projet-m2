@@ -1,9 +1,9 @@
 import { redirect } from 'react-router';
 import { profileStore, type companyProfileStoreType } from '../stores/profileStore';
 import { userStore } from '../stores/userStore';
-import { completeProfilFormCheck } from '../pages/company/completeProfil/type';
 import type { companyProfile } from '../types/types';
 import { UseAuthFetch } from '../hooks/useAuthFetch';
+import { completeProfilFormCheck } from '../pages/company/completeProfil/type';
 
 /** @description use zod schema to check if required fields of priofil are complete
  * @returns a boolean which indicates if the profil is complete

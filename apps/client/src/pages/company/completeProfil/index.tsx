@@ -18,7 +18,7 @@ import { useFile } from '../../../hooks/useFile';
 import { useUploadFile } from '../../../hooks/useUploadFile';
 import type { userContext } from '../../../routings/type';
 import { profileStore } from '../../../stores/profileStore';
-import type { companyProfile } from '../../../types';
+import type { companyProfile } from '../../../types/types';
 import { FormSection } from '../../common/form/FormSection';
 import { FormSubmit } from '../../common/form/FormSubmit';
 import { FormInput } from '../../common/form/FormInput';

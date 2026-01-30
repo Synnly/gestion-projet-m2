@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { companyProfile } from '../types';
+import type { companyProfile } from '../types/types';
 export type companyProfileStoreType = {
     profile: companyProfile | null;
     setProfil: (profile: companyProfile | null) => void;
