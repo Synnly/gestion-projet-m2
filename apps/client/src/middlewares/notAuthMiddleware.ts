@@ -1,5 +1,5 @@
 import { redirect } from 'react-router-dom';
-import { userStore } from '../store/userStore';
+import { userStore } from '../stores/userStore';
 
 /**
  * @description loader which check if user is not connected

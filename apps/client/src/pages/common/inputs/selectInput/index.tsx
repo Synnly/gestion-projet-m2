@@ -1,5 +1,11 @@
-import type { SelectInputProps } from './type';
-
+export interface SelectInputProps {
+    options: string[];
+    label: string;
+    /** Controlled value for the select (optional) */
+    value?: string;
+    /** Called when the select value changes */
+    onChange?: (value: string) => void;
+}
 export const FilterInput: React.FC<SelectInputProps> = ({ options, label, value, onChange }) => {
     return (
         <div className="flex">

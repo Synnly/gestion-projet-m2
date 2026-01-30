@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { RotateCcw, MapPin, ListFilter } from 'lucide-react';
-import { FilterInput } from '../../components/inputs/selectInput';
 import { internshipFilters, mapOptionToPayload } from './filters';
-import { useInternshipStore } from '../../store/useInternshipStore';
+import { useInternshipStore } from '../../../stores/useInternshipStore';
 import SortSelect from './SortSelect';
-import CityRadiusModal from '../../components/CityRadius/CityRadiusModal';
-import SalaryRangeSelector from '../../components/inputs/range/SalaryRangeSelector';
-import { userStore } from '../../store/userStore.ts';
+import { userStore } from '../../../stores/userStore';
+import { FilterInput } from '../../common/inputs/selectInput';
+import SalaryRangeSelector from '../../common/inputs/range/SalaryRangeSelector';
+import CityRadiusModal from './CityRadius/CityRadiusModal';
 
 export function FilterList() {
     const filters = useInternshipStore((s) => s.filters);
@@ -51,8 +51,7 @@ export function FilterList() {
                                 <label className="swap btn">
                                     <input type="checkbox" defaultChecked onClick={toggleShowMyApplicationsOnly} />
                                     <div className="swap-off">Toutes les annonces</div>
-                                    <div className="swap-on">
-                                        onClick={toggleShowMyApplicationsOnly}
+                                    <div className="swap-on" onClick={toggleShowMyApplicationsOnly}>
                                         Mes candidatures
                                     </div>
                                 </label>

@@ -2,14 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, type Resolver } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { userStore } from '../../store/userStore';
-import { profileStore } from '../../store/profileStore';
-import { Navbar } from '../../components/navbar/Navbar';
-import { FormSection } from '../../components/form/FormSection';
-import { FormInputEdit } from '../../components/form/FormInputEdit';
-import { CustomSelect } from '../../components/inputs/select/select';
-import { FormSubmit } from '../../components/form/FormSubmit';
-import { ProfilePicture } from '../../components/profile/profilPicture';
+import { userStore } from '../../stores/userStore';
+import { profileStore } from '../../stores/profileStore';
 import { useGetCompanyProfile } from '../../hooks/useGetCompanyProfile';
 import { useFile } from '../../hooks/useFile';
 import { useBlob } from '../../hooks/useBlob';
@@ -22,9 +16,15 @@ import {
     LegalStatus,
     editProfilForm,
     type SignedUrlResponse,
-} from '../completeProfil/type';
-import type { companyProfile } from '../../types';
+} from '../../types/completeProfil.type';
+import type { companyProfile } from '../../types/company.type';
 import { UseAuthFetch } from '../../hooks/useAuthFetch';
+import { Navbar } from '../common/navbar/Navbar';
+import { FormSection } from '../common/form/FormSection';
+import { ProfilePicture } from '../common/profilPicture';
+import { CustomSelect } from '../common/inputs/select/select';
+import { FormInputEdit } from '../common/form/FormInputEdit';
+import { FormSubmit } from '../common/form/FormSubmit';
 
 export function EditCompanyProfile() {
     const navigate = useNavigate();
@@ -83,7 +83,7 @@ export function EditCompanyProfile() {
                 logo: logoFile ?? undefined,
             });
         }
-    }, [profile, reset]);
+    }, [profile, reset, logoFile]);
 
     const { isPending, isError, error, mutateAsync } = useMutation({
         mutationFn: async (data: Omit<editProfilFormType, 'logo'> & { logo?: string }) => {

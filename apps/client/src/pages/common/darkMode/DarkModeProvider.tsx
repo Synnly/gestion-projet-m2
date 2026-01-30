@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 
-import { useDarkModeStore } from '../../store/darkModeStore';
+import { useDarkModeStore } from '../../../stores/darkModeStore';
 
 interface DarkModeProviderProps {
     children: ReactNode;

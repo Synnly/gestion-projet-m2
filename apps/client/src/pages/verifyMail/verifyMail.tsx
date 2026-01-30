@@ -1,13 +1,13 @@
 import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
 
-import type { userContext } from '../../protectedRoutes/type';
 import { useNavigate, useOutletContext } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
-import { userStore } from '../../store/userStore';
+import { userStore } from '../../stores/userStore';
 import { CodeInput } from './components/code';
-import Logo from '../../components/icons/Logo.tsx';
 import { UseAuthFetch } from '../../hooks/useAuthFetch.tsx';
+import type { userContext } from '../../types/type.tsx';
+import Logo from '../common/icons/Logo.tsx';
 
 export type VerifyEmailForm = {
     code1: string;

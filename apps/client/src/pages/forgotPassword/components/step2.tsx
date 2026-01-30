@@ -1,8 +1,8 @@
 import { useRef, type Dispatch, type SetStateAction } from 'react';
 import { useForm } from 'react-hook-form';
 import { CodeInput } from '../../verifyMail/components/code';
-import type { VerifyEmailForm } from '../../verifyMail';
 import { useMutation } from '@tanstack/react-query';
+import type { VerifyEmailForm } from '../../verifyMail/verifyMail';
 
 export const ForgotPasswordStep2 = ({
     setStep,

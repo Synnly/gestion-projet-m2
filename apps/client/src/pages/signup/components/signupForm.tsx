@@ -1,14 +1,13 @@
 import { useForm, type Resolver, type SubmitHandler } from 'react-hook-form';
-import { type companyFormSignUp, type registerForm } from '../type';
 import { useMutation } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FormSubmit } from '../../../components/form/FormSubmit';
-import { CustomForm } from '../../../components/form/CustomForm';
-import { companyFormSignUpSchema } from '../type';
 import { useNavigate } from 'react-router';
-import { FormInput } from '../../../components/form/FormInput';
-import { userStore } from '../../../store/userStore';
+import { userStore } from '../../../stores/userStore';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
+import { companyFormSignUpSchema, type companyFormSignUp, type registerForm } from '../../../types/signup.type';
+import { CustomForm } from '../../common/form/CustomForm';
+import { FormInput } from '../../common/form/FormInput';
+import { FormSubmit } from '../../common/form/FormSubmit';
 
 export const SignupForm = () => {
     const {

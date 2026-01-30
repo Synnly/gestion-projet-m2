@@ -3,12 +3,12 @@ import { useForm, type Resolver } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { userStore } from '../../../store/userStore';
-import { Navbar } from '../../../components/navbar/Navbar';
-import { FormSection } from '../../../components/form/FormSection';
-import { FormInputEdit } from '../../../components/form/FormInputEdit';
-import { FormSubmit } from '../../../components/form/FormSubmit';
-import { UseAuthFetch } from '../../../hooks/useAuthFetch';
+import { userStore } from '../../stores/userStore';
+import { UseAuthFetch } from '../../hooks/useAuthFetch';
+import { Navbar } from '../common/navbar/Navbar';
+import { FormSection } from '../common/form/FormSection';
+import { FormInputEdit } from '../common/form/FormInputEdit';
+import { FormSubmit } from '../common/form/FormSubmit';
 
 // Schéma de validation pour le changement de mot de passe
 const changePasswordSchema = z
@@ -56,8 +56,7 @@ export function ChangePassword() {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${access}`,
                 },
-                credentials: 'include',
-                body: JSON.stringify({ password }),
+                data: JSON.stringify({ password }),
             });
             if (!res.ok) {
                 throw new Error('Erreur lors de la modification du mot de passe');

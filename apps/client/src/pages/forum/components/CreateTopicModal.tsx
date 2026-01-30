@@ -3,12 +3,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'react-toastify';
 
-import { createTopicSchema, type CreateTopicForm, type CreateTopicModalProps } from '../types';
-import { createTopic } from '../../../api/create_topic';
-import { FormInput } from '../../../components/form/FormInput';
-import { FormSubmit } from '../../../components/form/FormSubmit';
-import { CustomForm } from '../../../components/form/CustomForm';
+import { createTopic } from '../../../apis/create_topic';
 import { Cross } from 'lucide-react';
+import { createTopicSchema, type CreateTopicForm, type CreateTopicModalProps } from '../../../types/forum.types';
+import { CustomForm } from '../../common/form/CustomForm';
+import { FormInput } from '../../common/form/FormInput';
+import { FormSubmit } from '../../common/form/FormSubmit';
 
 export function CreateTopicModal({ forumId, isOpen, onClose }: CreateTopicModalProps) {
     const queryClient = useQueryClient();

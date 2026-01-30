@@ -1,9 +1,9 @@
-import { Navbar } from '../../components/navbar/Navbar';
-import { userStore } from '../../store/userStore';
+import { userStore } from '../../stores/userStore';
 import { useGetCompanyProfile } from '../../hooks/useGetCompanyProfile';
 import { useBlob } from '../../hooks/useBlob';
 import { NavLink } from 'react-router';
 import { useEffect, useState } from 'react';
+import { Navbar } from '../common/navbar/Navbar';
 
 export function CompanyProfile() {
     // Récupérer l'ID de l'utilisateur connecté depuis le token

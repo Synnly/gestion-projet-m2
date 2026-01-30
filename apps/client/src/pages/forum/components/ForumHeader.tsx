@@ -1,7 +1,7 @@
-import logoPlaceholder from '../../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg';
-import { formatNumber } from '../../utils/format.ts';
+import logoPlaceholder from '../../../../assets/307ce493-b254-4b2d-8ba4-d12c080d6651.jpg';
 import { Pencil } from 'lucide-react';
-import type { Forum } from '../../types/forum.types.ts';
+import type { Forum } from '../../../types/forum.types';
+import { formatNumber } from '../../../utils/format';
 
 type Props = {
     forum: Forum;

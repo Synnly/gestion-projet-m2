@@ -1,4 +1,4 @@
-import type { userPayload } from '../store/userStore';
+import type { userPayload } from '../stores/userStore';
 
 export type userContext = {
     accessToken: string;

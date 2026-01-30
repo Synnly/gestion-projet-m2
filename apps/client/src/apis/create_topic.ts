@@ -1,11 +1,11 @@
 import { UseAuthFetch } from '../hooks/useAuthFetch';
-import type { CreateTopicPayload } from '../pages/forum/types';
+import type { CreateTopicPayload } from '../types/forum.types';
 
 const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
 
 export async function createTopic({ forumId, data }: CreateTopicPayload) {
     const authFetch = UseAuthFetch();
-    
+
     const response = await authFetch(`${API_URL}/api/forum/${forumId}/topics`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

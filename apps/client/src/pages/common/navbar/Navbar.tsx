@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { profileStore } from '../../store/profileStore';
-import { useBlob } from '../../hooks/useBlob';
+import { profileStore } from '../../../stores/profileStore';
+import { useBlob } from '../../../hooks/useBlob';
 import Logo from '../icons/Logo';
 import { User } from 'lucide-react';
 import { centerNavItems, rightNavItems, ItemLink } from './items';
-import { userStore } from '../../store/userStore';
+import { userStore } from '../../../stores/userStore';
 import { ToggleDarkMode } from '../darkMode/darkModeToggle';
 interface NavbarProps {
     appName?: string;

@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useOutletContext } from 'react-router-dom';
-import type { userContext } from '../type';
 import { toast } from 'react-toastify';
+import type { userContext } from '../../types/type';
 type ProtectedRouteByRoleProps = {
     allowedRoles: string[];
     redirectPath?: string;

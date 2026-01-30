@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
-import type { Topic } from '../../types/forum.types.ts';
-import { formatNumber } from '../../utils/format.ts';
+import type { Topic } from '../../../types/forum.types';
+import { formatNumber } from '../../../utils/format';
 
 type Props = {
     topic: Topic;
@@ -29,7 +29,7 @@ export const TopicRow = ({ topic, companyId, forumId }: Props) => {
                 </td>
 
                 <td className="w-px whitespace-nowrap text-right">
-                    {formatNumber(topic.nbMessages) === 'undefined' ? 0 : formatNumber(topic.nbMessages)} messages
+                    {formatNumber(topic?.nbMessages) === 'undefined' ? 0 : formatNumber(topic?.nbMessages)} messages
                 </td>
             </tr>
         </>

@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
 import { LoginForm } from './component/loginForm';
 import { AnimatePresence, motion } from 'motion/react';
-import Logo from '../../components/icons/Logo';
+import Logo from '../common/icons/Logo';
 
 export const Login = () => {
     return (

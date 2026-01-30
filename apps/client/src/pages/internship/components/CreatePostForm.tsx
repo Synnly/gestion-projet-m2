@@ -6,14 +6,14 @@ import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
 
-import { createPost, type CreatePostPayload } from '../../api/create_post';
-import { updatePost } from '../../api/update_post';
-import { useCreatePostStore } from '../../store/CreatePostStore';
-import { profileStore } from '../../store/profileStore';
-import { useInternshipStore } from '../../store/useInternshipStore';
-import { companyInternshipStore } from '../../store/companyInternshipStore';
+import { createPost, type CreatePostPayload } from '../../../apis/create_post';
+import { updatePost } from '../../../apis/update_post';
+import { useCreatePostStore } from '../../../stores/CreatePostStore';
+import { profileStore } from '../../../stores/profileStore';
+import { useInternshipStore } from '../../../stores/useInternshipStore';
+import { companyInternshipStore } from '../../../stores/companyInternshipStore';
 import { toast } from 'react-toastify';
-import type { PostType } from '../../types/internship.types.ts';
+import type { PostType } from '../../../types/internship.types';
 
 type PostFormMode = 'create' | 'edit';
 

@@ -14,8 +14,8 @@ export const Pagination: React.FC<Props> = ({ page, totalPages, onPageChange, ma
     if (totalPages <= 1) return null;
 
     const half = Math.floor(maxButtons / 2);
-    let start = clamp(page - half, 1, Math.max(1, totalPages - maxButtons + 1));
-    let end = Math.min(totalPages, start + maxButtons - 1);
+    const start = clamp(page - half, 1, Math.max(1, totalPages - maxButtons + 1));
+    const end = Math.min(totalPages, start + maxButtons - 1);
 
     const pages: number[] = [];
     for (let i = start; i <= end; i++) pages.push(i);

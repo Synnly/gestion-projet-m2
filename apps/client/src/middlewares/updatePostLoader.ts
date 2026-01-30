@@ -1,5 +1,5 @@
 import { redirect } from 'react-router';
-import { userStore } from '../store/userStore';
+import { userStore } from '../stores/userStore';
 import { UseAuthFetch } from '../hooks/useAuthFetch';
 import type { Internship } from '../types/internship.types.ts';
 import { fetchPublicSignedUrl } from '../hooks/useBlob.tsx';

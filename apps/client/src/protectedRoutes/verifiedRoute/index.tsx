@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useOutletContext } from 'react-router-dom';
-import type { userContext } from '../type';
+import type { userContext } from '../../types/type';
 export const VerifiedRoutes = ({ redirectPath = '/' }: { redirectPath?: string }) => {
     const user = useOutletContext<userContext>();
     const payload = user.get(user.accessToken);

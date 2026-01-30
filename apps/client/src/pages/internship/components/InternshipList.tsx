@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
 import InternshipCard from './InternshipCard';
-import ListContainer from '../../components/ui/list/ListContainer';
-import { useInternshipStore } from '../../store/useInternshipStore';
-import { useFetchInternships } from '../../hooks/useFetchInternships';
+import { useInternshipStore } from '../../../stores/useInternshipStore';
+import { useFetchInternships } from '../../../hooks/useFetchInternships';
 import InternshipPagination from './InternshipPagination';
+import ListContainer from '../../common/ui/list/ListContainer';
 
 const InternshipList: React.FC = () => {
     const { isLoading, isError, error } = useFetchInternships();

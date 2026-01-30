@@ -1,5 +1,5 @@
 import { redirect } from 'react-router-dom';
-import { userStore } from '../store/userStore'; // ton zustand store
+import { userStore } from '../stores/userStore'; // ton zustand store
 
 interface FetchOptions<TData = unknown> {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
@@ -32,7 +32,7 @@ export const UseAuthFetch = () => {
                         ...(options?.headers || {}),
                         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
                     },
-                    body: options?.data,
+                    body: options?.data as BodyInit,
                     credentials: 'include',
                 });
 

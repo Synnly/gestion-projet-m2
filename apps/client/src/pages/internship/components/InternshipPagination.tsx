@@ -1,6 +1,6 @@
 import React from 'react';
-import { useInternshipStore } from '../../store/useInternshipStore';
-import Pagination from '../../components/ui/pagination/Pagination';
+import { useInternshipStore } from '../../../stores/useInternshipStore';
+import Pagination from '../../common/ui/pagination/Pagination';
 
 const InternshipPagination: React.FC = () => {
     const pagination = useInternshipStore((s) => s.pagination);

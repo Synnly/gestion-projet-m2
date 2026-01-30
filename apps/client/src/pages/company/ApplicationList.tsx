@@ -1,10 +1,10 @@
 import { useParams } from 'react-router';
-import { ApplicationTable } from './component/ApplicationTable.tsx';
 import { useQuery } from '@tanstack/react-query';
 import { fetchInternshipById } from '../../hooks/useFetchInternships.ts';
 import { type ApplicationStatus, ApplicationStatusEnum } from '../../types/application.types.ts';
 import { useState } from 'react';
-import { Navbar } from '../../components/navbar/Navbar.tsx';
+import { ApplicationTable } from './components/ApplicationTable.tsx';
+import { Navbar } from '../common/navbar/Navbar.tsx';
 
 export const ApplicationList = () => {
     const postId = useParams().id as string;

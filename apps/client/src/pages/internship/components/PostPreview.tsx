@@ -1,9 +1,9 @@
-import { useCreatePostStore } from '../../store/CreatePostStore';
+import { useCreatePostStore } from '../../../stores/CreatePostStore';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-markdown-preview/markdown.css';
-import type { CompanyInInternship } from '../../types/internship.types.ts';
-import { fetchPublicSignedUrl } from '../../hooks/useBlob.tsx';
+import { fetchPublicSignedUrl } from '../../../hooks/useBlob.tsx';
 import { useEffect, useState } from 'react';
+import type { CompanyInInternship } from '../../../types/internship.types.ts';
 
 type PostPreviewProps = {
     company: CompanyInInternship;

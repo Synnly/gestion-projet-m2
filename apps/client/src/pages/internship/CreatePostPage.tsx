@@ -1,11 +1,11 @@
 import { useLayoutEffect } from 'react';
-import { CreatePostForm } from '../../components/posts/CreatePostForm';
-import { PostPreview } from '../../components/posts/PostPreview';
-import { profileStore } from '../../store/profileStore';
-import { useCreatePostStore } from '../../store/CreatePostStore';
-import { Navbar } from '../../components/navbar/Navbar';
+import { profileStore } from '../../stores/profileStore';
+import { useCreatePostStore } from '../../stores/CreatePostStore';
 import type { CompanyInInternship } from '../../types/internship.types.ts';
-import Spinner from '../../components/Spinner/Spinner.tsx';
+import Spinner from '../common/ui/loader/Spinner.tsx';
+import { Navbar } from '../common/navbar/Navbar.tsx';
+import { CreatePostForm } from './components/CreatePostForm.tsx';
+import { PostPreview } from './components/PostPreview.tsx';
 
 export default function CreatePostPage() {
     const profile = profileStore((state) => state.profile);

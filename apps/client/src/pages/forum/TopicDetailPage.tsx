@@ -2,13 +2,13 @@ import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { MessageSquare, RefreshCw } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { fetchTopicById } from '../../api/fetch_topic';
-import { Navbar } from '../../components/navbar/Navbar';
-import { TopicHeaderSkeleton } from './components/Skeleton';
-import type { Topic } from './types';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useFetchGeneralForum, useFetchForumByCompanyId } from '../../hooks/useFetchForum';
+import type { Topic } from '../../types/forum.types';
+import { fetchTopicById } from '../../apis/fetch_topic';
+import { Navbar } from '../common/navbar/Navbar';
+import { TopicHeaderSkeleton } from '../common/ui/loader/Skeleton';
 
 export default function TopicDetailPage() {
     const { forumId, topicId, companyId } = useParams<{ forumId: string; topicId: string; companyId: string }>();

@@ -5,7 +5,7 @@ export interface ModalHandle {
     showModal: (title: string, content: ReactNode, buttonText?: string) => void;
 }
 
-interface ModalProps {}
+type ModalProps = object;
 
 export const Modal = forwardRef<ModalHandle, ModalProps>((_, ref) => {
     // États internes pour gérer le contenu dynamique

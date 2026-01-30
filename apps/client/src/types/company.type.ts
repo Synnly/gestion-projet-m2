@@ -1,4 +1,4 @@
-import type { NafCode, StructureType } from './company/completeProfil/type';
+import type { NafCode, StructureType } from './completeProfil.type';
 
 export type companyProfile = {
     /** Unique identifier of the company */

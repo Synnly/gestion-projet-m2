@@ -1,6 +1,6 @@
 import { UseAuthFetch } from '../hooks/useAuthFetch';
 import { fetchPublicSignedUrl } from '../hooks/useBlob';
-import type { Topic as TopicDetail } from '../pages/forum/types';
+import type { Topic as TopicDetail } from '../types/forum.types';
 
 const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
 
@@ -37,7 +37,7 @@ export async function fetchTopicById(forumId: string, topicId: string): Promise<
     }
 
     const topic = await response.json();
-    
+
     if (topic?.author?.logo) {
         const presignedUrl = await fetchPublicSignedUrl(topic.author.logo);
         if (presignedUrl) topic.author.logo = presignedUrl;
@@ -46,9 +46,14 @@ export async function fetchTopicById(forumId: string, topicId: string): Promise<
     return topic;
 }
 
-export async function fetchTopics({ forumId, page = 1, limit = 10, searchQuery }: FetchTopicsParams): Promise<PaginationResult<TopicDetail>> {
+export async function fetchTopics({
+    forumId,
+    page = 1,
+    limit = 10,
+    searchQuery,
+}: FetchTopicsParams): Promise<PaginationResult<TopicDetail>> {
     const authFetch = UseAuthFetch();
-    
+
     const params = new URLSearchParams({
         page: page.toString(),
         limit: limit.toString(),
@@ -66,7 +71,8 @@ export async function fetchTopics({ forumId, page = 1, limit = 10, searchQuery }
     });
 
     if (!response.ok) {
-        const message = (await response.json().catch(() => null))?.message || 'Erreur lors de la récupération des topics';
+        const message =
+            (await response.json().catch(() => null))?.message || 'Erreur lors de la récupération des topics';
         throw new Error(message);
     }
 
@@ -78,7 +84,7 @@ export async function fetchTopics({ forumId, page = 1, limit = 10, searchQuery }
                 const presignedUrl = await fetchPublicSignedUrl(topic.author.logo);
                 if (presignedUrl) topic.author.logo = presignedUrl;
             }
-        })
+        }),
     );
 
     return paginationResult;

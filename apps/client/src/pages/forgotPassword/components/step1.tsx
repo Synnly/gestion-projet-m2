@@ -2,12 +2,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useForm, type Resolver } from 'react-hook-form';
 import z from 'zod';
-import { CustomForm } from '../../../components/form/CustomForm';
-import { FormInput } from '../../../components/form/FormInput';
-import { FormSubmit } from '../../../components/form/FormSubmit';
 import type { Dispatch, SetStateAction } from 'react';
-import Logo from '../../../components/icons/Logo';
 import { NavLink } from 'react-router';
+import Logo from '../../common/icons/Logo';
+import { CustomForm } from '../../common/form/CustomForm';
+import { FormInput } from '../../common/form/FormInput';
+import { FormSubmit } from '../../common/form/FormSubmit';
 const passwordSchema = z.object({
     email: z.string().min(1, { message: "l'email est requis" }).email('Adresse e-mail invalide'),
 });

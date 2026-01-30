@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useDarkModeStore } from '../../store/darkModeStore';
+import { useDarkModeStore } from '../../../stores/darkModeStore';
 import { Moon, Sun } from 'lucide-react';
 export function ToggleDarkMode() {
     const changeDarkMode = useDarkModeStore((state) => state.toggleDarkMode);

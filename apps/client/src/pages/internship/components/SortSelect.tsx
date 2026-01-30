@@ -1,6 +1,6 @@
 import { ChevronUp, ChevronDown, Filter } from 'lucide-react';
-import { useInternshipStore } from '../../store/useInternshipStore';
-import { cn } from '../../utils/cn';
+import { useInternshipStore } from '../../../stores/useInternshipStore';
+import { cn } from '../../../utils/cn';
 
 export default function SortSelect() {
     const filters = useInternshipStore((s) => s.filters);

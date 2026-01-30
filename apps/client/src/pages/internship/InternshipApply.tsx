@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Navbar } from '../../components/navbar/Navbar';
 import { Navigate, useNavigate, useParams } from 'react-router';
-import FileInput from '../../components/inputs/fileInput/FileInput';
-import InternshipDetail from '../../modules/internship/InternshipDetail';
 import { useState, type FormEvent } from 'react';
-import { userStore } from '../../store/userStore';
+import { userStore } from '../../stores/userStore';
 import { useUploadFile } from '../../hooks/useUploadFile';
 import { toast } from 'react-toastify';
 import type { Internship } from '../../types/internship.types';
 import { UseAuthFetch } from '../../hooks/useAuthFetch';
+import { Navbar } from '../common/navbar/Navbar';
+import InternshipDetail from './components/InternshipDetail';
+import FileInput from '../common/inputs/fileInput/FileInput';
 
 const getfileExtension = (file: File | null): string | null => {
     if (!file) return null;

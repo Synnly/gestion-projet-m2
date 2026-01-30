@@ -1,7 +1,7 @@
 import { useEffect, type ChangeEvent } from 'react';
-import type { VerifyEmailForm } from '..';
-import { FormSubmit } from '../../../components/form/FormSubmit';
 import type { FieldErrors, SubmitHandler, UseFormRegister, UseFormSetValue } from 'react-hook-form';
+import type { VerifyEmailForm } from '../verifyMail';
+import { FormSubmit } from '../../common/form/FormSubmit';
 
 export type CodeInputProps = {
     handleSubmit: (onValid: SubmitHandler<VerifyEmailForm>) => (e?: React.BaseSyntheticEvent) => Promise<void>;

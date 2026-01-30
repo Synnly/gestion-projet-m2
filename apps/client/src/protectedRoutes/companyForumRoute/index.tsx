@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useOutletContext, useParams } from 'react-router-dom';
-import type { userContext } from '../type';
 import { toast } from 'react-toastify';
+import type { userContext } from '../../types/type';
 
 export const CompanyForumRoute = () => {
     const user = useOutletContext<userContext>();

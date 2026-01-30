@@ -1,4 +1,4 @@
-import { Navbar } from '../components/navbar/Navbar';
+import { Navbar } from '../common/navbar/Navbar';
 import { Outlet } from 'react-router-dom';
 
 export function AdminDashboard() {

@@ -1,8 +1,13 @@
 import React, { useRef } from 'react';
-import { FilterInput } from '../selectInput';
-import type { SearchBarProps } from './type';
+import { FilterInput, type SelectInputProps } from '../selectInput';
 import { Search } from 'lucide-react';
 
+interface SearchBarProps {
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    selects: SelectInputProps[];
+    placeholder?: string;
+}
 export const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuery, selects, placeholder }) => {
     const inputRef = useRef<HTMLInputElement | null>(null);
 

@@ -1,8 +1,8 @@
 import { useLoaderData } from 'react-router';
-import { CreatePostForm } from '../../components/posts/CreatePostForm';
-import { Navbar } from '../../components/navbar/Navbar';
 import type { Internship } from '../../types/internship.types.ts';
-import { PostPreview } from '../../components/posts/PostPreview.tsx';
+import { Navbar } from '../common/navbar/Navbar.tsx';
+import { CreatePostForm } from './components/CreatePostForm.tsx';
+import { PostPreview } from './components/PostPreview.tsx';
 
 export default function UpdatePostPage() {
     const { post, postId } = useLoaderData() as { post: Internship; companyId: string; postId: string };

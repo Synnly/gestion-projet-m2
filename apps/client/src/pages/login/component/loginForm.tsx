@@ -1,10 +1,10 @@
 import { useForm } from 'react-hook-form';
-import { type companyFormLogin } from '../type';
-import { FormInput } from '../../../components/form/FormInput';
-import { FormSubmit } from '../../../components/form/FormSubmit';
-import { CustomForm } from '../../../components/form/CustomForm';
 import { useLogin } from '../../../hooks/useLogin';
 import { NavLink } from 'react-router';
+import { CustomForm } from '../../common/form/CustomForm';
+import { FormInput } from '../../common/form/FormInput';
+import type { companyFormLogin } from '../../../types/login.type';
+import { FormSubmit } from '../../common/form/FormSubmit';
 export const LoginForm = () => {
     const {
         register,

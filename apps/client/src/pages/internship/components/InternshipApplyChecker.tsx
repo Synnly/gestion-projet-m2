@@ -1,9 +1,9 @@
 import { ArrowUpRight, Eye } from 'lucide-react';
-import { formatDate } from '../../../company/applicationList/component/ApplicationTable.tsx';
 import { type Application } from '../../../types/application.types.ts';
-import { PdfModal } from '../../../company/applicationList/component/PdfModal.tsx';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { formatDate } from '../../company/components/ApplicationTable.tsx';
+import { PdfModal } from '../../company/components/PdfModal.tsx';
 
 export const ApplicationStatusChecker = ({
     application,

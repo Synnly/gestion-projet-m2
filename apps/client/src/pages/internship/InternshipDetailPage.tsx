@@ -1,14 +1,14 @@
 import { Link, useLoaderData } from 'react-router-dom';
-import InternshipDetail from '../../modules/internship/InternshipDetail';
-import { Navbar } from '../../components/navbar/Navbar';
 import { useQuery } from '@tanstack/react-query';
 import { fetchInternshipById } from '../../hooks/useFetchInternships';
 import { hydrate, useQueryClient } from '@tanstack/react-query';
-import Spinner from '../../components/Spinner/Spinner';
 import type { Internship, PaginationResult } from '../../types/internship.types';
-import { useInternshipStore } from '../../store/useInternshipStore';
+import { useInternshipStore } from '../../stores/useInternshipStore';
 import { useEffect } from 'react';
 import { toast } from 'react-toastify';
+import Spinner from '../common/ui/loader/Spinner';
+import { Navbar } from '../common/navbar/Navbar';
+import InternshipDetail from './components/InternshipDetail';
 
 export default function InternshipDetailPage() {
     const { id, dehydratedState } = useLoaderData() as { id?: string; dehydratedState?: unknown };

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { companyInternshipStore } from '../store/companyInternshipStore';
+import { companyInternshipStore } from '../stores/companyInternshipStore';
 import type { Internship, InternshipFilters, PaginationResult } from '../types/internship.types';
-import { userStore } from '../store/userStore';
+import { userStore } from '../stores/userStore';
 import { toast } from 'react-toastify';
 import { useEffect } from 'react';
 import { UseAuthFetch } from './useAuthFetch';

@@ -1,10 +1,10 @@
 import { useForm, type Resolver } from 'react-hook-form';
-import { passwordSchema } from '../../../auth/companySignup/type';
 import z from 'zod';
-import { CustomForm } from '../../../components/form/CustomForm';
-import { FormInput } from '../../../components/form/FormInput';
-import { FormSubmit } from '../../../components/form/FormSubmit';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { passwordSchema } from '../../../types/signup.type';
+import { CustomForm } from '../../common/form/CustomForm';
+import { FormInput } from '../../common/form/FormInput';
+import { FormSubmit } from '../../common/form/FormSubmit';
 
 const forgotPasswordTypeStep3Schema = z
     .object({

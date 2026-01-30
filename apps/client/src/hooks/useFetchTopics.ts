@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchTopics, type PaginationResult } from '../api/fetch_topic';
+import { fetchTopics, type PaginationResult } from '../apis/fetch_topic';
 import type { Topic } from '../types/forum.types';
 
 interface FetchTopicsParams {

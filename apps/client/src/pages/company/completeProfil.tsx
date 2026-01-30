@@ -7,22 +7,22 @@ import {
     LegalStatus,
     completeProfilForm,
     type SignedUrlResponse,
-} from './type';
-import { FormSection } from '../../components/form/FormSection';
-import { FormInput } from '../../components/form/FormInput';
-import { CustomSelect } from '../../components/inputs/select/select';
-import { FormSubmit } from '../../components/form/FormSubmit';
+} from '../../types/completeProfil.type.ts';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate, useOutletContext } from 'react-router';
-import { profileStore } from '../../store/profileStore';
-import { ProfilePicture } from '../../components/profile/profilPicture';
-import type { companyProfile } from '../../types';
+import { profileStore } from '../../stores/profileStore';
+import type { companyProfile } from '../../types/company.type';
 import { useFile } from '../../hooks/useFile';
 import { useBlob } from '../../hooks/useBlob';
-import type { userContext } from '../../protectedRoutes/type';
 import { useUploadFile } from '../../hooks/useUploadFile';
 import { useEffect, useState } from 'react';
 import { UseAuthFetch } from '../../hooks/useAuthFetch';
+import { FormSection } from '../common/form/FormSection.tsx';
+import type { userContext } from '../../types/type.tsx';
+import { ProfilePicture } from '../common/profilPicture.tsx';
+import { CustomSelect } from '../common/inputs/select/select.tsx';
+import { FormInput } from '../common/form/FormInput.tsx';
+import { FormSubmit } from '../common/form/FormSubmit.tsx';
 export const CompleteProfil = () => {
     const formInputStyle = 'p-3';
     const navigate = useNavigate();

@@ -1,5 +1,5 @@
 import { UseAuthFetch } from '../hooks/useAuthFetch';
-import { userStore } from '../store/userStore';
+import { userStore } from '../stores/userStore';
 
 /**
  * @description A loader function to protect routes that require authentication. It checks for user authentication and profile completeness.

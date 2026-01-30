@@ -1,15 +1,15 @@
 import React, { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router';
-import { useInternshipStore } from '../../store/useInternshipStore';
-import type { Internship } from '../../types/internship.types';
+import { useInternshipStore } from '../../../stores/useInternshipStore';
 import { Eye, Pen } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
-import { userStore } from '../../store/userStore';
-import { ApplicationStatusChecker } from '../../pages/internship/component/InternshipApplyChecker';
-import { ApplicationStatus } from '../../pages/internship/component/ApplicationStatus.tsx';
+import { userStore } from '../../../stores/userStore';
 import { useQuery } from '@tanstack/react-query';
-import { UseAuthFetch } from '../../hooks/useAuthFetch.tsx';
+import { UseAuthFetch } from '../../../hooks/useAuthFetch.tsx';
+import type { Internship } from '../../../types/internship.types.ts';
+import { ApplicationStatusChecker } from './InternshipApplyChecker.tsx';
+import { ApplicationStatus } from './ApplicationStatus.tsx';
 const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }> = ({
     internship,
     applyable = true,

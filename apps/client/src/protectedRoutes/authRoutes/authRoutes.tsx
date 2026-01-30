@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLoaderData, useLocation } from 'react-router';
-import { userStore } from '../../store/userStore';
+import { userStore } from '../../stores/userStore';
 /**
  * @description Function which refresh user session.
  *  @returns {Promise<string>} - The refreshed access token.

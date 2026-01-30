@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { useNavigation } from 'react-router-dom';
 import { useParams } from 'react-router';
-import { Navbar } from '../../components/navbar/Navbar.tsx';
-import Spinner from '../../components/Spinner/Spinner.tsx';
 import { useFetchForumByCompanyId, useFetchGeneralForum } from '../../hooks/useFetchForum.ts';
 import { useFetchTopics } from '../../hooks/useFetchTopics.ts';
-import { ForumHeader } from '../../components/forum/ForumHeader.tsx';
-import { TopicRow } from '../../components/forum/TopicRow.tsx';
-import Pagination from '../../components/ui/pagination/Pagination.tsx';
-import { SearchBar } from '../../components/inputs/searchBar';
-import { CreateTopicModal } from '../forum/components/CreateTopicModal.tsx';
 import type { Topic } from '../../types/forum.types.ts';
-import type { PaginationResult } from '../../api/fetch_topic.ts';
+import type { PaginationResult } from '../../types/internship.types.ts';
+import { Navbar } from '../common/navbar/Navbar.tsx';
+import Spinner from '../common/ui/loader/Spinner.tsx';
+import { ForumHeader } from './components/ForumHeader.tsx';
+import { SearchBar } from '../common/inputs/searchBar/index.tsx';
+import { TopicRow } from './components/TopicRow.tsx';
+import Pagination from '../common/ui/pagination/Pagination.tsx';
+import { CreateTopicModal } from './components/CreateTopicModal.tsx';
 
 type Props = {
     isGeneral?: boolean;
@@ -28,11 +28,11 @@ export function ForumPage({ isGeneral = false }: Props) {
     let isLoadingForum: boolean;
 
     if (isGeneral) {
-        let { data, isLoading: isLoadingTmp } = useFetchGeneralForum();
+        const { data, isLoading: isLoadingTmp } = useFetchGeneralForum();
         forum = data;
         isLoadingForum = isLoadingTmp;
     } else {
-        let { data, isLoading: isLoadingTmp } = useFetchForumByCompanyId(companyId);
+        const { data, isLoading: isLoadingTmp } = useFetchForumByCompanyId(companyId);
         forum = data;
         isLoadingForum = isLoadingTmp;
     }

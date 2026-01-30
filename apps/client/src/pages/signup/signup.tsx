@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
-import { SignupForm } from './component/signupForm';
 import { AnimatePresence, motion } from 'motion/react';
-import Logo from '../../components/icons/Logo';
+import { SignupForm } from './components/signupForm';
+import Logo from '../common/icons/Logo';
 
 export const CompanySignup = () => {
     return (

@@ -1,5 +1,5 @@
 import type { FieldError, FieldValues, UseFormRegister } from 'react-hook-form';
-import { cn } from '../../utils/cn';
+import { cn } from '../../../utils/cn';
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 export type FormInputProps<T extends FieldValues> = {
