@@ -15,9 +15,11 @@ Forum stages
 | Ioann Perez                  | Développeur                 |
 | Erwan Ortega                 | Développeur                 |
 
-
 ## Architecture du code
-```
+
+Arborescence principale du projet :
+
+```text
 ├── apps/
 │   ├── api/
 │   │   ├── .env
@@ -38,20 +40,42 @@ Forum stages
 │   │       │      └── module.service.spec
 │   │       └── integration/
 │   │               └── module.spec
-│   └── client/
-│       ├── .env
-│       ├── package.json
-│       ├── public
-│       └── src/
-│           ├── components
-│           ├── hooks
-│           ├── modules
-│           └── pages
-├── .gitignore
+└── apps/
+    └── client/
+        └── src/
+            ├── hooks/
+            │   └── useFetchInternships.ts
+            ├── stores/
+            │   └── userStore.ts
+            ├── utils/
+            │   └── fonctionUtilitaire.ts
+            ├── pages/
+            │   ├── commons/
+            │   │   └── components/                       # composants génériques
+            │   ├── internships/                          # composants + pages de internships
+            │   │   ├── components/
+            │   │   │   ├── InternshipCard.tsx
+            │   │   │   └── ApplicationStatus.tsx
+            │   │   └── InternshipsPage.tsx
+            │   ├── forums/                               # composants + pages de forum
+            │   │   ├── components/
+            │   │   ├── MainForumPage.tsx
+            │   │   └── SpecificForumPage.tsx 
+            │   └── auths/
+            ├── types/
+            ├── apis/
+            ├── middlewares/
+            │   ├── updatePostLoader.ts
+            │   └── completeProfilMiddleware.ts
+            ├── routings/
+            │   └── authRoutes/
+            ├── App.css
+            ├── App.tsx
+            └── main.tsx
 └── package.json
 ```
 
-### API
+### API (rôles)
 - `module.controller` : gestion des requêtes entrantes
 - `module.service` : logique métier
 - `module.schema` : schéma de la base de données
@@ -60,29 +84,30 @@ Forum stages
 - `test/unit/` : tests unitaires des modules
 - `test/integration/` : tests d'intégration des modules
 
-### Client
+### Client (structure)
 - `components/` : composants réutilisables des pages
 - `hooks/` : hooks réutilisables des pages
-- `modules/` : modules de l'application (ex: auth, profile, forum, etc) contenant la logique métier
+- `modules/` : modules de l'application (ex: auth, profile, forum, etc.) contenant la logique métier
 - `pages/` : pages de l'application assemblant les composants et modules
 
 ## Branches
-1 feature = 1 branche, puis fusion vers dev avec un pull request, puis merge vers main en fin de sprint
+1 feature = 1 branche, puis fusion vers `dev` avec un pull request, puis merge vers `main` en fin de sprint
+
+Arbre de branches (schéma simplifié) :
 ```
+main  ── feature2
   │
   ├──────────────┐ 
   │              ├──────┐
   │       ┌──────┤      │
   │       │      │      │
-main  feature2  dev  feature1
-
+ dev  feature1
 ```
 
 ## Pull request
-Les fusions vers `dev` et `main` sont protégées. Pour mettre à jour les branches, il faut ouvrir une pull request en expliquant les modifications de la branche. La branche ne peut être fusionnée avec `dev` uniquement que si deux personnes non autrices des modifications les ont validées et que les conflits ont étés résolus. Idem pour la branche `main`.
+Les fusions vers `dev` et `main` sont protégées. Pour mettre à jour les branches, il faut ouvrir une pull request en expliquant les modifications de la branche. La branche ne peut être fusionnée avec `dev` uniquement que si deux personnes non autrices des modifications les ont validées et que les conflits ont été résolus. Idem pour la branche `main`.
 
-## Format des pull request
-```
+### Format des pull requests
 Titre
 
 Description courte des changements
@@ -90,11 +115,9 @@ Description courte des changements
 - des
 - changements
 - importants
-```
-
 
 ## Format des commits
-`type: description courte des changements` avec `type` dans :
+Utiliser le format : `type: description courte des changements` avec `type` parmi :
 - feat : nouvelle fonctionnalité
 - fix : correction de bug
 - docs : modification de la documentation
@@ -103,10 +126,20 @@ Description courte des changements
 - test : ajout ou modification de tests
 - chore : modification des tâches de build ou des dépendances
 
-## Utilisation
+## Utilisation (commandes)
+```bash
+# lancer l'application en mode développement (client + API)
+npm run dev
 
-- `npm run dev` pour lancer l'application en mode développement (client et API)
-- `npm run api` pour lancer uniquement l'API
-- `npm run client` pour lancer uniquement le client
-- `npm run test` pour lancer les tests
-- `npm run test:seq` pour lancer les tests en séquence (conseillé)
+# lancer uniquement l'API
+npm run api
+
+# lancer uniquement le client
+npm run client
+
+# lancer les tests
+npm run test
+
+# lancer les tests en séquence (conseillé)
+npm run test:seq
+```
