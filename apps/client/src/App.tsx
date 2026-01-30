@@ -1,32 +1,32 @@
 import './App.css';
-import { createBrowserRouter, redirect, RouterProvider, Navigate } from 'react-router';
+import { createBrowserRouter, redirect, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { CompanySignup } from './auth/companySignup/index';
-import { Login } from './auth/Login/index';
-import { CompleteProfil } from './company/completeProfil/index';
-import { CompanyProfile } from './company/profile/index';
-import { EditCompanyProfile } from './company/editProfile/index';
-import { ChangePassword } from './company/editProfile/changePassword/index';
-import { protectedMiddleware } from './middleware/protectAuthMiddleware';
-import { completeProfilMiddleware } from './middleware/completeProfilMiddleware';
-import { notAuthMiddleWare } from './middleware/notAuthMiddleware';
-import { VerifyEmail } from './user/verifyMail';
-import { userStore } from './store/userStore';
-import { ForgotPassword } from './user/ForgotPassword';
+import { CompanySignup } from './pages/signup/signup';
+import { Login } from './pages/login/login';
+import { CompleteProfil } from './pages/company/completeProfil';
+import { CompanyProfile } from './pages/company/profile';
+import { EditCompanyProfile } from './pages/company/editProfile';
+import { ChangePassword } from './pages/company/changePassword';
+import { protectedMiddleware } from './middlewares/protectAuthMiddleware';
+import { completeProfilMiddleware } from './middlewares/completeProfilMiddleware';
+import { notAuthMiddleWare } from './middlewares/notAuthMiddleware';
+import { VerifyEmail } from './pages/verifyMail/verifyMail';
+import { userStore } from './stores/userStore';
+import { ForgotPassword } from './pages/forgotPassword/forgotPassword';
 import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
 import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
 import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
 import { CompanyForumRoute } from './protectedRoutes/companyForumRoute';
 import { InternshipPage } from './pages/internship/InternshipPage';
 import InternshipDetailPage from './pages/internship/InternshipDetailPage';
-import CreatePostPage from './pages/posts/CreatePostPage';
-import UpdatePostPage from './pages/posts/UpdatePostPage';
-import { updatePostLoader } from './loaders/updatePostLoader';
+import CreatePostPage from './pages/internship/CreatePostPage';
+import UpdatePostPage from './pages/internship/UpdatePostPage';
+import { updatePostLoader } from './middlewares/updatePostLoader';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { InternshipApply } from './pages/internship/InternshipApply';
-import { DarkModeProvider } from './components/darkMode/DarkModeProvider';
-import MainLayout from './components/layout/MainLayout';
+import { DarkModeProvider } from './pages/common/darkMode/DarkModeProvider';
+import MainLayout from './pages/common/layout/MainLayout';
 import TermsOfUse from './pages/legal/TermsOfUse';
 import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 import CookiePolicy from './pages/legal/CookiePolicy';
@@ -35,13 +35,12 @@ import About from './pages/legal/About';
 import Contact from './pages/legal/Contact';
 import FAQ from './pages/legal/FAQ';
 import Help from './pages/legal/Help';
-import { internshipLoader } from './loaders/intershipLoader';
-import { AdminDashboard } from './admin/dashboard';
-import { ApplicationList } from './company/applicationList/ApplicationList.tsx';
-import ImportStudent from './admin/importStudent.tsx';
+import { internshipLoader } from './middlewares/intershipLoader';
+import { AdminDashboard } from './pages/admin/dashboard';
+import ImportStudent from './pages/admin/importStudent.tsx';
 import TopicDetailPage from './pages/forum/TopicDetailPage';
-import { MainForumPage } from './pages/forums/MainForumPage.tsx';
-import { ForumPage } from './pages/forums/ForumPage.tsx';
+import { MainForumPage } from './pages/forum/MainForumPage.tsx';
+import { ForumPage } from './pages/forum/ForumPage.tsx';
 
 function App() {
     userStore.persist.rehydrate();
@@ -116,10 +115,6 @@ function App() {
                                     handle: { title: 'Changer le mot de passe' },
                                 },
                                 {
-                                    element: <VerifiedRoutes redirectPath="/company/dashboard" />,
-                                    children: [],
-                                },
-                                {
                                     path: 'offers/add',
                                     element: <CreatePostPage />,
                                     handle: { title: 'Créer une offre' },
@@ -129,10 +124,6 @@ function App() {
                         {
                             path: 'internship',
                             children: [
-                                {
-                                    index: true,
-                                    element: <VerifiedRoutes redirectPath="/" />,
-                                },
                                 {
                                     path: 'detail/:id',
                                     element: <InternshipDetailPage />,
@@ -156,7 +147,6 @@ function App() {
                                             index: true,
                                             element: <VerifiedRoutes redirectPath="/" />,
                                         },
-                                        { path: 'applications', element: <ApplicationList /> },
                                         {
                                             path: 'edit',
                                             loader: updatePostLoader,
@@ -178,10 +168,6 @@ function App() {
                                     children: [{ index: true, element: <ImportStudent /> }],
                                 },
                             ],
-                        },
-                        {
-                            path: 'applications',
-                            element: <Navigate to="/student/dashboard" replace />,
                         },
                         {
                             path: 'forums',
