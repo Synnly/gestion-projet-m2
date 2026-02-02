@@ -132,11 +132,7 @@ export default function RejectCompanyModal({
                     <button className="btn btn-ghost" onClick={onCancel} disabled={isLoading}>
                         Annuler
                     </button>
-                    <button
-                        className="btn btn-error"
-                        onClick={handleSubmit}
-                        disabled={!canSubmit || isLoading}
-                    >
+                    <button className="btn btn-error" onClick={handleSubmit} disabled={!canSubmit || isLoading}>
                         {isLoading ? (
                             <>
                                 <span className="loading loading-spinner loading-sm"></span>

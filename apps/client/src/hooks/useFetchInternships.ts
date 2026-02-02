@@ -13,7 +13,7 @@ export type BaseFilterProps = {
     limit: number;
 };
 
-export function buildQueryParams<T extends BaseFilterProps & Record<string,any>>(filters: T) {
+export function buildQueryParams<T extends BaseFilterProps & Record<string, any>>(filters: T) {
     const params = new URLSearchParams();
 
     const setParam = (key: string, value: any) => {
@@ -24,13 +24,13 @@ export function buildQueryParams<T extends BaseFilterProps & Record<string,any>>
             params.set(key, String(value));
         }
     };
-    const {page,limit,...rest} = filters    
+    const { page, limit, ...rest } = filters;
     params.set('page', String(page ?? 1));
     params.set('limit', String(limit ?? 10));
 
     Object.keys(rest).forEach((key) => {
-        setParam(key,filters[key])
-    })
+        setParam(key, filters[key]);
+    });
     /* setParam('searchQuery', filters.searchQuery);
     setParam('title', filters.title);
     setParam('description', filters.description);

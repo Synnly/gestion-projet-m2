@@ -3,10 +3,10 @@ import { profileStore } from '../../../stores/profileStore';
 import { useBlob } from '../../../hooks/useBlob';
 import Logo from '../icons/Logo';
 import { User } from 'lucide-react';
-import { centerNavItems, rightNavItems, ItemLink } from './items';
+import { centerNavItems, rightNavItems, ItemLink } from './components/Item';
 import { userStore } from '../../../stores/userStore';
 import { ToggleDarkMode } from '../darkMode/darkModeToggle';
-import { NotificationBell } from './notifications/NotificationBell';
+import { NotificationBell } from './components/NotificationBell';
 interface NavbarProps {
     appName?: string;
     /** If true, render only the logo/link */

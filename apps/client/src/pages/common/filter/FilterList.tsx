@@ -1,13 +1,12 @@
-import { RotateCcw, MapPin, ListFilter } from "lucide-react";
-import { useState, useEffect } from "react";
-import { useInternshipStore } from "../../../stores/useInternshipStore";
-import { userStore } from "../../../stores/userStore";
-import CityRadiusModal from "../../internships/components/CityRadius/CityRadiusModal";
-import SalaryRangeSelector from "../inputs/range/SalaryRangeSelector";
-import { FilterInput } from "../inputs/selectInput";
-import { internshipFilters, mapOptionToPayload } from "./filters";
-import SortSelect from "./SortSelect";
-
+import { RotateCcw, MapPin, ListFilter } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useInternshipStore } from '../../../stores/useInternshipStore';
+import { userStore } from '../../../stores/userStore';
+import CityRadiusModal from '../../internships/components/CityRadius/CityRadiusModal';
+import SalaryRangeSelector from '../inputs/range/SalaryRangeSelector';
+import { FilterInput } from '../inputs/selectInput/SelectInput';
+import { internshipFilters, mapOptionToPayload } from './filters';
+import SortSelect from './SortSelect';
 
 export function FilterList() {
     const filters = useInternshipStore((s) => s.filters);

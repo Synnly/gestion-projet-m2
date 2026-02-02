@@ -29,8 +29,8 @@ export function PendingValidation() {
                                 vérification par notre équipe d'administration.
                             </p>
                             <p className="text-sm mt-2">
-                                Cette étape
-                                permet de garantir la sécurité et la qualité des offres proposées sur notre plateforme.
+                                Cette étape permet de garantir la sécurité et la qualité des offres proposées sur notre
+                                plateforme.
                             </p>
                         </div>
                     </div>

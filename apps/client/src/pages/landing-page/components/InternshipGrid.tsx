@@ -21,7 +21,7 @@ export default function InternshipGrid({ internships }: Props) {
                         viewport={{ once: true }}
                         transition={{ duration: 0.6, delay: 0.1 * index }}
                     >
-                            <InternshipCard internship={internship} isSelected={false} />
+                        <InternshipCard internship={internship} isSelected={false} />
                     </motion.div>
                 ))}
             </div>

@@ -2,7 +2,7 @@ import { ArrowUpRight, Eye } from 'lucide-react';
 import { type Application } from '../../../types/application.types';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { PdfModal } from '../../company/applicationList/component/PdfModal';
+import { PdfModal } from '../../company/components/PdfModal';
 import { formatDate } from 'date-fns';
 
 export const ApplicationStatusChecker = ({
@@ -48,7 +48,7 @@ export const ApplicationStatusChecker = ({
                         onClick={handleApply}
                         className="btn btn-primary flex h-11 flex-1 items-center justify-center gap-2"
                         disabled={!isPostVisible}
-                        title={!isPostVisible ? 'Cette offre n\'est plus disponible' : ''}
+                        title={!isPostVisible ? "Cette offre n'est plus disponible" : ''}
                     >
                         <ArrowUpRight size={20} />
                         <span>{isPostVisible ? 'Candidater' : 'Offre non disponible'}</span>

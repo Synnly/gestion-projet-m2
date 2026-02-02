@@ -1,14 +1,13 @@
-import { useNavigation } from "react-router";
-import { useInternshipStore } from "../../stores/useInternshipStore";
-import { userStore } from "../../stores/userStore";
-import { FilterList } from "../common/filter/FilterList";
-import { SearchBar } from "../common/inputs/searchBar";
-import { Navbar } from "../common/navbar/Navbar";
-import Spinner from "../common/Spinner/Spinner";
-import ToastProvider from "../common/ui/toast/ToastProvider";
-import InternshipDetail from "./components/InternshipDetail";
-import InternshipList from "./components/InternshipList";
-
+import { useNavigation } from 'react-router';
+import { useInternshipStore } from '../../stores/useInternshipStore';
+import { userStore } from '../../stores/userStore';
+import { FilterList } from '../common/filter/FilterList';
+import { SearchBar } from '../../pages/common/inputs/searchBar/SearchBar';
+import { Navbar } from '../common/navbar/Navbar';
+import Spinner from '../common/Spinner/Spinner';
+import ToastProvider from '../common/ui/toast/ToastProvider';
+import InternshipDetail from './components/InternshipDetail';
+import InternshipList from './components/InternshipList';
 
 export function InternshipPage() {
     const navigation = useNavigation();

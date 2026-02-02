@@ -3,7 +3,6 @@ import { useInternshipStore } from '../../../stores/useInternshipStore';
 import type { Internship } from '../../../types/internship.types';
 import Card from '../../common/ui/card/Card';
 
-
 const InternshipCard: React.FC<{ internship: Internship; isSelected: boolean }> = ({ internship, isSelected }) => {
     const { setSelectedInternshipId } = useInternshipStore();
 

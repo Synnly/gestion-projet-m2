@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchTopics } from '../apis/fetch_topic';
-import type { Topic } from '../pages/forums/types';
+import type { Topic } from '../types/Forums.types';
 import type { PaginationResult } from '../types/internship.types';
 
 interface FetchTopicsParams {

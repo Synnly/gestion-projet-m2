@@ -1,6 +1,6 @@
 import { UseAuthFetch } from '../hooks/useAuthFetch';
 import { fetchPublicSignedUrl } from '../hooks/useBlob';
-import type { Topic as TopicDetail } from '../pages/forums/types';
+import type { Topic as TopicDetail } from '../types/Forums.types';
 import type { PaginationResult } from '../types/internship.types';
 
 const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';

@@ -1,14 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
-import MDEditor from "@uiw/react-md-editor";
-import { Pen, Eye } from "lucide-react";
-import { useRef, useEffect } from "react";
-import { NavLink } from "react-router";
-import { UseAuthFetch } from "../../../hooks/useAuthFetch";
-import { useInternshipStore } from "../../../stores/useInternshipStore";
-import { userStore } from "../../../stores/userStore";
-import type { Internship } from "../../../types/internship.types";
-import { ApplicationStatus } from "./ApplicationStatus";
-import { ApplicationStatusChecker } from "./InternshipApplyChecker";
+import { useQuery } from '@tanstack/react-query';
+import MDEditor from '@uiw/react-md-editor';
+import { Pen, Eye } from 'lucide-react';
+import { useRef, useEffect } from 'react';
+import { NavLink } from 'react-router';
+import { UseAuthFetch } from '../../../hooks/useAuthFetch';
+import { useInternshipStore } from '../../../stores/useInternshipStore';
+import { userStore } from '../../../stores/userStore';
+import type { Internship } from '../../../types/internship.types';
+import { ApplicationStatus } from './ApplicationStatus';
+import { ApplicationStatusChecker } from './InternshipApplyChecker';
 
 const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }> = ({
     internship,

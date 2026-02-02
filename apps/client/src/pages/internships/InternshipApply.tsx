@@ -10,7 +10,6 @@ import { Navbar } from '../common/navbar/Navbar';
 import InternshipDetail from './components/InternshipDetail';
 import FileInput from '../common/inputs/fileInput/FileInput';
 
-
 const getfileExtension = (file: File | null): string | null => {
     if (!file) return null;
     const parts = file.name.lastIndexOf('.');
@@ -102,13 +101,13 @@ export const InternshipApply = () => {
         e.preventDefault();
         if (!data) return;
         if (!cv || (data.isCoverLetterRequired && !coverLetter)) return;
-        
+
         if (!data.isVisible) {
-            toast.error('Cette offre n\'est plus disponible.', { toastId: 'post-not-visible-error' });
+            toast.error("Cette offre n'est plus disponible.", { toastId: 'post-not-visible-error' });
             navigate('/');
             return;
         }
-        
+
         const result = await mutation.mutateAsync();
         if (result) {
             setCoverLetter(null);
@@ -121,10 +120,10 @@ export const InternshipApply = () => {
         toast.error('Vous avez déjà postulé à cette offre.', { toastId: 'already-applied-error' });
         return <Navigate to="/home" replace={true} />;
     }
-    
+
     // Vérifier que l'annonce est visible
     if (data && !data.isVisible) {
-        toast.error('Cette offre n\'est plus disponible.', { toastId: 'post-not-visible-error' });
+        toast.error("Cette offre n'est plus disponible.", { toastId: 'post-not-visible-error' });
         return <Navigate to="/" replace={true} />;
     }
     return (

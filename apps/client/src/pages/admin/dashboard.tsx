@@ -1,8 +1,8 @@
-import { Navbar } from "../common/navbar/Navbar";
-import { AdminTabs } from "./components/AdminTabs";
-import ImportStudent from "./components/importStudent";
-import { StatsPage } from "./components/stats";
-import ValidateCompanies from "./components/ValidateCompanies";
+import { Navbar } from '../common/navbar/Navbar';
+import { AdminTabs } from './components/AdminTabs';
+import ImportStudent from './components/importStudent';
+import { StatsPage } from './components/stats/Stats';
+import ValidateCompanies from './components/ValidateCompanies';
 
 export function AdminDashboard() {
     const tabs = [
@@ -20,7 +20,7 @@ export function AdminDashboard() {
             id: 'stats',
             label: 'Statistiques',
             content: <StatsPage />,
-        }
+        },
     ];
 
     return (

@@ -7,7 +7,7 @@ import { formatNumber } from '../../utils/format';
 import { useFetchForumByCompanyId, useFetchForums, useFetchGeneralForum } from '../../hooks/useFetchForum';
 import { forumStore } from '../../stores/forumStore';
 import { userStore } from '../../stores/userStore';
-import { SearchBar } from '../common/inputs/searchBar';
+import { SearchBar } from '../../pages/common/inputs/searchBar/SearchBar';
 import { Navbar } from '../common/navbar/Navbar';
 
 export function MainForumPage() {

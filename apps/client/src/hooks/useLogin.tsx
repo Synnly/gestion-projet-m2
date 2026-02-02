@@ -1,13 +1,13 @@
 import { useMutation } from '@tanstack/react-query';
 import { userStore } from '../stores/userStore';
 import { useLocation, useNavigate } from 'react-router';
-import type { companyFormLogin } from '../pages/auth/Login/type';
+import type { companyFormLogin } from '../types/Login.types';
 function translateMessage(message: string): string {
     if (message === 'Invalid email or password') return 'email ou mot de passe invalide.';
 
     const notFoundRegex = /User with email ([\w.-]+@[\w.-]+\.\w+) not found/i;
     if (notFoundRegex.test(message)) return "Aucun utilisateur avec cet email n'existe.";
-    
+
     const bannedRegex = /User with email ([\w.-]+@[\w.-]+\.\w+) is banned(?: for (.+))?/i;
     const bannedMatch = message.match(bannedRegex);
     if (bannedMatch) {
@@ -48,7 +48,7 @@ export const useLogin = () => {
             setAccess(accessToken);
             const user = getAccess(accessToken);
             if (!user) throw new Error('Erreur lors de la récupération des informations utilisateur.');
-            
+
             // Force verification for students
             if (user.role === 'STUDENT') {
                 if (!user.isVerified) {
@@ -60,7 +60,7 @@ export const useLogin = () => {
                     return;
                 }
             }
-            
+
             const redirectTo = lastLocationRoute || '/home';
             navigate(redirectTo);
         }

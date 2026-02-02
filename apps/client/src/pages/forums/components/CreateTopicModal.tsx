@@ -3,9 +3,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'react-toastify';
 
-import { createTopicSchema, type CreateTopicForm, type CreateTopicModalProps } from '../types';
+import { createTopicSchema, type CreateTopicForm, type CreateTopicModalProps } from '../../../types/Forums.types';
 import { createTopic } from '../../../apis/create_topic';
-import { FormInput } from  '../../../pages/common/form/FormInput';
+import { FormInput } from '../../../pages/common/form/FormInput';
 import { FormSubmit } from '../../../pages/common/form/FormSubmit';
 import { CustomForm } from '../../../pages/common/form/CustomForm';
 import { Cross } from 'lucide-react';

@@ -9,7 +9,7 @@ import { TopicRow } from './components/TopicRow';
 import { CreateTopicModal } from './components/CreateTopicModal';
 import type { Topic } from '../../types/forum.types';
 import type { PaginationResult } from '../../types/internship.types';
-import { SearchBar } from '../common/inputs/searchBar';
+import { SearchBar } from '../../pages/common/inputs/searchBar/SearchBar';
 import { Navbar } from '../common/navbar/Navbar';
 import Pagination from '../common/ui/pagination/Pagination';
 

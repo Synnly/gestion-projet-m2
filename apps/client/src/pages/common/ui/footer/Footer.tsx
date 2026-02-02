@@ -3,7 +3,7 @@ import { Mail } from 'lucide-react';
 import Logo from '../../icons/Logo';
 
 export default function Footer() {
-    const year = "2025";
+    const year = '2025';
     const contactEmail = import.meta.env.VITE_CONTACT_EMAIL;
 
     return (
@@ -17,7 +17,8 @@ export default function Footer() {
                     </div>
 
                     <p className="text-sm text-base-content/70 max-w-sm">
-                        Nous mettons en relation les étudiants et les entreprises grâce à des offres de stage de qualité — approuvé par des milliers d'organisations.
+                        Nous mettons en relation les étudiants et les entreprises grâce à des offres de stage de qualité
+                        — approuvé par des milliers d'organisations.
                     </p>
 
                     <div className="flex items-center gap-3 mt-2">

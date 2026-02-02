@@ -24,7 +24,11 @@ export function CompaniesTab({ stats }: CompaniesTabProps) {
                                 <td>{company.offersCount}</td>
                                 <td>
                                     <div className="flex items-center gap-2">
-                                        <progress className="progress progress-success w-20" value={company.responseRate} max="100"></progress>
+                                        <progress
+                                            className="progress progress-success w-20"
+                                            value={company.responseRate}
+                                            max="100"
+                                        ></progress>
                                         <span className="text-xs">{company.responseRate}%</span>
                                     </div>
                                 </td>

@@ -20,21 +20,24 @@ export default function ValidateCompanies() {
 
     const authFetch = UseAuthFetch();
 
-    const loadPendingCompanies = useCallback(async (page: number = 1) => {
-        setIsLoading(true);
-        try {
-            const data = await fetchPendingCompanies(authFetch, page, itemsPerPage);
-            setCompanies(data.data);
-            setTotalPages(data.totalPages);
-            setTotal(data.total);
-            setCurrentPage(data.page);
-        } catch (error) {
-            toast.error('Erreur lors du chargement des entreprises en attente');
-            console.error(error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [authFetch]);
+    const loadPendingCompanies = useCallback(
+        async (page: number = 1) => {
+            setIsLoading(true);
+            try {
+                const data = await fetchPendingCompanies(authFetch, page, itemsPerPage);
+                setCompanies(data.data);
+                setTotalPages(data.totalPages);
+                setTotal(data.total);
+                setCurrentPage(data.page);
+            } catch (error) {
+                toast.error('Erreur lors du chargement des entreprises en attente');
+                console.error(error);
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [authFetch],
+    );
 
     useEffect(() => {
         loadPendingCompanies(currentPage);
@@ -204,7 +207,10 @@ export default function ValidateCompanies() {
                     <div className="modal-box max-w-2xl">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="font-bold text-lg">Détails de l'entreprise</h3>
-                            <button onClick={() => setSelectedCompany(null)} className="btn btn-sm btn-circle btn-ghost">
+                            <button
+                                onClick={() => setSelectedCompany(null)}
+                                className="btn btn-sm btn-circle btn-ghost"
+                            >
                                 <X className="h-4 w-4" />
                             </button>
                         </div>
@@ -249,20 +255,26 @@ export default function ValidateCompanies() {
                             )}
                             {selectedCompany.rejected?.isRejected && selectedCompany.rejected.rejectedAt && (
                                 <div className="col-span-2">
-                                    {selectedCompany.rejected.modifiedAt && 
-                                     new Date(selectedCompany.rejected.modifiedAt) > new Date(selectedCompany.rejected.rejectedAt) ? (
+                                    {selectedCompany.rejected.modifiedAt &&
+                                    new Date(selectedCompany.rejected.modifiedAt) >
+                                        new Date(selectedCompany.rejected.rejectedAt) ? (
                                         <div className="alert alert-success">
                                             <div>
-                                                <p className="text-sm font-semibold">✓ Profil modifié après rejet - En attente de re-validation</p>
-                                                <p className="text-xs">
-                                                    Date de refus initial : {formatDate(selectedCompany.rejected.rejectedAt)}
+                                                <p className="text-sm font-semibold">
+                                                    ✓ Profil modifié après rejet - En attente de re-validation
                                                 </p>
                                                 <p className="text-xs">
-                                                    Date de modification : {formatDate(selectedCompany.rejected.modifiedAt)}
+                                                    Date de refus initial :{' '}
+                                                    {formatDate(selectedCompany.rejected.rejectedAt)}
+                                                </p>
+                                                <p className="text-xs">
+                                                    Date de modification :{' '}
+                                                    {formatDate(selectedCompany.rejected.modifiedAt)}
                                                 </p>
                                                 {selectedCompany.rejected.rejectionReason && (
                                                     <p className="text-xs mt-1 whitespace-pre-line">
-                                                        Raison du rejet précédent : {selectedCompany.rejected.rejectionReason}
+                                                        Raison du rejet précédent :{' '}
+                                                        {selectedCompany.rejected.rejectionReason}
                                                     </p>
                                                 )}
                                             </div>
