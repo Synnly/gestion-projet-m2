@@ -18,6 +18,7 @@ describe('PostController', () => {
         create: jest.fn(),
         update: jest.fn(),
         findAllByStudent: jest.fn(),
+        delete: jest.fn(),
     };
 
     const mockJwtService = {
@@ -268,6 +269,27 @@ describe('PostController', () => {
             await expect(controller.update(companyId, postId, { title: 'x' } as any)).rejects.toThrow(
                 NotFoundException,
             );
+        });
+    });
+
+    describe('delete', () => {
+        const companyId = '507f1f77bcf86cd799439099';
+        const postId = '507f1f77bcf86cd799439011';
+
+        it('should call service delete with correct id', async () => {
+            mockPostService.delete.mockResolvedValue(undefined);
+
+            await controller.delete(companyId, postId);
+
+            expect(service.delete).toHaveBeenCalledWith(postId);
+            expect(service.delete).toHaveBeenCalledTimes(1);
+        });
+
+        it('should propagate NotFoundException from service', async () => {
+            mockPostService.delete.mockRejectedValue(new NotFoundException(`Post with id ${postId} not found`));
+
+            await expect(controller.delete(companyId, postId)).rejects.toThrow(NotFoundException);
+            expect(service.delete).toHaveBeenCalledWith(postId);
         });
     });
 
