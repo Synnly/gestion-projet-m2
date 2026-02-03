@@ -2,13 +2,13 @@ import { Link } from 'react-router-dom';
 import { Briefcase, Building2, ArrowRight } from 'lucide-react';
 import { motion, useInView } from 'motion/react';
 import { useState, useEffect, useRef } from 'react';
-import { Navbar } from '../../components/navbar/Navbar';
 import { features } from './mockFeatures.data';
 import FeatureCard from './components/FeatureCard';
 import InternshipGrid from './components/InternshipGrid';
-import { userStore } from '../../store/userStore';
-import { fetchPublicStats, fetchLatestPosts, type PublicStats } from '../../api/stats';
+import { fetchPublicStats, fetchLatestPosts, type PublicStats } from '../../apis/stats';
 import type { Internship } from '../../types/internship.types';
+import { userStore } from '../../stores/userStore';
+import { Navbar } from '../common/navbar/Navbar';
 
 export default function LandingPage() {
     const user = userStore((state) => state.access);
