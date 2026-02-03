@@ -1,11 +1,11 @@
-import type { PaginationResult } from '../types/internship.types.ts';
-import type { Forum, ForumFilters } from '../types/forum.types.ts';
+import type { PaginationResult } from '../types/internship.types';
+import type { Forum, ForumFilters } from '../types/forum.types';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { useEffect } from 'react';
-import { forumStore } from '../store/forumStore.ts';
-import { fetchPublicSignedUrl } from './useBlob.tsx';
-import { UseAuthFetch } from './useAuthFetch.tsx';
+import { forumStore } from '../stores/forumStore';
+import { fetchPublicSignedUrl } from './useBlob';
+import { UseAuthFetch } from './useAuthFetch';
 
 const API_URL = import.meta.env.VITE_APIURL;
 

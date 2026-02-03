@@ -5,7 +5,7 @@ const API_URL = import.meta.env.VITE_APIURL;
 
 export interface ChartData {
     name: string;
-    value?: number; 
+    value?: number;
     count?: number;
 }
 
