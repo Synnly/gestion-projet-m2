@@ -224,7 +224,7 @@ export class PostService {
     /**
      * Delete a post by id and all its associated applications. Notify applicants about the deletion.
      * @param postId Post id
-     * @returs A promise that resolves when the operation is complete
+     * @returns A promise that resolves when the operation is complete
      * @throws NotFoundException if the post does not exist
      */
     async delete(postId: string): Promise<void> {

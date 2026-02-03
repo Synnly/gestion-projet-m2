@@ -102,6 +102,7 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
             console.error(error);
         } finally {
             setModalOpen(false);
+            setIsLoading(false);
         }
     };
 
@@ -162,9 +163,9 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                                 <a className="btn grow" href={`/internship/${internship._id}/edit`}>
                                     Modifier <Pen />
                                 </a>
-                                <a className="btn grow" onClick={() => setModalOpen(true)}>
+                                <button className="btn grow" onClick={() => setModalOpen(true)}>
                                     Supprimer <Trash />
-                                </a>
+                                </button>
                                 <a className="btn grow" href={`/internship/${internship._id}/applications`}>
                                     Consulter les candidatures <Eye />
                                 </a>

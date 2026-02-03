@@ -327,7 +327,7 @@ export class ApplicationService {
      */
     async deleteAndSendNotification(id: string, message?: string): Promise<void> {
         const application = await this.applicationModel
-            .findOne({ _id: new Types.ObjectId(id) })
+            .findOne({ _id: new Types.ObjectId(id), deletedAt: { $exists: false } })
             .populate([
                 { path: 'student', select: '_id' },
                 { path: 'post', select: 'title _id' },
@@ -342,8 +342,6 @@ export class ApplicationService {
             { _id: new Types.ObjectId(id), deletedAt: { $exists: false } },
             { $set: { deletedAt: new Date() } },
         );
-
-        const app = await this.applicationModel.findOne({ _id: new Types.ObjectId(id) });
 
         // Send notification to student about application deletion
         try {

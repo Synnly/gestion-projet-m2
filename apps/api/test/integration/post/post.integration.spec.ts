@@ -909,7 +909,7 @@ describe('Post Integration Tests', () => {
             });
 
             post.applications = [application._id];
-            post.save();
+            await post.save();
 
             await request(app.getHttpServer())
                 .delete(buildPostsPath(`/${post._id}`))
