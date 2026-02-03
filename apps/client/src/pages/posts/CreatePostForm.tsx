@@ -6,7 +6,7 @@ import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
 
-import { createPost, type CreatePostPayload } from '../../apis/create_post';
+import { createPost, type CreatePostPayload } from '../../apis/post';
 import { updatePost } from '../../apis/update_post';
 
 import { toast } from 'react-toastify';
