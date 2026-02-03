@@ -1,111 +1,115 @@
 import { plainToInstance } from 'class-transformer';
-import { ApplicationPaginationDto, ApplicationDto } from '../../../../src/application/dto/application.dto';
+import { validate } from 'class-validator';
+import { ApplicationPaginationDto } from '../../../../src/common/pagination/dto/applicationPagination.dto';
 import { ApplicationStatus } from '../../../../src/application/application.schema';
-import { Types } from 'mongoose';
 
-describe('applicationPaginationDto', () => {
-    describe('transformation', () => {
-        it('should transform plain object to ApplicationPaginationDto correctly when all fields are provided', () => {
-            const applicationId = new Types.ObjectId();
-            const postId = new Types.ObjectId();
-            const studentId = new Types.ObjectId();
+describe('ApplicationPaginationDto (Query DTO)', () => {
+    describe('validation', () => {
+        it('should use default values when no parameters provided', () => {
+            const dto = plainToInstance(ApplicationPaginationDto, {});
 
-            const plainData = {
-                data: [
-                    {
-                        _id: applicationId,
-                        post: {
-                            _id: postId,
-                            title: 'Test Post',
-                            description: 'Test Description',
-                        },
-                        student: {
-                            _id: studentId,
-                            firstName: 'John',
-                            lastName: 'Doe',
-                            email: 'john@example.com',
-                            studentNumber: 'S12345',
-                        },
-                        status: ApplicationStatus.Pending,
-                        cv: 'cv.pdf',
-                        coverLetter: 'cover.pdf',
-                        createdAt: '2025-01-01T00:00:00.000Z',
-                    },
-                ],
-                total: 1,
-                page: 1,
-                limit: 10,
-            };
-
-            const dto = plainToInstance(ApplicationPaginationDto, plainData);
-
-            expect(dto.total).toBe(1);
             expect(dto.page).toBe(1);
             expect(dto.limit).toBe(10);
-            expect(dto.data).toHaveLength(1);
-            expect(dto.data[0]).toBeInstanceOf(ApplicationDto);
         });
 
-        it('should transform empty data array correctly', () => {
-            const plainData = {
-                data: [],
-                total: 0,
-                page: 1,
-                limit: 10,
-            };
-
-            const dto = plainToInstance(ApplicationPaginationDto, plainData);
-
-            expect(dto.total).toBe(0);
-            expect(dto.page).toBe(1);
-            expect(dto.limit).toBe(10);
-            expect(dto.data).toHaveLength(0);
-        });
-
-        it('should transform multiple applications correctly', () => {
-            const plainData = {
-                data: [
-                    {
-                        _id: new Types.ObjectId(),
-                        post: { _id: new Types.ObjectId(), title: 'Post 1' },
-                        student: { _id: new Types.ObjectId(), firstName: 'John', lastName: 'Doe' },
-                        status: ApplicationStatus.Pending,
-                        cv: 'cv1.pdf',
-                    },
-                    {
-                        _id: new Types.ObjectId(),
-                        post: { _id: new Types.ObjectId(), title: 'Post 2' },
-                        student: { _id: new Types.ObjectId(), firstName: 'Jane', lastName: 'Doe' },
-                        status: ApplicationStatus.Accepted,
-                        cv: 'cv2.pdf',
-                    },
-                ],
-                total: 25,
+        it('should accept valid page and limit values', async () => {
+            const dto = plainToInstance(ApplicationPaginationDto, {
                 page: 2,
-                limit: 10,
-            };
+                limit: 20,
+            });
 
-            const dto = plainToInstance(ApplicationPaginationDto, plainData);
-
-            expect(dto.total).toBe(25);
+            const errors = await validate(dto);
+            expect(errors).toHaveLength(0);
             expect(dto.page).toBe(2);
-            expect(dto.limit).toBe(10);
-            expect(dto.data).toHaveLength(2);
+            expect(dto.limit).toBe(20);
         });
 
-        it('should exclude extraneous values when excludeExtraneousValues is true', () => {
-            const plainData = {
-                data: [],
-                total: 0,
-                page: 1,
-                limit: 10,
-                extraField: 'should be excluded',
-            };
+        it('should accept status filter', async () => {
+            const dto = plainToInstance(ApplicationPaginationDto, {
+                status: ApplicationStatus.Pending,
+            });
 
-            const dto = plainToInstance(ApplicationPaginationDto, plainData, { excludeExtraneousValues: true });
+            const errors = await validate(dto);
+            expect(errors).toHaveLength(0);
+            expect(dto.status).toBe(ApplicationStatus.Pending);
+        });
 
-            expect((dto as any).extraField).toBeUndefined();
-            expect(dto.total).toBe(0);
+        it('should accept sort parameter', async () => {
+            const dto = plainToInstance(ApplicationPaginationDto, {
+                sort: 'dateDesc',
+            });
+
+            const errors = await validate(dto);
+            expect(errors).toHaveLength(0);
+            expect(dto.sort).toBe('dateDesc');
+        });
+
+        it('should reject page less than 1', async () => {
+            const dto = plainToInstance(ApplicationPaginationDto, {
+                page: 0,
+            });
+
+            const errors = await validate(dto);
+            expect(errors.length).toBeGreaterThan(0);
+            expect(errors[0].property).toBe('page');
+        });
+
+        it('should reject limit less than 1', async () => {
+            const dto = plainToInstance(ApplicationPaginationDto, {
+                limit: 0,
+            });
+
+            const errors = await validate(dto);
+            expect(errors.length).toBeGreaterThan(0);
+            expect(errors[0].property).toBe('limit');
+        });
+
+        it('should reject limit greater than 100', async () => {
+            const dto = plainToInstance(ApplicationPaginationDto, {
+                limit: 101,
+            });
+
+            const errors = await validate(dto);
+            expect(errors.length).toBeGreaterThan(0);
+            expect(errors[0].property).toBe('limit');
+        });
+
+        it('should accept limit of exactly 100', async () => {
+            const dto = plainToInstance(ApplicationPaginationDto, {
+                limit: 100,
+            });
+
+            const errors = await validate(dto);
+            expect(errors).toHaveLength(0);
+            expect(dto.limit).toBe(100);
+        });
+
+        it('should transform string values to numbers', () => {
+            const dto = plainToInstance(ApplicationPaginationDto, {
+                page: '3',
+                limit: '25',
+            });
+
+            expect(typeof dto.page).toBe('number');
+            expect(typeof dto.limit).toBe('number');
+            expect(dto.page).toBe(3);
+            expect(dto.limit).toBe(25);
+        });
+
+        it('should accept all parameters together', async () => {
+            const dto = plainToInstance(ApplicationPaginationDto, {
+                page: 3,
+                limit: 50,
+                status: ApplicationStatus.Accepted,
+                sort: 'dateAsc',
+            });
+
+            const errors = await validate(dto);
+            expect(errors).toHaveLength(0);
+            expect(dto.page).toBe(3);
+            expect(dto.limit).toBe(50);
+            expect(dto.status).toBe(ApplicationStatus.Accepted);
+            expect(dto.sort).toBe('dateAsc');
         });
     });
 });

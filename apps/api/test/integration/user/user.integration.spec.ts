@@ -9,65 +9,57 @@ import { RolesGuard } from '../../../src/common/roles/roles.guard';
 import { Reflector } from '@nestjs/core';
 
 describe('User Security Integration', () => {
-  let app: INestApplication;
-  let userService: UserService;
+    let app: INestApplication;
+    let userService: UserService;
 
-  let mockUser = { role: Role.STUDENT }; 
+    let mockUser = { role: Role.STUDENT };
 
-  const mockUserService = {
-    findOne: jest.fn().mockResolvedValue({ _id: 'targetUserId' }),
-    ban: jest.fn().mockResolvedValue(true),
-  };
+    const mockUserService = {
+        findOne: jest.fn().mockResolvedValue({ _id: 'targetUserId' }),
+        ban: jest.fn().mockResolvedValue(true),
+    };
 
-  const mockAuthGuard = {
-    canActivate: (context: any) => {
-      const req = context.switchToHttp().getRequest();
-      req.user = mockUser;
-      return true;
-    },
-  };
+    const mockAuthGuard = {
+        canActivate: (context: any) => {
+            const req = context.switchToHttp().getRequest();
+            req.user = mockUser;
+            return true;
+        },
+    };
 
-  beforeEach(async () => {
-    jest.clearAllMocks();
+    beforeEach(async () => {
+        jest.clearAllMocks();
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      controllers: [UserController],
-      providers: [
-        { provide: UserService, useValue: mockUserService },
-        RolesGuard, 
-        Reflector, 
-      ],
-    })
-      .overrideGuard(AuthGuard)
-      .useValue(mockAuthGuard)
-      .compile();
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+            controllers: [UserController],
+            providers: [{ provide: UserService, useValue: mockUserService }, RolesGuard, Reflector],
+        })
+            .overrideGuard(AuthGuard)
+            .useValue(mockAuthGuard)
+            .compile();
 
-    app = moduleFixture.createNestApplication();
-    await app.init();
-    userService = moduleFixture.get<UserService>(UserService);
-  });
+        app = moduleFixture.createNestApplication();
+        await app.init();
+        userService = moduleFixture.get<UserService>(UserService);
+    });
 
-  afterEach(async () => {
-    await app.close();
-  });
+    afterEach(async () => {
+        await app.close();
+    });
 
-  it('should return 403 when user is a STUDENT', async () => {
-    mockUser = { role: Role.STUDENT } as any;
+    it('should return 403 when user is a STUDENT', async () => {
+        mockUser = { role: Role.STUDENT } as any;
 
-    await request(app.getHttpServer())
-      .post('/api/users/507f1f77bcf86cd799439011/ban?reason=spam')
-      .expect(403);
-    
-    expect(userService.ban).not.toHaveBeenCalled();
-  });
+        await request(app.getHttpServer()).post('/api/users/507f1f77bcf86cd799439011/ban?reason=spam').expect(403);
 
-  it('should return 204 when user is an ADMIN', async () => {
-    mockUser = { role: Role.ADMIN } as any;
+        expect(userService.ban).not.toHaveBeenCalled();
+    });
 
-    await request(app.getHttpServer())
-      .post('/api/users/507f1f77bcf86cd799439011/ban?reason=spam')
-      .expect(204);
-    
-    expect(userService.ban).toHaveBeenCalledWith(expect.anything(), 'spam');
-  });
+    it('should return 204 when user is an ADMIN', async () => {
+        mockUser = { role: Role.ADMIN } as any;
+
+        await request(app.getHttpServer()).post('/api/users/507f1f77bcf86cd799439011/ban?reason=spam').expect(204);
+
+        expect(userService.ban).toHaveBeenCalledWith(expect.anything(), 'spam');
+    });
 });

@@ -445,6 +445,44 @@ describe('ApplicationService', () => {
             expect(result).toEqual(emptyResult);
             expect(result.data).toHaveLength(0);
         });
+
+        it('should expand Pending status to include Read status', async () => {
+            mockPaginationService.paginate.mockResolvedValue(paginatedResult);
+
+            const query = { page: 1, limit: 10, status: ApplicationStatus.Pending };
+
+            await service.findByPostPaginated(postId, query);
+
+            expect(mockPaginationService.paginate).toHaveBeenCalledWith(
+                mockApplicationModel,
+                expect.objectContaining({
+                    status: { $in: [ApplicationStatus.Pending, ApplicationStatus.Read] },
+                }),
+                1,
+                10,
+                expect.any(Array),
+                expect.any(String),
+            );
+        });
+
+        it('should not expand non-Pending status', async () => {
+            mockPaginationService.paginate.mockResolvedValue(paginatedResult);
+
+            const query = { page: 1, limit: 10, status: ApplicationStatus.Accepted };
+
+            await service.findByPostPaginated(postId, query);
+
+            expect(mockPaginationService.paginate).toHaveBeenCalledWith(
+                mockApplicationModel,
+                expect.objectContaining({
+                    status: ApplicationStatus.Accepted,
+                }),
+                1,
+                10,
+                expect.any(Array),
+                expect.any(String),
+            );
+        });
     });
 
     describe('getApplicationByStudentAndPost', () => {

@@ -15,7 +15,7 @@ import { RefreshToken, RefreshTokenSchema } from '../auth/refreshToken.schema';
     imports: [
         MongooseModule.forFeature([
             { name: User.name, schema: UserSchema },
-            { name: RefreshToken.name, schema: RefreshTokenSchema }
+            { name: RefreshToken.name, schema: RefreshTokenSchema },
         ]),
         MailerModule.register(),
     ],
@@ -65,6 +65,12 @@ import { RefreshToken, RefreshTokenSchema } from '../auth/refreshToken.schema';
             inject: [getConnectionToken()],
         },
     ],
-    exports: [MongooseModule, getModelToken(Company.name), getModelToken(Student.name), UserService, getModelToken(Admin.name)],
+    exports: [
+        MongooseModule,
+        getModelToken(Company.name),
+        getModelToken(Student.name),
+        UserService,
+        getModelToken(Admin.name),
+    ],
 })
 export class UsersModule {}

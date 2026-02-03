@@ -70,7 +70,6 @@ describe('ApplicationController', () => {
         jest.clearAllMocks();
     });
 
-
     it('should be defined when controller is instantiated', () => {
         expect(controller).toBeDefined();
     });
@@ -268,26 +267,26 @@ describe('ApplicationController', () => {
         it('should throw UnauthorizedException when user is not present', async () => {
             const req = { user: null } as any;
 
-            await expect(
-                controller.getApplicationFile(applicationId, 'cv', req),
-            ).rejects.toThrow('User not authenticated');
+            await expect(controller.getApplicationFile(applicationId, 'cv', req)).rejects.toThrow(
+                'User not authenticated',
+            );
         });
 
         it('should throw UnauthorizedException when user.sub is not present', async () => {
             const req = { user: { role: 'STUDENT' } } as any;
 
-            await expect(
-                controller.getApplicationFile(applicationId, 'cv', req),
-            ).rejects.toThrow('User not authenticated');
+            await expect(controller.getApplicationFile(applicationId, 'cv', req)).rejects.toThrow(
+                'User not authenticated',
+            );
         });
 
         it('should throw NotFoundException when application does not exist', async () => {
             mockApplicationService.findOne.mockResolvedValue(null);
             const req = { user: { sub: studentId.toString(), role: 'STUDENT' } } as any;
 
-            await expect(
-                controller.getApplicationFile(applicationId, 'cv', req),
-            ).rejects.toThrow(`Application with id ${applicationId} not found`);
+            await expect(controller.getApplicationFile(applicationId, 'cv', req)).rejects.toThrow(
+                `Application with id ${applicationId} not found`,
+            );
         });
 
         it('should throw NotFoundException when cv file does not exist on application', async () => {
@@ -298,9 +297,9 @@ describe('ApplicationController', () => {
             });
             const req = { user: { sub: studentId.toString(), role: 'STUDENT' } } as any;
 
-            await expect(
-                controller.getApplicationFile(applicationId, 'cv', req),
-            ).rejects.toThrow('cv not found for this application');
+            await expect(controller.getApplicationFile(applicationId, 'cv', req)).rejects.toThrow(
+                'cv not found for this application',
+            );
         });
 
         it('should throw NotFoundException when lm file does not exist on application', async () => {
@@ -312,9 +311,9 @@ describe('ApplicationController', () => {
             });
             const req = { user: { sub: studentId.toString(), role: 'STUDENT' } } as any;
 
-            await expect(
-                controller.getApplicationFile(applicationId, 'lm', req),
-            ).rejects.toThrow('lm not found for this application');
+            await expect(controller.getApplicationFile(applicationId, 'lm', req)).rejects.toThrow(
+                'lm not found for this application',
+            );
         });
 
         it('should return presigned download URL for cv', async () => {
@@ -407,5 +406,4 @@ describe('ApplicationController', () => {
             expect(result.total).toBe(0);
         });
     });
-
 });

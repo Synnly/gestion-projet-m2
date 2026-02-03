@@ -1,13 +1,4 @@
-import {
-    Controller,
-    Param,
-    HttpCode,
-    HttpStatus,
-    UseGuards,
-    Query,
-    Post,
-    NotFoundException,
-} from '@nestjs/common';
+import { Controller, Param, HttpCode, HttpStatus, UseGuards, Query, Post, NotFoundException } from '@nestjs/common';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../common/roles/roles.guard';
@@ -22,9 +13,7 @@ import { UserService } from './user.service';
  */
 @Controller('/api/users')
 export class UserController {
-    constructor(
-        private readonly userService: UserService
-    ) {}
+    constructor(private readonly userService: UserService) {}
 
     /**
      * Ban a user by id. Requires admin role.
@@ -35,10 +24,7 @@ export class UserController {
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
-    async ban(
-        @Param('userId', ParseObjectIdPipe) userId: string,
-        @Query('reason') reason?: string,
-    ) {
+    async ban(@Param('userId', ParseObjectIdPipe) userId: string, @Query('reason') reason?: string) {
         const banReason = reason?.trim() || 'No reason provided';
         await this.userService.ban(userId, banReason);
     }

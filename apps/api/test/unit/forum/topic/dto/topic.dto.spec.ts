@@ -13,10 +13,7 @@ describe('TopicDto', () => {
                 _id: topicId,
                 title: 'Test Topic',
                 description: 'Test Description',
-                messages: [
-                    { obj: { _id: messageId1 } },
-                    { obj: { _id: messageId2 } },
-                ],
+                messages: [{ obj: { _id: messageId1 } }, { obj: { _id: messageId2 } }],
                 author: {
                     _id: authorId,
                     firstName: 'John',

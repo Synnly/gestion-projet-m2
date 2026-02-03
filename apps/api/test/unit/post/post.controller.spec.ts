@@ -190,9 +190,15 @@ describe('PostController', () => {
             };
             mockPostService.findAll.mockResolvedValue(paginationResult);
 
-            await controller.findAll({ page: 1, limit: 10, company: 'different-company-id' } as any, mockCompanyRequest as any);
+            await controller.findAll(
+                { page: 1, limit: 10, company: 'different-company-id' } as any,
+                mockCompanyRequest as any,
+            );
 
-            expect(service.findAll).toHaveBeenCalledWith({ page: 1, limit: 10, company: 'different-company-id' }, false);
+            expect(service.findAll).toHaveBeenCalledWith(
+                { page: 1, limit: 10, company: 'different-company-id' },
+                false,
+            );
         });
 
         it('should set showHidden to false when user is not COMPANY', async () => {
@@ -213,9 +219,15 @@ describe('PostController', () => {
             };
             mockPostService.findAll.mockResolvedValue(paginationResult);
 
-            await controller.findAll({ page: 1, limit: 10, company: '507f1f77bcf86cd799439099' } as any, mockStudentRequest as any);
+            await controller.findAll(
+                { page: 1, limit: 10, company: '507f1f77bcf86cd799439099' } as any,
+                mockStudentRequest as any,
+            );
 
-            expect(service.findAll).toHaveBeenCalledWith({ page: 1, limit: 10, company: '507f1f77bcf86cd799439099' }, false);
+            expect(service.findAll).toHaveBeenCalledWith(
+                { page: 1, limit: 10, company: '507f1f77bcf86cd799439099' },
+                false,
+            );
         });
     });
 

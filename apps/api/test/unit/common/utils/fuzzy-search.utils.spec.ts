@@ -147,7 +147,7 @@ describe('fuzzy-search.utils', () => {
         it('creates working pattern that matches variations', () => {
             const pattern = buildFuzzyPattern('cafe');
             const regex = new RegExp(pattern, 'i');
-            
+
             expect(regex.test('cafe')).toBe(true);
             expect(regex.test('café')).toBe(true);
             expect(regex.test('CAFE')).toBe(true);
@@ -174,7 +174,7 @@ describe('fuzzy-search.utils', () => {
         it('matches text with accents bidirectionally', () => {
             const regex = buildFuzzyRegex('creation');
             expect(regex.test('création')).toBe(true);
-            
+
             const regex2 = buildFuzzyRegex('café');
             expect(regex2.test('cafe')).toBe(true);
         });
@@ -210,7 +210,7 @@ describe('fuzzy-search.utils', () => {
         it('handles accented characters in both directions', () => {
             const regex1 = buildFuzzyRegex('resume');
             expect(regex1.test('résumé')).toBe(true);
-            
+
             const regex2 = buildFuzzyRegex('résumé');
             expect(regex2.test('resume')).toBe(true);
         });
@@ -233,7 +233,7 @@ describe('fuzzy-search.utils', () => {
             const regex = buildFuzzyRegex('sanitaires');
             expect(regex.test('sanitaires')).toBe(true);
             expect(regex.test('SANITAIRES')).toBe(true);
-            
+
             const regex2 = buildFuzzyRegex('developpeur');
             expect(regex2.test('développeur')).toBe(true);
             expect(regex2.test('Développeur')).toBe(true);

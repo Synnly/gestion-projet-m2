@@ -1,5 +1,5 @@
 /**
- * Interface used to temporarely store the students login, 
+ * Interface used to temporarely store the students login,
  * before sending the account creation email to them.
  */
 export interface StudentLoginInfo {

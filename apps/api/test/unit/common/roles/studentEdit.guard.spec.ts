@@ -32,6 +32,17 @@ describe('StudentEditGuard', () => {
             expect(() => guard.canActivate(context)).toThrow('User not authenticated');
         });
 
+        it('should handle null request gracefully', () => {
+            const context = {
+                switchToHttp: () => ({
+                    getRequest: () => null,
+                }),
+            } as ExecutionContext;
+
+            expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+            expect(() => guard.canActivate(context)).toThrow('User not authenticated');
+        });
+
         it('should return true when user is ADMIN', () => {
             const context = createMockExecutionContext(
                 { sub: '507f1f77bcf86cd799439011', role: Role.ADMIN },
@@ -45,10 +56,7 @@ describe('StudentEditGuard', () => {
 
         it('should return true when STUDENT edits their own resource', () => {
             const studentId = '507f1f77bcf86cd799439011';
-            const context = createMockExecutionContext(
-                { sub: studentId, role: Role.STUDENT },
-                { studentId },
-            );
+            const context = createMockExecutionContext({ sub: studentId, role: Role.STUDENT }, { studentId });
 
             const result = guard.canActivate(context);
 
@@ -104,10 +112,7 @@ describe('StudentEditGuard', () => {
 
         it('should use user._id if user.sub is not present for STUDENT', () => {
             const studentId = '507f1f77bcf86cd799439011';
-            const context = createMockExecutionContext(
-                { _id: studentId, role: Role.STUDENT },
-                { studentId },
-            );
+            const context = createMockExecutionContext({ _id: studentId, role: Role.STUDENT }, { studentId });
 
             const result = guard.canActivate(context);
 
@@ -116,10 +121,7 @@ describe('StudentEditGuard', () => {
 
         it('should use user.id if user.sub and user._id are not present for STUDENT', () => {
             const studentId = '507f1f77bcf86cd799439011';
-            const context = createMockExecutionContext(
-                { id: studentId, role: Role.STUDENT },
-                { studentId },
-            );
+            const context = createMockExecutionContext({ id: studentId, role: Role.STUDENT }, { studentId });
 
             const result = guard.canActivate(context);
 

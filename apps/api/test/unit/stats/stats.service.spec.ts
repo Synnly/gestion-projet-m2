@@ -355,6 +355,31 @@ describe('StatsService (Integration)', () => {
             expect(stats.totalStudents).toBe('0');
         });
 
+        it('should return number as-is for counts less than 10', async () => {
+            const company = await companyModel.create({
+                email: 'small@test.com',
+                password: 'pwd',
+                name: 'Small Corp',
+                isValid: true,
+            });
+
+            // Create 5 visible posts (less than 10)
+            const postsPromises = Array.from({ length: 5 }, (_, i) =>
+                postModel.create({
+                    title: `Post ${i}`,
+                    description: 'Desc',
+                    company: company._id,
+                    type: PostType.Teletravail,
+                }),
+            );
+            await Promise.all(postsPromises);
+
+            const stats = await service.getPublicStats();
+
+            // 5 is less than 10, so it should be returned as-is
+            expect(stats.totalPosts).toBe('5');
+        });
+
         it('should return all counts simultaneously', async () => {
             const company = await companyModel.create({
                 email: 'multi@test.com',
@@ -435,6 +460,23 @@ describe('StatsService (Integration)', () => {
 
             // 550 rounded to nearest 10 = 550 = 0.55k -> "0.6k"
             expect(stats.totalPosts).toBe('0.6k');
+        });
+
+        it('should format round thousands without decimal (e.g. 1000 -> 1k)', async () => {
+            const company = await companyModel.create({
+                email: 'round-k@test.com',
+                password: 'pwd',
+                name: 'Round K Corp',
+                isValid: true,
+            });
+
+            // Mock countDocuments to return exactly 1000
+            jest.spyOn(postModel, 'countDocuments').mockResolvedValueOnce(1000 as any);
+
+            const stats = await service.getPublicStats();
+
+            // 1000 rounded to nearest 100 = 1000 = 1k (integer, no decimal)
+            expect(stats.totalPosts).toBe('1k');
         });
 
         it('should format numbers between 1000 and 9999 with k suffix rounded to nearest 100', async () => {

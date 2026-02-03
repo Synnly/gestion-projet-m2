@@ -36,20 +36,20 @@ describe('FileSizeValidationPipe', () => {
             pipe.transform(bigFile);
         } catch (error) {
             expect(error).toBeInstanceOf(PayloadTooLargeException);
-            
+
             expect(error.getStatus()).toBe(413);
 
             expect(error.getResponse()).toEqual({
                 message: 'File is too large. Max allowed size is 2MB',
                 error: 'Payload Too Large',
-                statusCode: 413
+                statusCode: 413,
             });
         }
     });
 
     it('should pass if file size is valid', () => {
         const validFile = { size: 1 * 1024 * 1024 } as Express.Multer.File; // 1 Mo
-        
+
         const result = pipe.transform(validFile);
         expect(result).toBe(validFile);
     });
@@ -61,5 +61,29 @@ describe('FileSizeValidationPipe', () => {
             expect(error).toBeInstanceOf(BadRequestException);
             expect(error.message).toBe('File is required');
         }
+    });
+
+    it('should use default maxSize of 2MB when IMPORT_MAX_SIZE_BYTES is not configured', () => {
+        const configWithoutMaxSize = {
+            get: jest.fn((key: string) => {
+                if (key === 'IMPORT_MAX_SIZE_BYTES') return undefined;
+                return null;
+            }),
+        };
+
+        const pipeWithDefault = new FileSizeValidationPipe(configWithoutMaxSize);
+
+        // File size exactly at default limit (2MB) should pass
+        const validFile = { size: 2 * 1024 * 1024 } as Express.Multer.File;
+        const result = pipeWithDefault.transform(validFile);
+        expect(result).toBe(validFile);
+
+        // File size slightly over default limit (2MB + 1 byte) should fail
+        const tooLargeFile = { size: 2 * 1024 * 1024 + 1 } as Express.Multer.File;
+        expect(() => pipeWithDefault.transform(tooLargeFile)).toThrow(PayloadTooLargeException);
+    });
+
+    it('should throw BadRequestException when file is null', () => {
+        expect(() => pipe.transform(null as any)).toThrow(BadRequestException);
     });
 });

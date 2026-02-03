@@ -187,9 +187,10 @@ describe('UsersModule Admin provider factory', () => {
         const UsersModule = mod.UsersModule;
 
         const providers: any[] = Reflect.getMetadata('providers', UsersModule) || [];
-        const adminProvider = providers.find(
-            (p: any) => p.provide && typeof p.provide === 'function' && p.provide.name === 'AdminModel'
-        ) || providers[3]; // Admin is at index 3 (after Company, Student, UserService)
+        const adminProvider =
+            providers.find(
+                (p: any) => p.provide && typeof p.provide === 'function' && p.provide.name === 'AdminModel',
+            ) || providers[3]; // Admin is at index 3 (after Company, Student, UserService)
         expect(adminProvider).toBeDefined();
 
         const useFactory = adminProvider?.useFactory;
@@ -221,10 +222,11 @@ describe('UsersModule Admin provider factory', () => {
         const UsersModule = mod.UsersModule;
 
         const providers: any[] = Reflect.getMetadata('providers', UsersModule) || [];
-        const adminProvider = providers.find(
-            (p: any) => p.provide && typeof p.provide === 'function' && p.provide.name === 'AdminModel'
-        ) || providers[3];
-        
+        const adminProvider =
+            providers.find(
+                (p: any) => p.provide && typeof p.provide === 'function' && p.provide.name === 'AdminModel',
+            ) || providers[3];
+
         const useFactory = adminProvider?.useFactory;
         if (!useFactory) {
             // Skip if provider structure is different

@@ -62,4 +62,13 @@ describe('UpdatePostDto', () => {
         expect(typeof dto.maxSalary).toBe('number');
         expect(dto.maxSalary).toBe(2345);
     });
+
+    it('transforms string to boolean for isCoverLetterRequired via Type decorator', () => {
+        const plain = { title: 'T', description: 'D', isCoverLetterRequired: 'true' } as any;
+        const { plainToInstance } = require('class-transformer');
+        const dto = plainToInstance(UpdatePostDto, plain);
+
+        expect(typeof dto.isCoverLetterRequired).toBe('boolean');
+        expect(dto.isCoverLetterRequired).toBe(true);
+    });
 });
