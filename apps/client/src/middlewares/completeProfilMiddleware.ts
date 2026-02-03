@@ -64,10 +64,12 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
         const modifiedAt = newProfile.profile?.rejected?.modifiedAt;
 
         // Vérifier si l'entreprise a modifié son profil après le rejet
-        console.log('isRejected:', isRejected, 'rejectedAt:', rejectedAt, 'modifiedAt:', modifiedAt);
         const hasModifiedAfterRejection =
-            !isRejected || (rejectedAt && modifiedAt && new Date(modifiedAt) > new Date(rejectedAt));
-        console.log('hasModifiedAfterRejection:', hasModifiedAfterRejection);
+            !isRejected &&
+            rejectedAt !== undefined &&
+            modifiedAt !== undefined &&
+            new Date(modifiedAt) > new Date(rejectedAt);
+
         // Si rejeté mais modifié après rejet et profil complet, considérer comme en attente de validation
         if (hasModifiedAfterRejection && isComplete) {
             if (pathname !== '/pending-validation') {
@@ -94,32 +96,26 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
         }
 
         if (isComplete) {
-            try {
-                const validationRes = await authFetch(`${API_URL}/api/companies/${payload.id}/is-valid`, {
-                    method: 'GET',
-                });
+            const validationRes = await authFetch(`${API_URL}/api/companies/${payload.id}/is-valid`, {
+                method: 'GET',
+            });
 
-                if (!validationRes.ok) {
-                    console.error(
-                        `Failed to check company validation status: received HTTP ${validationRes.status} for company ${payload.id}`,
-                    );
-                    // Allow navigation to continue to avoid degrading UX on transient failures.
-                    return;
-                }
-
-                const { isValid } = await validationRes.json();
-                if (!isValid && pathname !== '/pending-validation') {
-                    throw redirect('/pending-validation');
-                }
-
-                // If company has become valid while on the pending page, redirect to dashboard.
-                if (isValid && pathname === '/pending-validation') {
-                    throw redirect(`/home`);
-                }
-            } catch (error) {
-                console.error(`Error while checking company validation status for company ${payload.id}:`, error);
+            if (!validationRes.ok) {
+                console.error(
+                    `Failed to check company validation status: received HTTP ${validationRes.status} for company ${payload.id}`,
+                );
                 // Allow navigation to continue to avoid degrading UX on transient failures.
                 return;
+            }
+
+            const { isValid } = await validationRes.json();
+            if (!isValid && pathname !== '/pending-validation') {
+                throw redirect('/pending-validation');
+            }
+
+            // If company has become valid while on the pending page, redirect to dashboard.
+            if (isValid && pathname === '/pending-validation') {
+                throw redirect(`/home`);
             }
         }
 
