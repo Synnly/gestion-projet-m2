@@ -98,6 +98,30 @@ describe('StudentService', () => {
         );
     });
 
+    it('create logs error and continues when mailer fails', async () => {
+        const dto = { email: 'x@y.z' } as any;
+
+        const mockCreatedStudent = {
+            email: 'x@y.z',
+            firstName: 'Test',
+            role: Role.STUDENT,
+        } as any;
+
+        mockModel.create.mockResolvedValue(mockCreatedStudent);
+        mockMailerService.sendAccountCreationEmail.mockRejectedValue(new Error('Mail error'));
+
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+        await service.create(dto);
+
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            'Failed to send welcome email to x@y.z:',
+            expect.any(Error),
+        );
+
+        consoleErrorSpy.mockRestore();
+    });
+
     it('update updates existing student when found', async () => {
         const saveMock = jest.fn().mockResolvedValue(undefined);
         const studentDoc: any = { save: saveMock, set: jest.fn() };
@@ -106,6 +130,15 @@ describe('StudentService', () => {
         await service.update('1', { email: 'new@e.mail' } as any);
         expect(mockModel.findOne).toHaveBeenCalledWith({ _id: '1', deletedAt: { $exists: false } });
         expect(saveMock).toHaveBeenCalled();
+    });
+
+    it('update returns undefined when student not found', async () => {
+        mockModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+        const result = await service.update('1', { email: 'new@e.mail' } as any);
+
+        expect(result).toBeUndefined();
+        expect(mockModel.findOne).toHaveBeenCalledWith({ _id: '1', deletedAt: { $exists: false } });
     });
 
     it('remove resolves when document updated', async () => {
@@ -224,6 +257,35 @@ describe('StudentService', () => {
 
             expect(mockModel.insertMany.mock.calls[0][0].length).toBe(2);
             expect(result).toEqual({ added: 2, skipped: 2 });
+        });
+
+        it('should rethrow error when insertMany fails', async () => {
+            mockModel.find.mockResolvedValue([]);
+            mockModel.insertMany.mockRejectedValue(new Error('Database error'));
+
+            await expect(service.createMany(dtos, false)).rejects.toThrow('Database error');
+        });
+
+        it('should log errors when sending emails fails for some students', async () => {
+            mockModel.find.mockResolvedValue([]);
+            mockModel.insertMany.mockResolvedValue(dtos);
+            mockMailerService.sendAccountCreationEmail
+                .mockResolvedValueOnce(true)
+                .mockRejectedValueOnce(new Error('Email error'))
+                .mockResolvedValueOnce(true)
+                .mockResolvedValueOnce(true);
+
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            const result = await service.createMany(dtos, false);
+
+            expect(result.added).toBe(4);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                expect.stringContaining('Failed to send email to'),
+                expect.any(Error),
+            );
+
+            consoleErrorSpy.mockRestore();
         });
     });
 

@@ -1,6 +1,8 @@
 import { Types } from 'mongoose';
 import { plainToInstance } from 'class-transformer';
 import { MessageDto } from '../../../../../src/forum/message/dto/messageDto';
+import { Role } from '../../../../../src/common/roles/roles.enum';
+
 describe('MessageDto', () => {
     describe('transformation', () => {
         it('should transform plain object to MessageDto correctly when all fields are provided and student is author', () => {
@@ -47,6 +49,69 @@ describe('MessageDto', () => {
             expect(dto.parentMessageId?.authorId.name).toBe('Company Name');
             expect(dto.parentMessageId?.authorId.email).toBe('totoCorp@corp.com');
             expect(dto.createdAt).toEqual(new Date('2025-02-01'));
+        });
+
+        it('should transform plain object to MessageDto correctly when company is author', () => {
+            const messageId = new Types.ObjectId();
+            const authorId = new Types.ObjectId();
+            const plainData = {
+                _id: messageId,
+                authorId: {
+                    _id: authorId,
+                    name: 'Company Name',
+                    email: 'company@test.com',
+                    logo: 'http://logo.png',
+                    role: Role.COMPANY,
+                },
+                content: 'This is a company message',
+                createdAt: new Date('2025-02-01'),
+            };
+            const dto = plainToInstance(MessageDto, plainData);
+            expect(dto._id).toEqual(messageId);
+            expect(dto.authorId._id).toEqual(authorId);
+            expect(dto.authorId.name).toBe('Company Name');
+            expect(dto.authorId.email).toBe('company@test.com');
+            expect(dto.content).toBe('This is a company message');
+        });
+
+        it('should handle unknown role with fallback to Object', () => {
+            const messageId = new Types.ObjectId();
+            const authorId = new Types.ObjectId();
+            const plainData = {
+                _id: messageId,
+                authorId: {
+                    _id: authorId,
+                    email: 'unknown@test.com',
+                    role: 'UNKNOWN_ROLE',
+                },
+                content: 'This is a message from unknown role',
+                createdAt: new Date('2025-02-01'),
+            };
+            const dto = plainToInstance(MessageDto, plainData);
+            expect(dto._id).toEqual(messageId);
+            expect(dto.authorId._id).toEqual(authorId);
+            expect(dto.content).toBe('This is a message from unknown role');
+        });
+
+        it('should transform message without parentMessageId', () => {
+            const messageId = new Types.ObjectId();
+            const authorId = new Types.ObjectId();
+            const plainData = {
+                _id: messageId,
+                authorId: {
+                    _id: authorId,
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    email: 'john@test.com',
+                    role: Role.STUDENT,
+                },
+                content: 'This is a root message',
+                createdAt: new Date('2025-02-01'),
+            };
+            const dto = plainToInstance(MessageDto, plainData);
+            expect(dto._id).toEqual(messageId);
+            expect(dto.parentMessageId).toBeUndefined();
+            expect(dto.content).toBe('This is a root message');
         });
     });
 });

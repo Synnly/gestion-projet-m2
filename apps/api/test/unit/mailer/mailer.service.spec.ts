@@ -396,6 +396,62 @@ describe('MailerService', () => {
         });
     });
 
+    describe('sendAccountBanEmail', () => {
+        it('should send account ban email with reason', async () => {
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+
+            const result = await service.sendAccountBanEmail('user@example.com', 'Violation of terms');
+
+            expect(result).toBe(true);
+            expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: 'user@example.com',
+                    subject: `Vous avez été banni de Test App !`,
+                    template: 'accountBan',
+                    from: '"Test App" <noreply@example.com>',
+                    context: {
+                        email: 'user@example.com',
+                        banReason: 'Violation of terms',
+                        fromName: 'Test App',
+                    },
+                }),
+            );
+        });
+
+        it('should send account ban email with empty reason when not provided', async () => {
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+
+            const result = await service.sendAccountBanEmail('user@example.com');
+
+            expect(result).toBe(true);
+            expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: 'user@example.com',
+                    subject: `Vous avez été banni de Test App !`,
+                    template: 'accountBan',
+                    context: expect.objectContaining({
+                        banReason: '',
+                    }),
+                }),
+            );
+        });
+
+        it('should normalize email to lowercase', async () => {
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+
+            await service.sendAccountBanEmail('USER@EXAMPLE.COM', 'Test reason');
+
+            expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: 'user@example.com',
+                    context: expect.objectContaining({
+                        email: 'user@example.com',
+                    }),
+                }),
+            );
+        });
+    });
+
     describe('sendCustomTemplateEmail', () => {
         it('should send email with custom template', async () => {
             mockNestMailerService.sendMail.mockResolvedValue(true);

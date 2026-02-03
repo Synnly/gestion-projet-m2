@@ -27,6 +27,10 @@ describe('StatsController', () => {
       totalCompanies: 10,
       totalStudents: 90,
     }),
+    getLatestPublicPosts: jest.fn().mockResolvedValue([
+      { _id: '1', title: 'Post 1' },
+      { _id: '2', title: 'Post 2' },
+    ]),
   };
 
   beforeEach(async () => {
@@ -74,6 +78,30 @@ describe('StatsController', () => {
       // This test verifies that getPublicStats doesn't have guards
       const result = await controller.getPublicStats();
       expect(result).toBeDefined();
+    });
+  });
+
+  describe('getLatestPublicPosts', () => {
+    it('should return latest public posts with default limit', async () => {
+      const result = await controller.getLatestPublicPosts();
+      
+      expect(service.getLatestPublicPosts).toHaveBeenCalledWith(6);
+      expect(result).toEqual([
+        { _id: '1', title: 'Post 1' },
+        { _id: '2', title: 'Post 2' },
+      ]);
+    });
+
+    it('should return latest public posts with custom limit', async () => {
+      await controller.getLatestPublicPosts(10);
+      
+      expect(service.getLatestPublicPosts).toHaveBeenCalledWith(10);
+    });
+
+    it('should cap limit at 20 when exceeding maximum', async () => {
+      await controller.getLatestPublicPosts(50);
+      
+      expect(service.getLatestPublicPosts).toHaveBeenCalledWith(20);
     });
   });
 });

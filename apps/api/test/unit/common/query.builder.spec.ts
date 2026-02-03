@@ -170,6 +170,17 @@ describe('QueryBuilder', () => {
             ]);
         });
 
+        it('swaps minSalary and maxSalary when minSalary > maxSalary', async () => {
+            const qb = new QueryBuilder({ minSalary: 3000, maxSalary: 2000 } as any, mockGeoService as any);
+            const filter = await qb.build();
+
+            // Should swap values so minSalary=2000, maxSalary=3000
+            expect(filter.$and).toEqual([
+                { minSalary: { $type: 'number', $gte: 2000, $lte: 3000 } },
+                { maxSalary: { $type: 'number', $lte: 3000 } },
+            ]);
+        });
+
         it('filters by minSalary only', async () => {
             const qb = new QueryBuilder({ minSalary: 2000 } as any, mockGeoService as any);
             const filter = await qb.build();

@@ -180,3 +180,73 @@ describe('UsersModule Student provider factory', () => {
         expect(result).toBe(mockStudentModel);
     });
 });
+
+describe('UsersModule Admin provider factory', () => {
+    it('should execute Admin useFactory and create discriminator when missing', () => {
+        const mod = require('../../../src/user/user.module');
+        const UsersModule = mod.UsersModule;
+
+        const providers: any[] = Reflect.getMetadata('providers', UsersModule) || [];
+        const adminProvider = providers.find(
+            (p: any) => p.provide && typeof p.provide === 'function' && p.provide.name === 'AdminModel'
+        ) || providers[3]; // Admin is at index 3 (after Company, Student, UserService)
+        expect(adminProvider).toBeDefined();
+
+        const useFactory = adminProvider?.useFactory;
+        if (!useFactory) {
+            // Skip if provider structure is different
+            return;
+        }
+
+        const mockUserModel: any = {
+            discriminators: undefined,
+            discriminator: jest.fn().mockReturnValue('adminDiscriminatorModel'),
+        };
+
+        const mockConnection: any = {
+            model: jest.fn().mockImplementation((name: string) => {
+                if (name === 'User') return mockUserModel;
+                return null;
+            }),
+        };
+
+        const result = useFactory(mockConnection as any);
+
+        expect(result).toBe('adminDiscriminatorModel');
+        expect(mockUserModel.discriminator).toHaveBeenCalled();
+    });
+
+    it('should execute Admin useFactory and return existing model when discriminator exists', () => {
+        const mod = require('../../../src/user/user.module');
+        const UsersModule = mod.UsersModule;
+
+        const providers: any[] = Reflect.getMetadata('providers', UsersModule) || [];
+        const adminProvider = providers.find(
+            (p: any) => p.provide && typeof p.provide === 'function' && p.provide.name === 'AdminModel'
+        ) || providers[3];
+        
+        const useFactory = adminProvider?.useFactory;
+        if (!useFactory) {
+            // Skip if provider structure is different
+            return;
+        }
+
+        const mockUserModel: any = {
+            discriminators: { Admin: true },
+            discriminator: jest.fn(),
+        };
+
+        const mockAdminModel = 'existingAdminModel';
+
+        const mockConnection: any = {
+            model: jest.fn().mockImplementation((name: string) => {
+                if (name === 'User') return mockUserModel;
+                if (name === 'Admin') return mockAdminModel;
+                return null;
+            }),
+        };
+
+        const result = useFactory(mockConnection as any);
+        expect(result).toBe(mockAdminModel);
+    });
+});

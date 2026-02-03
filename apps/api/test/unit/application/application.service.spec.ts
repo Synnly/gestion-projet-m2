@@ -278,6 +278,33 @@ describe('ApplicationService', () => {
             expect(save).toHaveBeenCalledTimes(1);
             expect(result).toEqual({ cvUrl: 'https://cv-only-url', lmUrl: undefined });
         });
+
+        it('should log error and continue when notification fails during create', async () => {
+            mockStudentService.findOne.mockResolvedValue(student);
+            mockPostService.findOne.mockResolvedValue(post);
+            const exec = jest.fn().mockResolvedValue(null);
+            mockApplicationModel.findOne.mockReturnValue({ exec });
+            mockS3Service.generatePresignedUploadUrl.mockResolvedValueOnce({
+                fileName: 'cv-file.pdf',
+                uploadUrl: 'https://cv-url',
+            });
+            const save = jest.fn().mockResolvedValue({ _id: new Types.ObjectId() });
+            mockApplicationModel.mockImplementation(() => ({ save }));
+            mockPostService.addApplication.mockResolvedValue(undefined);
+            mockNotificationService.create.mockRejectedValue(new Error('Notification service error'));
+
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            const result = await service.create(studentId, postId, { cvExtension: 'pdf' });
+
+            expect(result).toEqual({ cvUrl: 'https://cv-url', lmUrl: undefined });
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Failed to send notification for new application:',
+                expect.any(Error),
+            );
+
+            consoleErrorSpy.mockRestore();
+        });
     });
 
     describe('updateStatus', () => {
@@ -314,6 +341,33 @@ describe('ApplicationService', () => {
 
             await expect(service.updateStatus(postId, ApplicationStatus.Rejected)).rejects.toThrow(NotFoundException);
             expect(exec).toHaveBeenCalledTimes(1);
+        });
+
+        it('should log error and continue when notification fails', async () => {
+            const application = {
+                _id: postId,
+                post: { _id: postId, title: 'Test Post' } as any,
+                student: { _id: studentId } as any,
+                status: ApplicationStatus.Pending,
+                save: jest.fn().mockResolvedValue(true),
+            };
+            const exec = jest.fn().mockResolvedValue(application);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+            mockNotificationService.create.mockRejectedValue(new Error('Notification service error'));
+
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            await service.updateStatus(postId, ApplicationStatus.Accepted);
+
+            expect(application.status).toBe(ApplicationStatus.Accepted);
+            expect(application.save).toHaveBeenCalledTimes(1);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Failed to send notification for application status update:',
+                expect.any(Error),
+            );
+
+            consoleErrorSpy.mockRestore();
         });
     });
     describe('findByPostPaginated', () => {

@@ -386,5 +386,218 @@ describe('StatsService (Integration)', () => {
                 totalStudents: '1',
             });
         });
+
+        it('should format numbers between 10 and 99 as rounded to nearest 10', async () => {
+            const company = await companyModel.create({
+                email: 'format-test@test.com',
+                password: 'pwd',
+                name: 'Format Corp',
+                isValid: true,
+            });
+
+            // Create 25 visible posts
+            const postsPromises = Array.from({ length: 25 }, (_, i) =>
+                postModel.create({
+                    title: `Post ${i}`,
+                    description: 'Desc',
+                    company: company._id,
+                    type: PostType.Teletravail,
+                }),
+            );
+            await Promise.all(postsPromises);
+
+            const stats = await service.getPublicStats();
+
+            // 25 rounded to nearest 10 = 30
+            expect(stats.totalPosts).toBe('30');
+        });
+
+        it('should format numbers between 100 and 999 with k suffix', async () => {
+            const company = await companyModel.create({
+                email: 'format-k@test.com',
+                password: 'pwd',
+                name: 'Format K Corp',
+                isValid: true,
+            });
+
+            // Create 550 visible posts
+            const postsPromises = Array.from({ length: 550 }, (_, i) =>
+                postModel.create({
+                    title: `Post ${i}`,
+                    description: 'Desc',
+                    company: company._id,
+                    type: PostType.Teletravail,
+                }),
+            );
+            await Promise.all(postsPromises);
+
+            const stats = await service.getPublicStats();
+
+            // 550 rounded to nearest 10 = 550 = 0.55k -> "0.6k"
+            expect(stats.totalPosts).toBe('0.6k');
+        });
+
+        it('should format numbers between 1000 and 9999 with k suffix rounded to nearest 100', async () => {
+            const company = await companyModel.create({
+                email: 'format-k2@test.com',
+                password: 'pwd',
+                name: 'Format K2 Corp',
+                isValid: true,
+            });
+
+            // Mock countDocuments to avoid creating 5550 posts
+            jest.spyOn(postModel, 'countDocuments').mockResolvedValueOnce(5550 as any);
+
+            const stats = await service.getPublicStats();
+
+            // 5550 rounded to nearest 100 = 5600 = 5.6k
+            expect(stats.totalPosts).toBe('5.6k');
+        });
+
+        it('should format numbers >= 1M with M suffix', async () => {
+            const company = await companyModel.create({
+                email: 'format-m@test.com',
+                password: 'pwd',
+                name: 'Format M Corp',
+                isValid: true,
+            });
+
+            // Mock countDocuments to return >= 1M
+            jest.spyOn(postModel, 'countDocuments').mockResolvedValueOnce(1200000 as any);
+
+            const stats = await service.getPublicStats();
+
+            // 1200000 -> 1.2M
+            expect(stats.totalPosts).toBe('1.2M');
+        });
+
+        it('should format whole millions without decimals', async () => {
+            const company = await companyModel.create({
+                email: 'format-m2@test.com',
+                password: 'pwd',
+                name: 'Format M2 Corp',
+                isValid: true,
+            });
+
+            // Mock countDocuments to return exactly 2M
+            jest.spyOn(postModel, 'countDocuments').mockResolvedValueOnce(2000000 as any);
+
+            const stats = await service.getPublicStats();
+
+            // 2000000 -> 2M (no decimal)
+            expect(stats.totalPosts).toBe('2M');
+        });
+    });
+
+    describe('getLatestPublicPosts', () => {
+        it('should return visible posts with populated company', async () => {
+            const company = await companyModel.create({
+                email: 'latest@test.com',
+                password: 'pwd',
+                name: 'Latest Corp',
+                isValid: true,
+                city: 'Paris',
+                country: 'France',
+            });
+
+            await postModel.create({
+                title: 'Latest Post',
+                description: 'Desc',
+                company: company._id,
+                type: PostType.Teletravail,
+            });
+
+            const posts = await service.getLatestPublicPosts();
+
+            expect(posts).toHaveLength(1);
+            expect(posts[0].title).toBe('Latest Post');
+            expect((posts[0].company as any).name).toBe('Latest Corp');
+        });
+
+        it('should return limited number of posts', async () => {
+            const company = await companyModel.create({
+                email: 'limit@test.com',
+                password: 'pwd',
+                name: 'Limit Corp',
+                isValid: true,
+            });
+
+            // Create 10 posts
+            const postsPromises = Array.from({ length: 10 }, (_, i) =>
+                postModel.create({
+                    title: `Post ${i}`,
+                    description: 'Desc',
+                    company: company._id,
+                    type: PostType.Teletravail,
+                }),
+            );
+            await Promise.all(postsPromises);
+
+            const posts = await service.getLatestPublicPosts(3);
+
+            expect(posts).toHaveLength(3);
+        });
+
+        it('should not return invisible posts', async () => {
+            const company = await companyModel.create({
+                email: 'invisible@test.com',
+                password: 'pwd',
+                name: 'Invisible Corp',
+                isValid: true,
+            });
+
+            await postModel.create({
+                title: 'Visible Post',
+                description: 'Desc',
+                company: company._id,
+                type: PostType.Teletravail,
+                isVisible: true,
+            });
+
+            await postModel.create({
+                title: 'Invisible Post',
+                description: 'Desc',
+                company: company._id,
+                type: PostType.Teletravail,
+                isVisible: false,
+            });
+
+            const posts = await service.getLatestPublicPosts();
+
+            expect(posts).toHaveLength(1);
+            expect(posts[0].title).toBe('Visible Post');
+        });
+
+        it('should return posts sorted by createdAt descending', async () => {
+            const company = await companyModel.create({
+                email: 'sorted@test.com',
+                password: 'pwd',
+                name: 'Sorted Corp',
+                isValid: true,
+            });
+
+            const firstPost = await postModel.create({
+                title: 'First Post',
+                description: 'Desc',
+                company: company._id,
+                type: PostType.Teletravail,
+            });
+
+            // Wait a bit to ensure different timestamps
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            await postModel.create({
+                title: 'Second Post',
+                description: 'Desc',
+                company: company._id,
+                type: PostType.Teletravail,
+            });
+
+            const posts = await service.getLatestPublicPosts();
+
+            expect(posts).toHaveLength(2);
+            expect(posts[0].title).toBe('Second Post');
+            expect(posts[1].title).toBe('First Post');
+        });
     });
 });

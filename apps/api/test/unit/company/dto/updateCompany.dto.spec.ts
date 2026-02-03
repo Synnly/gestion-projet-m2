@@ -1,4 +1,5 @@
 import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 import { UpdateCompanyDto } from '../../../../src/company/dto/updateCompany.dto';
 import { NafCode } from '../../../../src/company/nafCodes.enum';
 import { LegalStatus, StructureType } from '../../../../src/company/company.schema';
@@ -477,6 +478,40 @@ describe('UpdateCompanyDto', () => {
             const errors = await validate(dto);
             expect(errors.length).toBeGreaterThan(0);
             expect(errors[0].property).toBe('password');
+        });
+    });
+
+    describe('Rejected field validation', () => {
+        it('should pass validation when rejected is a valid object', async () => {
+            const dto = plainToInstance(UpdateCompanyDto, {
+                rejected: {
+                    isRejected: true,
+                    rejectionReason: 'Invalid documentation',
+                },
+            });
+
+            const errors = await validate(dto);
+            expect(errors.length).toBe(0);
+        });
+
+        it('should pass validation when rejected is not provided', async () => {
+            const dto = plainToInstance(UpdateCompanyDto, {
+                name: 'Company Name',
+            });
+
+            const errors = await validate(dto);
+            expect(errors.length).toBe(0);
+        });
+
+        it('should pass validation when rejected has only isRejected', async () => {
+            const dto = plainToInstance(UpdateCompanyDto, {
+                rejected: {
+                    isRejected: false,
+                },
+            });
+
+            const errors = await validate(dto);
+            expect(errors.length).toBe(0);
         });
     });
 });

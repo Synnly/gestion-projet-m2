@@ -23,11 +23,13 @@ describe('ApplicationController', () => {
         updateStatus: jest.fn(),
         getApplicationByStudentAndPost: jest.fn(),
         findByStudent: jest.fn(),
+        findByPostPaginated: jest.fn(),
     };
 
     const mockS3Service = {
         generatePublicDownloadUrl: jest.fn(),
         generatePresignedUploadUrl: jest.fn(),
+        generatePresignedDownloadUrl: jest.fn(),
     };
 
     const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
@@ -259,6 +261,150 @@ describe('ApplicationController', () => {
             await controller.findMine(studentId, 1, 5, undefined, 'test');
 
             expect(mockApplicationService.findByStudent).toHaveBeenCalledWith(studentId, 1, 5, undefined, 'test');
+        });
+    });
+
+    describe('getApplicationFile', () => {
+        it('should throw UnauthorizedException when user is not present', async () => {
+            const req = { user: null } as any;
+
+            await expect(
+                controller.getApplicationFile(applicationId, 'cv', req),
+            ).rejects.toThrow('User not authenticated');
+        });
+
+        it('should throw UnauthorizedException when user.sub is not present', async () => {
+            const req = { user: { role: 'STUDENT' } } as any;
+
+            await expect(
+                controller.getApplicationFile(applicationId, 'cv', req),
+            ).rejects.toThrow('User not authenticated');
+        });
+
+        it('should throw NotFoundException when application does not exist', async () => {
+            mockApplicationService.findOne.mockResolvedValue(null);
+            const req = { user: { sub: studentId.toString(), role: 'STUDENT' } } as any;
+
+            await expect(
+                controller.getApplicationFile(applicationId, 'cv', req),
+            ).rejects.toThrow(`Application with id ${applicationId} not found`);
+        });
+
+        it('should throw NotFoundException when cv file does not exist on application', async () => {
+            mockApplicationService.findOne.mockResolvedValue({
+                _id: applicationId,
+                cv: undefined,
+                post: { _id: postId },
+            });
+            const req = { user: { sub: studentId.toString(), role: 'STUDENT' } } as any;
+
+            await expect(
+                controller.getApplicationFile(applicationId, 'cv', req),
+            ).rejects.toThrow('cv not found for this application');
+        });
+
+        it('should throw NotFoundException when lm file does not exist on application', async () => {
+            mockApplicationService.findOne.mockResolvedValue({
+                _id: applicationId,
+                cv: 'cv.pdf',
+                coverLetter: undefined,
+                post: { _id: postId },
+            });
+            const req = { user: { sub: studentId.toString(), role: 'STUDENT' } } as any;
+
+            await expect(
+                controller.getApplicationFile(applicationId, 'lm', req),
+            ).rejects.toThrow('lm not found for this application');
+        });
+
+        it('should return presigned download URL for cv', async () => {
+            mockApplicationService.findOne.mockResolvedValue({
+                _id: applicationId,
+                cv: 'path/to/cv.pdf',
+                post: { _id: postId },
+            });
+            mockS3Service.generatePresignedDownloadUrl.mockResolvedValue({ downloadUrl: 'https://download-url' });
+            const req = { user: { sub: studentId.toString(), role: 'STUDENT' } } as any;
+
+            const result = await controller.getApplicationFile(applicationId, 'cv', req);
+
+            expect(result).toEqual({ downloadUrl: 'https://download-url' });
+            expect(mockS3Service.generatePresignedDownloadUrl).toHaveBeenCalledWith(
+                'path/to/cv.pdf',
+                studentId.toString(),
+                'STUDENT',
+                postId.toString(),
+            );
+        });
+
+        it('should return presigned download URL for lm (cover letter)', async () => {
+            mockApplicationService.findOne.mockResolvedValue({
+                _id: applicationId,
+                cv: 'path/to/cv.pdf',
+                coverLetter: 'path/to/lm.pdf',
+                post: { _id: postId },
+            });
+            mockS3Service.generatePresignedDownloadUrl.mockResolvedValue({ downloadUrl: 'https://lm-download-url' });
+            const req = { user: { sub: studentId.toString(), role: 'STUDENT' } } as any;
+
+            const result = await controller.getApplicationFile(applicationId, 'lm', req);
+
+            expect(result).toEqual({ downloadUrl: 'https://lm-download-url' });
+            expect(mockS3Service.generatePresignedDownloadUrl).toHaveBeenCalledWith(
+                'path/to/lm.pdf',
+                studentId.toString(),
+                'STUDENT',
+                postId.toString(),
+            );
+        });
+    });
+
+    describe('findByPostPaginated', () => {
+        it('should return paginated applications for a post', async () => {
+            const paginatedResult = {
+                data: [
+                    {
+                        _id: applicationId,
+                        post: { _id: postId, title: 'Test post' },
+                        student: { _id: studentId, firstName: 'John', lastName: 'Doe', email: 'john@example.com' },
+                        status: ApplicationStatus.Pending,
+                        cv: 'cv.pdf',
+                    },
+                ],
+                total: 1,
+                totalPages: 1,
+                page: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockApplicationService.findByPostPaginated.mockResolvedValue(paginatedResult);
+
+            const result = await controller.findByPostPaginated(postId, { page: 1, limit: 10 } as any);
+
+            expect(result.data).toHaveLength(1);
+            expect(result.total).toBe(1);
+            expect(result.totalPages).toBe(1);
+            expect(result.page).toBe(1);
+            expect(result.hasNext).toBe(false);
+            expect(result.hasPrev).toBe(false);
+            expect(mockApplicationService.findByPostPaginated).toHaveBeenCalledWith(postId, { page: 1, limit: 10 });
+        });
+
+        it('should return empty result when no applications exist', async () => {
+            const paginatedResult = {
+                data: [],
+                total: 0,
+                totalPages: 0,
+                page: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockApplicationService.findByPostPaginated.mockResolvedValue(paginatedResult);
+
+            const result = await controller.findByPostPaginated(postId, { page: 1, limit: 10 } as any);
+
+            expect(result.data).toHaveLength(0);
+            expect(result.total).toBe(0);
         });
     });
 

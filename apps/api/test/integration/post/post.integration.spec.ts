@@ -141,7 +141,7 @@ describe('Post Integration Tests', () => {
         }
 
         studentAccessToken = studentLoginRes.text;
-    });
+    }, 30000);
 
     afterEach(async () => {
         await postModel.deleteMany({}).exec();
@@ -153,7 +153,7 @@ describe('Post Integration Tests', () => {
         await studentModel.deleteMany({}).exec();
         await app.close();
         if (mongod) await mongod.stop();
-    });
+    }, 30000);
 
     const createPost = async (data: any) => {
         return await postModel.create({

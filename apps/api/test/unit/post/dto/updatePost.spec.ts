@@ -27,6 +27,11 @@ describe('UpdatePostDto', () => {
         expect(dto.isVisible).toBe(false);
     });
 
+    it('sets isVisible false when description missing', () => {
+        const dto = new UpdatePostDto({ title: 'T' } as Partial<UpdatePostDto>);
+        expect(dto.isVisible).toBe(false);
+    });
+
     it('works when constructed without partial', () => {
         const dto = new UpdatePostDto();
         expect(dto).toBeInstanceOf(UpdatePostDto);
