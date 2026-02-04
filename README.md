@@ -222,4 +222,4 @@ npm run test:seq    # Lance les tests en séquentiel
 ```bash
 npm run build
 ```
-permet notamment des détecter les erreurs de compilation avant la mise en production
+permet notamment de détecter les erreurs de compilation avant la mise en production
