@@ -44,10 +44,28 @@ Forum stages
 │       ├── package.json
 │       ├── public
 │       └── src/
-│           ├── components
-│           ├── hooks
-│           ├── modules
-│           └── pages
+│           ├── apis/
+│           ├── hooks/
+│           ├── middlewares/
+│           ├── pages/
+│           │     ├── forums/
+|           |     |     ├── components/
+|           |     |     |         ├── ForumCard.tsx
+|           |     |     |         ├── ForumHeader.tsx
+|           |     |     |         ├── MessageItem.tsx
+|           |     |     |         └── ReplyMessage.txs
+|           |     |     ├── ForumPage.tsx
+|           |     |     ├── MainForumPage.tsx
+|           |     |     └── TopicDetailPage.tsx
+│           │     ├── internships/
+|           |     |     ├── components/
+|           |     |     |         └── InternshipCard.tsx
+|           |     |     ├── InternshipsPage.tsx
+|           |     |     ├── InternshipDetailPage.tsx
+│           ├── routings/
+│           ├── stores/
+│           ├── types/
+│           └── utils/
 ├── .gitignore
 └── package.json
 ```
