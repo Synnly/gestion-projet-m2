@@ -1,0 +1,257 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { AdminController } from '../../../src/admin/admin.controller';
+import { AdminService } from '../../../src/admin/admin.service';
+import { CreateExportDto, ExportFormat } from '../../../src/admin/dto/createExportDto';
+import { ExportStatus } from '../../../src/admin/database-export.schema';
+import { HttpException, HttpStatus } from '@nestjs/common';
+import { Types } from 'mongoose';
+import { Readable } from 'stream';
+import type { Request, Response } from 'express';
+
+describe('AdminController', () => {
+    let controller: AdminController;
+    let service: AdminService;
+
+    const mockAdminService = {
+        initiateExport: jest.fn(),
+        getExportStatus: jest.fn(),
+        getExportsByAdmin: jest.fn(),
+        cancelExport: jest.fn(),
+        downloadExport: jest.fn(),
+    };
+
+    beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+            controllers: [AdminController],
+            providers: [
+                {
+                    provide: AdminService,
+                    useValue: mockAdminService,
+                },
+            ],
+        })
+            .overrideGuard(require('../../../src/auth/auth.guard').AuthGuard)
+            .useValue({ canActivate: jest.fn(() => true) })
+            .overrideGuard(require('../../../src/common/roles/roles.guard').RolesGuard)
+            .useValue({ canActivate: jest.fn(() => true) })
+            .compile();
+
+        controller = module.get<AdminController>(AdminController);
+        service = module.get<AdminService>(AdminService);
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('should be defined', () => {
+        expect(controller).toBeDefined();
+    });
+
+    describe('createExport', () => {
+        it('should initiate an export and return response DTO', async () => {
+            const adminId = new Types.ObjectId();
+            const dto: CreateExportDto = { format: ExportFormat.JSON };
+            const mockRequest = {
+                user: { _id: adminId },
+            } as any;
+
+            const mockExportJob = {
+                _id: new Types.ObjectId(),
+                status: ExportStatus.PENDING,
+            };
+
+            mockAdminService.initiateExport.mockResolvedValue(mockExportJob);
+
+            const result = await controller.createExport(dto, mockRequest);
+
+            expect(result).toEqual({
+                message: 'Export initiated. You will receive an email when the export is complete.',
+                exportId: mockExportJob._id.toString(),
+                status: ExportStatus.PENDING,
+            });
+            expect(service.initiateExport).toHaveBeenCalledWith(adminId.toString(), dto);
+        });
+    });
+
+    describe('getExportStatus', () => {
+        it('should return export status', async () => {
+            const exportId = new Types.ObjectId();
+            const mockExport = {
+                _id: exportId,
+                status: ExportStatus.COMPLETED,
+                fileUrl: '/api/admin/export/123/download',
+                fileSize: 1024,
+                collectionsCount: 10,
+                documentsCount: 100,
+                startedAt: new Date(),
+                completedAt: new Date(),
+            };
+
+            mockAdminService.getExportStatus.mockResolvedValue(mockExport);
+
+            const result = await controller.getExportStatus(exportId.toString());
+
+            expect(result).toEqual({
+                exportId: exportId.toString(),
+                status: ExportStatus.COMPLETED,
+                fileUrl: mockExport.fileUrl,
+                fileSize: mockExport.fileSize,
+                collectionsCount: mockExport.collectionsCount,
+                documentsCount: mockExport.documentsCount,
+                startedAt: mockExport.startedAt,
+                completedAt: mockExport.completedAt,
+                errorMessage: undefined,
+            });
+            expect(service.getExportStatus).toHaveBeenCalledWith(exportId.toString());
+        });
+
+        it('should throw HttpException if export not found', async () => {
+            mockAdminService.getExportStatus.mockResolvedValue(null);
+
+            await expect(controller.getExportStatus('nonexistent')).rejects.toThrow(
+                new HttpException('Export not found', HttpStatus.NOT_FOUND),
+            );
+        });
+
+        it('should include error message if export failed', async () => {
+            const exportId = new Types.ObjectId();
+            const mockExport = {
+                _id: exportId,
+                status: ExportStatus.FAILED,
+                errorMessage: 'Database connection failed',
+                startedAt: new Date(),
+                completedAt: new Date(),
+            };
+
+            mockAdminService.getExportStatus.mockResolvedValue(mockExport);
+
+            const result = await controller.getExportStatus(exportId.toString());
+
+            expect(result.status).toBe(ExportStatus.FAILED);
+            expect(result.errorMessage).toBe('Database connection failed');
+        });
+    });
+
+    describe('listExports', () => {
+        it('should return list of exports for admin', async () => {
+            const adminId = new Types.ObjectId();
+            const mockRequest = {
+                user: { _id: adminId },
+            } as any;
+
+            const mockExports = [
+                {
+                    _id: new Types.ObjectId(),
+                    status: ExportStatus.COMPLETED,
+                    fileUrl: '/api/admin/export/1/download',
+                    fileSize: 1024,
+                    collectionsCount: 10,
+                    documentsCount: 100,
+                    startedAt: new Date(),
+                    completedAt: new Date(),
+                    createdAt: new Date(),
+                },
+                {
+                    _id: new Types.ObjectId(),
+                    status: ExportStatus.IN_PROGRESS,
+                    startedAt: new Date(),
+                    createdAt: new Date(),
+                },
+            ];
+
+            mockAdminService.getExportsByAdmin.mockResolvedValue(mockExports);
+
+            const result = await controller.listExports(mockRequest);
+
+            expect(result).toHaveLength(2);
+            expect(result[0].exportId).toBe(mockExports[0]._id.toString());
+            expect(result[0].status).toBe(ExportStatus.COMPLETED);
+            expect(result[1].status).toBe(ExportStatus.IN_PROGRESS);
+            expect(service.getExportsByAdmin).toHaveBeenCalledWith(adminId.toString());
+        });
+
+        it('should return empty array if no exports', async () => {
+            const adminId = new Types.ObjectId();
+            const mockRequest = {
+                user: { _id: adminId },
+            } as any;
+
+            mockAdminService.getExportsByAdmin.mockResolvedValue([]);
+
+            const result = await controller.listExports(mockRequest);
+
+            expect(result).toEqual([]);
+        });
+    });
+
+    describe('cancelExport', () => {
+        it('should cancel an export successfully', async () => {
+            const exportId = new Types.ObjectId().toString();
+
+            mockAdminService.cancelExport.mockResolvedValue(true);
+
+            const result = await controller.cancelExport(exportId);
+
+            expect(result).toEqual({
+                message: 'Export cancelled successfully',
+                exportId,
+            });
+            expect(service.cancelExport).toHaveBeenCalledWith(exportId);
+        });
+
+        it('should throw HttpException if export cannot be cancelled', async () => {
+            const exportId = new Types.ObjectId().toString();
+
+            mockAdminService.cancelExport.mockResolvedValue(false);
+
+            await expect(controller.cancelExport(exportId)).rejects.toThrow(
+                new HttpException('Export cannot be cancelled or does not exist', HttpStatus.BAD_REQUEST),
+            );
+        });
+
+        it('should throw HttpException if export not found', async () => {
+            mockAdminService.cancelExport.mockResolvedValue(false);
+
+            await expect(controller.cancelExport('nonexistent')).rejects.toThrow(HttpException);
+        });
+    });
+
+    describe('downloadExport', () => {
+        it('should download export file', async () => {
+            const exportId = new Types.ObjectId().toString();
+            const mockStream = new Readable();
+            const mockResponse = {
+                set: jest.fn(),
+            } as unknown as Response;
+
+            mockAdminService.downloadExport.mockResolvedValue({
+                stream: mockStream,
+                filename: 'database-export-2026-02-04.json.gz',
+                mimeType: 'application/gzip',
+            });
+
+            const result = await controller.downloadExport(exportId, mockResponse);
+
+            expect(mockResponse.set).toHaveBeenCalledWith({
+                'Content-Type': 'application/gzip',
+                'Content-Disposition': 'attachment; filename="database-export-2026-02-04.json.gz"',
+            });
+            expect(result).toBeDefined();
+            expect(service.downloadExport).toHaveBeenCalledWith(exportId);
+        });
+
+        it('should handle download errors', async () => {
+            const exportId = new Types.ObjectId().toString();
+            const mockResponse = {
+                set: jest.fn(),
+            } as unknown as Response;
+
+            mockAdminService.downloadExport.mockRejectedValue(
+                new HttpException('Export file not found', HttpStatus.NOT_FOUND),
+            );
+
+            await expect(controller.downloadExport(exportId, mockResponse)).rejects.toThrow(HttpException);
+        });
+    });
+});
