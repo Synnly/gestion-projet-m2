@@ -1,4 +1,4 @@
-import { Controller, Param, HttpCode, HttpStatus, UseGuards, Query, Post, NotFoundException } from '@nestjs/common';
+import { Controller, Param, HttpCode, HttpStatus, UseGuards, Query, Post } from '@nestjs/common';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../common/roles/roles.guard';
