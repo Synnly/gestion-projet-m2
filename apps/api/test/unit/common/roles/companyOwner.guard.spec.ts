@@ -114,6 +114,17 @@ describe('CompanyOwnerGuard', () => {
             expect(result).toBe(true);
         });
 
+        it('should handle null request gracefully', () => {
+            const context = {
+                switchToHttp: () => ({
+                    getRequest: () => null,
+                }),
+            } as ExecutionContext;
+
+            expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+            expect(() => guard.canActivate(context)).toThrow('User not authenticated');
+        });
+
         it('should reject when ObjectId-like values do not match', () => {
             const userId = { toString: () => '507f1f77bcf86cd799439011' };
             const companyId = { toString: () => '507f1f77bcf86cd799439012' };

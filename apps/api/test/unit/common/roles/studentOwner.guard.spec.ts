@@ -36,6 +36,16 @@ describe('StudentOwnerGuard', () => {
             expect(() => guard.canActivate(context)).toThrow('User not authenticated');
         });
 
+        it('should handle null request gracefully', () => {
+            const context = {
+                switchToHttp: () => ({
+                    getRequest: () => null,
+                }),
+            } as ExecutionContext;
+            expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+            expect(() => guard.canActivate(context)).toThrow('User not authenticated');
+        });
+
         it('should allow access for ADMIN role', () => {
             const user = { role: Role.ADMIN, sub: 'admin-id' };
             const context = createMockExecutionContext(user, { studentId: 'any' });

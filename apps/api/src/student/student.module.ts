@@ -5,10 +5,7 @@ import { StudentController } from './student.controller';
 import { StudentService } from './student.service';
 
 @Module({
-    imports: [
-        UsersModule,
-        MailerModule.register(),
-    ],
+    imports: [UsersModule, MailerModule.register()],
     controllers: [StudentController],
     providers: [StudentService],
     exports: [StudentService],

@@ -12,6 +12,7 @@ import { CompanyModule } from '../../../src/company/company.module';
 import { Company, CompanyDocument } from '../../../src/company/company.schema';
 import { RefreshToken, RefreshTokenDocument } from '../../../src/auth/refreshToken.schema';
 import { Role } from '../../../src/common/roles/roles.enum';
+import { MailerService } from '../../../src/mailer/mailer.service';
 
 describe('Auth Integration Tests', () => {
     let app: INestApplication;
@@ -23,6 +24,12 @@ describe('Auth Integration Tests', () => {
     const REFRESH_TOKEN_SECRET = 'test-refresh-secret';
     const ACCESS_TOKEN_LIFESPAN_MINUTES = 5;
     const REFRESH_TOKEN_LIFESPAN_MINUTES = 60;
+
+    const mockMailerService = {
+        sendVerificationEmail: jest.fn().mockResolvedValue(true),
+        sendAccountCreationEmail: jest.fn().mockResolvedValue(true),
+        sendPasswordResetEmail: jest.fn().mockResolvedValue(true),
+    };
 
     beforeAll(async () => {
         mongod = await MongoMemoryServer.create();
@@ -45,7 +52,10 @@ describe('Auth Integration Tests', () => {
                 CompanyModule,
                 AuthModule,
             ],
-        }).compile();
+        })
+            .overrideProvider(MailerService)
+            .useValue(mockMailerService)
+            .compile();
 
         app = moduleFixture.createNestApplication();
         app.use(cookieParser());
