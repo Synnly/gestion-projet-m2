@@ -28,6 +28,10 @@ export const MessageItem = ({
 
     // Check if the author is banned
     const isAuthorBanned = !!authorId.ban;
+
+    console.log('MessageItem rendered with message:', message);
+    console.log('Author info:', authorId);
+    console.log('Is author banned?', isAuthorBanned);
     
     // Check if it's the user's own message
     const isOwnMessage = currentUserId && authorId._id === currentUserId;

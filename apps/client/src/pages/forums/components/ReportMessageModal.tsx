@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createReport, ReportReason, REPORT_REASON_LABELS } from '../../../api/reports';
+import { createReport, ReportReason, REPORT_REASON_LABELS } from '../../../apis/reports';
 import { toast } from 'react-toastify';
 import { useQueryClient } from '@tanstack/react-query';
 

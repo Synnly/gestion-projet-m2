@@ -17,7 +17,7 @@ import { Report, ReportSchema } from '../forum/report/report.schema';
     imports: [
         MongooseModule.forFeature([
             { name: User.name, schema: UserSchema },
-            { name: RefreshToken.name, schema: RefreshTokenSchema },,
+            { name: RefreshToken.name, schema: RefreshTokenSchema },
             { name: Message.name, schema: MessageSchema },
             { name: Report.name, schema: ReportSchema },
         ]),

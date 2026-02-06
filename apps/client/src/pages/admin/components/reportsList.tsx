@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { getAllReports, REPORT_REASON_LABELS, updateReportStatus } from '../api/reports';
-import type { Report } from '../api/reports';
+import { getAllReports, REPORT_REASON_LABELS, updateReportStatus } from '../../../apis/reports';
+import type { Report } from '../../../apis/reports';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { BanUserModal } from './components/BanUserModal';
+import { BanUserModal } from './BanUserModal';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
 type SortField = 'reportCount' | 'latestReport';

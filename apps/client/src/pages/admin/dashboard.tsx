@@ -3,7 +3,7 @@ import { AdminTabs } from './components/AdminTabs';
 import ImportStudent from './components/importStudent';
 import { StatsPage } from './components/stats/Stats';
 import ValidateCompanies from './components/ValidateCompanies';
-import ReportsList from './reportsList';
+import ReportsList from './components/ReportsList';
 
 
 export function AdminDashboard() {

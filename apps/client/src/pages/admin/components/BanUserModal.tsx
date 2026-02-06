@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { banUser } from '../../api/users';
+import { banUser } from '../../../apis/users';
 import { toast } from 'react-toastify';
 import { Ban } from 'lucide-react';
 
