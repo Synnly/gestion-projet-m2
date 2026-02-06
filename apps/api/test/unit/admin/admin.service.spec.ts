@@ -63,7 +63,7 @@ describe('AdminService', () => {
 
     const mockConfigService = {
         get: jest.fn((key: string) => {
-            if (key === 'EXPORT_DIR') return './test-exports';
+            if (key === 'EXPORTS_DIR') return './test-exports';
             if (key === 'FRONTEND_URL') return 'http://localhost:5173';
             if (key === 'MAIL_FROM_NAME') return 'Stagora';
             if (key === 'MAIL_FROM_EMAIL') return 'noreply@stagora.com';
@@ -370,11 +370,12 @@ describe('AdminService', () => {
     });
 
     describe('private methods (via performExport)', () => {
-        it('should throw NotFoundException if export job not found in performExport', async () => {
+        it('should exit gracefully if export job not found in performExport', async () => {
             const exportId = new Types.ObjectId().toString();
             MockExportModel.findById.mockResolvedValue(null);
 
-            await expect(service['performExport'](exportId)).rejects.toThrow(NotFoundException);
+            // Should not throw, just return undefined
+            await expect(service['performExport'](exportId)).resolves.toBeUndefined();
         });
 
         it('should handle export cancellation before starting', async () => {
@@ -441,4 +442,280 @@ describe('AdminService', () => {
             expect(mockExport.save).toHaveBeenCalled();
         });
     });
+
+    describe('exportAllCollectionsStreaming', () => {
+        it('should throw InternalServerErrorException if connection not available', async () => {
+            const exportId = new Types.ObjectId().toString();
+            const originalConnection = service['connection'];
+            service['connection'] = null as any;
+
+            await expect(service['exportAllCollectionsStreaming'](exportId)).rejects.toThrow(InternalServerErrorException);
+
+            service['connection'] = originalConnection;
+        });
+
+        it('should throw InternalServerErrorException if db not available', async () => {
+            const exportId = new Types.ObjectId().toString();
+            const originalConnection = service['connection'];
+            service['connection'] = { db: null } as any;
+
+            await expect(service['exportAllCollectionsStreaming'](exportId)).rejects.toThrow(InternalServerErrorException);
+
+            service['connection'] = originalConnection;
+        });
+    });
+
+    describe('checkCancellationDuringExport', () => {
+        it('should return true if export is cancelled', async () => {
+            const exportId = new Types.ObjectId().toString();
+            const mockExport = {
+                status: ExportStatus.CANCELLED,
+            };
+
+            MockExportModel.findById.mockResolvedValue(mockExport);
+
+            const result = await service['checkCancellationDuringExport'](exportId);
+
+            expect(result).toBe(true);
+            expect(MockExportModel.findById).toHaveBeenCalledWith(exportId);
+        });
+
+        it('should return false if export is not cancelled', async () => {
+            const exportId = new Types.ObjectId().toString();
+            const mockExport = {
+                status: ExportStatus.IN_PROGRESS,
+            };
+
+            MockExportModel.findById.mockResolvedValue(mockExport);
+
+            const result = await service['checkCancellationDuringExport'](exportId);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false if export is null', async () => {
+            const exportId = new Types.ObjectId().toString();
+
+            MockExportModel.findById.mockResolvedValue(null);
+
+            const result = await service['checkCancellationDuringExport'](exportId);
+
+            expect(result).toBe(false);
+        });
+    });
+
+    describe('getExportPath', () => {
+        it('should return correct export path', () => {
+            const filename = 'test-export.json.gz';
+            const result = service['getExportPath'](filename);
+
+            expect(result).toContain('test-exports');
+            expect(result).toContain(filename);
+        });
+
+        it('should use default exports directory if not configured', () => {
+            const originalGet = mockConfigService.get;
+            mockConfigService.get = jest.fn((key: string) => {
+                if (key === 'EXPORTS_DIR') return undefined;
+                return originalGet(key);
+            });
+
+            const filename = 'test-export.json.gz';
+            const result = service['getExportPath'](filename);
+
+            expect(result).toContain('exports');
+            expect(result).toContain(filename);
+
+            mockConfigService.get = originalGet;
+        });
+    });
+
+    describe('sendExportCompletedEmail', () => {
+        it('should send email on successful export', async () => {
+            const mockExport = {
+                _id: new Types.ObjectId(),
+                adminId: new Types.ObjectId(),
+                fileSize: 1024,
+                collectionsCount: 5,
+                documentsCount: 100,
+                completedAt: new Date(),
+            };
+
+            const mockAdmin = {
+                _id: mockExport.adminId,
+                email: 'admin@test.com',
+            };
+
+            MockAdminModel.findById = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockAdmin),
+            });
+
+            await service['sendExportCompletedEmail'](mockExport as any);
+
+            expect(mailerService.mailerProvider.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: 'admin@test.com',
+                    subject: 'Database Export Completed',
+                    template: 'exportCompleted',
+                }),
+            );
+        });
+
+        it('should not send email if admin not found', async () => {
+            const mockExport = {
+                _id: new Types.ObjectId(),
+                adminId: new Types.ObjectId(),
+            };
+
+            MockAdminModel.findById = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            await service['sendExportCompletedEmail'](mockExport as any);
+
+            expect(mailerService.mailerProvider.sendMail).not.toHaveBeenCalled();
+        });
+
+        it('should not send email if admin has no email', async () => {
+            const mockExport = {
+                _id: new Types.ObjectId(),
+                adminId: new Types.ObjectId(),
+            };
+
+            const mockAdmin = {
+                _id: mockExport.adminId,
+                email: null,
+            };
+
+            MockAdminModel.findById = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockAdmin),
+            });
+
+            await service['sendExportCompletedEmail'](mockExport as any);
+
+            expect(mailerService.mailerProvider.sendMail).not.toHaveBeenCalled();
+        });
+
+        it('should handle email sending errors silently', async () => {
+            const mockExport = {
+                _id: new Types.ObjectId(),
+                adminId: new Types.ObjectId(),
+                fileSize: 1024,
+                collectionsCount: 5,
+                documentsCount: 100,
+                completedAt: new Date(),
+            };
+
+            const mockAdmin = {
+                _id: mockExport.adminId,
+                email: 'admin@test.com',
+            };
+
+            MockAdminModel.findById = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockAdmin),
+            });
+
+            mailerService.mailerProvider.sendMail.mockRejectedValueOnce(new Error('Email error'));
+
+            // Should not throw
+            await expect(service['sendExportCompletedEmail'](mockExport as any)).resolves.toBeUndefined();
+        });
+    });
+
+    describe('sendExportFailedEmail', () => {
+        it('should send email on failed export', async () => {
+            const mockExport = {
+                _id: new Types.ObjectId(),
+                adminId: new Types.ObjectId(),
+            };
+
+            const mockAdmin = {
+                _id: mockExport.adminId,
+                email: 'admin@test.com',
+            };
+
+            MockAdminModel.findById = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockAdmin),
+            });
+
+            const errorMessage = 'Database connection failed';
+
+            await service['sendExportFailedEmail'](mockExport as any, errorMessage);
+
+            expect(mailerService.mailerProvider.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: 'admin@test.com',
+                    subject: 'Database Export Failed',
+                    template: 'exportFailed',
+                    context: expect.objectContaining({
+                        errorMessage,
+                    }),
+                }),
+            );
+        });
+
+        it('should not send email if admin not found', async () => {
+            const mockExport = {
+                _id: new Types.ObjectId(),
+                adminId: new Types.ObjectId(),
+            };
+
+            MockAdminModel.findById = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            await service['sendExportFailedEmail'](mockExport as any, 'Error');
+
+            expect(mailerService.mailerProvider.sendMail).not.toHaveBeenCalled();
+        });
+
+        it('should handle email sending errors silently', async () => {
+            const mockExport = {
+                _id: new Types.ObjectId(),
+                adminId: new Types.ObjectId(),
+            };
+
+            const mockAdmin = {
+                _id: mockExport.adminId,
+                email: 'admin@test.com',
+            };
+
+            MockAdminModel.findById = jest.fn().mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockAdmin),
+            });
+
+            mailerService.mailerProvider.sendMail.mockRejectedValueOnce(new Error('Email error'));
+
+            // Should not throw
+            await expect(service['sendExportFailedEmail'](mockExport as any, 'Error')).resolves.toBeUndefined();
+        });
+    });
+
+    describe('formatFileSize', () => {
+        it('should format 0 bytes', () => {
+            const result = service['formatFileSize'](0);
+            expect(result).toBe('0 Bytes');
+        });
+
+        it('should format bytes', () => {
+            const result = service['formatFileSize'](512);
+            expect(result).toBe('512 Bytes');
+        });
+
+        it('should format kilobytes', () => {
+            const result = service['formatFileSize'](1024);
+            expect(result).toBe('1 KB');
+        });
+
+        it('should format megabytes', () => {
+            const result = service['formatFileSize'](1024 * 1024 * 2.5);
+            expect(result).toBe('2.5 MB');
+        });
+
+        it('should format gigabytes', () => {
+            const result = service['formatFileSize'](1024 * 1024 * 1024 * 1.75);
+            expect(result).toBe('1.75 GB');
+        });
+    });
 });
+

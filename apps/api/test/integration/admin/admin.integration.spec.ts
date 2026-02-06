@@ -1,4 +1,4 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication, UnauthorizedException, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { MongooseModule, getModelToken, getConnectionToken } from '@nestjs/mongoose';
@@ -9,12 +9,12 @@ import cookieParser from 'cookie-parser';
 
 import { AdminModule } from '../../../src/admin/admin.module';
 import { AuthModule } from '../../../src/auth/auth.module';
+import { AuthGuard } from '../../../src/auth/auth.guard';
 import { UsersModule } from '../../../src/user/user.module';
 import { MailerModule } from '../../../src/mailer/mailer.module';
 import { User, UserDocument } from '../../../src/user/user.schema';
 import { DatabaseExport, DatabaseExportDocument, ExportStatus } from '../../../src/admin/database-export.schema';
 import { Role } from '../../../src/common/roles/roles.enum';
-import * as bcrypt from 'bcrypt';
 
 describe('Admin Export Integration Tests', () => {
     let app: INestApplication;
@@ -33,6 +33,8 @@ describe('Admin Export Integration Tests', () => {
     beforeAll(async () => {
         mongod = await MongoMemoryServer.create();
         const uri = mongod.getUri();
+
+        let jwtService: any;
 
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [
@@ -59,12 +61,31 @@ describe('Admin Export Integration Tests', () => {
                 MailerModule,
                 AdminModule,
             ],
-        }).compile();
+        })
+            .overrideGuard(AuthGuard)
+            .useValue({
+                canActivate: (context: any) => {
+                    const req = context.switchToHttp().getRequest();
+                    const auth = req.headers?.authorization;
+                    if (!auth) throw new UnauthorizedException();
+                    const token = auth.replace('Bearer ', '');
+                    try {
+                        const payload = jwtService.verify(token, { secret: ACCESS_TOKEN_SECRET });
+                        req.user = payload;
+                        return true;
+                    } catch {
+                        throw new UnauthorizedException();
+                    }
+                },
+            })
+            .compile();
 
         app = moduleFixture.createNestApplication();
         app.use(cookieParser());
         app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
         await app.init();
+
+        jwtService = moduleFixture.get<any>(require('@nestjs/jwt').JwtService);
 
         userModel = moduleFixture.get<Model<UserDocument>>(getModelToken(User.name));
         exportModel = moduleFixture.get<Model<DatabaseExportDocument>>(getModelToken(DatabaseExport.name));
@@ -73,10 +94,9 @@ describe('Admin Export Integration Tests', () => {
 
     beforeEach(async () => {
         // Create admin user for tests
-        const hashedPassword = await bcrypt.hash('AdminPass123!', 10);
         const admin = await userModel.create({
             email: 'admin@test.com',
-            password: hashedPassword,
+            password: 'AdminPass123!',
             role: Role.ADMIN,
             isValid: true,
             isVerified: true,
@@ -134,12 +154,14 @@ describe('Admin Export Integration Tests', () => {
         });
 
         it('should return 403 for non-admin users', async () => {
-            // Create a student user
-            const hashedPassword = await bcrypt.hash('StudentPass123!', 10);
+            // Create a student user with all required fields
             await userModel.create({
                 email: 'student@test.com',
-                password: hashedPassword,
+                password: 'StudentPass123!',
                 role: Role.STUDENT,
+                studentNumber: 'STU123',
+                firstName: 'Test',
+                lastName: 'Student',
                 isValid: true,
                 isVerified: true,
             });

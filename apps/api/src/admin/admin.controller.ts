@@ -50,7 +50,7 @@ export class AdminController {
         dto: CreateExportDto,
         @Req() req: Request,
     ): Promise<ExportInitiatedResponseDto> {
-        const adminId = (req as any).user._id.toString();
+        const adminId = ((req as any).user.sub || (req as any).user._id).toString();
         const exportJob = await this.adminService.initiateExport(adminId, dto);
 
         return {
@@ -93,7 +93,7 @@ export class AdminController {
      */
     @Get('exports')
     async listExports(@Req() req: Request): Promise<ExportListItemDto[]> {
-        const adminId = (req as any).user._id.toString();
+        const adminId = ((req as any).user.sub || (req as any).user._id).toString();
         const exports = await this.adminService.getExportsByAdmin(adminId);
 
         return exports.map((exp) => ({

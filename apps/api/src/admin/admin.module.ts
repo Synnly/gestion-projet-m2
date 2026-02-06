@@ -9,8 +9,10 @@ import { MailerModule } from '../mailer/mailer.module';
 @Module({
     imports: [
         UsersModule,
-        MailerModule,
-        MongooseModule.forFeature([{ name: DatabaseExport.name, schema: DatabaseExportSchema }]),
+        MailerModule.register(),
+        MongooseModule.forFeature([
+            { name: DatabaseExport.name, schema: DatabaseExportSchema },
+        ]),
     ],
     controllers: [AdminController],
     providers: [AdminService],

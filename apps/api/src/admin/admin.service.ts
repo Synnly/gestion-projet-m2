@@ -9,8 +9,12 @@ import { AdminUserDocument } from '../user/user.schema';
 import { DatabaseExport, DatabaseExportDocument, ExportStatus } from './database-export.schema';
 import { MailerService } from '../mailer/mailer.service';
 import { ConfigService } from '@nestjs/config';
-import { Readable } from 'stream';
+import { Readable, Transform, pipeline } from 'stream';
 import * as zlib from 'zlib';
+import { createWriteStream } from 'fs';
+import { promisify } from 'util';
+
+const pipelineAsync = promisify(pipeline);
 
 @Injectable()
 export class AdminService {
@@ -86,7 +90,9 @@ export class AdminService {
     private async performExport(exportId: string): Promise<void> {
         let exportJob = await this.exportModel.findById(exportId);
         if (!exportJob) {
-            throw new NotFoundException(`Export job ${exportId} not found`);
+            // Export job no longer exists (might have been cancelled or deleted)
+            // This is not an error - just exit gracefully
+            return;
         }
 
         try {
@@ -98,11 +104,8 @@ export class AdminService {
             // Mark export as in progress
             await this.markExportInProgress(exportJob);
 
-            // Export all collections
-            const { exportData, totalDocuments, collectionsCount } = await this.exportAllCollections(exportId);
-
-            // Create and save the export file
-            const { filename, fileSize } = await this.createExportFile(exportData);
+            // Export all collections with streaming
+            const { filename, fileSize, totalDocuments, collectionsCount } = await this.exportAllCollectionsStreaming(exportId);
 
             // Mark export as completed
             await this.markExportCompleted(exportJob, filename, fileSize, collectionsCount, totalDocuments);
@@ -133,115 +136,125 @@ export class AdminService {
     private async markExportInProgress(exportJob: DatabaseExportDocument): Promise<void> {
         exportJob.status = ExportStatus.IN_PROGRESS;
         exportJob.startedAt = new Date();
-        await exportJob.save();
+        try {
+            await exportJob.save();
+        } catch (error) {
+            // Export might have been deleted - exit gracefully
+            return;
+        }
     }
 
     /**
-     * Export all database collections
+     * Export all database collections using streaming to avoid memory issues
      * @param exportId ID of the export job (for cancellation checks)
-     * @returns Export data with statistics
+     * @returns Export metadata with statistics
      */
-    private async exportAllCollections(
+    private async exportAllCollectionsStreaming(
         exportId: string,
-    ): Promise<{ exportData: Record<string, any[]>; totalDocuments: number; collectionsCount: number }> {
-        if (!this.connection) {
+    ): Promise<{ filename: string; fileSize: number; totalDocuments: number; collectionsCount: number }> {
+        if (!this.connection || !this.connection.db) {
             throw new InternalServerErrorException('Database connection not available');
         }
 
-        if (!this.connection.db) {
-            throw new InternalServerErrorException('Database not available');
-        }
-
         const collections = await this.connection.db.listCollections().toArray();
-        const exportData: Record<string, any[]> = {};
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `database-export-${timestamp}.json.gz`;
+        const exportPath = this.getExportPath(filename);
+
+        // Ensure export directory exists
+        const fs = require('fs').promises;
+        const path = require('path');
+        await fs.mkdir(path.dirname(exportPath), { recursive: true });
+
         let totalDocuments = 0;
+        let isFirstCollection = true;
+
+        // Create streaming pipeline
+        const writeStream = createWriteStream(exportPath);
+        const gzipStream = zlib.createGzip();
+        gzipStream.pipe(writeStream);
+
+        // Start JSON object
+        gzipStream.write('{\n');
 
         for (const collInfo of collections) {
             const collName = collInfo.name;
 
-            // Check for cancellation before processing each collection
+            // Check for cancellation
             if (await this.checkCancellationDuringExport(exportId)) {
+                gzipStream.end();
+                writeStream.end();
                 throw new HttpException('Export cancelled by user', HttpStatus.CONFLICT);
             }
 
-            // Export collection data
-            const documents = await this.exportCollection(collName);
-            exportData[collName] = documents;
-            totalDocuments += documents.length;
+            // Add comma between collections
+            if (!isFirstCollection) {
+                gzipStream.write(',\n');
+            }
+            isFirstCollection = false;
+
+            // Write collection name
+            gzipStream.write(`  "${collName}": [\n`);
+
+            // Stream documents from collection
+            const cursor = this.connection.db.collection(collName).find({});
+            let isFirstDoc = true;
+
+            for await (const doc of cursor) {
+                if (!isFirstDoc) {
+                    gzipStream.write(',\n');
+                }
+                isFirstDoc = false;
+
+                // Write document as JSON
+                gzipStream.write('    ' + JSON.stringify(doc));
+                totalDocuments++;
+            }
+
+            // Close collection array
+            gzipStream.write('\n  ]');
         }
 
+        // Close JSON object
+        gzipStream.write('\n}\n');
+        gzipStream.end();
+
+        // Wait for stream to finish
+        await new Promise<void>((resolve, reject) => {
+            writeStream.on('finish', () => resolve());
+            writeStream.on('error', reject);
+        });
+
+        // Get file size
+        const stats = await fs.stat(exportPath);
+
         return {
-            exportData,
+            filename,
+            fileSize: stats.size,
             totalDocuments,
             collectionsCount: collections.length,
         };
     }
 
     /**
-     * Check if export was cancelled during processing
+     * Check if export was cancelled during execution
      * @param exportId ID of the export job
      * @returns True if cancelled, false otherwise
      */
     private async checkCancellationDuringExport(exportId: string): Promise<boolean> {
         const exportJob = await this.exportModel.findById(exportId);
-        if (!exportJob || exportJob.status === ExportStatus.CANCELLED) {
-            return true;
-        }
-        return false;
+        return exportJob?.status === ExportStatus.CANCELLED;
     }
 
     /**
-     * Export all documents from a single collection
-     * @param collectionName Name of the collection to export
-     * @returns Array of documents
+     * Get the filesystem path for an export file
+     * @param filename Name of the export file
+     * @returns Full filesystem path
      */
-    private async exportCollection(collectionName: string): Promise<any[]> {
-        if (!this.connection?.db) {
-            throw new InternalServerErrorException('Database connection not available');
-        }
-
-        const collection = this.connection.db.collection(collectionName);
-        return collection.find({}).toArray();
-    }
-
-    /**
-     * Create and save the export file
-     * @param exportData The data to export
-     * @returns Filename and file size
-     */
-    private async createExportFile(exportData: Record<string, any[]>): Promise<{ filename: string; fileSize: number }> {
-        // Convert to JSON
-        const jsonString = JSON.stringify(exportData, null, 2);
-        const buffer = Buffer.from(jsonString, 'utf-8');
-
-        // Compress
-        const compressed = await this.compressData(buffer);
-
-        // Generate filename
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `database-export-${timestamp}.json.gz`;
-
-        // Save to filesystem
-        await this.saveExportFile(filename, compressed);
-
-        return {
-            filename,
-            fileSize: compressed.length,
-        };
-    }
-
-    /**
-     * Save export file to filesystem
-     * @param filename Name of the file
-     * @param data File content
-     */
-    private async saveExportFile(filename: string, data: Buffer): Promise<void> {
-        const exportPath = this.getExportPath(filename);
-        const fs = require('fs').promises;
+    private getExportPath(filename: string): string {
         const path = require('path');
-
-        await fs.mkdir(path.dirname(exportPath), { recursive: true });
-        await fs.writeFile(exportPath, data);
+        const exportsDir = this.configService.get<string>('EXPORTS_DIR') || './exports';
+        return path.join(exportsDir, filename);
     }
 
     /**
@@ -266,7 +279,12 @@ export class AdminService {
         exportJob.fileSize = fileSize;
         exportJob.collectionsCount = collectionsCount;
         exportJob.documentsCount = documentsCount;
-        await exportJob.save();
+        try {
+            await exportJob.save();
+        } catch (error) {
+            // Export might have been deleted - exit gracefully
+            return;
+        }
     }
 
     /**
@@ -280,34 +298,15 @@ export class AdminService {
         exportJob.status = ExportStatus.FAILED;
         exportJob.completedAt = new Date();
         exportJob.errorMessage = error.message;
-        await exportJob.save();
+        try {
+            await exportJob.save();
+        } catch (saveError) {
+            // Export might have been deleted - exit gracefully
+            return;
+        }
 
         // Send failure email
         await this.sendExportFailedEmail(exportJob, error.message);
-    }
-
-    /**
-     * Compress data using gzip
-     * @param data Buffer to compress
-     * @returns Compressed buffer
-     */
-    private compressData(data: Buffer): Promise<Buffer> {
-        return new Promise((resolve, reject) => {
-            zlib.gzip(data, (error, result) => {
-                if (error) reject(error);
-                else resolve(result);
-            });
-        });
-    }
-
-    /**
-     * Get the filesystem path for an export file
-     * @param filename Name of the export file
-     * @returns Full path to the export file
-     */
-    private getExportPath(filename: string): string {
-        const exportDir = this.configService.get<string>('EXPORT_DIR') || './exports';
-        return require('path').join(exportDir, filename);
     }
 
     /**
@@ -316,7 +315,7 @@ export class AdminService {
      */
     private async sendExportCompletedEmail(exportJob: DatabaseExportDocument): Promise<void> {
         try {
-            const admin = await this.adminModel.findById(exportJob.adminId);
+            const admin = await this.adminModel.findById(exportJob.adminId).exec();
             if (!admin || !admin.email) {
                 return;
             }
@@ -349,7 +348,7 @@ export class AdminService {
      */
     private async sendExportFailedEmail(exportJob: DatabaseExportDocument, errorMessage: string): Promise<void> {
         try {
-            const admin = await this.adminModel.findById(exportJob.adminId);
+            const admin = await this.adminModel.findById(exportJob.adminId).exec();
             if (!admin || !admin.email) {
                 return;
             }

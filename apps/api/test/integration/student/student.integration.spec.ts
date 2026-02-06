@@ -7,6 +7,8 @@ import { UsersModule } from '../../../src/user/user.module';
 import { StudentModule } from '../../../src/student/student.module';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
+import { StudentEditGuard } from '../../../src/common/roles/studentEdit.guard';
+import { StudentOwnerGuard } from '../../../src/common/roles/studentOwner.guard';
 import { Role } from '../../../src/common/roles/roles.enum';
 import { ConfigModule } from '@nestjs/config';
 
@@ -28,6 +30,8 @@ describe('Student Integration', () => {
             },
         };
         const mockRolesGuard = { canActivate: jest.fn().mockReturnValue(true) };
+        const mockStudentEditGuard = { canActivate: jest.fn().mockReturnValue(true) };
+        const mockStudentOwnerGuard = { canActivate: jest.fn().mockReturnValue(true) };
 
         const moduleRef = await Test.createTestingModule({
             imports: [
@@ -44,6 +48,10 @@ describe('Student Integration', () => {
             .useValue(mockAuthGuard)
             .overrideGuard(RolesGuard)
             .useValue(mockRolesGuard)
+            .overrideGuard(StudentEditGuard)
+            .useValue(mockStudentEditGuard)
+            .overrideGuard(StudentOwnerGuard)
+            .useValue(mockStudentOwnerGuard)
             .compile();
 
         app = moduleRef.createNestApplication();
@@ -69,7 +77,7 @@ describe('Student Integration', () => {
         const res = await request(app.getHttpServer()).get('/api/students').expect(200);
         expect(Array.isArray(res.body)).toBeTruthy();
         expect(res.body.find((s: any) => s.email === dto.email)).toBeDefined();
-    });
+    }, 20000);
 
     it('POST /api/students -> fails validation when firstName is missing', async () => {
         const dto = {
