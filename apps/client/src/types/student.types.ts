@@ -1,5 +1,5 @@
 import z from 'zod';
-import { IMAGE_SIZE_MAX } from '../utils/constantes.ts';
+import { IMAGE_SIZE_MAX } from '../utils/constantes';
 
 export type studentProfile = {
     _id: string;

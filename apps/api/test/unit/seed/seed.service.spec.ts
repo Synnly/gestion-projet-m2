@@ -102,5 +102,26 @@ describe('SeedService', () => {
             expect(forumService.findOneByCompanyId).toHaveBeenCalled();
             expect(forumService.create).not.toHaveBeenCalled();
         });
+
+        it('should log error and not create admin when writeFileSync fails', async () => {
+            adminService.count.mockResolvedValue(0);
+            forumService.findOneByCompanyId.mockResolvedValue({} as any);
+            (fs.writeFileSync as jest.Mock).mockImplementation(() => {
+                throw new Error('Permission denied');
+            });
+
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            await service.run();
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Failed to write ADMIN-CREDENTIALS.txt file during seeding:',
+                expect.any(Error),
+                '. Default admin not created.',
+            );
+            expect(adminService.create).not.toHaveBeenCalled();
+
+            consoleErrorSpy.mockRestore();
+        });
     });
 });

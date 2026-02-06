@@ -1,7 +1,7 @@
 import { useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useApplicationStore, type ApplicationResponse } from '../store/useApplicationStore';
-import { userStore } from '../store/userStore';
+import { useApplicationStore, type ApplicationResponse } from '../stores/useApplicationStore';
+import { userStore } from '../stores/userStore';
 import { UseAuthFetch } from './useAuthFetch';
 
 const API_URL = import.meta.env.VITE_APIURL;

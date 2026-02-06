@@ -152,6 +152,67 @@ describe('TopicService', () => {
                 '-createdAt',
             );
         });
+
+        it('should add search query filter when searchQuery is provided', async () => {
+            const paginationDto = { page: 1, limit: 10, searchQuery: 'test' };
+            const expectedResult = {
+                data: [mockTopic],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockPaginationService.paginate.mockResolvedValue(expectedResult);
+
+            await service.findAll(mockForumId.toString(), paginationDto);
+
+            expect(paginationService.paginate).toHaveBeenCalledWith(
+                topicModel,
+                {
+                    forumId: mockForumId.toString(),
+                    $or: [
+                        { title: { $regex: 'test', $options: 'i' } },
+                        { description: { $regex: 'test', $options: 'i' } },
+                    ],
+                },
+                1,
+                10,
+                [
+                    { path: 'messages', select: 'content author createdAt updatedAt' },
+                    { path: 'author', select: '_id firstName lastName name email logo' },
+                ],
+                undefined,
+            );
+        });
+
+        it('should use default page and limit when not provided', async () => {
+            const paginationDto = {};
+            const expectedResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            };
+
+            mockPaginationService.paginate.mockResolvedValue(expectedResult);
+
+            await service.findAll(mockForumId.toString(), paginationDto as any);
+
+            expect(paginationService.paginate).toHaveBeenCalledWith(
+                topicModel,
+                { forumId: mockForumId.toString() },
+                1,
+                10,
+                expect.any(Array),
+                undefined,
+            );
+        });
     });
 
     describe('findOne', () => {

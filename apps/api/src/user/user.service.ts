@@ -31,7 +31,6 @@ export class UserService {
         return this.userModel.findOne({ _id: id, deletedAt: { $exists: false }, ban: { $exists: false } }).exec();
     }
 
-
     /**
      * Ban a user by setting a `ban` object.
      * @param userId The user's id.
@@ -42,7 +41,8 @@ export class UserService {
         const bannedUser = await this.userModel
             .findOneAndUpdate(
                 { _id: userId, ban: { $exists: false }, deletedAt: { $exists: false } },
-                { $set: { ban: { date: new Date(), reason: reason } } })
+                { $set: { ban: { date: new Date(), reason: reason } } },
+            )
             .exec();
 
         if (!bannedUser) throw new NotFoundException('User not found or already banned / deleted');

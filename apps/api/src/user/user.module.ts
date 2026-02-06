@@ -17,7 +17,7 @@ import { Report, ReportSchema } from '../forum/report/report.schema';
     imports: [
         MongooseModule.forFeature([
             { name: User.name, schema: UserSchema },
-            { name: RefreshToken.name, schema: RefreshTokenSchema },
+            { name: RefreshToken.name, schema: RefreshTokenSchema },,
             { name: Message.name, schema: MessageSchema },
             { name: Report.name, schema: ReportSchema },
         ]),
@@ -69,6 +69,12 @@ import { Report, ReportSchema } from '../forum/report/report.schema';
             inject: [getConnectionToken()],
         },
     ],
-    exports: [MongooseModule, getModelToken(Company.name), getModelToken(Student.name), UserService, getModelToken(Admin.name)],
+    exports: [
+        MongooseModule,
+        getModelToken(Company.name),
+        getModelToken(Student.name),
+        UserService,
+        getModelToken(Admin.name),
+    ],
 })
 export class UsersModule {}

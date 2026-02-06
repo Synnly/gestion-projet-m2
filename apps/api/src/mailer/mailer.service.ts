@@ -227,7 +227,13 @@ export class MailerService {
      * @param firstName Optional first name for personalization
      * @param customMessage Optional custom welcome message
      */
-    async sendAccountCreationEmail(email: string, rawPassword: string, firstName: string = 'Étudiant', lastName: string = "", customMessage: string = '') {
+    async sendAccountCreationEmail(
+        email: string,
+        rawPassword: string,
+        firstName: string = 'Étudiant',
+        lastName: string = '',
+        customMessage: string = '',
+    ) {
         const normalized = email.toLowerCase();
         const { from, name } = this.getFromAddress();
 
