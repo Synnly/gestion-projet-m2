@@ -101,9 +101,7 @@ describe('QueryBuilder', () => {
             // Each token should have an $or with fields
             expect(filter.$and[0]).toHaveProperty('$or');
             expect(filter.$and[0].$or).toEqual(
-                expect.arrayContaining([
-                    expect.objectContaining({ title: expect.any(RegExp) }),
-                ])
+                expect.arrayContaining([expect.objectContaining({ title: expect.any(RegExp) })]),
             );
         });
 
@@ -170,6 +168,17 @@ describe('QueryBuilder', () => {
             ]);
         });
 
+        it('swaps minSalary and maxSalary when minSalary > maxSalary', async () => {
+            const qb = new QueryBuilder({ minSalary: 3000, maxSalary: 2000 } as any, mockGeoService as any);
+            const filter = await qb.build();
+
+            // Should swap values so minSalary=2000, maxSalary=3000
+            expect(filter.$and).toEqual([
+                { minSalary: { $type: 'number', $gte: 2000, $lte: 3000 } },
+                { maxSalary: { $type: 'number', $lte: 3000 } },
+            ]);
+        });
+
         it('filters by minSalary only', async () => {
             const qb = new QueryBuilder({ minSalary: 2000 } as any, mockGeoService as any);
             const filter = await qb.build();
@@ -184,10 +193,7 @@ describe('QueryBuilder', () => {
             expect(filter.$and).toEqual([
                 { minSalary: { $type: 'number', $lte: 3000 } },
                 {
-                    $or: [
-                        { maxSalary: { $type: 'number', $lte: 3000 } },
-                        { maxSalary: { $exists: false } },
-                    ],
+                    $or: [{ maxSalary: { $type: 'number', $lte: 3000 } }, { maxSalary: { $exists: false } }],
                 },
             ]);
         });
@@ -279,6 +285,98 @@ describe('QueryBuilder', () => {
         it('returns default descending token when no sort provided', () => {
             const qb = new QueryBuilder({} as any, mockGeoService as any);
             expect(qb.buildSort(undefined)).toBe('-1');
+        });
+    });
+
+    describe('buildMessageFilter', () => {
+        it('should build message filter with topicId', () => {
+            const topicId = new Types.ObjectId().toString();
+            const qb = new QueryBuilder({ topicId } as any, mockGeoService as any);
+            const filter = qb.buildMessageFilter();
+
+            expect(filter.topicId).toBeDefined();
+            expect(filter.topicId.toString()).toBe(new Types.ObjectId(topicId).toString());
+        });
+
+        it('should return empty filter when no topicId provided', () => {
+            const qb = new QueryBuilder({} as any, mockGeoService as any);
+            const filter = qb.buildMessageFilter();
+
+            expect(filter).toEqual({});
+        });
+    });
+
+    describe('build - additional branches', () => {
+        it('should not add geolocation filter when geoService returns null', async () => {
+            const geoServiceNull = {
+                geocodeAddress: jest.fn().mockResolvedValue(null),
+            };
+            const qb = new QueryBuilder({ city: 'UnknownCity', radiusKm: 10 } as any, geoServiceNull as any);
+            const filter = await qb.build();
+
+            expect(filter.location).toBeUndefined();
+        });
+
+        it('should not add geolocation filter when geoService is undefined', async () => {
+            const qb = new QueryBuilder({ city: 'Paris', radiusKm: 10 } as any, undefined);
+            const filter = await qb.build();
+
+            expect(filter.location).toBeUndefined();
+        });
+
+        it('should skip invalid company ObjectId', async () => {
+            const qb = new QueryBuilder({ company: 'invalid-id' } as any, mockGeoService as any);
+            const filter = await qb.build();
+
+            expect(filter.company).toBeUndefined();
+        });
+
+        it('should filter empty keySkills after mapping', async () => {
+            const qb = new QueryBuilder({ keySkills: ['', null, undefined] } as any, mockGeoService as any);
+            const filter = await qb.build();
+
+            expect(filter.keySkills).toBeUndefined();
+        });
+
+        it('should include _id filter when provided', async () => {
+            const testId = { $in: [new Types.ObjectId()] };
+            const qb = new QueryBuilder({ _id: testId } as any, mockGeoService as any);
+            const filter = await qb.build();
+
+            expect(filter._id).toBe(testId);
+        });
+
+        it('should not set isVisible when showHidden is true', async () => {
+            const qb = new QueryBuilder({ showHidden: true } as any, mockGeoService as any);
+            const filter = await qb.build();
+
+            expect(filter.isVisible).toBeUndefined();
+        });
+
+        it('should not set isVisible for forums (isForum = true)', async () => {
+            const qb = new QueryBuilder({} as any, mockGeoService as any);
+            const filter = await qb.build(true);
+
+            expect(filter.isVisible).toBeUndefined();
+        });
+
+        it('should handle empty searchQuery after trim', async () => {
+            const qb = new QueryBuilder({ searchQuery: '   ' } as any, mockGeoService as any);
+            const filter = await qb.build();
+
+            expect(filter.$text).toBeUndefined();
+            expect(filter.$and).toBeUndefined();
+        });
+
+        it('should handle null/undefined values in keySkills array', async () => {
+            const qb = new QueryBuilder(
+                { keySkills: ['JavaScript', '', 'TypeScript', null] } as any,
+                mockGeoService as any,
+            );
+            const filter = await qb.build();
+
+            // Should only have 2 valid skills
+            expect(filter.keySkills.$in).toHaveLength(2);
         });
     });
 });

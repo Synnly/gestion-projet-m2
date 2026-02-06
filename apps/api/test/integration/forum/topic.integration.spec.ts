@@ -57,10 +57,12 @@ describe('Topic Integration Tests', () => {
                         return false;
                     }
                 },
-            })            .overrideGuard(RolesGuard)
+            })
+            .overrideGuard(RolesGuard)
             .useValue({ canActivate: () => true })
             .overrideGuard(ForumAccessGuard)
-            .useValue({ canActivate: () => true })            .compile();
+            .useValue({ canActivate: () => true })
+            .compile();
 
         app = moduleFixture.createNestApplication({ logger: false });
         app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
@@ -487,7 +489,7 @@ describe('Topic Integration Tests', () => {
                 .post(`/api/forum/invalid-id/topics`)
                 .set('Authorization', 'Bearer ' + accessToken)
                 .send(topicData);
-            
+
             // ParseObjectIdPipe peut générer une erreur 400 ou 500 selon l'implémentation
             expect([400, 500]).toContain(res.status);
         });
