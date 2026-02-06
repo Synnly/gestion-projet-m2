@@ -602,7 +602,10 @@ describe('ApplicationService', () => {
 
             await service.deleteAndSendNotification(appIdStr);
 
-            expect(mockApplicationModel.findOne).toHaveBeenCalledWith({ _id: new Types.ObjectId(appIdStr) });
+            expect(mockApplicationModel.findOne).toHaveBeenCalledWith({
+                _id: new Types.ObjectId(appIdStr),
+                deletedAt: { $exists: false },
+            });
             expect(mockApplicationModel.findOneAndUpdate).toHaveBeenCalledWith(
                 { _id: new Types.ObjectId(appIdStr), deletedAt: { $exists: false } },
                 { $set: { deletedAt: expect.any(Date) } },

@@ -233,7 +233,10 @@ export class PostService {
             throw new NotFoundException(`Post with id ${postId} not found`);
         }
 
-        await this.postModel.findByIdAndDelete(postId).exec();
+        await this.postModel.findOneAndUpdate(
+            { _id: new Types.ObjectId(postId), deletedAt: { $exists: false } },
+            { $set: { deletedAt: new Date() } },
+        );
 
         // Delete all applications associated with this post
         for (const applicationId of post.applications) {

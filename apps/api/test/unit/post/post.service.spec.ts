@@ -48,7 +48,6 @@ describe('PostService', () => {
         find: jest.fn(),
         findById: jest.fn(),
         findOneAndUpdate: jest.fn(),
-        findByIdAndDelete: jest.fn(),
         constructor: jest.fn(),
     };
 
@@ -259,7 +258,7 @@ describe('PostService', () => {
             };
             mockPaginationService.paginate.mockResolvedValue(paginationResult);
 
-            const result = await service.findAll({ page: 1, limit: 10 } as any);
+            const result = await service.findAll({ page: 1, limit: 10 } as any, false);
 
             // Service returns a paginated result: assert on `data`
             expect(result.data).toHaveLength(1);
@@ -279,7 +278,7 @@ describe('PostService', () => {
             };
             mockPaginationService.paginate.mockResolvedValue(paginationResult);
 
-            const result = await service.findAll({ page: 1, limit: 10 } as any);
+            const result = await service.findAll({ page: 1, limit: 10 } as any, false);
 
             expect(result.data).toHaveLength(0);
             expect(result.total).toBe(0);
@@ -302,7 +301,7 @@ describe('PostService', () => {
             };
             mockPaginationService.paginate.mockResolvedValue(paginationResult);
 
-            const result = await service.findAll({ page: 1, limit: 10 } as any);
+            const result = await service.findAll({ page: 1, limit: 10 } as any, false);
 
             expect(result.data).toHaveLength(3);
             expect(result.data[0].title).toBe('Développeur Full Stack');
@@ -584,14 +583,17 @@ describe('PostService', () => {
             mockPostModel.findById.mockReturnValue({ exec: execFind });
 
             const execDelete = jest.fn().mockResolvedValue(mockPostWithApps);
-            mockPostModel.findByIdAndDelete.mockReturnValue({ exec: execDelete });
+            mockPostModel.findOneAndUpdate.mockReturnValue({ exec: execDelete });
 
             mockApplicationService.deleteAndSendNotification.mockResolvedValue(undefined);
 
             await service.delete(postId);
 
             expect(mockPostModel.findById).toHaveBeenCalledWith(postId);
-            expect(mockPostModel.findByIdAndDelete).toHaveBeenCalledWith(postId);
+            expect(mockPostModel.findOneAndUpdate).toHaveBeenCalledWith(
+                expect.objectContaining({ _id: expect.any(Types.ObjectId), deletedAt: { $exists: false } }),
+                expect.objectContaining({ $set: { deletedAt: expect.any(Date) } }),
+            );
             expect(mockApplicationService.deleteAndSendNotification).toHaveBeenCalledTimes(2);
             expect(mockApplicationService.deleteAndSendNotification).toHaveBeenCalledWith(
                 appId1.toString(),
@@ -609,11 +611,14 @@ describe('PostService', () => {
             mockPostModel.findById.mockReturnValue({ exec: execFind });
 
             const execDelete = jest.fn().mockResolvedValue(mockPostNoApps);
-            mockPostModel.findByIdAndDelete.mockReturnValue({ exec: execDelete });
+            mockPostModel.findOneAndUpdate.mockReturnValue({ exec: execDelete });
 
             await service.delete(postId);
 
-            expect(mockPostModel.findByIdAndDelete).toHaveBeenCalledWith(postId);
+            expect(mockPostModel.findOneAndUpdate).toHaveBeenCalledWith(
+                expect.objectContaining({ _id: expect.any(Types.ObjectId), deletedAt: { $exists: false } }),
+                expect.objectContaining({ $set: { deletedAt: expect.any(Date) } }),
+            );
             expect(mockApplicationService.deleteAndSendNotification).not.toHaveBeenCalled();
         });
 
@@ -622,7 +627,7 @@ describe('PostService', () => {
             mockPostModel.findById.mockReturnValue({ exec: execFind });
 
             await expect(service.delete(postId)).rejects.toThrow(NotFoundException);
-            expect(mockPostModel.findByIdAndDelete).not.toHaveBeenCalled();
+            expect(mockPostModel.findOneAndUpdate).not.toHaveBeenCalled();
             expect(mockApplicationService.deleteAndSendNotification).not.toHaveBeenCalled();
         });
     });
