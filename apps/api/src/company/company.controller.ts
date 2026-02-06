@@ -42,20 +42,26 @@ export class CompanyController {
 
     /**
      * Retrieves all companies
-     * @returns An array of all companies
+     * @param query Pagination parameters
+     * @returns A paginated array of all companies
      */
     @Get('')
     @HttpCode(HttpStatus.OK)
-    async findAll(): Promise<CompanyDto[]> {
-        const companies = await this.companyService.findAll();
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async findAll(
+        @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        query: PaginationDto,
+    ): Promise<PaginationResult<CompanyDto>> {
+        const companies = await this.companyService.findAll(query);
 
-        return companies.map((company) =>
-            plainToInstance(CompanyDto, company, {
-                excludeExtraneousValues: true,
-            }),
-        );
+        return {
+            ...companies,
+            data: companies.data.map((company) =>
+                plainToInstance(CompanyDto, company, { excludeExtraneousValues: true }),
+            ),
+        };
     }
-
 
     /**
      * Retrieves companies pending validation with pagination
@@ -117,7 +123,12 @@ export class CompanyController {
     ) {
         await this.companyService.update(companyId, {
             isValid: false,
-            rejected: { isRejected: true, rejectionReason: dto.rejectionReason, rejectedAt: new Date(), modifiedAt: undefined },
+            rejected: {
+                isRejected: true,
+                rejectionReason: dto.rejectionReason,
+                rejectedAt: new Date(),
+                modifiedAt: undefined,
+            },
         });
     }
 
@@ -212,10 +223,12 @@ export class CompanyController {
         const posts = company.posts ?? [];
         return new CompanyDto({
             ...company,
-            rejected: company.rejected ? {
-                ...company.rejected,
-                rejectionReason: company.rejected.rejectionReason ?? '',
-            } : { isRejected: false, rejectionReason: undefined, rejectedAt: undefined },
+            rejected: company.rejected
+                ? {
+                      ...company.rejected,
+                      rejectionReason: company.rejected.rejectionReason ?? '',
+                  }
+                : { isRejected: false, rejectionReason: undefined, rejectedAt: undefined },
             posts: posts.map((post: PostDocument) => new PostDto(post)),
         });
     }
