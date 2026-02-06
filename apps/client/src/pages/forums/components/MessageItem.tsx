@@ -28,10 +28,6 @@ export const MessageItem = ({
 
     // Check if the author is banned
     const isAuthorBanned = !!authorId.ban;
-
-    console.log('MessageItem rendered with message:', message);
-    console.log('Author info:', authorId);
-    console.log('Is author banned?', isAuthorBanned);
     
     // Check if it's the user's own message
     const isOwnMessage = currentUserId && authorId._id === currentUserId;
@@ -133,7 +129,7 @@ export const MessageItem = ({
                                 <span className="text-lg leading-none mt-1">"</span> Citer
                             </button>
                         )}
-                        <span className={cn('badge', variant[`${message.authorId.role}`].style)}>
+                        <span className={cn('badge ml-auto', variant[`${message.authorId.role}`].style)}>
                             {variant[`${message.authorId.role}`].tag}
                         </span>
                     </div>

@@ -69,12 +69,12 @@ export class MessageService {
         const queryBuilder = new QueryBuilder<Message>({ ...rest, topicId });
         const filter = queryBuilder.buildMessageFilter();
         const populate = [
-            { path: 'authorId', select: 'firstName lastName name logo role ' },
+            { path: 'authorId', select: 'firstName lastName name logo role ban' },
             {
                 path: 'parentMessageId',
                 populate: {
                     path: 'authorId',
-                    select: 'firstName lastName name',
+                    select: 'firstName lastName name ban',
                 },
             },
         ];
