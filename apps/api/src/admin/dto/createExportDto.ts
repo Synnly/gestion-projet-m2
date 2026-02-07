@@ -12,8 +12,4 @@ export class CreateExportDto {
     @IsOptional()
     @IsEnum(ExportFormat)
     format?: ExportFormat = ExportFormat.JSON;
-
-    @IsOptional()
-    @IsString()
-    description?: string;
 }

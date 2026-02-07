@@ -3,6 +3,7 @@ import { AdminTabs } from './components/AdminTabs';
 import ImportStudent from './components/importStudent';
 import { StatsPage } from './components/stats/Stats';
 import ValidateCompanies from './components/ValidateCompanies';
+import ExportDatabase from './components/ExportDatabase';
 
 export function AdminDashboard() {
     const tabs = [
@@ -15,6 +16,11 @@ export function AdminDashboard() {
             id: 'validate-companies',
             label: 'Validation Entreprises',
             content: <ValidateCompanies />,
+        },
+        {
+            id: 'export-database',
+            label: 'Export Base de Données',
+            content: <ExportDatabase />,
         },
         {
             id: 'stats',

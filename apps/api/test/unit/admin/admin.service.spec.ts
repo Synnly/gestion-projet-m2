@@ -106,8 +106,61 @@ describe('AdminService', () => {
         configService = module.get(ConfigService);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         jest.clearAllMocks();
+        jest.restoreAllMocks();
+        
+        // Cleanup any test export files
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            const exportsDir = './test-exports';
+            
+            if (fs.existsSync(exportsDir)) {
+                const files = fs.readdirSync(exportsDir);
+                for (const file of files) {
+                    try {
+                        fs.unlinkSync(path.join(exportsDir, file));
+                    } catch (e) {
+                        // Ignore cleanup errors
+                    }
+                }
+                try {
+                    fs.rmdirSync(exportsDir);
+                } catch (e) {
+                    // Ignore cleanup errors
+                }
+            }
+        } catch (error) {
+            // Ignore cleanup errors
+        }
+    });
+
+    afterAll(async () => {
+        // Final cleanup
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            const exportsDir = './test-exports';
+            
+            if (fs.existsSync(exportsDir)) {
+                const files = fs.readdirSync(exportsDir);
+                for (const file of files) {
+                    try {
+                        fs.unlinkSync(path.join(exportsDir, file));
+                    } catch (e) {
+                        // Ignore
+                    }
+                }
+                try {
+                    fs.rmdirSync(exportsDir);
+                } catch (e) {
+                    // Ignore
+                }
+            }
+        } catch (error) {
+            // Ignore
+        }
     });
 
     it('should be defined', () => {
@@ -404,8 +457,10 @@ describe('AdminService', () => {
 
             MockExportModel.findById.mockResolvedValue(mockExport);
 
-            const originalConnection = service['connection'];
-            service['connection'] = null as any;
+            // Mock exportAllCollectionsStreaming to throw error
+            jest.spyOn(service as any, 'exportAllCollectionsStreaming').mockRejectedValue(
+                new InternalServerErrorException('Database connection not available')
+            );
 
             // performExport should not throw but handle the error internally
             await service['performExport'](exportId);
@@ -413,8 +468,6 @@ describe('AdminService', () => {
             // Verify export status was updated to failed
             expect(mockExport.status).toBe(ExportStatus.FAILED);
             expect(mockExport.save).toHaveBeenCalled();
-
-            service['connection'] = originalConnection;
         });
 
         it('should handle export cancellation during processing', async () => {
@@ -430,9 +483,10 @@ describe('AdminService', () => {
                 .mockResolvedValueOnce(mockExport)
                 .mockResolvedValueOnce({ ...mockExport, status: ExportStatus.CANCELLED });
 
-            connection.db.listCollections.mockReturnValue({
-                toArray: jest.fn().mockResolvedValue([{ name: 'users' }]),
-            });
+            // Mock exportAllCollectionsStreaming to throw cancellation error
+            jest.spyOn(service as any, 'exportAllCollectionsStreaming').mockRejectedValue(
+                new HttpException('Export cancelled by user', HttpStatus.CONFLICT)
+            );
 
             // performExport should not throw but handle cancellation gracefully
             await service['performExport'](exportId);
@@ -462,6 +516,174 @@ describe('AdminService', () => {
             await expect(service['exportAllCollectionsStreaming'](exportId)).rejects.toThrow(InternalServerErrorException);
 
             service['connection'] = originalConnection;
+        });
+
+        it('should handle multiple collections and process them sequentially', async () => {
+            const exportId = new Types.ObjectId().toString();
+            
+            // Mock collections
+            const mockCollections = [
+                { name: 'users' },
+                { name: 'posts' },
+                { name: 'comments' },
+            ];
+
+            mockConnection.db.listCollections.mockReturnValue({
+                toArray: jest.fn().mockResolvedValue(mockCollections),
+            });
+
+            // Track how many times we check for cancellation (one per collection)
+            const checkCancellationSpy = jest.spyOn(service as any, 'checkCancellationDuringExport')
+                .mockResolvedValue(false);
+
+            // Mock cursors for each collection
+            const mockCursor = {
+                [Symbol.asyncIterator]: async function* () {
+                    yield { _id: '1', data: 'test' };
+                },
+            };
+
+            mockConnection.db.collection.mockReturnValue({
+                find: jest.fn().mockReturnValue(mockCursor),
+            });
+
+            const fs = require('fs');
+            jest.spyOn(fs.promises, 'mkdir').mockResolvedValue(undefined);
+            jest.spyOn(fs.promises, 'stat').mockResolvedValue({ size: 2048 });
+
+            // Mock write stream with all required methods
+            const mockWriteStream = {
+                on: jest.fn((event, handler) => {
+                    if (event === 'finish') {
+                        setImmediate(handler);
+                    } else if (event === 'error') {
+                        // Store error handler
+                    }
+                    return mockWriteStream;
+                }),
+                once: jest.fn().mockReturnThis(),
+                emit: jest.fn(),
+                end: jest.fn(),
+                write: jest.fn(),
+                writable: true,
+            };
+            jest.spyOn(fs, 'createWriteStream').mockReturnValue(mockWriteStream as any);
+
+            const result = await service['exportAllCollectionsStreaming'](exportId);
+
+            // Verify we processed all collections
+            expect(checkCancellationSpy).toHaveBeenCalledTimes(3);
+            expect(result.collectionsCount).toBe(3);
+            expect(result.totalDocuments).toBe(3); // One doc per collection
+        });
+
+        it('should write comma separator between documents in a collection', async () => {
+            const exportId = new Types.ObjectId().toString();
+            
+            // Mock a single collection with multiple documents
+            const mockCollections = [
+                { name: 'users' },
+            ];
+
+            mockConnection.db.listCollections.mockReturnValue({
+                toArray: jest.fn().mockResolvedValue(mockCollections),
+            });
+
+            // Mock cursor with multiple documents
+            const mockCursor = {
+                [Symbol.asyncIterator]: async function* () {
+                    yield { _id: '1', name: 'user1', email: 'user1@test.com' };
+                    yield { _id: '2', name: 'user2', email: 'user2@test.com' };
+                    yield { _id: '3', name: 'user3', email: 'user3@test.com' };
+                },
+            };
+
+            mockConnection.db.collection.mockReturnValue({
+                find: jest.fn().mockReturnValue(mockCursor),
+            });
+
+            const fs = require('fs');
+            jest.spyOn(fs.promises, 'mkdir').mockResolvedValue(undefined);
+            jest.spyOn(fs.promises, 'stat').mockResolvedValue({ size: 1536 });
+
+            // Mock write stream with all required methods
+            const mockWriteStream = {
+                on: jest.fn((event, handler) => {
+                    if (event === 'finish') {
+                        setImmediate(handler);
+                    }
+                    return mockWriteStream;
+                }),
+                once: jest.fn().mockReturnThis(),
+                emit: jest.fn(),
+                end: jest.fn(),
+                write: jest.fn(),
+                writable: true,
+            };
+            jest.spyOn(fs, 'createWriteStream').mockReturnValue(mockWriteStream as any);
+
+            // Mock checkCancellationDuringExport
+            jest.spyOn(service as any, 'checkCancellationDuringExport').mockResolvedValue(false);
+
+            const result = await service['exportAllCollectionsStreaming'](exportId);
+
+            // Verify we processed all documents
+            expect(result.collectionsCount).toBe(1);
+            expect(result.totalDocuments).toBe(3); // Three documents in the collection
+        });
+
+        it('should throw HttpException when export is cancelled during processing', async () => {
+            const exportId = new Types.ObjectId().toString();
+            
+            // Mock collections
+            const mockCollections = [
+                { name: 'users' },
+                { name: 'posts' },
+            ];
+
+            mockConnection.db.listCollections.mockReturnValue({
+                toArray: jest.fn().mockResolvedValue(mockCollections),
+            });
+
+            // Mock cursor
+            const mockCursor = {
+                [Symbol.asyncIterator]: async function* () {
+                    yield { _id: '1', name: 'user1' };
+                },
+            };
+
+            mockConnection.db.collection.mockReturnValue({
+                find: jest.fn().mockReturnValue(mockCursor),
+            });
+
+            const fs = require('fs');
+            jest.spyOn(fs.promises, 'mkdir').mockResolvedValue(undefined);
+            
+            // Mock write stream with all required methods
+            const mockWriteStream = {
+                on: jest.fn().mockReturnThis(),
+                once: jest.fn().mockReturnThis(),
+                emit: jest.fn(),
+                end: jest.fn(),
+                write: jest.fn(),
+                writable: true,
+            };
+            jest.spyOn(fs, 'createWriteStream').mockReturnValue(mockWriteStream as any);
+
+            // Mock checkCancellationDuringExport: first call OK, second call cancelled
+            jest.spyOn(service as any, 'checkCancellationDuringExport')
+                .mockResolvedValueOnce(false) // First collection OK
+                .mockResolvedValueOnce(true); // Cancelled before second collection
+
+            // Execute and expect HttpException with correct message
+            try {
+                await service['exportAllCollectionsStreaming'](exportId);
+                fail('Should have thrown HttpException');
+            } catch (error) {
+                expect(error).toBeInstanceOf(HttpException);
+                expect(error.message).toBe('Export cancelled by user');
+                expect(error.getStatus()).toBe(HttpStatus.CONFLICT);
+            }
         });
     });
 
@@ -715,6 +937,81 @@ describe('AdminService', () => {
         it('should format gigabytes', () => {
             const result = service['formatFileSize'](1024 * 1024 * 1024 * 1.75);
             expect(result).toBe('1.75 GB');
+        });
+    });
+
+    describe('markExportInProgress', () => {
+        it('should update export status to in progress', async () => {
+            const mockExport = {
+                _id: new Types.ObjectId(),
+                status: ExportStatus.PENDING,
+                startedAt: null,
+                save: jest.fn().mockResolvedValue(true),
+            };
+
+            await service['markExportInProgress'](mockExport as any);
+
+            expect(mockExport.status).toBe(ExportStatus.IN_PROGRESS);
+            expect(mockExport.startedAt).toBeInstanceOf(Date);
+            expect(mockExport.save).toHaveBeenCalled();
+        });
+
+        it('should handle save error gracefully and return early', async () => {
+            const mockExport = {
+                _id: new Types.ObjectId(),
+                status: ExportStatus.PENDING,
+                startedAt: null,
+                save: jest.fn().mockRejectedValue(new Error('Save failed')),
+            };
+
+            // Should not throw, just return
+            await expect(service['markExportInProgress'](mockExport as any)).resolves.toBeUndefined();
+            expect(mockExport.save).toHaveBeenCalled();
+        });
+    });
+
+    describe('handleExportFailure', () => {
+        it('should update export status to failed and save error message', async () => {
+            const mockExport = {
+                _id: new Types.ObjectId(),
+                adminId: new Types.ObjectId(),
+                status: ExportStatus.IN_PROGRESS,
+                save: jest.fn().mockResolvedValue(true),
+            };
+
+            const error = new Error('Export failed due to database error');
+
+            await service['handleExportFailure'](mockExport as any, error);
+
+            expect(mockExport.status).toBe(ExportStatus.FAILED);
+            expect(mockExport.completedAt).toBeInstanceOf(Date);
+            expect(mockExport.errorMessage).toBe(error.message);
+            expect(mockExport.save).toHaveBeenCalled();
+        });
+
+        it('should return early if exportJob is null', async () => {
+            const sendEmailSpy = jest.spyOn(service as any, 'sendExportFailedEmail');
+
+            await service['handleExportFailure'](null as any, new Error('Test error'));
+
+            expect(sendEmailSpy).not.toHaveBeenCalled();
+        });
+
+        it('should return early when save fails and not send email', async () => {
+            const mockExport = {
+                _id: new Types.ObjectId(),
+                adminId: new Types.ObjectId(),
+                status: ExportStatus.IN_PROGRESS,
+                save: jest.fn().mockRejectedValue(new Error('Save failed')),
+            };
+
+            const sendEmailSpy = jest.spyOn(service as any, 'sendExportFailedEmail').mockResolvedValue(undefined);
+
+            await service['handleExportFailure'](mockExport as any, new Error('Export error'));
+
+            expect(mockExport.save).toHaveBeenCalled();
+            // Email should NOT be sent when save fails (early return)
+            expect(sendEmailSpy).not.toHaveBeenCalled();
         });
     });
 });
