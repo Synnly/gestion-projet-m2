@@ -30,7 +30,7 @@ export const StudentList = () => {
                 setIsLoading(false);
             }
         },
-        [authFetch],
+        [authFetch, itemsPerPage],
     );
 
     useEffect(() => {
