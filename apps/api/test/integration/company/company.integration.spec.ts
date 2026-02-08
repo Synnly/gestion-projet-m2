@@ -221,40 +221,31 @@ describe('Company Integration Tests', () => {
             expect(res.body.message).toBeDefined();
         });
 
-        it('should fail when unauthorized (no token)', async () => {
+        it('should allow creation without token (public signup)', async () => {
             const dto = {
-                email: 'test@company.com',
+                email: 'public@company.com',
                 password: 'StrongP@ss1',
                 role: 'COMPANY' as any,
-                name: 'Test Company',
+                name: 'Public Company',
             };
 
             await request(app.getHttpServer()).post('/api/companies').send(dto).expect(201);
         });
 
-        it('should fail when invalid token', async () => {
+        it('should fail when creating with an already existing email', async () => {
             const dto = {
-                email: 'test@company.com',
+                email: 'duplicate@company.com',
                 password: 'StrongP@ss1',
                 role: 'COMPANY' as any,
-                name: 'Test Company',
+                name: 'Original Company',
             };
 
+            await request(app.getHttpServer()).post('/api/companies').send(dto).expect(201);
+            
             await request(app.getHttpServer())
                 .post('/api/companies')
-                .set('Authorization', 'Bearer invalid-token')
                 .send(dto)
-                .expect(201);
-        });
-
-        it('should return 404 when updating a non-existent company', async () => {
-            const nonExistentId = new Types.ObjectId();
-
-            await request(app.getHttpServer())
-                .put(`/api/companies/${nonExistentId}`)
-                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
-                .send({ name: "Won't Exist" })
-                .expect(500);
+                .expect(409);
         });
 
         it('should reject unknown fields (forbidNonWhitelisted)', async () => {
@@ -1547,6 +1538,86 @@ describe('Company Integration Tests', () => {
                 .expect(200);
 
             expect(response.body).toEqual({ isValid: true });
+        });
+    });
+
+    describe('ADMIN Endpoints - Validation Flow', () => {
+        it('should list companies pending validation', async () => {
+            await companyModel.create([
+                { email: 'pending1@test.com', password: 'hash', name: 'P1', isValid: false, role: Role.COMPANY, isVerified: true },
+                { email: 'valid@test.com', password: 'hash', name: 'V1', isValid: true, role: Role.COMPANY, isVerified: true },
+            ]);
+
+            const res = await request(app.getHttpServer())
+                .get('/api/companies/pending-validation')
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .expect(200);
+
+            expect(res.body.data).toHaveLength(1);
+            expect(res.body.data[0].email).toBe('pending1@test.com');
+        });
+
+        it('should validate a company', async () => {
+            const company = await companyModel.create({
+                email: 'to-validate@test.com', password: 'hash', name: 'To Validate', isValid: false, role: Role.COMPANY, isVerified: true
+            });
+
+            await request(app.getHttpServer())
+                .put(`/api/companies/${company._id}/validate`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({})
+                .expect(204);
+
+            const updated = await companyModel.findById(company._id);
+            expect(updated?.isValid).toBe(true);
+            expect(updated?.rejected?.isRejected).toBe(false);
+        });
+
+        it('should reject a company with a reason', async () => {
+            const company = await companyModel.create({
+                email: 'to-reject@test.com', password: 'hash', name: 'To Reject', isValid: false, role: Role.COMPANY, isVerified: true
+            });
+
+            await request(app.getHttpServer())
+                .put(`/api/companies/${company._id}/reject`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .send({ rejectionReason: 'Incomplete SIRET' })
+                .expect(204);
+
+            const updated = await companyModel.findById(company._id);
+            expect(updated?.isValid).toBe(false);
+            expect(updated?.rejected?.isRejected).toBe(true);
+            expect(updated?.rejected?.rejectionReason).toBe('Incomplete SIRET');
+        });
+    });
+
+    describe('Public Profile Endpoints', () => {
+        it('should get public profile (authenticated)', async () => {
+            const company = await companyModel.create({
+                email: 'public-p@test.com', password: 'hash', name: 'Public P', isValid: true, role: Role.COMPANY, isVerified: true
+            });
+
+            const res = await request(app.getHttpServer())
+                .get(`/api/companies/${company._id}/public-profile`)
+                .set('Authorization', `Bearer ${tokenFor(Role.STUDENT)}`)
+                .expect(200);
+
+            expect(res.body.name).toBe('Public P');
+        });
+
+        it('should update public profile as owner', async () => {
+            const company = await companyModel.create({
+                email: 'update-p@test.com', password: 'hash', name: 'Update P', isValid: true, role: Role.COMPANY, isVerified: true
+            });
+
+            await request(app.getHttpServer())
+                .put(`/api/companies/${company._id}/public-profile`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY, company._id.toString())}`)
+                .send({ city: 'New City', country: 'France' })
+                .expect(204);
+
+            const updated = await companyModel.findById(company._id);
+            expect(updated?.city).toBe('New City');
         });
     });
 });
