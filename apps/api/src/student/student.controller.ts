@@ -9,7 +9,6 @@ import {
     HttpStatus,
     NotFoundException,
     Param,
-    ParseArrayPipe,
     ParseBoolPipe,
     Post,
     Put,
