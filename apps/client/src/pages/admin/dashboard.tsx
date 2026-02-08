@@ -4,6 +4,7 @@ import ImportStudent from './components/importStudent';
 import { StatsPage } from './components/stats/Stats';
 import ValidateCompanies from './components/ValidateCompanies';
 import { StudentList } from './components/StudentList.tsx';
+import { CompanyList } from './components/CompanyList.tsx';
 
 export function AdminDashboard() {
     const tabs = [
@@ -26,6 +27,11 @@ export function AdminDashboard() {
             id: 'manage-users',
             label: 'Gérer les Utilisateurs',
             content: <StudentList />,
+        },
+        {
+            id: 'manage-companies',
+            label: 'Gérer les Entreprises',
+            content: <CompanyList />,
         },
     ];
 
