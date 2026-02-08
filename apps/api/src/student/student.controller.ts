@@ -33,6 +33,8 @@ import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
 import { FileSizeValidationPipe } from '../common/pipes/file-size-validation.pipe';
 import { FileTypeValidationPipe } from '../common/pipes/file-type-validation.pipe';
 import { StudentEditGuard } from '../common/roles/studentEdit.guard';
+import { PaginationDto } from '../common/pagination/dto/pagination.dto';
+import { PaginationResult } from '../common/pagination/dto/paginationResult';
 
 @Controller('/api/students')
 /**
@@ -51,9 +53,16 @@ export class StudentController {
     @UseGuards(AuthGuard, RolesGuard)
     @HttpCode(HttpStatus.OK)
     @Roles(Role.COMPANY, Role.ADMIN)
-    async findAll(): Promise<StudentDto[]> {
-        const students = await this.studentService.findAll();
-        return students.map((s) => plainToInstance(StudentDto, s, { excludeExtraneousValues: true }));
+    async findAll(
+        @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        query: PaginationDto,
+    ): Promise<PaginationResult<StudentDto>> {
+        const students = await this.studentService.findAll(query);
+
+        return {
+            ...students,
+            data: students.data.map((s) => plainToInstance(StudentDto, s, { excludeExtraneousValues: true })),
+        };
     }
 
     /**

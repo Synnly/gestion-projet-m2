@@ -11,8 +11,6 @@ import { NafCode } from '../../../src/company/nafCodes.enum';
 import { PostService } from '../../../src/post/post.service';
 import { ForumService } from '../../../src/forum/forum.service';
 import { GeoService } from '../../../src/common/geography/geo.service';
-import { PaginationDto } from '../../../src/common/pagination/dto/pagination.dto';
-import { PaginationResult } from '../../../src/common/pagination/dto/paginationResult';
 
 describe('CompanyService', () => {
     let service: CompanyService;

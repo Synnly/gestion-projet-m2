@@ -14,6 +14,11 @@ import * as chardet from 'chardet';
 import * as iconv from 'iconv-lite';
 import { parse } from 'csv-parse/sync';
 import { ConfigService } from '@nestjs/config';
+import { PaginationDto } from '../common/pagination/dto/pagination.dto';
+import { PaginationResult } from '../common/pagination/dto/paginationResult';
+import { QueryBuilder } from '../common/pagination/query.builder';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { GeoService } from '../common/geography/geo.service';
 
 @Injectable()
 /**
@@ -24,16 +29,25 @@ import { ConfigService } from '@nestjs/config';
 export class StudentService {
     constructor(
         @InjectModel(Student.name) private readonly studentModel: Model<StudentUserDocument>,
+        @InjectModel(Student.name) private readonly model: Model<Student>,
         private readonly mailerService: MailerService,
         private readonly configService: ConfigService,
+        private readonly geoService: GeoService,
+        private readonly paginationService: PaginationService,
     ) {}
 
     /**
      * Find all students that are not soft-deleted.
      * @returns A promise resolving to an array of `Student` documents.
      */
-    async findAll(): Promise<Student[]> {
-        return this.studentModel.find({ deletedAt: { $exists: false } }).exec();
+    async findAll(query: PaginationDto): Promise<PaginationResult<Student>> {
+        const { page, limit, sort, ...filters } = query;
+        const qb = new QueryBuilder<Student>({ ...filters, showHidden: true } as any, this.geoService);
+        const filter = await qb.build();
+        filter.deletedAt = { $exists: false };
+        const sortQuery = qb.buildSort(sort);
+
+        return this.paginationService.paginate(this.model, filter, page, limit, [], sortQuery);
     }
 
     /**
@@ -69,7 +83,7 @@ export class StudentService {
                 'Vous pouvez désormais accéder à la plateforme de gestion des stages.',
             );
         } catch (error) {
-            console.error(`Failed to send welcome email to ${newStudent.email}:`, error);
+            console.error(`Failed to send welcome email to ${newStudent}:`, error);
         }
         return;
     }

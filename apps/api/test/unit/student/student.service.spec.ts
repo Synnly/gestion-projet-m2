@@ -6,6 +6,8 @@ import { Role } from '../../../src/common/roles/roles.enum';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { MailerService } from '../../../src/mailer/mailer.service';
 import { ConfigService } from '@nestjs/config';
+import { GeoService } from '../../../src/common/geography/geo.service';
+import { PaginationService } from '../../../src/common/pagination/pagination.service';
 
 describe('StudentService', () => {
     let service: StudentService;
@@ -33,6 +35,14 @@ describe('StudentService', () => {
         sendAccountCreationEmail: jest.fn().mockResolvedValue(true),
     };
 
+    const mockGeoService = {
+        geocodeAddress: jest.fn().mockResolvedValue([2.3522, 48.8566]),
+    };
+
+    const mockPaginationService = {
+        paginate: jest.fn(),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -40,6 +50,14 @@ describe('StudentService', () => {
                 { provide: getModelToken(Student.name), useValue: mockModel },
                 { provide: ConfigService, useValue: mockConfigService },
                 { provide: MailerService, useValue: mockMailerService },
+                {
+                    provide: GeoService,
+                    useValue: mockGeoService,
+                },
+                {
+                    provide: PaginationService,
+                    useValue: mockPaginationService,
+                },
             ],
         }).compile();
 
@@ -52,12 +70,21 @@ describe('StudentService', () => {
         expect(service).toBeDefined();
     });
 
-    it('findAll calls model.find with deletedAt filter', async () => {
-        const expected = [{ email: 'a@b.c' }];
-        mockModel.find.mockReturnValue({ exec: jest.fn().mockResolvedValue(expected) });
+    it('findAll calls paginationService.paginate with deletedAt filter', async () => {
+        const query = { page: 1, limit: 10 } as any;
+        const expected = {
+            data: [{ email: 'a@b.c' }],
+            total: 1,
+            page: 1,
+            limit: 10,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
+        };
+        mockPaginationService.paginate.mockResolvedValue(expected);
 
-        const res = await service.findAll();
-        expect(mockModel.find).toHaveBeenCalledWith({ deletedAt: { $exists: false } });
+        const res = await service.findAll(query);
+        expect(mockPaginationService.paginate).toHaveBeenCalled();
         expect(res).toEqual(expected);
     });
 

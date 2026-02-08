@@ -4,7 +4,6 @@ import { Model } from 'mongoose';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { Company } from './company.schema';
-import { CompanyUserDocument } from '../user/user.schema';
 import { PostService } from '../post/post.service';
 import { Post } from '../post/post.schema';
 import { ForumService } from '../forum/forum.service';

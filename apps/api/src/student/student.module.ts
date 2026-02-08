@@ -3,14 +3,13 @@ import { MailerModule } from '../mailer/mailer.module';
 import { UsersModule } from '../user/user.module';
 import { StudentController } from './student.controller';
 import { StudentService } from './student.service';
+import { GeoService } from '../common/geography/geo.service';
+import { PaginationService } from '../common/pagination/pagination.service';
 
 @Module({
-    imports: [
-        UsersModule,
-        MailerModule.register(),
-    ],
+    imports: [UsersModule, MailerModule.register()],
     controllers: [StudentController],
-    providers: [StudentService],
+    providers: [StudentService, GeoService, PaginationService],
     exports: [StudentService],
 })
 /**

@@ -51,10 +51,21 @@ describe('StudentController', () => {
     });
 
     it('findAll returns mapped DTOs', async () => {
-        mockService.findAll.mockResolvedValue([{ email: 'a@b.c' }]);
-        const res = await controller.findAll();
-        expect(res).toHaveLength(1);
-        expect(res[0]).toHaveProperty('email', 'a@b.c');
+        const paginatedResult = {
+            data: [{ email: 'a@b.c' }],
+            total: 1,
+            page: 1,
+            limit: 10,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
+        };
+        mockService.findAll.mockResolvedValue(paginatedResult);
+        const query = { page: 1, limit: 10 } as any;
+        const res = await controller.findAll(query);
+        expect(res.data).toHaveLength(1);
+        expect(res.data[0]).toHaveProperty('email', 'a@b.c');
+        expect(res.total).toBe(1);
     });
 
     it('findOne throws NotFoundException when no student', async () => {
