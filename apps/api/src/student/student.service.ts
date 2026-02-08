@@ -84,7 +84,7 @@ export class StudentService {
                 'Vous pouvez désormais accéder à la plateforme de gestion des stages.',
             );
         } catch (error) {
-            console.error(`Failed to send welcome email to ${newStudent}:`, error);
+            console.error(`Failed to send welcome email to ${newStudent.email}:`, error);
         }
         return;
     }
