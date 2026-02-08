@@ -212,4 +212,17 @@ export class StudentController {
     async remove(@Param('studentId', ParseObjectIdPipe) studentId: string) {
         await this.studentService.remove(studentId);
     }
+
+    /**
+     * Get statistics about students, such as the number of applications, accepted offers, etc.
+     * @param ids An array of student ids to get stats for.
+     * @returns An array of objects containing the student id and their corresponding stats.
+     */
+    @Get('stats/:ids')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    @HttpCode(HttpStatus.OK)
+    async getStats(@Query('ids') ids: string[]) {
+        return await this.studentService.getStats(ids);
+    }
 }

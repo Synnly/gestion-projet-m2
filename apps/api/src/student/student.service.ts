@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateStudentDto } from './dto/createStudent.dto';
 import { Student } from './student.schema';
 import { StudentUserDocument } from '../user/user.schema';
@@ -19,6 +19,7 @@ import { PaginationResult } from '../common/pagination/dto/paginationResult';
 import { QueryBuilder } from '../common/pagination/query.builder';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { GeoService } from '../common/geography/geo.service';
+import { StudentDto } from './dto/student.dto';
 
 @Injectable()
 /**
@@ -265,5 +266,65 @@ export class StudentService {
 
         // If skipExistingRecords is true, we won't try to insert already existing emails
         return dtos.filter((dto) => !existingEmails.has(dto.email) && !existingStudentNumbers.has(dto.studentNumber));
+    }
+
+    /**
+     * Get stats for a list of students, including total applications, accepted applications and account creation date.
+     * @param ids The list of student ids.
+     * @returns A record mapping each student id to their stats.
+     */
+    async getStats(
+        ids: string[],
+    ): Promise<
+        Record<string, { applicationCount: number; acceptedApplicationCount: number; creationDate: Date | null }>
+    > {
+        const stats = await this.studentModel.aggregate([
+            { $match: { _id: { $in: ids.map((id) => new Types.ObjectId(id)) } } },
+            {
+                $lookup: {
+                    from: 'applications',
+                    localField: '_id',
+                    foreignField: 'student',
+                    as: 'applications',
+                },
+            },
+            {
+                $addFields: {
+                    applicationCount: { $size: '$applications' },
+                    acceptedApplicationCount: {
+                        $size: {
+                            $filter: {
+                                input: '$applications',
+                                as: 'app',
+                                cond: { $eq: ['$$app.status', 'accepted'] },
+                            },
+                        },
+                    },
+                },
+            },
+            {
+                $project: {
+                    _id: 1,
+                    applicationCount: 1,
+                    acceptedApplicationCount: 1,
+                    creationDate: '$createdAt',
+                },
+            },
+        ]);
+
+        return stats.reduce(
+            (acc, stat) => {
+                acc[stat._id.toString()] = {
+                    applicationCount: stat.applicationCount,
+                    acceptedApplicationCount: stat.acceptedApplicationCount,
+                    creationDate: stat.creationDate,
+                };
+                return acc;
+            },
+            {} as Record<
+                string,
+                { applicationCount: number; acceptedApplicationCount: number; creationDate: Date | null }
+            >,
+        );
     }
 }
