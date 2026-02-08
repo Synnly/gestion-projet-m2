@@ -9,11 +9,10 @@ import { ImportStatus } from '../../../../src/admin/database-import.schema';
 describe('ImportResponseDto', () => {
     describe('ImportInitiatedResponseDto', () => {
         it('should create a valid ImportInitiatedResponseDto', () => {
-            const dto: ImportInitiatedResponseDto = {
-                message: 'Import initiated. You will receive an email when the import is complete.',
-                importId: '507f1f77bcf86cd799439011',
-                status: ImportStatus.PENDING,
-            };
+            const dto = new ImportInitiatedResponseDto();
+            dto.message = 'Import initiated. You will receive an email when the import is complete.';
+            dto.importId = '507f1f77bcf86cd799439011';
+            dto.status = ImportStatus.PENDING;
 
             expect(dto).toBeDefined();
             expect(dto.message).toBe('Import initiated. You will receive an email when the import is complete.');
@@ -22,11 +21,10 @@ describe('ImportResponseDto', () => {
         });
 
         it('should have required properties', () => {
-            const dto: ImportInitiatedResponseDto = {
-                message: 'Import started',
-                importId: '123456',
-                status: ImportStatus.PENDING,
-            };
+            const dto = new ImportInitiatedResponseDto();
+            dto.message = 'Import started';
+            dto.importId = '123456';
+            dto.status = ImportStatus.PENDING;
 
             expect(dto).toHaveProperty('message');
             expect(dto).toHaveProperty('importId');
@@ -36,16 +34,15 @@ describe('ImportResponseDto', () => {
 
     describe('ImportStatusResponseDto', () => {
         it('should create a valid ImportStatusResponseDto with all properties', () => {
-            const dto: ImportStatusResponseDto = {
-                importId: '507f1f77bcf86cd799439011',
-                status: ImportStatus.COMPLETED,
-                filename: 'database-backup.json.gz',
-                fileSize: 1048576,
-                collectionsCount: 15,
-                documentsCount: 2500,
-                startedAt: new Date('2026-02-08T10:00:00Z'),
-                completedAt: new Date('2026-02-08T10:05:00Z'),
-            };
+            const dto = new ImportStatusResponseDto();
+            dto.importId = '507f1f77bcf86cd799439011';
+            dto.status = ImportStatus.COMPLETED;
+            dto.filename = 'database-backup.json.gz';
+            dto.fileSize = 1048576;
+            dto.collectionsCount = 15;
+            dto.documentsCount = 2500;
+            dto.startedAt = new Date('2026-02-08T10:00:00Z');
+            dto.completedAt = new Date('2026-02-08T10:05:00Z');
 
             expect(dto).toBeDefined();
             expect(dto.importId).toBe('507f1f77bcf86cd799439011');
@@ -59,10 +56,9 @@ describe('ImportResponseDto', () => {
         });
 
         it('should create a valid ImportStatusResponseDto with minimal properties', () => {
-            const dto: ImportStatusResponseDto = {
-                importId: '507f1f77bcf86cd799439011',
-                status: ImportStatus.PENDING,
-            };
+            const dto = new ImportStatusResponseDto();
+            dto.importId = '507f1f77bcf86cd799439011';
+            dto.status = ImportStatus.PENDING;
 
             expect(dto).toBeDefined();
             expect(dto.importId).toBe('507f1f77bcf86cd799439011');
@@ -72,13 +68,12 @@ describe('ImportResponseDto', () => {
         });
 
         it('should include error message when import fails', () => {
-            const dto: ImportStatusResponseDto = {
-                importId: '507f1f77bcf86cd799439011',
-                status: ImportStatus.FAILED,
-                errorMessage: 'Invalid JSON format in import file',
-                startedAt: new Date('2026-02-08T10:00:00Z'),
-                completedAt: new Date('2026-02-08T10:01:00Z'),
-            };
+            const dto = new ImportStatusResponseDto();
+            dto.importId = '507f1f77bcf86cd799439011';
+            dto.status = ImportStatus.FAILED;
+            dto.errorMessage = 'Invalid JSON format in import file';
+            dto.startedAt = new Date('2026-02-08T10:00:00Z');
+            dto.completedAt = new Date('2026-02-08T10:01:00Z');
 
             expect(dto.status).toBe(ImportStatus.FAILED);
             expect(dto.errorMessage).toBe('Invalid JSON format in import file');
@@ -94,10 +89,9 @@ describe('ImportResponseDto', () => {
             ];
 
             statuses.forEach((status) => {
-                const dto: ImportStatusResponseDto = {
-                    importId: '507f1f77bcf86cd799439011',
-                    status,
-                };
+                const dto = new ImportStatusResponseDto();
+                dto.importId = '507f1f77bcf86cd799439011';
+                dto.status = status;
 
                 expect(dto.status).toBe(status);
             });
@@ -107,17 +101,16 @@ describe('ImportResponseDto', () => {
     describe('ImportListItemDto', () => {
         it('should create a valid ImportListItemDto with all properties', () => {
             const createdAt = new Date('2026-02-08T09:00:00Z');
-            const dto: ImportListItemDto = {
-                importId: '507f1f77bcf86cd799439011',
-                status: ImportStatus.COMPLETED,
-                filename: 'database-backup.json.gz',
-                fileSize: 2097152,
-                collectionsCount: 20,
-                documentsCount: 5000,
-                startedAt: new Date('2026-02-08T10:00:00Z'),
-                completedAt: new Date('2026-02-08T10:10:00Z'),
-                createdAt,
-            };
+            const dto = new ImportListItemDto();
+            dto.importId = '507f1f77bcf86cd799439011';
+            dto.status = ImportStatus.COMPLETED;
+            dto.filename = 'database-backup.json.gz';
+            dto.fileSize = 2097152;
+            dto.collectionsCount = 20;
+            dto.documentsCount = 5000;
+            dto.startedAt = new Date('2026-02-08T10:00:00Z');
+            dto.completedAt = new Date('2026-02-08T10:10:00Z');
+            dto.createdAt = createdAt;
 
             expect(dto).toBeDefined();
             expect(dto.importId).toBe('507f1f77bcf86cd799439011');
@@ -131,11 +124,10 @@ describe('ImportResponseDto', () => {
 
         it('should create a valid ImportListItemDto with minimal properties', () => {
             const createdAt = new Date('2026-02-08T09:00:00Z');
-            const dto: ImportListItemDto = {
-                importId: '507f1f77bcf86cd799439011',
-                status: ImportStatus.PENDING,
-                createdAt,
-            };
+            const dto = new ImportListItemDto();
+            dto.importId = '507f1f77bcf86cd799439011';
+            dto.status = ImportStatus.PENDING;
+            dto.createdAt = createdAt;
 
             expect(dto).toBeDefined();
             expect(dto.importId).toBe('507f1f77bcf86cd799439011');
@@ -145,11 +137,10 @@ describe('ImportResponseDto', () => {
         });
 
         it('should have required createdAt property', () => {
-            const dto: ImportListItemDto = {
-                importId: '507f1f77bcf86cd799439011',
-                status: ImportStatus.IN_PROGRESS,
-                createdAt: new Date(),
-            };
+            const dto = new ImportListItemDto();
+            dto.importId = '507f1f77bcf86cd799439011';
+            dto.status = ImportStatus.IN_PROGRESS;
+            dto.createdAt = new Date();
 
             expect(dto).toHaveProperty('createdAt');
             expect(dto.createdAt).toBeInstanceOf(Date);
@@ -157,27 +148,26 @@ describe('ImportResponseDto', () => {
 
         it('should support listing imports in different states', () => {
             const createdAt = new Date();
-            const imports: ImportListItemDto[] = [
-                {
-                    importId: '1',
-                    status: ImportStatus.COMPLETED,
-                    collectionsCount: 10,
-                    documentsCount: 1000,
-                    createdAt,
-                },
-                {
-                    importId: '2',
-                    status: ImportStatus.IN_PROGRESS,
-                    startedAt: new Date(),
-                    createdAt,
-                },
-                {
-                    importId: '3',
-                    status: ImportStatus.FAILED,
-                    completedAt: new Date(),
-                    createdAt,
-                },
-            ];
+            const dto1 = new ImportListItemDto();
+            dto1.importId = '1';
+            dto1.status = ImportStatus.COMPLETED;
+            dto1.collectionsCount = 10;
+            dto1.documentsCount = 1000;
+            dto1.createdAt = createdAt;
+
+            const dto2 = new ImportListItemDto();
+            dto2.importId = '2';
+            dto2.status = ImportStatus.IN_PROGRESS;
+            dto2.startedAt = new Date();
+            dto2.createdAt = createdAt;
+
+            const dto3 = new ImportListItemDto();
+            dto3.importId = '3';
+            dto3.status = ImportStatus.FAILED;
+            dto3.completedAt = new Date();
+            dto3.createdAt = createdAt;
+
+            const imports = [dto1, dto2, dto3];
 
             expect(imports).toHaveLength(3);
             expect(imports[0].status).toBe(ImportStatus.COMPLETED);
@@ -188,10 +178,9 @@ describe('ImportResponseDto', () => {
 
     describe('ImportCancelledResponseDto', () => {
         it('should create a valid ImportCancelledResponseDto', () => {
-            const dto: ImportCancelledResponseDto = {
-                message: 'Import cancelled successfully',
-                importId: '507f1f77bcf86cd799439011',
-            };
+            const dto = new ImportCancelledResponseDto();
+            dto.message = 'Import cancelled successfully';
+            dto.importId = '507f1f77bcf86cd799439011';
 
             expect(dto).toBeDefined();
             expect(dto.message).toBe('Import cancelled successfully');
@@ -199,20 +188,18 @@ describe('ImportResponseDto', () => {
         });
 
         it('should have required properties', () => {
-            const dto: ImportCancelledResponseDto = {
-                message: 'Cancelled',
-                importId: '123',
-            };
+            const dto = new ImportCancelledResponseDto();
+            dto.message = 'Cancelled';
+            dto.importId = '123';
 
             expect(dto).toHaveProperty('message');
             expect(dto).toHaveProperty('importId');
         });
 
         it('should allow custom cancellation messages', () => {
-            const dto: ImportCancelledResponseDto = {
-                message: 'Import operation cancelled by administrator',
-                importId: '507f1f77bcf86cd799439011',
-            };
+            const dto = new ImportCancelledResponseDto();
+            dto.message = 'Import operation cancelled by administrator';
+            dto.importId = '507f1f77bcf86cd799439011';
 
             expect(dto.message).toBe('Import operation cancelled by administrator');
         });
