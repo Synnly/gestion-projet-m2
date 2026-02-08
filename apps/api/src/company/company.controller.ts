@@ -243,7 +243,7 @@ export class CompanyController {
     @Get('/:companyId/public-profile')
     @HttpCode(HttpStatus.OK)
     async getPublicProfile(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyDto> {
-        const company = this.companyService.findOne(companyId);
+        const company = await this.companyService.findOne(companyId);
         return plainToInstance(CompanyDto, company, {
             excludeExtraneousValues: true,
         });
