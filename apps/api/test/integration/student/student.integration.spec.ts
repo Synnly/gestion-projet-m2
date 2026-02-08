@@ -178,29 +178,4 @@ describe('Student Integration', () => {
     it('DELETE /api/students/:studentId -> returns 404 when student not found', async () => {
         await request(app.getHttpServer()).delete('/api/students/507f1f77bcf86cd799439022').expect(404);
     });
-
-    it('GET /api/students/stats/:ids -> returns stats for students', async () => {
-        const dto = {
-            email: 'studentstats@example.com',
-            studentNumber: 'SN-STATS',
-            firstName: 'Stat',
-            lastName: 'User',
-        };
-
-        await request(app.getHttpServer()).post('/api/students').send(dto).expect(201);
-        const student = await studentModel.findOne({ email: dto.email });
-        const studentId = student._id.toString();
-
-        // We can't easily create applications without ApplicationModule, 
-        // but we can test that it returns 0 applications.
-        const res = await request(app.getHttpServer())
-            .get(`/api/students/stats/${studentId}`)
-            .query({ ids: [studentId] })
-            .expect(200);
-
-        expect(res.body[studentId]).toBeDefined();
-        expect(res.body[studentId].applicationCount).toBe(0);
-        expect(res.body[studentId].acceptedApplicationCount).toBe(0);
-        expect(res.body[studentId].creationDate).toBeDefined();
-    });
 });

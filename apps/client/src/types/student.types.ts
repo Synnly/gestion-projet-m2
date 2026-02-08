@@ -87,9 +87,3 @@ export const editProfilForm = z.object({
 });
 
 export type editProfilFormType = z.infer<typeof editProfilForm>;
-
-export interface StudentStats {
-    applicationCount: number;
-    acceptedApplicationCount: number;
-    creationDate: string | null;
-}

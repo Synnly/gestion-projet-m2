@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 import { toast } from 'react-toastify';
-import { fetchStudents, fetchStudentStats } from '../../../apis/student';
-import type { studentProfile, StudentStats } from '../../../types/student.types';
+import { fetchStudents } from '../../../apis/student';
+import type { studentProfile } from '../../../types/student.types';
 import Pagination from '../../common/ui/pagination/Pagination.tsx';
 
 export const StudentList = () => {
     const [students, setStudents] = useState<studentProfile[]>([]);
-    const [stats, setStats] = useState<Record<string, StudentStats>>({});
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
@@ -24,13 +23,6 @@ export const StudentList = () => {
                 setStudents(data.data);
                 setTotalPages(data.totalPages);
                 setTotal(data.total);
-
-                // Fetch stats for the loaded students
-                if (data.data.length > 0) {
-                    const studentIds = data.data.map((s) => s._id);
-                    const statsData = await fetchStudentStats(authFetch, studentIds);
-                    setStats((prev) => ({ ...prev, ...statsData }));
-                }
             } catch (error) {
                 toast.error('Erreur lors du chargement des étudiants');
                 console.error(error);
@@ -49,15 +41,6 @@ export const StudentList = () => {
         if (newPage >= 1 && newPage <= totalPages) {
             setCurrentPage(newPage);
         }
-    };
-
-    const formatDate = (dateString: string | null) => {
-        if (!dateString) return <span className="text-gray-400 italic">N/A</span>;
-        return new Date(dateString).toLocaleDateString('fr-FR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
     };
 
     return (
@@ -86,45 +69,16 @@ export const StudentList = () => {
                                     <th>Prénom</th>
                                     <th>Email</th>
                                     <th>N° Étudiant</th>
-                                    <th>Date d'ajout</th>
-                                    <th>Candidatures</th>
-                                    <th>Acceptés</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {students.map((student) => {
-                                    const studentStats = stats[student._id];
                                     return (
                                         <tr key={student._id} className="hover:bg-base-200 duration-100 ease-in-out">
                                             <td className="font-semibold w-0">{student.lastName}</td>
                                             <td className="w-0">{student.firstName}</td>
                                             <td>{student.email}</td>
                                             <td className="w-0">{student.studentNumber}</td>
-                                            <td className="w-0">
-                                                <div className="w-max">
-                                                    {formatDate(studentStats?.creationDate || null)}
-                                                </div>
-                                            </td>
-                                            <td className="w-0 text-center">
-                                                {studentStats ? (
-                                                    <span className="badge badge-ghost">
-                                                        {studentStats.applicationCount}
-                                                    </span>
-                                                ) : (
-                                                    '-'
-                                                )}
-                                            </td>
-                                            <td className="w-0 text-center">
-                                                {studentStats ? (
-                                                    <span
-                                                        className={`badge ${studentStats.acceptedApplicationCount > 0 ? 'badge-success' : 'badge-ghost'}`}
-                                                    >
-                                                        {studentStats.acceptedApplicationCount}
-                                                    </span>
-                                                ) : (
-                                                    '-'
-                                                )}
-                                            </td>
                                         </tr>
                                     );
                                 })}

@@ -255,40 +255,6 @@ describe('StudentService', () => {
         });
     });
 
-    describe('getStats', () => {
-        it('should return student stats mapped by id', async () => {
-            const studentId = '507f1f77bcf86cd799439011';
-            const creationDate = new Date();
-            const mockAggregationResult = [
-                {
-                    _id: { toString: () => studentId },
-                    applicationCount: 5,
-                    acceptedApplicationCount: 1,
-                    creationDate: creationDate,
-                },
-            ];
-
-            mockModel.aggregate.mockResolvedValue(mockAggregationResult);
-
-            const result = await service.getStats([studentId]);
-
-            expect(mockModel.aggregate).toHaveBeenCalled();
-            expect(result[studentId]).toEqual({
-                applicationCount: 5,
-                acceptedApplicationCount: 1,
-                creationDate: creationDate,
-            });
-        });
-
-        it('should return an empty object if no stats found', async () => {
-            mockModel.aggregate.mockResolvedValue([]);
-
-            const result = await service.getStats(['507f1f77bcf86cd799439011']);
-
-            expect(result).toEqual({});
-        });
-    });
-
     describe('parseFileContent', () => {
         const createMockFile = (content: any, mimetype: string): Express.Multer.File => ({
             fieldname: 'file',
