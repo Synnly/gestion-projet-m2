@@ -203,4 +203,24 @@ describe('StudentController', () => {
             expect(mockService.createMany).not.toHaveBeenCalled();
         });
     });
+
+    describe('updateProfile', () => {
+        it('should call studentService.update with studentId and dto', async () => {
+            mockService.update.mockResolvedValue(undefined);
+            const dto = { firstName: 'Updated', lastName: 'Name' } as any;
+
+            await controller.updateProfile('student123', dto);
+
+            expect(mockService.update).toHaveBeenCalledWith('student123', dto);
+        });
+
+        it('should return undefined on success (NO_CONTENT)', async () => {
+            mockService.update.mockResolvedValue(undefined);
+            const dto = { firstName: 'Updated' } as any;
+
+            const result = await controller.updateProfile('student123', dto);
+
+            expect(result).toBeUndefined();
+        });
+    });
 });

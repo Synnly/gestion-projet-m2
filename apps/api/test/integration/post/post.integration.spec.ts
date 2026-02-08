@@ -18,6 +18,7 @@ import { Application, ApplicationDocument, ApplicationStatus } from '../../../sr
 import { ApplicationModule } from '../../../src/application/application.module';
 import { Student, StudentDocument } from '../../../src/student/student.schema';
 import { StudentModule } from '../../../src/student/student.module';
+import { MailerService } from '../../../src/mailer/mailer.service';
 
 describe('Post Integration Tests', () => {
     let app: INestApplication;
@@ -35,6 +36,14 @@ describe('Post Integration Tests', () => {
     const REFRESH_TOKEN_SECRET = 'test-refresh-secret';
     const ACCESS_TOKEN_LIFESPAN_MINUTES = 60;
     const REFRESH_TOKEN_LIFESPAN_MINUTES = 1440;
+
+    const mockMailerService = {
+        sendVerificationEmail: jest.fn().mockResolvedValue(true),
+        sendAccountCreationEmail: jest.fn().mockResolvedValue(true),
+        sendPasswordResetEmail: jest.fn().mockResolvedValue(true),
+        sendApplicationNotification: jest.fn().mockResolvedValue(true),
+        sendApplicationStatusUpdate: jest.fn().mockResolvedValue(true),
+    };
 
     beforeAll(async () => {
         mongod = await MongoMemoryServer.create();
@@ -83,6 +92,8 @@ describe('Post Integration Tests', () => {
                     }
                 },
             })
+            .overrideProvider(MailerService)
+            .useValue(mockMailerService)
             .compile();
 
         app = moduleFixture.createNestApplication();
@@ -141,7 +152,7 @@ describe('Post Integration Tests', () => {
         }
 
         studentAccessToken = studentLoginRes.text;
-    });
+    }, 30000);
 
     afterEach(async () => {
         await postModel.deleteMany({}).exec();
@@ -153,7 +164,7 @@ describe('Post Integration Tests', () => {
         await studentModel.deleteMany({}).exec();
         await app.close();
         if (mongod) await mongod.stop();
-    });
+    }, 30000);
 
     const createPost = async (data: any) => {
         return await postModel.create({

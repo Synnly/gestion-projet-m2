@@ -35,6 +35,7 @@ The DTO automatically validates and transforms the query string:
 ```
 
 **Protection built-in:**
+
 - `page` must be at least 1
 - `limit` is capped at 100 to prevent abuse
 - All types are automatically converted (strings → numbers, etc.)
@@ -57,6 +58,7 @@ const filter = await qb.build();
 ```
 
 **Smart features:**
+
 - Uses MongoDB text index for global search (fast!)
 - Falls back to regex if text index doesn't exist
 - Handles salary ranges with overlap logic
@@ -97,10 +99,10 @@ const result = await paginationService.paginate(
 // In your controller
 async findAll(@Query() query: PaginationDto) {
   const { page, limit, sort, ...filters } = query;
-  
+
   const qb = new QueryBuilder(filters, this.geoService);
   const filter = await qb.build();
-  
+
   return this.paginationService.paginate(
     this.model,
     filter,
@@ -147,28 +149,34 @@ Options: `dateAsc`, `dateDesc` (default is `dateDesc`).
 ## Filter Types Explained
 
 ### Text Search (`searchQuery`)
+
 - Uses MongoDB text index
 - Searches: title, description, sector, duration, keySkills
 - Case-insensitive
 
 ### Exact Filters
+
 - `sector` - Exact match (case-insensitive)
 - `type` - Exact match (Présentiel/Télétravail/Hybride)
 - `company` - Filter by company ID
 
 ### Regex Filters
+
 - `title`, `description`, `duration` - Partial match (case-insensitive)
 
 ### Salary Range
+
 - `minSalary` - Post's max salary must be >= this value
 - `maxSalary` - Post's min salary must be <= this value
 - Both together = overlap logic (finds posts whose range intersects yours)
 
 ### Skills
+
 - `keySkills` - Accepts string or array
 - Matches if post has ANY of the skills you specify
 
 ### Location
+
 - `city` + `radiusKm` - Geocodes city, finds posts within radius
 - Uses 2dsphere index for performance
 
@@ -194,6 +202,7 @@ The schema defines these indexes for fast queries:
 ### Geocoding Cache
 
 The GeoService caches geocoded addresses in memory:
+
 - Same city searched twice? Second time is instant
 - Rate-limited to 1 req/sec to respect Nominatim's policy
 - Consider Redis for production with multiple instances
@@ -201,6 +210,7 @@ The GeoService caches geocoded addresses in memory:
 ### Limit Protection
 
 The DTO enforces `@Max(100)` on limit to prevent:
+
 - Accidental huge queries (`?limit=999999`)
 - API abuse
 - Memory issues

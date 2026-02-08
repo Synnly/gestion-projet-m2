@@ -27,6 +27,11 @@ describe('UpdatePostDto', () => {
         expect(dto.isVisible).toBe(false);
     });
 
+    it('sets isVisible false when description missing', () => {
+        const dto = new UpdatePostDto({ title: 'T' } as Partial<UpdatePostDto>);
+        expect(dto.isVisible).toBe(false);
+    });
+
     it('works when constructed without partial', () => {
         const dto = new UpdatePostDto();
         expect(dto).toBeInstanceOf(UpdatePostDto);
@@ -56,5 +61,14 @@ describe('UpdatePostDto', () => {
         expect(dto.minSalary).toBe(1234);
         expect(typeof dto.maxSalary).toBe('number');
         expect(dto.maxSalary).toBe(2345);
+    });
+
+    it('transforms string to boolean for isCoverLetterRequired via Type decorator', () => {
+        const plain = { title: 'T', description: 'D', isCoverLetterRequired: 'true' } as any;
+        const { plainToInstance } = require('class-transformer');
+        const dto = plainToInstance(UpdatePostDto, plain);
+
+        expect(typeof dto.isCoverLetterRequired).toBe('boolean');
+        expect(dto.isCoverLetterRequired).toBe(true);
     });
 });

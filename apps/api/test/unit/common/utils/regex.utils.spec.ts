@@ -68,7 +68,9 @@ describe('regex.utils', () => {
         });
 
         it('escapes complex patterns', () => {
-            expect(escapeRegexLiteral('dev.*+?^${}()|[]\\\\')).toBe('dev\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\\\\\');
+            expect(escapeRegexLiteral('dev.*+?^${}()|[]\\\\')).toBe(
+                'dev\\.\\*\\+\\?\\^\\$\\{\\}\\(\\)\\|\\[\\]\\\\\\\\',
+            );
         });
 
         it('leaves regular text unchanged', () => {
@@ -104,7 +106,7 @@ describe('regex.utils', () => {
             const specialChars = '.*+?^${}()|[]\\-';
             const escaped = escapeRegexLiteral(specialChars);
             const regex = new RegExp(escaped);
-            
+
             // Should match the literal special characters
             expect(regex.test(specialChars)).toBe(true);
         });
@@ -139,13 +141,13 @@ describe('regex.utils', () => {
         it('handles real-world examples', () => {
             // Email-like patterns
             expect(escapeRegexLiteral('user+tag@example.com')).toBe('user\\+tag@example\\.com');
-            
+
             // File paths
             expect(escapeRegexLiteral('C:\\Users\\test')).toBe('C:\\\\Users\\\\test');
-            
+
             // URLs
             expect(escapeRegexLiteral('https://example.com?query=value')).toBe('https://example\\.com\\?query=value');
-            
+
             // Mathematical expressions
             expect(escapeRegexLiteral('(x+y)*2')).toBe('\\(x\\+y\\)\\*2');
         });
