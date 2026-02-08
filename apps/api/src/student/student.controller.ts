@@ -9,6 +9,7 @@ import {
     HttpStatus,
     NotFoundException,
     Param,
+    ParseArrayPipe,
     ParseBoolPipe,
     Post,
     Put,
@@ -222,7 +223,7 @@ export class StudentController {
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     @HttpCode(HttpStatus.OK)
-    async getStats(@Query('ids') ids: string[]) {
+    async getStats(@Param('ids', new ParseArrayPipe({ items: String, separator: ',' })) ids: string[]) {
         return await this.studentService.getStats(ids);
     }
 }

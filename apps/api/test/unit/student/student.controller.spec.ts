@@ -17,6 +17,7 @@ describe('StudentController', () => {
         remove: jest.fn(),
         createMany: jest.fn(),
         parseFileContent: jest.fn(),
+        getStats: jest.fn(),
     } as any;
 
     const TEST_MAX_ROWS = 1000; 
@@ -113,6 +114,18 @@ describe('StudentController', () => {
         mockService.remove.mockResolvedValue(undefined);
         await controller.remove('1');
         expect(mockService.remove).toHaveBeenCalledWith('1');
+    });
+
+    it('getStats calls studentService.getStats', async () => {
+        const ids = ['1', '2'];
+        const mockStats = {
+            '1': { applicationCount: 1, acceptedApplicationCount: 0, creationDate: new Date() },
+        };
+        mockService.getStats.mockResolvedValue(mockStats);
+
+        const res = await controller.getStats(ids);
+        expect(mockService.getStats).toHaveBeenCalledWith(ids);
+        expect(res).toEqual(mockStats);
     });
 
     describe('import', () => {
