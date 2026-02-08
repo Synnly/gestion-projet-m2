@@ -19,7 +19,6 @@ import { PaginationResult } from '../common/pagination/dto/paginationResult';
 import { QueryBuilder } from '../common/pagination/query.builder';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { GeoService } from '../common/geography/geo.service';
-import { StudentDto } from './dto/student.dto';
 
 @Injectable()
 /**
