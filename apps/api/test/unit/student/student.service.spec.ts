@@ -8,7 +8,7 @@ import { MailerService } from '../../../src/mailer/mailer.service';
 import { ConfigService } from '@nestjs/config';
 import { GeoService } from '../../../src/common/geography/geo.service';
 import { PaginationService } from '../../../src/common/pagination/pagination.service';
-import { CreateStudentDto } from 'src/student/dto/createStudent.dto
+import { CreateStudentDto } from 'src/student/dto/createStudent.dto';
 
 describe('StudentService', () => {
     let service: StudentService;
