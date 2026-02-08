@@ -3,6 +3,7 @@ import { AdminTabs } from './components/AdminTabs';
 import ImportStudent from './components/importStudent';
 import { StatsPage } from './components/stats/Stats';
 import ValidateCompanies from './components/ValidateCompanies';
+import { StudentList } from './components/StudentList.tsx';
 
 export function AdminDashboard() {
     const tabs = [
@@ -20,6 +21,11 @@ export function AdminDashboard() {
             id: 'stats',
             label: 'Statistiques',
             content: <StatsPage />,
+        },
+        {
+            id: 'manage-users',
+            label: 'Gérer les Utilisateurs',
+            content: <StudentList />,
         },
     ];
 
