@@ -3,24 +3,31 @@ import { InjectModel, InjectConnection } from '@nestjs/mongoose';
 import { Admin } from './admin.schema';
 import { CreateAdminDto } from './dto/createAdminDto';
 import { CreateExportDto } from './dto/createExportDto';
+import { CreateImportDto } from './dto/createImportDto';
 import { Model, Connection } from 'mongoose';
 import { Role } from '../common/roles/roles.enum';
 import { AdminUserDocument } from '../user/user.schema';
 import { DatabaseExport, DatabaseExportDocument, ExportStatus } from './database-export.schema';
+import { DatabaseImport, DatabaseImportDocument, ImportStatus } from './database-import.schema';
 import { MailerService } from '../mailer/mailer.service';
 import { ConfigService } from '@nestjs/config';
 import { Readable, Transform, pipeline } from 'stream';
 import * as zlib from 'zlib';
-import { createWriteStream } from 'fs';
+import { createWriteStream, createReadStream } from 'fs';
 import { promisify } from 'util';
 
 const pipelineAsync = promisify(pipeline);
+
+type JobDocument = DatabaseExportDocument | DatabaseImportDocument;
+type JobStatus = ExportStatus | ImportStatus;
+type JobModel = Model<DatabaseExportDocument> | Model<DatabaseImportDocument>;
 
 @Injectable()
 export class AdminService {
     constructor(
         @InjectModel(Admin.name) private readonly adminModel: Model<AdminUserDocument>,
         @InjectModel(DatabaseExport.name) private readonly exportModel: Model<DatabaseExportDocument>,
+        @InjectModel(DatabaseImport.name) private readonly importModel: Model<DatabaseImportDocument>,
         @InjectConnection() private readonly connection: Connection,
         private readonly mailerService: MailerService,
         private readonly configService: ConfigService,
@@ -97,12 +104,12 @@ export class AdminService {
 
         try {
             // Check if export was cancelled before we started
-            if (await this.isExportCancelled(exportJob)) {
+            if (this.isJobCancelled(exportJob)) {
                 return;
             }
 
             // Mark export as in progress
-            await this.markExportInProgress(exportJob);
+            await this.markJobInProgress(exportJob);
 
             // Export all collections with streaming
             const { filename, fileSize, totalDocuments, collectionsCount } = await this.exportAllCollectionsStreaming(exportId);
@@ -113,33 +120,30 @@ export class AdminService {
             // Send success notification
             await this.sendExportCompletedEmail(exportJob);
         } catch (error) {
-            await this.handleExportFailure(exportJob, error);
+            await this.handleJobFailure(exportJob, error, this.sendExportFailedEmail.bind(this));
         }
     }
 
     /**
-     * Check if export has been cancelled
-     * @param exportJob The export job to check
+     * Check if a job (export or import) has been cancelled
+     * @param job The job to check
      * @returns True if cancelled, false otherwise
      */
-    private async isExportCancelled(exportJob: DatabaseExportDocument): Promise<boolean> {
-        if (exportJob.status === ExportStatus.CANCELLED) {
-            return true;
-        }
-        return false;
+    private isJobCancelled(job: JobDocument): boolean {
+        return job.status === ExportStatus.CANCELLED || job.status === ImportStatus.CANCELLED;
     }
 
     /**
-     * Mark export as in progress
-     * @param exportJob The export job to update
+     * Mark a job (export or import) as in progress
+     * @param job The job to update
      */
-    private async markExportInProgress(exportJob: DatabaseExportDocument): Promise<void> {
-        exportJob.status = ExportStatus.IN_PROGRESS;
-        exportJob.startedAt = new Date();
+    private async markJobInProgress(job: JobDocument): Promise<void> {
+        job.status = ExportStatus.IN_PROGRESS as any;
+        job.startedAt = new Date();
         try {
-            await exportJob.save();
+            await job.save();
         } catch (error) {
-            // Export might have been deleted - exit gracefully
+            // Job might have been deleted - exit gracefully
             return;
         }
     }
@@ -181,7 +185,7 @@ export class AdminService {
             const collName = collInfo.name;
 
             // Check for cancellation
-            if (await this.checkCancellationDuringExport(exportId)) {
+            if (await this.checkCancellationDuringOperation(exportId, this.exportModel, ExportStatus.CANCELLED)) {
                 gzipStream.end();
                 writeStream.end();
                 throw new HttpException('Export cancelled by user', HttpStatus.CONFLICT);
@@ -237,13 +241,19 @@ export class AdminService {
     }
 
     /**
-     * Check if export was cancelled during execution
-     * @param exportId ID of the export job
+     * Check if a job was cancelled during execution
+     * @param jobId ID of the job
+     * @param model The model to query (export or import)
+     * @param cancelledStatus The status value indicating cancellation
      * @returns True if cancelled, false otherwise
      */
-    private async checkCancellationDuringExport(exportId: string): Promise<boolean> {
-        const exportJob = await this.exportModel.findById(exportId);
-        return exportJob?.status === ExportStatus.CANCELLED;
+    private async checkCancellationDuringOperation<T extends JobDocument>(
+        jobId: string,
+        model: Model<T>,
+        cancelledStatus: JobStatus,
+    ): Promise<boolean> {
+        const job = await model.findById(jobId);
+        return job?.status === cancelledStatus;
     }
 
     /**
@@ -288,25 +298,30 @@ export class AdminService {
     }
 
     /**
-     * Handle export failure
-     * @param exportJob The export job that failed
+     * Handle job failure (export or import)
+     * @param job The job that failed
      * @param error The error that occurred
+     * @param sendEmailFn Function to send failure notification email
      */
-    private async handleExportFailure(exportJob: DatabaseExportDocument, error: any): Promise<void> {
-        if (!exportJob) return;
+    private async handleJobFailure(
+        job: JobDocument | null,
+        error: any,
+        sendEmailFn: (job: JobDocument, errorMessage: string) => Promise<void>,
+    ): Promise<void> {
+        if (!job) return;
 
-        exportJob.status = ExportStatus.FAILED;
-        exportJob.completedAt = new Date();
-        exportJob.errorMessage = error.message;
+        job.status = ExportStatus.FAILED as any;
+        job.completedAt = new Date();
+        job.errorMessage = error.message;
         try {
-            await exportJob.save();
+            await job.save();
         } catch (saveError) {
-            // Export might have been deleted - exit gracefully
+            // Job might have been deleted - exit gracefully
             return;
         }
 
         // Send failure email
-        await this.sendExportFailedEmail(exportJob, error.message);
+        await sendEmailFn(job, error.message);
     }
 
     /**
@@ -315,8 +330,8 @@ export class AdminService {
      */
     private async sendExportCompletedEmail(exportJob: DatabaseExportDocument): Promise<void> {
         try {
-            const admin = await this.adminModel.findById(exportJob.adminId).exec();
-            if (!admin || !admin.email) {
+            const adminEmail = await this.getAdminEmail(exportJob.adminId.toString());
+            if (!adminEmail) {
                 return;
             }
 
@@ -324,7 +339,7 @@ export class AdminService {
             const { from, name } = this.getFromAddress();
 
             await this.mailerService['mailerProvider'].sendMail({
-                to: admin.email,
+                to: adminEmail,
                 subject: 'Database Export Completed',
                 template: 'exportCompleted',
                 from,
@@ -348,15 +363,15 @@ export class AdminService {
      */
     private async sendExportFailedEmail(exportJob: DatabaseExportDocument, errorMessage: string): Promise<void> {
         try {
-            const admin = await this.adminModel.findById(exportJob.adminId).exec();
-            if (!admin || !admin.email) {
+            const adminEmail = await this.getAdminEmail(exportJob.adminId.toString());
+            if (!adminEmail) {
                 return;
             }
 
             const { from, name } = this.getFromAddress();
 
             await this.mailerService['mailerProvider'].sendMail({
-                to: admin.email,
+                to: adminEmail,
                 subject: 'Database Export Failed',
                 template: 'exportFailed',
                 from,
@@ -380,6 +395,20 @@ export class AdminService {
             email,
             from: `"${name}" <${email}>`,
         };
+    }
+
+    /**
+     * Get admin by ID and return email if exists
+     * @param adminId ID of the admin
+     * @returns Admin email or null
+     */
+    private async getAdminEmail(adminId: string): Promise<string | null> {
+        try {
+            const admin = await this.adminModel.findById(adminId).exec();
+            return admin?.email || null;
+        } catch (error) {
+            return null;
+        }
     }
 
     /**
@@ -414,27 +443,52 @@ export class AdminService {
     }
 
     /**
+     * Generic method to cancel an ongoing operation (export or import)
+     * @param jobId ID of the job to cancel
+     * @param model The model to query
+     * @param pendingStatus Pending status value
+     * @param inProgressStatus In progress status value
+     * @param cancelledStatus Cancelled status value
+     * @returns True if cancelled, false otherwise
+     */
+    private async cancelJob<T extends JobDocument>(
+        jobId: string,
+        model: Model<T>,
+        pendingStatus: JobStatus,
+        inProgressStatus: JobStatus,
+        cancelledStatus: JobStatus,
+    ): Promise<boolean> {
+        const job = await model.findById(jobId);
+
+        if (!job) {
+            return false;
+        }
+
+        // Can only cancel pending or in-progress jobs
+        if (job.status !== pendingStatus && job.status !== inProgressStatus) {
+            return false;
+        }
+
+        job.status = cancelledStatus as any;
+        job.completedAt = new Date();
+        await job.save();
+
+        return true;
+    }
+
+    /**
      * Cancel an ongoing export operation
      * @param exportId ID of the export to cancel
      * @returns True if cancelled, false otherwise
      */
     async cancelExport(exportId: string): Promise<boolean> {
-        const exportJob = await this.exportModel.findById(exportId);
-
-        if (!exportJob) {
-            return false;
-        }
-
-        // Can only cancel pending or in-progress exports
-        if (exportJob.status !== ExportStatus.PENDING && exportJob.status !== ExportStatus.IN_PROGRESS) {
-            return false;
-        }
-
-        exportJob.status = ExportStatus.CANCELLED;
-        exportJob.completedAt = new Date();
-        await exportJob.save();
-
-        return true;
+        return this.cancelJob(
+            exportId,
+            this.exportModel,
+            ExportStatus.PENDING,
+            ExportStatus.IN_PROGRESS,
+            ExportStatus.CANCELLED,
+        );
     }
 
     /**
@@ -472,5 +526,319 @@ export class AdminService {
             filename: exportJob.fileKey,
             mimeType: 'application/gzip',
         };
+    }
+
+    // ========== IMPORT METHODS ==========
+
+    /**
+     * Initiate a full database import.
+     * The import runs asynchronously in the background.
+     * @param adminId ID of the admin initiating the import
+     * @param file The uploaded file buffer
+     * @param originalFilename Original name of the uploaded file
+     * @param dto Import configuration
+     * @returns The created import job document
+     */
+    async initiateImport(
+        adminId: string,
+        file: Buffer,
+        originalFilename: string,
+        dto: CreateImportDto,
+    ): Promise<DatabaseImportDocument> {
+        // Save uploaded file temporarily
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `database-import-${timestamp}.json.gz`;
+        const importPath = this.getImportPath(filename);
+
+        // Ensure import directory exists
+        const fs = require('fs').promises;
+        const path = require('path');
+        await fs.mkdir(path.dirname(importPath), { recursive: true });
+
+        // Write file to disk
+        await fs.writeFile(importPath, file);
+
+        // Get file size
+        const stats = await fs.stat(importPath);
+
+        // Create import record
+        const importJob = new this.importModel({
+            adminId,
+            status: ImportStatus.PENDING,
+            filename: originalFilename,
+            fileKey: filename,
+            fileSize: stats.size,
+        });
+        await importJob.save();
+
+        // Start import in background (don't await)
+        this.performImport(importJob._id.toString(), dto.clearExisting || false);
+
+        return importJob;
+    }
+
+    /**
+     * Perform the actual database import operation.
+     * This runs asynchronously and updates the import status.
+     * @param importId ID of the import job
+     * @param clearExisting Whether to clear existing data before importing
+     */
+    private async performImport(importId: string, clearExisting: boolean): Promise<void> {
+        let importJob = await this.importModel.findById(importId);
+        if (!importJob) {
+            return;
+        }
+
+        try {
+            // Check if import was cancelled before we started
+            if (this.isJobCancelled(importJob)) {
+                return;
+            }
+
+            // Mark import as in progress
+            await this.markJobInProgress(importJob);
+
+            // Import all collections with streaming
+            const { totalDocuments, collectionsCount } = await this.importAllCollectionsStreaming(
+                importId,
+                importJob.fileKey!,
+                clearExisting,
+            );
+
+            // Mark import as completed
+            await this.markImportCompleted(importJob, collectionsCount, totalDocuments);
+
+            // Send success notification
+            await this.sendImportCompletedEmail(importJob);
+        } catch (error) {
+            await this.handleJobFailure(importJob, error, this.sendImportFailedEmail.bind(this));
+        }
+    }
+
+
+
+
+
+    /**
+     * Import all database collections using streaming to avoid memory issues
+     * @param importId ID of the import job (for cancellation checks)
+     * @param fileKey The file key to import from
+     * @param clearExisting Whether to clear existing data before importing
+     * @returns Import metadata with statistics
+     */
+    private async importAllCollectionsStreaming(
+        importId: string,
+        fileKey: string,
+        clearExisting: boolean,
+    ): Promise<{ totalDocuments: number; collectionsCount: number }> {
+        if (!this.connection || !this.connection.db) {
+            throw new InternalServerErrorException('Database connection not available');
+        }
+
+        const importPath = this.getImportPath(fileKey);
+        const fs = require('fs');
+
+        // Check if file exists
+        if (!fs.existsSync(importPath)) {
+            throw new HttpException('Import file not found on disk', HttpStatus.NOT_FOUND);
+        }
+
+        // Read and decompress file
+        const fileContent = await this.readAndDecompressFile(importPath);
+
+        // Parse JSON
+        let data: Record<string, any[]>;
+        try {
+            data = JSON.parse(fileContent);
+        } catch (error) {
+            throw new HttpException('Invalid JSON format in import file', HttpStatus.BAD_REQUEST);
+        }
+
+        let totalDocuments = 0;
+        let collectionsCount = 0;
+
+        // Process each collection
+        for (const [collectionName, documents] of Object.entries(data)) {
+            // Check for cancellation
+            if (await this.checkCancellationDuringOperation(importId, this.importModel, ImportStatus.CANCELLED)) {
+                throw new HttpException('Import cancelled by user', HttpStatus.CONFLICT);
+            }
+
+            if (!Array.isArray(documents)) {
+                continue;
+            }
+
+            const collection = this.connection.db.collection(collectionName);
+
+            // Clear existing data if requested
+            if (clearExisting) {
+                await collection.deleteMany({});
+            }
+
+            // Insert documents in batches
+            if (documents.length > 0) {
+                const batchSize = 1000;
+                for (let i = 0; i < documents.length; i += batchSize) {
+                    const batch = documents.slice(i, i + batchSize);
+                    await collection.insertMany(batch, { ordered: false });
+                    totalDocuments += batch.length;
+
+                    // Check for cancellation between batches
+                    if (await this.checkCancellationDuringOperation(importId, this.importModel, ImportStatus.CANCELLED)) {
+                        throw new HttpException('Import cancelled by user', HttpStatus.CONFLICT);
+                    }
+                }
+                collectionsCount++;
+            }
+        }
+
+        return {
+            totalDocuments,
+            collectionsCount,
+        };
+    }
+
+    /**
+     * Read and decompress a gzip file
+     * @param filePath Path to the file
+     * @returns Decompressed content as string
+     */
+    private async readAndDecompressFile(filePath: string): Promise<string> {
+        const fs = require('fs');
+        const util = require('util');
+        const gunzip = util.promisify(zlib.gunzip);
+
+        const compressed = fs.readFileSync(filePath);
+        const decompressed = await gunzip(compressed);
+        return decompressed.toString('utf-8');
+    }
+
+
+
+    /**
+     * Get the filesystem path for an import file
+     * @param filename Name of the import file
+     * @returns Full filesystem path
+     */
+    private getImportPath(filename: string): string {
+        const path = require('path');
+        const importsDir = this.configService.get<string>('IMPORTS_DIR') || './imports';
+        return path.join(importsDir, filename);
+    }
+
+    /**
+     * Mark import as completed and update metadata
+     * @param importJob The import job to update
+     * @param collectionsCount Number of collections imported
+     * @param documentsCount Number of documents imported
+     */
+    private async markImportCompleted(
+        importJob: DatabaseImportDocument,
+        collectionsCount: number,
+        documentsCount: number,
+    ): Promise<void> {
+        importJob.status = ImportStatus.COMPLETED;
+        importJob.completedAt = new Date();
+        importJob.collectionsCount = collectionsCount;
+        importJob.documentsCount = documentsCount;
+        try {
+            await importJob.save();
+        } catch (error) {
+            return;
+        }
+    }
+
+
+
+    /**
+     * Send email notification when import is completed
+     * @param importJob The completed import job
+     */
+    private async sendImportCompletedEmail(importJob: DatabaseImportDocument): Promise<void> {
+        try {
+            const adminEmail = await this.getAdminEmail(importJob.adminId.toString());
+            if (!adminEmail) {
+                return;
+            }
+
+            const { from, name } = this.getFromAddress();
+
+            await this.mailerService['mailerProvider'].sendMail({
+                to: adminEmail,
+                subject: 'Database Import Completed',
+                template: 'importCompleted',
+                from,
+                context: {
+                    fromName: name,
+                    importId: importJob._id.toString(),
+                    filename: importJob.filename,
+                    collectionsCount: importJob.collectionsCount,
+                    documentsCount: importJob.documentsCount,
+                    completedAt: importJob.completedAt?.toISOString(),
+                },
+            });
+        } catch (error) {}
+    }
+
+    /**
+     * Send email notification when import fails
+     * @param importJob The failed import job
+     * @param errorMessage The error message
+     */
+    private async sendImportFailedEmail(importJob: DatabaseImportDocument, errorMessage: string): Promise<void> {
+        try {
+            const adminEmail = await this.getAdminEmail(importJob.adminId.toString());
+            if (!adminEmail) {
+                return;
+            }
+
+            const { from, name } = this.getFromAddress();
+
+            await this.mailerService['mailerProvider'].sendMail({
+                to: adminEmail,
+                subject: 'Database Import Failed',
+                template: 'importFailed',
+                from,
+                context: {
+                    fromName: name,
+                    importId: importJob._id.toString(),
+                    filename: importJob.filename,
+                    errorMessage,
+                },
+            });
+        } catch (error) {}
+    }
+
+    /**
+     * Get the status of an import job
+     * @param importId ID of the import
+     * @returns Import job document or null
+     */
+    async getImportStatus(importId: string): Promise<DatabaseImportDocument | null> {
+        return this.importModel.findById(importId).exec();
+    }
+
+    /**
+     * Get all imports for a specific admin
+     * @param adminId ID of the admin
+     * @returns List of import jobs
+     */
+    async getImportsByAdmin(adminId: string): Promise<DatabaseImportDocument[]> {
+        return this.importModel.find({ adminId }).sort({ createdAt: -1 }).exec();
+    }
+
+    /**
+     * Cancel an ongoing import operation
+     * @param importId ID of the import to cancel
+     * @returns True if cancelled, false otherwise
+     */
+    async cancelImport(importId: string): Promise<boolean> {
+        return this.cancelJob(
+            importId,
+            this.importModel,
+            ImportStatus.PENDING,
+            ImportStatus.IN_PROGRESS,
+            ImportStatus.CANCELLED,
+        );
     }
 }

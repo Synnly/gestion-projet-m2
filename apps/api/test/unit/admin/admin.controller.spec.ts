@@ -2,7 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AdminController } from '../../../src/admin/admin.controller';
 import { AdminService } from '../../../src/admin/admin.service';
 import { CreateExportDto, ExportFormat } from '../../../src/admin/dto/createExportDto';
+import { CreateImportDto } from '../../../src/admin/dto/createImportDto';
 import { ExportStatus } from '../../../src/admin/database-export.schema';
+import { ImportStatus } from '../../../src/admin/database-import.schema';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { Readable } from 'stream';
@@ -18,6 +20,10 @@ describe('AdminController', () => {
         getExportsByAdmin: jest.fn(),
         cancelExport: jest.fn(),
         downloadExport: jest.fn(),
+        initiateImport: jest.fn(),
+        getImportStatus: jest.fn(),
+        getImportsByAdmin: jest.fn(),
+        cancelImport: jest.fn(),
     };
 
     beforeEach(async () => {
@@ -252,6 +258,217 @@ describe('AdminController', () => {
             );
 
             await expect(controller.downloadExport(exportId, mockResponse)).rejects.toThrow(HttpException);
+        });
+    });
+
+    // ========== IMPORT TESTS ==========
+
+    describe('createImport', () => {
+        it('should initiate an import and return response DTO', async () => {
+            const adminId = new Types.ObjectId();
+            const dto: CreateImportDto = { clearExisting: false };
+            const mockRequest = {
+                user: { _id: adminId },
+            } as any;
+
+            const mockFile = {
+                buffer: Buffer.from('test data'),
+                originalname: 'database-backup.json.gz',
+            } as Express.Multer.File;
+
+            const mockImportJob = {
+                _id: new Types.ObjectId(),
+                status: ImportStatus.PENDING,
+            };
+
+            mockAdminService.initiateImport.mockResolvedValue(mockImportJob);
+
+            const result = await controller.createImport(mockFile, dto, mockRequest);
+
+            expect(result).toEqual({
+                message: 'Import initiated. You will receive an email when the import is complete.',
+                importId: mockImportJob._id.toString(),
+                status: ImportStatus.PENDING,
+            });
+            expect(service.initiateImport).toHaveBeenCalledWith(
+                adminId.toString(),
+                mockFile.buffer,
+                mockFile.originalname,
+                dto,
+            );
+        });
+
+        it('should handle clearExisting parameter', async () => {
+            const adminId = new Types.ObjectId();
+            const dto: CreateImportDto = { clearExisting: true };
+            const mockRequest = {
+                user: { _id: adminId },
+            } as any;
+
+            const mockFile = {
+                buffer: Buffer.from('test data'),
+                originalname: 'database-backup.json.gz',
+            } as Express.Multer.File;
+
+            const mockImportJob = {
+                _id: new Types.ObjectId(),
+                status: ImportStatus.PENDING,
+            };
+
+            mockAdminService.initiateImport.mockResolvedValue(mockImportJob);
+
+            await controller.createImport(mockFile, dto, mockRequest);
+
+            expect(service.initiateImport).toHaveBeenCalledWith(
+                adminId.toString(),
+                mockFile.buffer,
+                mockFile.originalname,
+                dto,
+            );
+        });
+    });
+
+    describe('getImportStatus', () => {
+        it('should return import status', async () => {
+            const importId = new Types.ObjectId();
+            const mockImport = {
+                _id: importId,
+                status: ImportStatus.COMPLETED,
+                filename: 'database-backup.json.gz',
+                fileSize: 2048,
+                collectionsCount: 15,
+                documentsCount: 2500,
+                startedAt: new Date(),
+                completedAt: new Date(),
+            };
+
+            mockAdminService.getImportStatus.mockResolvedValue(mockImport);
+
+            const result = await controller.getImportStatus(importId.toString());
+
+            expect(result).toEqual({
+                importId: importId.toString(),
+                status: ImportStatus.COMPLETED,
+                filename: mockImport.filename,
+                fileSize: mockImport.fileSize,
+                collectionsCount: mockImport.collectionsCount,
+                documentsCount: mockImport.documentsCount,
+                startedAt: mockImport.startedAt,
+                completedAt: mockImport.completedAt,
+                errorMessage: undefined,
+            });
+            expect(service.getImportStatus).toHaveBeenCalledWith(importId.toString());
+        });
+
+        it('should throw HttpException if import not found', async () => {
+            mockAdminService.getImportStatus.mockResolvedValue(null);
+
+            await expect(controller.getImportStatus('nonexistent')).rejects.toThrow(
+                new HttpException('Import not found', HttpStatus.NOT_FOUND),
+            );
+        });
+
+        it('should include error message if import failed', async () => {
+            const importId = new Types.ObjectId();
+            const mockImport = {
+                _id: importId,
+                status: ImportStatus.FAILED,
+                errorMessage: 'Invalid JSON format in import file',
+                startedAt: new Date(),
+                completedAt: new Date(),
+            };
+
+            mockAdminService.getImportStatus.mockResolvedValue(mockImport);
+
+            const result = await controller.getImportStatus(importId.toString());
+
+            expect(result.status).toBe(ImportStatus.FAILED);
+            expect(result.errorMessage).toBe('Invalid JSON format in import file');
+        });
+    });
+
+    describe('listImports', () => {
+        it('should return list of imports for admin', async () => {
+            const adminId = new Types.ObjectId();
+            const mockRequest = {
+                user: { _id: adminId },
+            } as any;
+
+            const mockImports = [
+                {
+                    _id: new Types.ObjectId(),
+                    status: ImportStatus.COMPLETED,
+                    filename: 'backup1.json.gz',
+                    fileSize: 2048,
+                    collectionsCount: 15,
+                    documentsCount: 2500,
+                    startedAt: new Date(),
+                    completedAt: new Date(),
+                    createdAt: new Date(),
+                },
+                {
+                    _id: new Types.ObjectId(),
+                    status: ImportStatus.IN_PROGRESS,
+                    filename: 'backup2.json.gz',
+                    startedAt: new Date(),
+                    createdAt: new Date(),
+                },
+            ];
+
+            mockAdminService.getImportsByAdmin.mockResolvedValue(mockImports);
+
+            const result = await controller.listImports(mockRequest);
+
+            expect(result).toHaveLength(2);
+            expect(result[0].importId).toBe(mockImports[0]._id.toString());
+            expect(result[0].status).toBe(ImportStatus.COMPLETED);
+            expect(result[1].status).toBe(ImportStatus.IN_PROGRESS);
+            expect(service.getImportsByAdmin).toHaveBeenCalledWith(adminId.toString());
+        });
+
+        it('should return empty array if no imports', async () => {
+            const adminId = new Types.ObjectId();
+            const mockRequest = {
+                user: { _id: adminId },
+            } as any;
+
+            mockAdminService.getImportsByAdmin.mockResolvedValue([]);
+
+            const result = await controller.listImports(mockRequest);
+
+            expect(result).toEqual([]);
+        });
+    });
+
+    describe('cancelImport', () => {
+        it('should cancel an import successfully', async () => {
+            const importId = new Types.ObjectId().toString();
+
+            mockAdminService.cancelImport.mockResolvedValue(true);
+
+            const result = await controller.cancelImport(importId);
+
+            expect(result).toEqual({
+                message: 'Import cancelled successfully',
+                importId,
+            });
+            expect(service.cancelImport).toHaveBeenCalledWith(importId);
+        });
+
+        it('should throw HttpException if import cannot be cancelled', async () => {
+            const importId = new Types.ObjectId().toString();
+
+            mockAdminService.cancelImport.mockResolvedValue(false);
+
+            await expect(controller.cancelImport(importId)).rejects.toThrow(
+                new HttpException('Import cannot be cancelled or does not exist', HttpStatus.BAD_REQUEST),
+            );
+        });
+
+        it('should throw HttpException if import not found', async () => {
+            mockAdminService.cancelImport.mockResolvedValue(false);
+
+            await expect(controller.cancelImport('nonexistent')).rejects.toThrow(HttpException);
         });
     });
 });

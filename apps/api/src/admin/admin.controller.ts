@@ -12,16 +12,29 @@ import {
     HttpStatus,
     HttpException,
     StreamableFile,
+    UseInterceptors,
+    UploadedFile,
+    ParseFilePipe,
+    MaxFileSizeValidator,
+    FileTypeValidator,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response, Request } from 'express';
 import { AdminService } from './admin.service';
 import { CreateExportDto } from './dto/createExportDto';
+import { CreateImportDto } from './dto/createImportDto';
 import {
     ExportInitiatedResponseDto,
     ExportStatusResponseDto,
     ExportListItemDto,
     ExportCancelledResponseDto,
 } from './dto/exportResponseDto';
+import {
+    ImportInitiatedResponseDto,
+    ImportStatusResponseDto,
+    ImportListItemDto,
+    ImportCancelledResponseDto,
+} from './dto/importResponseDto';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
@@ -145,5 +158,110 @@ export class AdminController {
         });
 
         return new StreamableFile(stream);
+    }
+
+    // ========== IMPORT ENDPOINTS ==========
+
+    /**
+     * Initiate a full database import.
+     * The import runs in the background and the admin receives an email when complete.
+     * @param file Uploaded database export file
+     * @param dto Import configuration
+     * @param req Authenticated request containing user info
+     * @returns Import job information including ID for tracking
+     */
+    @Post('import')
+    @UseInterceptors(FileInterceptor('file'))
+    async createImport(
+        @UploadedFile(
+            new ParseFilePipe({
+                validators: [
+                    new MaxFileSizeValidator({ maxSize: 500 * 1024 * 1024 }), // 500MB max
+                    new FileTypeValidator({ fileType: /(gzip|json|gz)$/ }),
+                ],
+            }),
+        )
+        file: Express.Multer.File,
+        @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        dto: CreateImportDto,
+        @Req() req: Request,
+    ): Promise<ImportInitiatedResponseDto> {
+        const adminId = ((req as any).user.sub || (req as any).user._id).toString();
+        const importJob = await this.adminService.initiateImport(adminId, file.buffer, file.originalname, dto);
+
+        return {
+            message: 'Import initiated. You will receive an email when the import is complete.',
+            importId: importJob._id.toString(),
+            status: importJob.status,
+        };
+    }
+
+    /**
+     * Get the status and details of a specific import.
+     * @param importId ID of the import to retrieve
+     * @returns Import information including status
+     */
+    @Get('import/:importId')
+    async getImportStatus(@Param('importId') importId: string): Promise<ImportStatusResponseDto> {
+        const importJob = await this.adminService.getImportStatus(importId);
+
+        if (!importJob) {
+            throw new HttpException('Import not found', HttpStatus.NOT_FOUND);
+        }
+
+        return {
+            importId: importJob._id.toString(),
+            status: importJob.status,
+            filename: importJob.filename,
+            fileSize: importJob.fileSize,
+            collectionsCount: importJob.collectionsCount,
+            documentsCount: importJob.documentsCount,
+            startedAt: importJob.startedAt,
+            completedAt: importJob.completedAt,
+            errorMessage: importJob.errorMessage,
+        };
+    }
+
+    /**
+     * List all imports for the authenticated admin.
+     * @param req Authenticated request containing user info
+     * @returns List of import jobs
+     */
+    @Get('imports')
+    async listImports(@Req() req: Request): Promise<ImportListItemDto[]> {
+        const adminId = ((req as any).user.sub || (req as any).user._id).toString();
+        const imports = await this.adminService.getImportsByAdmin(adminId);
+
+        return imports.map((imp) => ({
+            importId: imp._id.toString(),
+            status: imp.status,
+            filename: imp.filename,
+            fileSize: imp.fileSize,
+            collectionsCount: imp.collectionsCount,
+            documentsCount: imp.documentsCount,
+            startedAt: imp.startedAt,
+            completedAt: imp.completedAt,
+            createdAt: imp.createdAt!,
+        }));
+    }
+
+    /**
+     * Cancel an ongoing import operation.
+     * Only works if the import is still pending or in progress.
+     * @param importId ID of the import to cancel
+     * @returns Confirmation message
+     */
+    @Delete('import/:importId')
+    async cancelImport(@Param('importId') importId: string): Promise<ImportCancelledResponseDto> {
+        const cancelled = await this.adminService.cancelImport(importId);
+
+        if (!cancelled) {
+            throw new HttpException('Import cannot be cancelled or does not exist', HttpStatus.BAD_REQUEST);
+        }
+
+        return {
+            message: 'Import cancelled successfully',
+            importId,
+        };
     }
 }

@@ -4,6 +4,7 @@ import { AdminService } from './admin.service';
 import { AdminController } from './admin.controller';
 import { UsersModule } from '../user/user.module';
 import { DatabaseExport, DatabaseExportSchema } from './database-export.schema';
+import { DatabaseImport, DatabaseImportSchema } from './database-import.schema';
 import { MailerModule } from '../mailer/mailer.module';
 
 @Module({
@@ -12,6 +13,7 @@ import { MailerModule } from '../mailer/mailer.module';
         MailerModule.register(),
         MongooseModule.forFeature([
             { name: DatabaseExport.name, schema: DatabaseExportSchema },
+            { name: DatabaseImport.name, schema: DatabaseImportSchema },
         ]),
     ],
     controllers: [AdminController],
