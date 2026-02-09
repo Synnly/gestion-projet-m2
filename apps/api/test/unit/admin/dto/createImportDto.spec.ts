@@ -1,4 +1,5 @@
 import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 import { CreateImportDto } from '../../../../src/admin/dto/createImportDto';
 
 describe('CreateImportDto', () => {
@@ -34,9 +35,29 @@ describe('CreateImportDto', () => {
         expect(errors).toHaveLength(0);
     });
 
-    it('should fail validation when clearExisting is not a boolean', async () => {
-        const dto = new CreateImportDto();
-        (dto.clearExisting as any) = 'true';
+    it('should transform string "true" to boolean true', async () => {
+        const plain = { clearExisting: 'true' };
+        const dto = plainToInstance(CreateImportDto, plain);
+
+        const errors = await validate(dto);
+        expect(errors).toHaveLength(0);
+        expect(dto.clearExisting).toBe(true);
+        expect(typeof dto.clearExisting).toBe('boolean');
+    });
+
+    it('should transform string "false" to boolean false', async () => {
+        const plain = { clearExisting: 'false' };
+        const dto = plainToInstance(CreateImportDto, plain);
+
+        const errors = await validate(dto);
+        expect(errors).toHaveLength(0);
+        expect(dto.clearExisting).toBe(false);
+        expect(typeof dto.clearExisting).toBe('boolean');
+    });
+
+    it('should fail validation when clearExisting is an invalid string', async () => {
+        const plain = { clearExisting: 'invalid' };
+        const dto = plainToInstance(CreateImportDto, plain);
 
         const errors = await validate(dto);
         expect(errors.length).toBeGreaterThan(0);

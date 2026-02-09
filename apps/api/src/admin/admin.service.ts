@@ -210,8 +210,9 @@ export class AdminService {
                 }
                 isFirstDoc = false;
 
-                // Write document as JSON
-                gzipStream.write('    ' + JSON.stringify(doc));
+                // Write document as JSON with ObjectIds converted to Extended JSON format
+                const convertedDoc = this.convertToExtendedJSON(doc);
+                gzipStream.write('    ' + JSON.stringify(convertedDoc));
                 totalDocuments++;
             }
 
@@ -680,7 +681,9 @@ export class AdminService {
                 const batchSize = 1000;
                 for (let i = 0; i < documents.length; i += batchSize) {
                     const batch = documents.slice(i, i + batchSize);
-                    await collection.insertMany(batch, { ordered: false });
+                    // Convert Extended JSON ObjectIds back to MongoDB ObjectIds
+                    const convertedBatch = batch.map((doc) => this.convertFromExtendedJSON(doc));
+                    await collection.insertMany(convertedBatch, { ordered: false });
                     totalDocuments += batch.length;
 
                     // Check for cancellation between batches
@@ -714,6 +717,82 @@ export class AdminService {
     }
 
 
+
+    /**
+     * Convert a MongoDB document to Extended JSON format
+     * Recursively converts ObjectIds to { $oid: "..." } format
+     * @param obj The object to convert
+     * @returns The object with ObjectIds converted to Extended JSON
+     */
+    private convertToExtendedJSON(obj: any): any {
+        if (obj === null || obj === undefined) {
+            return obj;
+        }
+
+        // Handle ObjectId instances
+        if (obj instanceof Types.ObjectId) {
+            return { $oid: obj.toString() };
+        }
+
+        // Handle Date instances
+        if (obj instanceof Date) {
+            return { $date: obj.toISOString() };
+        }
+
+        // Handle arrays
+        if (Array.isArray(obj)) {
+            return obj.map((item) => this.convertToExtendedJSON(item));
+        }
+
+        // Handle objects
+        if (typeof obj === 'object') {
+            const converted: any = {};
+            for (const [key, value] of Object.entries(obj)) {
+                converted[key] = this.convertToExtendedJSON(value);
+            }
+            return converted;
+        }
+
+        return obj;
+    }
+
+    /**
+     * Convert Extended JSON format back to MongoDB types
+     * Recursively converts { $oid: "..." } to ObjectId instances
+     * @param obj The object to convert
+     * @returns The object with Extended JSON converted to MongoDB types
+     */
+    private convertFromExtendedJSON(obj: any): any {
+        if (obj === null || obj === undefined) {
+            return obj;
+        }
+
+        // Handle Extended JSON ObjectId format: { $oid: "..." }
+        if (obj.$oid && typeof obj.$oid === 'string') {
+            return new Types.ObjectId(obj.$oid);
+        }
+
+        // Handle Extended JSON Date format: { $date: "..." }
+        if (obj.$date && typeof obj.$date === 'string') {
+            return new Date(obj.$date);
+        }
+
+        // Handle arrays
+        if (Array.isArray(obj)) {
+            return obj.map((item) => this.convertFromExtendedJSON(item));
+        }
+
+        // Handle objects
+        if (typeof obj === 'object') {
+            const converted: any = {};
+            for (const [key, value] of Object.entries(obj)) {
+                converted[key] = this.convertFromExtendedJSON(value);
+            }
+            return converted;
+        }
+
+        return obj;
+    }
 
     /**
      * Get the filesystem path for an import file
