@@ -188,6 +188,40 @@ describe('AuthService', () => {
 
             await expect(service.login(company.email, 'wrongPassword')).rejects.toThrow(InvalidCredentialsException);
         });
+
+        it('should send verification email when user is not verified and login is called', async () => {
+            const company = await createMockCompany({ isVerified: false });
+            mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
+
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            await service.login(company.email, company.plainPassword);
+
+            expect(mockMailerService.sendVerificationEmail).toHaveBeenCalledWith(company.email);
+        });
+
+        it('should not send verification email when user is already verified and login is called', async () => {
+            const company = await createMockCompany({ isVerified: true });
+            mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
+
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            await service.login(company.email, company.plainPassword);
+
+            expect(mockMailerService.sendVerificationEmail).not.toHaveBeenCalled();
+        });
     });
 
     describe('generateAccessToken', () => {

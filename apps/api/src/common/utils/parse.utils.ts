@@ -9,11 +9,7 @@ export function toNumberOrUndefined(value: unknown): number | undefined {
     if (value === null || value === undefined || value === '') return undefined;
     if (typeof value === 'string') {
         const normalized = value.trim();
-        if (
-            normalized === 'Infinity' ||
-            normalized === '-Infinity' ||
-            normalized.toLowerCase() === 'nan'
-        ) {
+        if (normalized === 'Infinity' || normalized === '-Infinity' || normalized.toLowerCase() === 'nan') {
             return undefined;
         }
     }

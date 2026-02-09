@@ -32,7 +32,10 @@ export class PaginationService {
         sort?: string,
     ): Promise<PaginationResult<T>> {
         const skip = (page - 1) * limit;
-        const query = (sort === "-1") ? model.find(filter).sort({createdAt: -1}).skip(skip).limit(limit) : model.find(filter).sort({createdAt: 1}).skip(skip).limit(limit);
+        const query =
+            sort === '-1'
+                ? model.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit)
+                : model.find(filter).sort({ createdAt: 1 }).skip(skip).limit(limit);
 
         if (populate) populate.forEach((p) => query.populate(p as any));
 

@@ -396,6 +396,62 @@ describe('MailerService', () => {
         });
     });
 
+    describe('sendAccountBanEmail', () => {
+        it('should send account ban email with reason', async () => {
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+
+            const result = await service.sendAccountBanEmail('user@example.com', 'Violation of terms');
+
+            expect(result).toBe(true);
+            expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: 'user@example.com',
+                    subject: `Vous avez été banni de Test App !`,
+                    template: 'accountBan',
+                    from: '"Test App" <noreply@example.com>',
+                    context: {
+                        email: 'user@example.com',
+                        banReason: 'Violation of terms',
+                        fromName: 'Test App',
+                    },
+                }),
+            );
+        });
+
+        it('should send account ban email with empty reason when not provided', async () => {
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+
+            const result = await service.sendAccountBanEmail('user@example.com');
+
+            expect(result).toBe(true);
+            expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: 'user@example.com',
+                    subject: `Vous avez été banni de Test App !`,
+                    template: 'accountBan',
+                    context: expect.objectContaining({
+                        banReason: '',
+                    }),
+                }),
+            );
+        });
+
+        it('should normalize email to lowercase', async () => {
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+
+            await service.sendAccountBanEmail('USER@EXAMPLE.COM', 'Test reason');
+
+            expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: 'user@example.com',
+                    context: expect.objectContaining({
+                        email: 'user@example.com',
+                    }),
+                }),
+            );
+        });
+    });
+
     describe('sendCustomTemplateEmail', () => {
         it('should send email with custom template', async () => {
             mockNestMailerService.sendMail.mockResolvedValue(true);
@@ -504,6 +560,172 @@ describe('MailerService', () => {
             expect(typeof hashed).toBe('string');
             const ok = await (service as any).verifyOtp(plain, hashed);
             expect(ok).toBe(true);
+        });
+    });
+
+    describe('sendAccountCreationEmail', () => {
+        it('should send account creation email with credentials and return true', async () => {
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+
+            const result = await service.sendAccountCreationEmail(
+                'student@example.com',
+                'TempPass123!',
+                'John',
+                'Doe',
+                'Welcome message',
+            );
+
+            expect(result).toBe(true);
+            expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: 'student@example.com',
+                    subject: 'Vos identifiants de connexion',
+                    template: 'accountCreation',
+                    from: '"Test App" <noreply@example.com>',
+                    context: expect.objectContaining({
+                        email: 'student@example.com',
+                        password: 'TempPass123!',
+                        firstName: 'John',
+                        lastName: 'Doe',
+                        customMessage: 'Welcome message',
+                        fromName: 'Test App',
+                    }),
+                }),
+            );
+        });
+
+        it('should use default firstName when not provided', async () => {
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+
+            const result = await service.sendAccountCreationEmail('student@example.com', 'TempPass123!');
+
+            expect(result).toBe(true);
+            expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    context: expect.objectContaining({
+                        firstName: 'Étudiant',
+                        lastName: '',
+                        customMessage: '',
+                    }),
+                }),
+            );
+        });
+    });
+
+    describe('verifyPasswordResetOtp - additional branches', () => {
+        it('should increment password reset attempts on invalid OTP', async () => {
+            const mockUser = {
+                _id: '507f1f77bcf86cd799439011',
+                email: 'user@example.com',
+                passwordResetCode: null as string | null,
+                passwordResetExpires: new Date(Date.now() + 5 * 60 * 1000),
+                passwordResetAttempts: 0,
+                save: jest.fn(),
+            };
+
+            mockUser.passwordResetCode = await bcrypt.hash('123456', 10);
+            mockUserModel.findOne.mockResolvedValue(mockUser);
+            mockUser.save.mockResolvedValue(mockUser);
+
+            await expect(service.verifyPasswordResetOtp('user@example.com', '999999')).rejects.toBeInstanceOf(
+                BadRequestException,
+            );
+
+            expect(mockUser.passwordResetAttempts).toBe(1);
+            expect(mockUser.save).toHaveBeenCalled();
+        });
+
+        it('should invalidate OTP after 5 failed password reset attempts', async () => {
+            const mockUser = {
+                _id: '507f1f77bcf86cd799439011',
+                email: 'user@example.com',
+                passwordResetCode: await bcrypt.hash('123456', 10),
+                passwordResetExpires: new Date(Date.now() + 5 * 60 * 1000),
+                passwordResetAttempts: 5,
+                save: jest.fn(),
+            };
+            mockUserModel.findOne.mockResolvedValue(mockUser);
+            mockUser.save.mockResolvedValue(mockUser);
+
+            await expect(service.verifyPasswordResetOtp('user@example.com', '999999')).rejects.toBeInstanceOf(
+                HttpException,
+            );
+
+            expect(mockUser.passwordResetCode).toBeNull();
+            expect(mockUser.passwordResetExpires).toBeNull();
+            expect(mockUser.passwordResetAttempts).toBe(0);
+        });
+    });
+
+    describe('getFromAddress edge cases', () => {
+        it('should use default No-Reply when MAIL_FROM_NAME is not configured', async () => {
+            // Override configService to return undefined for MAIL_FROM_NAME
+            const customConfigService = {
+                get: jest.fn((key: string) => {
+                    const config = {
+                        MAIL_USER: 'test@example.com',
+                        MAIL_FROM_NAME: undefined,
+                        MAIL_FROM_EMAIL: 'noreply@example.com',
+                    };
+                    return config[key];
+                }),
+            };
+
+            // Create a new service instance with modified config
+            const module = await Test.createTestingModule({
+                providers: [
+                    MailerService,
+                    {
+                        provide: MAILER_PROVIDER,
+                        useValue: mockNestMailerService,
+                    },
+                    {
+                        provide: ConfigService,
+                        useValue: customConfigService,
+                    },
+                    {
+                        provide: getModelToken(User.name),
+                        useValue: mockUserModel,
+                    },
+                ],
+            }).compile();
+
+            const customService = module.get<MailerService>(MailerService);
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+
+            await customService.sendInfoEmail('user@test.com', 'Test', 'Message');
+
+            expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    from: expect.stringContaining('No-Reply'),
+                    context: expect.objectContaining({
+                        fromName: 'No-Reply',
+                    }),
+                }),
+            );
+        });
+    });
+
+    describe('enforceRateLimit edge cases', () => {
+        it('should initialize rate limit fields when not set', async () => {
+            const mockUser = {
+                _id: '507f1f77bcf86cd799439011',
+                email: 'user@example.com',
+                emailVerificationCode: null,
+                emailVerificationExpires: null,
+                emailVerificationAttempts: 0,
+                otpRequestCount: undefined,
+                lastOtpRequestAt: undefined,
+                save: jest.fn(),
+            };
+            mockUserModel.findOne.mockResolvedValue(mockUser);
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+            mockUser.save.mockResolvedValue(mockUser);
+
+            await service.sendVerificationEmail('user@example.com');
+
+            expect(mockUser.otpRequestCount).toBe(1);
+            expect(mockUser.lastOtpRequestAt).toBeInstanceOf(Date);
         });
     });
 });

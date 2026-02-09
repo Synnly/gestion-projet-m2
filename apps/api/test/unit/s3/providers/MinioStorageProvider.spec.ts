@@ -386,9 +386,9 @@ describe('MinioStorageProvider', () => {
 
         const provider = new MinioStorageProvider(cfg, mockAppModel as any);
 
-        await expect(provider.generatePresignedDownloadUrl('somefile.pdf', companyId, Role.COMPANY)).rejects.toBeInstanceOf(
-            ForbiddenException,
-        );
+        await expect(
+            provider.generatePresignedDownloadUrl('somefile.pdf', companyId, Role.COMPANY),
+        ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
     it('generatePresignedDownloadUrl - company role forbidden when application links to other company', async () => {
@@ -482,9 +482,9 @@ describe('MinioStorageProvider', () => {
 
         const provider = new MinioStorageProvider(cfg);
 
-        await expect(provider.generatePresignedDownloadUrl(`${uploaderId}_cv.pdf`, 'differentUser')).rejects.toBeInstanceOf(
-            ForbiddenException,
-        );
+        await expect(
+            provider.generatePresignedDownloadUrl(`${uploaderId}_cv.pdf`, 'differentUser'),
+        ).rejects.toBeInstanceOf(ForbiddenException);
     });
 
     it('generatePresignedDownloadUrl - company role forbidden when applicationModel not available', async () => {
