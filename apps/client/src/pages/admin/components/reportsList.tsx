@@ -199,7 +199,12 @@ export default function ReportsList() {
             await updateReportStatus(reportId, newStatus);
             fetchReports();
         } catch (err) {
-            alert('Erreur lors de la mise à jour du statut');
+            toast.error(
+            `Erreur lors de la mise à jour du statut: ${
+                err instanceof Error ? err.message : 'Une erreur est survenue'
+            }`,
+            { toastId: 'update-report-status-error' }
+            );
         }
     };
 
@@ -220,6 +225,8 @@ export default function ReportsList() {
                 return 'bg-success text-success-content';
             case 'rejected':
                 return 'bg-error text-error-content';
+            case 'reviewed':
+                return 'bg-info text-info-content';
             default:
                 return 'bg-base-200';
         }

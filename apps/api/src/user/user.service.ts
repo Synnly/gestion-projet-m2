@@ -50,7 +50,7 @@ export class UserService {
         // Deletes all refresh tokens linked to the user
         await this.refreshTokenModel.deleteMany({ userId: userId });
 
-        // Get all messages from this user (using regex for MongoDB compatibility)
+        // Get all messages from this user
         const userMessages = await this.messageModel
             .find({ authorId: userId.toString() })
             .select('_id')

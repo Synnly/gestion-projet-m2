@@ -139,18 +139,26 @@ export default function TopicDetailPage() {
     // Handle the hash to highlight and scroll to a specific message
     useEffect(() => {
         const hash = location.hash;
+        let timeoutId: number | undefined;
+
         if (hash.startsWith('#message-')) {
             const messageId = hash.replace('#message-', '');
             setHighlightedMessageId(messageId);
-            
+
             // Wait for the DOM to be ready before scrolling
-            setTimeout(() => {
+            timeoutId = window.setTimeout(() => {
                 const element = document.getElementById(hash.substring(1));
                 if (element) {
                     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             }, 500);
         }
+
+        return () => {
+            if (timeoutId !== undefined) {
+                window.clearTimeout(timeoutId);
+            }
+        };
     }, [location.hash, data]);
 
     const toggleSender = () => setShown(!shown);

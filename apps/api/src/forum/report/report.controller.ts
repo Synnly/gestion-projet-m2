@@ -54,7 +54,7 @@ export class ReportController {
      * @returns Paginated list of reports
      */
     @Get()
-    @UseGuards(RolesGuard)
+    @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     async getAllReports(
         @Query('page') page?: number,
