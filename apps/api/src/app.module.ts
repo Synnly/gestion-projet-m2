@@ -2,6 +2,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { CompanyModule } from './company/company.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module';
 import { TokensMiddleware } from './common/middleware/tokens.middleware';
 import { S3Module } from './s3/s3.module';
@@ -23,6 +24,7 @@ import { UsersModule } from './user/user.module';
         ConfigModule.forRoot({
             isGlobal: true,
         }),
+        ScheduleModule.forRoot(),
         MailerModule.register(MailerProviderType.gmail),
         MongooseModule.forRootAsync({
             imports: [ConfigModule],

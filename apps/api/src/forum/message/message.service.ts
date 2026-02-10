@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { Message } from './message.schema';
 import { Forum } from '../forum.schema';
 import { InjectModel } from '@nestjs/mongoose';
@@ -13,6 +14,8 @@ import { NotificationService } from 'src/notification/notification.service';
 import { CreateNotificationDto } from 'src/notification/dto/createNotification.dto';
 @Injectable()
 export class MessageService {
+    private readonly logger = new Logger(MessageService.name);
+
     constructor(
         @InjectModel(Message.name) private readonly messageModel: Model<Message>,
         @InjectModel(Topic.name) private readonly topicModel: Model<Topic>,
@@ -99,5 +102,25 @@ export class MessageService {
         }
         
         return message;
+    }
+
+    /**
+     * CronJob that runs daily at 3:00 AM to permanently delete messages 
+     * that have been soft-deleted for more than 30 days.
+     */
+    @Cron(CronExpression.EVERY_DAY_AT_3AM)
+    async cleanupOldDeletedMessages(): Promise<void> {
+        try {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            const result = await this.messageModel.deleteMany({
+                deletedAt: { $ne: null, $lte: thirtyDaysAgo }
+            });
+
+            this.logger.log(`Cleanup completed: ${result.deletedCount} messages permanently deleted`);
+        } catch (error) {
+            this.logger.error('Error during message cleanup', error);
+        }
     }
 }
