@@ -29,6 +29,7 @@ export type MessageType = {
     parentMessageId?: MessageType;
     content: string;
     createdAt: Date;
+    deletedAt?: Date | null;
 };
 const apiUrl = import.meta.env.VITE_APIURL;
 

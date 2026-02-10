@@ -10,6 +10,9 @@ export const ReplyMessage = ({ replyMessage }: replyMessageProps) => {
     // Vérifier si l'auteur du message cité est banni
     const isAuthorBanned = !!replyMessage.authorId.ban;
     
+    // Vérifier si le message cité est supprimé
+    const isMessageDeleted = !!replyMessage.deletedAt;
+    
     const authorName = isAuthorBanned
         ? '[utilisateur supprimé]'
         : 'name' in replyMessage.authorId && replyMessage.authorId.name
@@ -18,7 +21,11 @@ export const ReplyMessage = ({ replyMessage }: replyMessageProps) => {
             ? `${replyMessage.authorId.firstName} ${replyMessage.authorId.lastName}`.trim()
             : 'Utilisateur';
     
-    const messageContent = isAuthorBanned ? '[message supprimé]' : replyMessage.content;
+    const messageContent = isMessageDeleted
+        ? '[message supprimé (par un admin)]'
+        : isAuthorBanned
+            ? '[message supprimé]'
+            : replyMessage.content;
     
     return (
         <div className="flex flex-col border-l-4 border-blue-400 bg-base-200 p-4 rounded-r-lg max-w-2xl font-sans">

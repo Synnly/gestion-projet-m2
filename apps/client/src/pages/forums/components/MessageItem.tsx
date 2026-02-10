@@ -29,6 +29,9 @@ export const MessageItem = ({
     // Check if the author is banned
     const isAuthorBanned = !!authorId.ban;
     
+    // Check if the message is deleted
+    const isMessageDeleted = !!message.deletedAt;
+    
     // Check if it's the user's own message
     const isOwnMessage = currentUserId && authorId._id === currentUserId;
     
@@ -36,10 +39,11 @@ export const MessageItem = ({
     const isAlreadyReported = reportedMessageIds?.has(message._id);
     
     // The report button is shown only if:
+    // - The message is not deleted
     // - The author is not banned
     // - It's not the user's own message
     // - The message has not already been reported by the user
-    const showReportButton = !isAuthorBanned && !isOwnMessage && !isAlreadyReported;
+    const showReportButton = !isMessageDeleted && !isAuthorBanned && !isOwnMessage && !isAlreadyReported;
     
     const displayName = isAuthorBanned
         ? { name: '[utilisateur supprimé]' }
@@ -109,12 +113,18 @@ export const MessageItem = ({
                     {message.parentMessageId && <ReplyMessage replyMessage={message.parentMessageId} />}
 
                     <MDEditor.Markdown
-                        source={isAuthorBanned ? '[message supprimé]' : message.content}
+                        source={
+                            isMessageDeleted 
+                                ? '[message supprimé (par un admin)]' 
+                                : isAuthorBanned 
+                                    ? '[message supprimé]' 
+                                    : message.content
+                        }
                         className="!bg-transparent !text-base-content !text-sm leading-relaxed"
                         style={{ fontFamily: 'inherit' }}
                     />
                     <div className="flex flex-row gap-2 p-2 justify-between items-center">
-                        {!isAuthorBanned && (
+                        {!isAuthorBanned && !isMessageDeleted && (
                             <button
                                 className="btn btn-soft btn-sm"
                                 onClick={() =>
