@@ -73,6 +73,7 @@ export class ReportService {
             .find(filter)
             .populate({
                 path: 'messageId',
+                match: { deletedAt: null },
                 populate: [
                     {
                         path: 'topicId',
@@ -86,10 +87,13 @@ export class ReportService {
             })
             .exec();
 
+        // Filter out reports where messageId is null (deleted messages)
+        const validReports = allReports.filter((report: any) => report.messageId !== null);
+
         // Group reports by reported user (message author)
         const userGroupsMap = new Map<string, { reports: Report[], latestDate: Date }>();
         
-        allReports.forEach((report: any) => {
+        validReports.forEach((report: any) => {
             const author = report.messageId?.authorId;
             if (!author) return;
             
@@ -153,7 +157,7 @@ export class ReportService {
             selectedReports.push(...sortedReports);
         });
 
-        const totalReports = allReports.length;
+        const totalReports = validReports.length;
 
         return {
             data: selectedReports,

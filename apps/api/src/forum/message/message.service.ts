@@ -81,4 +81,23 @@ export class MessageService {
         const paginate = await this.paginationService.paginate(this.messageModel, filter, page, limit, populate);
         return paginate;
     }
+
+    /**
+     * Soft delete a message by setting the deletedAt field.
+     * @param messageId - The ID of the message to delete.
+     * @returns The updated message.
+     */
+    async deleteMessage(messageId: string): Promise<Message> {
+        const message = await this.messageModel.findByIdAndUpdate(
+            messageId,
+            { deletedAt: new Date() },
+            { new: true }
+        );
+        
+        if (!message) {
+            throw new NotFoundException('Message not found');
+        }
+        
+        return message;
+    }
 }
