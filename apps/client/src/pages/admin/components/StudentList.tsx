@@ -35,7 +35,7 @@ export const StudentList = () => {
 
     useEffect(() => {
         loadStudents(currentPage);
-    }, [currentPage, loadStudents]);
+    }, [currentPage]);
 
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && newPage <= totalPages) {

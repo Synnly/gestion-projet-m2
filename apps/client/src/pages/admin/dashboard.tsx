@@ -24,8 +24,8 @@ export function AdminDashboard() {
             content: <StatsPage />,
         },
         {
-            id: 'manage-users',
-            label: 'Gérer les Utilisateurs',
+            id: 'manage-students',
+            label: 'Gérer les Étudiants',
             content: <StudentList />,
         },
         {
