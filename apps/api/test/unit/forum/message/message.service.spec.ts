@@ -58,6 +58,7 @@ describe('MessageService', () => {
         create: jest.fn(),
         find: jest.fn(),
         findById: jest.fn(),
+        findByIdAndUpdate: jest.fn(),
     };
 
     const mockPaginationService = {
@@ -340,6 +341,66 @@ describe('MessageService', () => {
                     returnLink: expect.stringContaining('/forums/general/'),
                 }),
             );
+        });
+    });
+
+    describe('deleteMessage', () => {
+        it('should soft delete a message by setting deletedAt', async () => {
+            const messageId = new Types.ObjectId().toString();
+            const deletedMessage = {
+                ...mockMessage,
+                _id: messageId,
+                deletedAt: new Date(),
+            };
+
+            messageModel.findByIdAndUpdate.mockResolvedValue(deletedMessage);
+
+            const result = await service.deleteMessage(messageId);
+
+            expect(messageModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                messageId,
+                { deletedAt: expect.any(Date) },
+                { new: true }
+            );
+            expect(result).toEqual(deletedMessage);
+        });
+
+        it('should throw NotFoundException when message is not found', async () => {
+            const messageId = new Types.ObjectId().toString();
+
+            messageModel.findByIdAndUpdate.mockResolvedValue(null);
+
+            await expect(service.deleteMessage(messageId)).rejects.toThrow(NotFoundException);
+            expect(messageModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                messageId,
+                { deletedAt: expect.any(Date) },
+                { new: true }
+            );
+        });
+
+        it('should set deletedAt to current date and time', async () => {
+            const messageId = new Types.ObjectId().toString();
+            const mockDate = new Date('2026-02-10T10:00:00Z');
+            jest.spyOn(global, 'Date').mockImplementation(() => mockDate as any);
+
+            const deletedMessage = {
+                ...mockMessage,
+                _id: messageId,
+                deletedAt: mockDate,
+            };
+
+            messageModel.findByIdAndUpdate.mockResolvedValue(deletedMessage);
+
+            const result = await service.deleteMessage(messageId);
+
+            expect(messageModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                messageId,
+                { deletedAt: mockDate },
+                { new: true }
+            );
+            expect(result.deletedAt).toEqual(mockDate);
+
+            jest.restoreAllMocks();
         });
     });
 });

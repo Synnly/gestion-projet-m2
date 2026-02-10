@@ -293,6 +293,57 @@ describe('ReportService', () => {
             // So user1's reports should come first
             expect(result.data[0].messageId.authorId._id.equals(user1Id)).toBe(true);
         });
+
+        it('should exclude reports for deleted messages (deletedAt not null)', async () => {
+            const reportsWithDeleted = [
+                {
+                    _id: new Types.ObjectId(),
+                    messageId: null, // Message is null because of match filter in populate
+                    reporterId: new Types.ObjectId(),
+                    reason: ReportReason.SPAM,
+                    status: 'pending',
+                    createdAt: new Date('2026-01-20T10:00:00'),
+                },
+                {
+                    _id: new Types.ObjectId(),
+                    messageId: {
+                        _id: new Types.ObjectId(),
+                        content: 'Active Message',
+                        deletedAt: null,
+                        authorId: {
+                            _id: user1Id,
+                            email: 'user1@test.com',
+                            firstName: 'User',
+                            lastName: 'One',
+                            ban: undefined,
+                        },
+                        topicId: {
+                            _id: new Types.ObjectId(),
+                            forumId: 'forum1',
+                            title: 'Topic 1',
+                        },
+                    },
+                    reporterId: new Types.ObjectId(),
+                    reason: ReportReason.INAPPROPRIATE,
+                    status: 'pending',
+                    createdAt: new Date('2026-01-20T11:00:00'),
+                },
+            ];
+
+            const mockQuery = {
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(reportsWithDeleted),
+            };
+            mockReportModel.find.mockReturnValue(mockQuery);
+
+            const result = await service.getAllReports(1, 10);
+
+            // Should only return 1 report (the one with active message)
+            expect(result.data).toHaveLength(1);
+            expect(result.total).toBe(1);
+            expect(result.data[0].messageId).not.toBeNull();
+            expect(result.data[0].messageId._id).toBeDefined();
+        });
     });
 
     describe('getReportById', () => {
