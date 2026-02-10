@@ -22,7 +22,7 @@ export const ReplyMessage = ({ replyMessage }: replyMessageProps) => {
             : 'Utilisateur';
     
     const messageContent = isMessageDeleted
-        ? '[message supprimé (par un admin)]'
+        ? '[message supprimé par un administrateur]'
         : isAuthorBanned
             ? '[message supprimé]'
             : replyMessage.content;

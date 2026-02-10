@@ -115,7 +115,7 @@ export const MessageItem = ({
                     <MDEditor.Markdown
                         source={
                             isMessageDeleted 
-                                ? '[message supprimé (par un admin)]' 
+                                ? '[message supprimé par un administrateur]' 
                                 : isAuthorBanned 
                                     ? '[message supprimé]' 
                                     : message.content
