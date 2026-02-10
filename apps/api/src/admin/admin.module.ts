@@ -5,10 +5,7 @@ import { UsersModule } from '../user/user.module';
 import { Report, ReportSchema } from '../forum/report/report.schema';
 
 @Module({
-    imports: [
-        UsersModule,
-        MongooseModule.forFeature([{ name: Report.name, schema: ReportSchema }]),
-    ],
+    imports: [UsersModule],
     controllers: [],
     providers: [AdminService],
     exports: [AdminService],

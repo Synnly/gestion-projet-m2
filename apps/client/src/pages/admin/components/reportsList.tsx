@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { getAllReports, REPORT_REASON_LABELS, updateReportStatus } from '../../../apis/reports';
@@ -50,7 +50,7 @@ export default function ReportsList() {
     const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
     const limit = 50; // Reports per page
 
-    const fetchReports = async () => {
+    const fetchReports = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
@@ -62,7 +62,7 @@ export default function ReportsList() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, limit, statusFilter]);
 
     const deleteMessageMutation = useMutation({
         mutationFn: (messageId: string) => deleteMessage(messageId),
@@ -87,7 +87,7 @@ export default function ReportsList() {
 
     useEffect(() => {
         fetchReports();
-    }, [page, statusFilter]);
+    }, [fetchReports]);
 
     // Group reports by reported user, then by message
     const groupedReports = useMemo(() => {

@@ -85,7 +85,7 @@ export class ReportController {
      * @returns List of reports for the message
      */
     @Get('message/:messageId')
-    @UseGuards(RolesGuard)
+    @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     async getReportsByMessageId(@Param('messageId', ParseObjectIdPipe) messageId: string) {
         return this.reportService.getReportsByMessageId(messageId);
@@ -96,7 +96,7 @@ export class ReportController {
      * @returns Object with counts for each status
      */
     @Get('stats/summary')
-    @UseGuards(RolesGuard)
+    @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     async getReportStats() {
         return this.reportService.getReportStats();
@@ -108,7 +108,7 @@ export class ReportController {
      * @returns The report
      */
     @Get(':id')
-    @UseGuards(RolesGuard)
+    @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     async getReportById(@Param('id', ParseObjectIdPipe) reportId: string) {
         return this.reportService.getReportById(reportId);
@@ -121,7 +121,7 @@ export class ReportController {
      * @returns The updated report
      */
     @Patch(':id')
-    @UseGuards(RolesGuard)
+    @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     async updateReportStatus(
         @Param('id', ParseObjectIdPipe) reportId: string,
@@ -135,7 +135,7 @@ export class ReportController {
      * @param reportId - The ID of the report
      */
     @Delete(':id')
-    @UseGuards(RolesGuard)
+    @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
     async deleteReport(@Param('id', ParseObjectIdPipe) reportId: string) {

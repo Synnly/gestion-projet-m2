@@ -324,7 +324,7 @@ describe('ReportService', () => {
                         },
                     },
                     reporterId: new Types.ObjectId(),
-                    reason: ReportReason.INAPPROPRIATE,
+                    reason: ReportReason.INAPPROPRIATE_CONTENT,
                     status: 'pending',
                     createdAt: new Date('2026-01-20T11:00:00'),
                 },
