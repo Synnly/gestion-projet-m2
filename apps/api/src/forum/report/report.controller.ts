@@ -2,11 +2,13 @@ import {
     BadRequestException,
     Body,
     Controller,
+    DefaultValuePipe,
     Delete,
     Get,
     HttpCode,
     HttpStatus,
     Param,
+    ParseIntPipe,
     Patch,
     Post,
     Query,
@@ -57,8 +59,8 @@ export class ReportController {
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
     async getAllReports(
-        @Query('page') page?: number,
-        @Query('limit') limit?: number,
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
         @Query('status') status?: string,
     ) {
         return this.reportService.getAllReports(page, limit, status);
