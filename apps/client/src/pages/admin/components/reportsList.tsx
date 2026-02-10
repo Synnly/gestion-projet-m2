@@ -1,10 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { getAllReports, REPORT_REASON_LABELS, updateReportStatus } from '../../../apis/reports';
 import type { Report } from '../../../apis/reports';
+import { deleteMessage } from '../../../apis/messages';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { BanUserModal } from './BanUserModal';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { DeleteMessageModal } from './DeleteMessageModal';
+import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 
 type SortField = 'reportCount' | 'latestReport';
 type SortDirection = 'asc' | 'desc';
@@ -40,6 +43,8 @@ export default function ReportsList() {
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [banModalOpen, setBanModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<{ id: string; email: string } | null>(null);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [selectedMessage, setSelectedMessage] = useState<{ id: string; content: string } | null>(null);
     const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
     const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
     const limit = 50; // Reports per page
@@ -56,6 +61,27 @@ export default function ReportsList() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const deleteMessageMutation = useMutation({
+        mutationFn: (messageId: string) => deleteMessage(messageId),
+        onSuccess: () => {
+            setDeleteModalOpen(false);
+            setSelectedMessage(null);
+            fetchReports();
+        },
+        onError: (error: Error) => {
+            alert(`Erreur lors de la suppression du message: ${error.message}`);
+        },
+    });
+
+    const handleDeleteMessage = (messageId: string, content: string) => {
+        setSelectedMessage({ id: messageId, content });
+        setDeleteModalOpen(true);
+    };
+
+    const handleConfirmDelete = (messageId: string) => {
+        deleteMessageMutation.mutate(messageId);
     };
 
     useEffect(() => {
@@ -342,6 +368,7 @@ export default function ReportsList() {
                                                                     <th className="w-1/2">Message</th>
                                                                     <th className="w-32">Signalements</th>
                                                                     <th className="w-44">Dernier signalement</th>
+                                                                    <th className="w-24">Actions</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
@@ -381,10 +408,20 @@ export default function ReportsList() {
                                                                             <td className="whitespace-nowrap text-xs">
                                                                                 {format(messageGroup.latestReport, 'dd/MM/yyyy HH:mm', { locale: fr })}
                                                                             </td>
+                                                                            <td>
+                                                                                <button
+                                                                                    onClick={() => handleDeleteMessage(messageGroup.messageId, messageGroup.messageContent)}
+                                                                                    className="btn btn-error btn-xs"
+                                                                                    title="Supprimer le message"
+                                                                                    disabled={deleteMessageMutation.isPending}
+                                                                                >
+                                                                                    <Trash2 size={14} />
+                                                                                </button>
+                                                                            </td>
                                                                         </tr>
                                                                         {expandedMessages.has(messageGroup.messageId) && (
                                                                             <tr>
-                                                                                <td colSpan={4} className="bg-base-300 p-0">
+                                                                                <td colSpan={5} className="bg-base-300 p-0">
                                                                                     <div className="p-3">
                                                                                         <table className="table table-xs w-full">
                                                                                             <thead>
@@ -491,6 +528,20 @@ export default function ReportsList() {
                         setSelectedUser(null);
                     }}
                     onSuccess={handleBanSuccess}
+                />
+            )}
+
+            {selectedMessage && (
+                <DeleteMessageModal
+                    messageId={selectedMessage.id}
+                    messageContent={selectedMessage.content}
+                    isOpen={deleteModalOpen}
+                    onClose={() => {
+                        setDeleteModalOpen(false);
+                        setSelectedMessage(null);
+                    }}
+                    onConfirm={handleConfirmDelete}
+                    isDeleting={deleteMessageMutation.isPending}
                 />
             )}
         </div>
