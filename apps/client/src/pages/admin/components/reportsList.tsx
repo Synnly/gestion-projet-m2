@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
 import { getAllReports, REPORT_REASON_LABELS, updateReportStatus } from '../../../apis/reports';
 import type { Report } from '../../../apis/reports';
 import { deleteMessage } from '../../../apis/messages';
@@ -71,7 +72,7 @@ export default function ReportsList() {
             fetchReports();
         },
         onError: (error: Error) => {
-            alert(`Erreur lors de la suppression du message: ${error.message}`);
+            toast.error(`Erreur lors de la suppression du message: ${error.message}`, { toastId: 'delete-message-error' });
         },
     });
 
