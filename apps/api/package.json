@@ -29,6 +29,7 @@
         "@nestjs/core": "^11.0.1",
         "@nestjs/jwt": "^11.0.1",
         "@nestjs/platform-express": "^11.0.1",
+        "@nestjs/schedule": "^6.1.1",
         "@nestjs/throttler": "^6.4.0",
         "@types/multer": "^2.0.0",
         "axios": "^1.13.2",
@@ -52,6 +53,7 @@
         "@nestjs/testing": "^11.0.1",
         "@types/bcrypt": "^6.0.0",
         "@types/cookie-parser": "^1.4.10",
+        "@types/cron": "^2.0.1",
         "@types/express": "^5.0.0",
         "@types/jest": "^30.0.0",
         "@types/minio": "^7.1.0",
@@ -96,7 +98,6 @@
             "!src/app.module.ts"
         ],
         "coverageDirectory": "../coverage",
-        "testEnvironment": "node",
         "moduleNameMapper": {
             "^src/(.*)$": "<rootDir>/src/$1"
         }
