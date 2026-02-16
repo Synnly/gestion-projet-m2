@@ -139,9 +139,7 @@ export default function ExportDatabase() {
                 }
             } catch (error: any) {
                 console.error('Erreur lors de la vérification du statut d\'import:', error);
-                
-                pollAttempts++;
-                
+                                
                 if (pollAttempts > 5 || error?.status === 401 || error?.status === 403) {
                     setImportStatusMessage('Import probablement terminé. Redirection vers la page de connexion...');
                     localStorage.setItem('import_success_message', 
