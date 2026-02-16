@@ -593,7 +593,7 @@ export default function ExportDatabase() {
                                     {isCreating || pendingImportId ? (
                                         <>
                                             <Loader2 className="w-4 h-4 animate-spin" />
-                                            {pendingImportId ? 'Import en cours...' : 'Import en cours...'}
+                                            Import en cours...
                                         </>
                                     ) : (
                                         <>

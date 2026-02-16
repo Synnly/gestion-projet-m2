@@ -176,7 +176,7 @@ export class AdminController {
             new ParseFilePipe({
                 validators: [
                     new MaxFileSizeValidator({ maxSize: 500 * 1024 * 1024 }), // 500MB max
-                    new FileTypeValidator({ fileType: /(gzip|json|gz)$/ }),
+                    new FileTypeValidator({ fileType: /\.(json|gz|json\.gz)$/ }),
                 ],
             }),
         )

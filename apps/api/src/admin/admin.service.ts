@@ -832,7 +832,6 @@ export class AdminService {
                 }
             );
 
-            // Cancel all pending or in-progress imports (except the current one)
             await this.importModel.updateMany(
                 { 
                     status: { 
