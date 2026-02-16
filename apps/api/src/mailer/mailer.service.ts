@@ -435,4 +435,76 @@ export class MailerService {
 
         return user;
     }
+
+    /**
+     * Send application acceptance email to student
+     * @param email Student's email address
+     * @param firstName Student's first name
+     * @param lastName Student's last name
+     * @param postTitle Title of the post
+     * @param companyName Name of the company
+     * @returns True if email was sent successfully
+     */
+    async sendApplicationAcceptedEmail(
+        email: string,
+        firstName: string,
+        lastName: string,
+        postTitle: string,
+        companyName: string,
+    ): Promise<boolean> {
+        const normalized = email.toLowerCase();
+        const { from, name } = this.getFromAddress();
+
+        await this.mailerProvider.sendMail({
+            to: normalized,
+            subject: `Candidature acceptée - ${postTitle}`,
+            template: 'applicationAccepted',
+            from,
+            context: {
+                firstName,
+                lastName,
+                postTitle,
+                companyName,
+                fromName: name,
+            },
+        });
+
+        return true;
+    }
+
+    /**
+     * Send application rejection email to student
+     * @param email Student's email address
+     * @param firstName Student's first name
+     * @param lastName Student's last name
+     * @param postTitle Title of the post
+     * @param companyName Name of the company
+     * @returns True if email was sent successfully
+     */
+    async sendApplicationRejectedEmail(
+        email: string,
+        firstName: string,
+        lastName: string,
+        postTitle: string,
+        companyName: string,
+    ): Promise<boolean> {
+        const normalized = email.toLowerCase();
+        const { from, name } = this.getFromAddress();
+
+        await this.mailerProvider.sendMail({
+            to: normalized,
+            subject: `Mise à jour de votre candidature - ${postTitle}`,
+            template: 'applicationRejected',
+            from,
+            context: {
+                firstName,
+                lastName,
+                postTitle,
+                companyName,
+                fromName: name,
+            },
+        });
+
+        return true;
+    }
 }
