@@ -352,7 +352,9 @@ export class AdminService {
                     completedAt: exportJob.completedAt?.toISOString(),
                 },
             });
-        } catch (error) {}
+        } catch (error) {
+            console.error(`Failed to send export completed email for export ${exportJob._id}:`, error);
+        }
     }
 
     /**
@@ -380,7 +382,9 @@ export class AdminService {
                     errorMessage,
                 },
             });
-        } catch (error) {}
+        } catch (error) {
+            console.error(`Failed to send export failed email for export ${exportJob._id}:`, error);
+        }
     }
 
     /**
@@ -899,7 +903,9 @@ export class AdminService {
                     completedAt: importJob.completedAt?.toISOString(),
                 },
             });
-        } catch (error) {}
+        } catch (error) {
+            console.error(`Failed to send import completed email for import ${importJob._id}:`, error);
+        }
     }
 
     /**
@@ -928,7 +934,9 @@ export class AdminService {
                     errorMessage,
                 },
             });
-        } catch (error) {}
+        } catch (error) {
+            console.error(`Failed to send import failed email for import ${importJob._id}:`, error);
+        }
     }
 
     /**

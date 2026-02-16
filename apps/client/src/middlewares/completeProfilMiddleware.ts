@@ -66,8 +66,7 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
         // Vérifier si l'entreprise a modifié son profil après le rejet
         const hasModifiedAfterRejection =
             !isRejected || (rejectedAt && modifiedAt && new Date(modifiedAt) > new Date(rejectedAt));
-        // console.log('hasModifiedAfterRejection:', hasModifiedAfterRejection);
-        ///// a supprimer non ? imposiible de me sortir de cette boucle : 
+
         // Si rejeté mais modifié après rejet et profil complet, considérer comme en attente de validation
         // if (hasModifiedAfterRejection && isComplete) {
         //     if (pathname !== '/pending-validation') {
