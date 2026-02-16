@@ -428,42 +428,65 @@ export class CompanyService {
             );
         }
 
-        if (postIds.length > 0) {
-            const deletedPosts = await this.postModel.deleteMany({
-                _id: { $in: postIds },
+        const session = await this.companyModel.db.startSession();
+        try {
+            await session.withTransaction(async () => {
+                if (postIds.length > 0) {
+                    const deletedPosts = await this.postModel
+                        .deleteMany({
+                            _id: { $in: postIds },
+                        })
+                        .session(session);
+                    this.logger.log(`${deletedPosts.deletedCount} deleted posts`);
+                }
+
+                const forumsToDelete = await this.forumModel
+                    .find({ company: { $in: companyIds } })
+                    .select('_id')
+                    .session(session);
+                const forumIds = forumsToDelete.map((f) => f._id);
+
+                if (forumIds.length > 0) {
+                    const topicsToDelete = await this.topicModel
+                        .find({ forumId: { $in: forumIds } })
+                        .select('_id')
+                        .session(session);
+                    const topicIds = topicsToDelete.map((t) => t._id);
+
+                    if (topicIds.length > 0) {
+                        const deletedMessages = await this.messageModel
+                            .deleteMany({
+                                topicId: { $in: topicIds },
+                            })
+                            .session(session);
+                        this.logger.log(`${deletedMessages.deletedCount} deleted messages`);
+
+                        const deletedTopics = await this.topicModel
+                            .deleteMany({
+                                _id: { $in: topicIds },
+                            })
+                            .session(session);
+                        this.logger.log(`${deletedTopics.deletedCount} deleted topics`);
+                    }
+
+                    const deletedForums = await this.forumModel
+                        .deleteMany({
+                            _id: { $in: forumIds },
+                        })
+                        .session(session);
+                    this.logger.log(`${deletedForums.deletedCount} deleted forums`);
+                }
+
+                const deletedCompanies = await this.companyModel
+                    .deleteMany({
+                        _id: { $in: companyIds },
+                    })
+                    .session(session);
+
+                this.logger.log(`Company cleanup completed: ${deletedCompanies.deletedCount} companies deleted`);
             });
-            this.logger.log(`${deletedPosts.deletedCount} deleted posts`);
+        } finally {
+            await session.endSession();
         }
-
-        const forumsToDelete = await this.forumModel.find({ company: { $in: companyIds } }).select('_id');
-        const forumIds = forumsToDelete.map((f) => f._id);
-
-        if (forumIds.length > 0) {
-            const topicsToDelete = await this.topicModel.find({ forumId: { $in: forumIds } }).select('_id');
-            const topicIds = topicsToDelete.map((t) => t._id);
-
-            if (topicIds.length > 0) {
-                const deletedMessages = await this.messageModel.deleteMany({
-                    topicId: { $in: topicIds },
-                });
-                this.logger.log(`${deletedMessages.deletedCount} deleted messages`);
-
-                const deletedTopics = await this.topicModel.deleteMany({
-                    _id: { $in: topicIds },
-                });
-                this.logger.log(`${deletedTopics.deletedCount} deleted topics`);
-            }
-
-            const deletedForums = await this.forumModel.deleteMany({
-                _id: { $in: forumIds },
-            });
-            this.logger.log(`${deletedForums.deletedCount} deleted forums`);
-        }
-
-        const deletedCompanies = await this.companyModel.deleteMany({
-            _id: { $in: companyIds },
-        });
-
-        this.logger.log(`Company cleanup completed: ${deletedCompanies.deletedCount} companies deleted`);
     }
 }
