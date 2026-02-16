@@ -1,7 +1,15 @@
 import { useMutation } from '@tanstack/react-query';
 import { userStore } from '../stores/userStore';
 import { useLocation, useNavigate } from 'react-router';
+import { useState } from 'react';
 import type { companyFormLogin } from '../types/Login.types';
+
+interface PendingDeletionData {
+    userId: string;
+    daysRemaining: number;
+    deletedAt: string;
+}
+
 function translateMessage(message: string): string {
     if (message === 'Invalid email or password') return 'email ou mot de passe invalide.';
 
@@ -17,6 +25,7 @@ function translateMessage(message: string): string {
 
     return 'Une erreur est survenue, veuillez réessayer plus tard.';
 }
+
 export const useLogin = () => {
     const getAccess = userStore((state) => state.get);
     const setAccess = userStore((state) => state.set);
@@ -24,6 +33,8 @@ export const useLogin = () => {
     const navigate = useNavigate();
     const lastLocationRoute = lastLocation.state?.from;
     const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
+    const [pendingDeletionData, setPendingDeletionData] = useState<PendingDeletionData | null>(null);
+
     const { mutateAsync, isPending, isError, error, reset } = useMutation({
         mutationFn: async (data: companyFormLogin) => {
             const res = await fetch(`${API_URL}/api/auth/login`, {
@@ -35,13 +46,27 @@ export const useLogin = () => {
                 credentials: 'include',
             });
             if (!res.ok) {
-                const message = await res.json();
-                throw new Error(translateMessage(message.message));
+                const errorData = await res.json();
+                
+                // Check if this is an account pending deletion error
+                if (errorData.error === 'ACCOUNT_PENDING_DELETION') {
+                    const deletionInfo: PendingDeletionData = {
+                        userId: errorData.userId,
+                        daysRemaining: errorData.daysRemaining,
+                        deletedAt: errorData.deletedAt,
+                    };
+                    setPendingDeletionData(deletionInfo);
+                    throw new Error('ACCOUNT_PENDING_DELETION');
+                }
+                
+                throw new Error(translateMessage(errorData.message));
             }
             return res;
         },
     });
+
     const login = async (data: companyFormLogin) => {
+        setPendingDeletionData(null); // Reset pending deletion data
         const res = await mutateAsync(data);
         if (res.ok) {
             const accessToken = await res.text();
@@ -65,5 +90,6 @@ export const useLogin = () => {
             navigate(redirectTo);
         }
     };
-    return { login, isPending, isError, error, reset };
+
+    return { login, isPending, isError, error, reset, pendingDeletionData, clearPendingDeletion: () => setPendingDeletionData(null) };
 };

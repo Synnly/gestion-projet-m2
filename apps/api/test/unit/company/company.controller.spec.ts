@@ -29,6 +29,8 @@ describe('CompanyController', () => {
         updatePublicProfile: jest.fn(),
         findPendingValidation: jest.fn(),
         isValid: jest.fn(),
+        restore: jest.fn(),
+        checkDeletionStatus: jest.fn(),
     };
 
     const mockReflector = {
@@ -1565,6 +1567,174 @@ describe('CompanyController', () => {
 
             expect(service.isValid).toHaveBeenCalledTimes(1);
             expect(service.isValid).toHaveBeenCalledWith(companyId);
+        });
+    });
+
+    describe('restore', () => {
+        it('should restore company successfully when restore is called with valid company id', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.restore.mockResolvedValue(undefined);
+
+            await controller.restore(companyId);
+
+            expect(service.restore).toHaveBeenCalledWith(companyId);
+            expect(service.restore).toHaveBeenCalledTimes(1);
+        });
+
+        it('should restore soft-deleted company when restore is called within 30 days', async () => {
+            const companyId = '507f1f77bcf86cd799439012';
+            mockCompanyService.restore.mockResolvedValue(undefined);
+
+            await controller.restore(companyId);
+
+            expect(service.restore).toHaveBeenCalledWith(companyId);
+        });
+
+        it('should throw error when restore is called with non-existent company id', async () => {
+            const companyId = '507f1f77bcf86cd799439999';
+            mockCompanyService.restore.mockRejectedValue(new NotFoundException('Company not found'));
+
+            await expect(controller.restore(companyId)).rejects.toThrow(NotFoundException);
+            expect(service.restore).toHaveBeenCalledWith(companyId);
+        });
+
+        it('should throw error when restore is called after 30 days deletion period', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.restore.mockRejectedValue(new Error('Cannot restore company after 30 days'));
+
+            await expect(controller.restore(companyId)).rejects.toThrow('Cannot restore company after 30 days');
+        });
+
+        it('should throw error when restore is called for company not marked for deletion', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.restore.mockRejectedValue(new Error('Company is not marked for deletion'));
+
+            await expect(controller.restore(companyId)).rejects.toThrow('Company is not marked for deletion');
+        });
+
+        it('should call service with correct companyId when restore is invoked', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.restore.mockResolvedValue(undefined);
+
+            await controller.restore(companyId);
+
+            expect(service.restore).toHaveBeenCalledTimes(1);
+            expect(service.restore).toHaveBeenCalledWith(companyId);
+        });
+
+        it('should propagate service errors when restore encounters database error', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.restore.mockRejectedValue(new Error('Database error'));
+
+            await expect(controller.restore(companyId)).rejects.toThrow('Database error');
+        });
+    });
+
+    describe('getDeletionStatus', () => {
+        it('should return deletion status when getDeletionStatus is called with valid company id', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockStatus = {
+                isMarkedForDeletion: true,
+                daysRemaining: 25,
+                scheduledDeletionDate: new Date('2026-03-15'),
+            };
+            mockCompanyService.checkDeletionStatus.mockResolvedValue(mockStatus);
+
+            const result = await controller.getDeletionStatus(companyId);
+
+            expect(result).toEqual(mockStatus);
+            expect(service.checkDeletionStatus).toHaveBeenCalledWith(companyId);
+            expect(service.checkDeletionStatus).toHaveBeenCalledTimes(1);
+        });
+
+        it('should return status with isMarkedForDeletion false when company is not marked for deletion', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockStatus = {
+                isMarkedForDeletion: false,
+                daysRemaining: null,
+                scheduledDeletionDate: null,
+            };
+            mockCompanyService.checkDeletionStatus.mockResolvedValue(mockStatus);
+
+            const result = await controller.getDeletionStatus(companyId);
+
+            expect(result.isMarkedForDeletion).toBe(false);
+            expect(result.daysRemaining).toBeNull();
+        });
+
+        it('should return correct days remaining when company is marked for deletion', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockStatus = {
+                isMarkedForDeletion: true,
+                daysRemaining: 15,
+                scheduledDeletionDate: new Date('2026-03-03'),
+            };
+            mockCompanyService.checkDeletionStatus.mockResolvedValue(mockStatus);
+
+            const result = await controller.getDeletionStatus(companyId);
+
+            expect(result.daysRemaining).toBe(15);
+            expect(result.isMarkedForDeletion).toBe(true);
+        });
+
+        it('should return status with 0 days remaining when deletion is imminent', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockStatus = {
+                isMarkedForDeletion: true,
+                daysRemaining: 0,
+                scheduledDeletionDate: new Date('2026-02-16'),
+            };
+            mockCompanyService.checkDeletionStatus.mockResolvedValue(mockStatus);
+
+            const result = await controller.getDeletionStatus(companyId);
+
+            expect(result.daysRemaining).toBe(0);
+            expect(result.isMarkedForDeletion).toBe(true);
+        });
+
+        it('should throw NotFoundException when getDeletionStatus is called with non-existent company id', async () => {
+            const companyId = '507f1f77bcf86cd799439999';
+            mockCompanyService.checkDeletionStatus.mockRejectedValue(new NotFoundException('Company not found'));
+
+            await expect(controller.getDeletionStatus(companyId)).rejects.toThrow(NotFoundException);
+            expect(service.checkDeletionStatus).toHaveBeenCalledWith(companyId);
+        });
+
+        it('should include scheduled deletion date when company is marked for deletion', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const deletionDate = new Date('2026-03-18');
+            const mockStatus = {
+                isMarkedForDeletion: true,
+                daysRemaining: 30,
+                scheduledDeletionDate: deletionDate,
+            };
+            mockCompanyService.checkDeletionStatus.mockResolvedValue(mockStatus);
+
+            const result = await controller.getDeletionStatus(companyId);
+
+            expect(result.scheduledDeletionDate).toEqual(deletionDate);
+        });
+
+        it('should propagate service errors when getDeletionStatus encounters database error', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.checkDeletionStatus.mockRejectedValue(new Error('Database error'));
+
+            await expect(controller.getDeletionStatus(companyId)).rejects.toThrow('Database error');
+        });
+
+        it('should call service with correct companyId when getDeletionStatus is invoked', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockStatus = {
+                isMarkedForDeletion: false,
+                daysRemaining: null,
+                scheduledDeletionDate: null,
+            };
+            mockCompanyService.checkDeletionStatus.mockResolvedValue(mockStatus);
+
+            await controller.getDeletionStatus(companyId);
+
+            expect(service.checkDeletionStatus).toHaveBeenCalledTimes(1);
+            expect(service.checkDeletionStatus).toHaveBeenCalledWith(companyId);
         });
     });
 });

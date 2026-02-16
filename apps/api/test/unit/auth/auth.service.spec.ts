@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { Role } from '../../../src/common/roles/roles.enum';
 import * as bcrypt from 'bcrypt';
 import { InvalidCredentialsException } from '../../../src/common/exceptions/invalidCredentials.exception';
+import { AccountPendingDeletionException } from '../../../src/common/exceptions/accountPendingDeletion.exception';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { User } from '../../../src/user/user.schema';
 import { MailerService } from '../../../src/mailer/mailer.service';
@@ -455,6 +456,155 @@ describe('AuthService', () => {
             const result = await service.login(company.email, company.plainPassword);
 
             expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+        });
+    });
+
+    describe('login - account pending deletion check', () => {
+        it('should throw AccountPendingDeletionException when company account is soft-deleted within 30 days and login is called', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            const deletedAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000); // 10 days ago
+            company.deletedAt = deletedAt;
+            mockUserModel.findOne.mockResolvedValue(company);
+
+            try {
+                await service.login(company.email, company.plainPassword);
+                fail('Should have thrown AccountPendingDeletionException');
+            } catch (error) {
+                expect(error).toBeInstanceOf(AccountPendingDeletionException);
+                expect(error.userId).toBe(company._id.toString());
+                expect(error.daysRemaining).toBe(20); // 30 - 10 = 20
+                expect(error.deletedAt).toEqual(deletedAt);
+            }
+        });
+
+        it('should throw AccountPendingDeletionException with correct days remaining when account deleted 5 days ago', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            const deletedAt = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000); // 5 days ago
+            company.deletedAt = deletedAt;
+            mockUserModel.findOne.mockResolvedValue(company);
+
+            try {
+                await service.login(company.email, company.plainPassword);
+                fail('Should have thrown AccountPendingDeletionException');
+            } catch (error) {
+                expect(error).toBeInstanceOf(AccountPendingDeletionException);
+                expect(error.daysRemaining).toBe(25); // 30 - 5 = 25
+            }
+        });
+
+        it('should throw AccountPendingDeletionException with 1 day remaining when account deleted 29 days ago', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            const deletedAt = new Date(Date.now() - 29 * 24 * 60 * 60 * 1000); // 29 days ago
+            company.deletedAt = deletedAt;
+            mockUserModel.findOne.mockResolvedValue(company);
+
+            try {
+                await service.login(company.email, company.plainPassword);
+                fail('Should have thrown AccountPendingDeletionException');
+            } catch (error) {
+                expect(error).toBeInstanceOf(AccountPendingDeletionException);
+                expect(error.daysRemaining).toBe(1); // 30 - 29 = 1
+            }
+        });
+
+        it('should throw ForbiddenException when company account is soft-deleted more than 30 days ago and login is called', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            const deletedAt = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000); // 31 days ago
+            company.deletedAt = deletedAt;
+            mockUserModel.findOne.mockResolvedValue(company);
+
+            try {
+                await service.login(company.email, company.plainPassword);
+                fail('Should have thrown ForbiddenException');
+            } catch (error) {
+                expect(error).toBeInstanceOf(ForbiddenException);
+                expect(error.message).toContain('définitivement supprimé');
+            }
+        });
+
+        it('should throw ForbiddenException when company account deleted exactly 30 days ago', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            const deletedAt = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+            company.deletedAt = deletedAt;
+            mockUserModel.findOne.mockResolvedValue(company);
+
+            try {
+                await service.login(company.email, company.plainPassword);
+                fail('Should have thrown ForbiddenException');
+            } catch (error) {
+                expect(error).toBeInstanceOf(ForbiddenException);
+                expect(error.message).toContain('définitivement supprimé');
+            }
+        });
+
+        it('should not throw AccountPendingDeletionException when company account is not soft-deleted and login is called', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            company.deletedAt = null;
+            mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
+
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(company.email, company.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+        });
+
+        it('should not check deletion status for STUDENT role and login successfully', async () => {
+            const student = await createMockCompany({ role: Role.STUDENT });
+            student.deletedAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000); // Has deletedAt but not a company
+            mockUserModel.findOne.mockResolvedValue(student);
+            mockUserModel.findById.mockResolvedValue(student);
+
+            const savedToken = createMockRefreshToken(student._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(student.email, student.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+        });
+
+        it('should not check deletion status for ADMIN role and login successfully', async () => {
+            const admin = await createMockCompany({ role: Role.ADMIN });
+            admin.deletedAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+            mockUserModel.findOne.mockResolvedValue(admin);
+            mockUserModel.findById.mockResolvedValue(admin);
+
+            const savedToken = createMockRefreshToken(admin._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(admin.email, admin.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+        });
+
+        it('should throw AccountPendingDeletionException with 0 days remaining calculation edge case', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            // Set deletedAt to exactly 29.5 days ago (should round to 29 days, leaving 1 day)
+            const deletedAt = new Date(Date.now() - 29.5 * 24 * 60 * 60 * 1000);
+            company.deletedAt = deletedAt;
+            mockUserModel.findOne.mockResolvedValue(company);
+
+            try {
+                await service.login(company.email, company.plainPassword);
+                fail('Should have thrown AccountPendingDeletionException');
+            } catch (error) {
+                expect(error).toBeInstanceOf(AccountPendingDeletionException);
+                expect(error.daysRemaining).toBeGreaterThanOrEqual(0);
+            }
         });
     });
 });

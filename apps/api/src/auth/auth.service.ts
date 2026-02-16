@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { AccessTokenPayload, RefreshToken, RefreshTokenDocument, RefreshTokenPayload } from './refreshToken.schema';
 import { Role } from '../common/roles/roles.enum';
 import { InvalidCredentialsException } from '../common/exceptions/invalidCredentials.exception';
+import { AccountPendingDeletionException } from '../common/exceptions/accountPendingDeletion.exception';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
@@ -53,6 +54,7 @@ export class AuthService {
      * @throws {NotFoundException} If the user with the specified email is not found.
      * @throws {InvalidCredentialsException} If the provided credentials are invalid.
      * @throws {ForbiddenException} If the user with the specified email is banned.
+     * @throws {AccountPendingDeletionException} If the user account is pending deletion.
      */
     async login(email: string, password: string): Promise<{ access: string; refresh: string }> {
         const user = await this.userModel.findOne({ email: email });
@@ -63,6 +65,31 @@ export class AuthService {
         }
 
         if (user.ban) throw new ForbiddenException(`User with email ${email} is banned for '${user.ban.reason}'`);
+
+        // Check if account is soft-deleted (pending deletion) - only applies to Company accounts
+        if (user.role === Role.COMPANY) {
+            const companyUser = user as any; // Company accounts have deletedAt field
+            if (companyUser.deletedAt) {
+                const now = new Date();
+                const daysSinceDeletion = Math.floor(
+                    (now.getTime() - companyUser.deletedAt.getTime()) / (1000 * 60 * 60 * 24),
+                );
+                const daysRemaining = Math.max(0, 30 - daysSinceDeletion);
+
+                if (daysRemaining > 0) {
+                    throw new AccountPendingDeletionException(
+                        user._id.toString(),
+                        daysRemaining,
+                        companyUser.deletedAt,
+                    );
+                } else {
+                    // Account should be deleted, prevent login
+                    throw new ForbiddenException(
+                        "Votre compte a été définitivement supprimé. Veuillez contacter le support si vous pensez qu'il s'agit d'une erreur.",
+                    );
+                }
+            }
+        }
 
         // Generating tokens
         const { token, rti } = await this.generateRefreshToken(user._id, user.role);

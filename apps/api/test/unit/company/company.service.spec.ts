@@ -10,6 +10,11 @@ import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
 import { NafCode } from '../../../src/company/nafCodes.enum';
 import { PostService } from '../../../src/post/post.service';
 import { ForumService } from '../../../src/forum/forum.service';
+import { Post } from '../../../src/post/post.schema';
+import { Application } from '../../../src/application/application.schema';
+import { Forum } from '../../../src/forum/forum.schema';
+import { Topic } from '../../../src/forum/topic/topic.schema';
+import { Message } from '../../../src/forum/message/message.schema';
 
 describe('CompanyService', () => {
     let service: CompanyService;
@@ -23,6 +28,30 @@ describe('CompanyService', () => {
         findOneAndUpdate: jest.fn(),
         findOneAndDelete: jest.fn(),
         updateOne: jest.fn(),
+        deleteMany: jest.fn(),
+    };
+
+    const mockPostModel = {
+        find: jest.fn(),
+        deleteMany: jest.fn(),
+    };
+
+    const mockApplicationModel = {
+        deleteMany: jest.fn(),
+    };
+
+    const mockForumModel = {
+        find: jest.fn(),
+        deleteMany: jest.fn(),
+    };
+
+    const mockTopicModel = {
+        find: jest.fn(),
+        deleteMany: jest.fn(),
+    };
+
+    const mockMessageModel = {
+        deleteMany: jest.fn(),
     };
 
     const mockExec = jest.fn();
@@ -50,6 +79,26 @@ describe('CompanyService', () => {
                 {
                     provide: getModelToken(Company.name),
                     useValue: mockCompanyModel,
+                },
+                {
+                    provide: getModelToken(Post.name),
+                    useValue: mockPostModel,
+                },
+                {
+                    provide: getModelToken(Application.name),
+                    useValue: mockApplicationModel,
+                },
+                {
+                    provide: getModelToken(Forum.name),
+                    useValue: mockForumModel,
+                },
+                {
+                    provide: getModelToken(Topic.name),
+                    useValue: mockTopicModel,
+                },
+                {
+                    provide: getModelToken(Message.name),
+                    useValue: mockMessageModel,
                 },
                 {
                     provide: PostService,
@@ -1293,6 +1342,323 @@ describe('CompanyService', () => {
                 _id: companyId,
                 deletedAt: { $exists: false },
             });
+        });
+    });
+
+    describe('handleCompanyCleanupCron', () => {
+        it('should do nothing when no companies to delete', async () => {
+            mockCompanyModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([]),
+            });
+
+            await service.handleCompanyCleanupCron();
+
+            expect(mockCompanyModel.find).toHaveBeenCalled();
+            expect(mockPostModel.find).not.toHaveBeenCalled();
+            expect(mockApplicationModel.deleteMany).not.toHaveBeenCalled();
+            expect(mockPostModel.deleteMany).not.toHaveBeenCalled();
+            expect(mockForumModel.find).not.toHaveBeenCalled();
+            expect(mockTopicModel.find).not.toHaveBeenCalled();
+            expect(mockMessageModel.deleteMany).not.toHaveBeenCalled();
+            expect(mockTopicModel.deleteMany).not.toHaveBeenCalled();
+            expect(mockForumModel.deleteMany).not.toHaveBeenCalled();
+            expect(mockCompanyModel.deleteMany).not.toHaveBeenCalled();
+        });
+
+        it('should delete companies and all related data when companies older than 30 days exist', async () => {
+            const companyId1 = 'company1';
+            const companyId2 = 'company2';
+            const postId1 = 'post1';
+            const postId2 = 'post2';
+            const forumId1 = 'forum1';
+            const topicId1 = 'topic1';
+
+            mockCompanyModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([
+                    { _id: companyId1, name: 'Company 1' },
+                    { _id: companyId2, name: 'Company 2' },
+                ]),
+            });
+
+            mockPostModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: postId1 }, { _id: postId2 }]),
+            });
+
+            mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 5 });
+            mockPostModel.deleteMany.mockResolvedValue({ deletedCount: 2 });
+
+            mockForumModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: forumId1 }]),
+            });
+
+            mockTopicModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: topicId1 }]),
+            });
+
+            mockMessageModel.deleteMany.mockResolvedValue({ deletedCount: 10 });
+            mockTopicModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+            mockForumModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+            mockCompanyModel.deleteMany.mockResolvedValue({ deletedCount: 2 });
+
+            await service.handleCompanyCleanupCron();
+
+            expect(mockCompanyModel.find).toHaveBeenCalledWith({
+                deletedAt: { $lte: expect.any(Date) },
+            });
+
+            expect(mockPostModel.find).toHaveBeenCalledWith({
+                company: { $in: [companyId1, companyId2] },
+            });
+
+            expect(mockApplicationModel.deleteMany).toHaveBeenCalledWith({
+                post: { $in: [postId1, postId2] },
+            });
+
+            expect(mockPostModel.deleteMany).toHaveBeenCalledWith({
+                _id: { $in: [postId1, postId2] },
+            });
+
+            expect(mockForumModel.find).toHaveBeenCalledWith({
+                company: { $in: [companyId1, companyId2] },
+            });
+
+            expect(mockTopicModel.find).toHaveBeenCalledWith({
+                forumId: { $in: [forumId1] },
+            });
+
+            expect(mockMessageModel.deleteMany).toHaveBeenCalledWith({
+                topicId: { $in: [topicId1] },
+            });
+
+            expect(mockTopicModel.deleteMany).toHaveBeenCalledWith({
+                _id: { $in: [topicId1] },
+            });
+
+            expect(mockForumModel.deleteMany).toHaveBeenCalledWith({
+                _id: { $in: [forumId1] },
+            });
+
+            expect(mockCompanyModel.deleteMany).toHaveBeenCalledWith({
+                _id: { $in: [companyId1, companyId2] },
+            });
+        });
+
+        it('should handle companies with no posts correctly', async () => {
+            const companyId = 'company1';
+
+            mockCompanyModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: companyId, name: 'Company 1' }]),
+            });
+
+            mockPostModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([]),
+            });
+
+            mockForumModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([]),
+            });
+
+            mockCompanyModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+
+            await service.handleCompanyCleanupCron();
+
+            expect(mockCompanyModel.find).toHaveBeenCalled();
+            expect(mockPostModel.find).toHaveBeenCalled();
+            expect(mockApplicationModel.deleteMany).not.toHaveBeenCalled();
+            expect(mockPostModel.deleteMany).not.toHaveBeenCalled();
+            expect(mockForumModel.find).toHaveBeenCalled();
+            expect(mockCompanyModel.deleteMany).toHaveBeenCalledWith({
+                _id: { $in: [companyId] },
+            });
+        });
+
+        it('should handle the full cleanup process correctly with exact date check', async () => {
+            const oldDate = new Date();
+            oldDate.setDate(oldDate.getDate() - 35);
+
+            const companiesToDelete = [
+                { _id: 'oldCompany1', name: 'Old Company 1' },
+                { _id: 'oldCompany2', name: 'Old Company 2' },
+            ];
+
+            mockCompanyModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue(companiesToDelete),
+            });
+
+            mockPostModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: 'post1' }]),
+            });
+
+            mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 3 });
+            mockPostModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+
+            mockForumModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: 'forum1' }]),
+            });
+
+            mockTopicModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: 'topic1' }]),
+            });
+
+            mockMessageModel.deleteMany.mockResolvedValue({ deletedCount: 5 });
+            mockTopicModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+            mockForumModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+            mockCompanyModel.deleteMany.mockResolvedValue({ deletedCount: 2 });
+
+            await service.handleCompanyCleanupCron();
+
+            expect(mockCompanyModel.find).toHaveBeenCalledWith({
+                deletedAt: { $lte: expect.any(Date) },
+            });
+
+            expect(mockCompanyModel.deleteMany).toHaveBeenCalledWith({
+                _id: { $in: ['oldCompany1', 'oldCompany2'] },
+            });
+        });
+    });
+
+    describe('restore', () => {
+        it('should restore a soft-deleted company within 30 days', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const deletedDate = new Date();
+            deletedDate.setDate(deletedDate.getDate() - 15); // Deleted 15 days ago
+
+            const mockCompany = {
+                _id: companyId,
+                name: 'Test Company',
+                deletedAt: deletedDate,
+            };
+
+            const mockExec = jest.fn().mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+            mockCompanyModel.updateOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+
+            await service.restore(companyId);
+
+            expect(mockCompanyModel.findOne).toHaveBeenCalledWith({
+                _id: companyId,
+                deletedAt: { $exists: true },
+            });
+            expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
+                { _id: companyId },
+                { $unset: { deletedAt: 1 } },
+            );
+        });
+
+        it('should throw NotFoundException when company is not found or not deleted', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+
+            const mockExec = jest.fn().mockResolvedValue(null);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+
+            await expect(service.restore(companyId)).rejects.toThrow(NotFoundException);
+            expect(mockCompanyModel.findOne).toHaveBeenCalledWith({
+                _id: companyId,
+                deletedAt: { $exists: true },
+            });
+        });
+
+        it('should throw BadRequestException when 30-day period has expired', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const deletedDate = new Date();
+            deletedDate.setDate(deletedDate.getDate() - 35); // Deleted 35 days ago
+
+            const mockCompany = {
+                _id: companyId,
+                name: 'Test Company',
+                deletedAt: deletedDate,
+            };
+
+            const mockExec = jest.fn().mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+
+            await expect(service.restore(companyId)).rejects.toThrow(BadRequestException);
+            expect(mockCompanyModel.updateOne).not.toHaveBeenCalled();
+        });
+
+        it('should throw NotFoundException when company has no deletedAt field', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+
+            const mockCompany = {
+                _id: companyId,
+                name: 'Test Company',
+                deletedAt: undefined,
+            };
+
+            const mockExec = jest.fn().mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+
+            await expect(service.restore(companyId)).rejects.toThrow(NotFoundException);
+        });
+    });
+
+    describe('checkDeletionStatus', () => {
+        it('should return isDeleted: false when company is not deleted', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+
+            const mockCompany = {
+                _id: companyId,
+                name: 'Test Company',
+                deletedAt: undefined,
+            };
+
+            const mockExec = jest.fn().mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+
+            const result = await service.checkDeletionStatus(companyId);
+
+            expect(result).toEqual({ isDeleted: false });
+            expect(mockCompanyModel.findOne).toHaveBeenCalledWith({ _id: companyId });
+        });
+
+        it('should return deletion info with days remaining when company is deleted', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const deletedDate = new Date();
+            deletedDate.setDate(deletedDate.getDate() - 10); // Deleted 10 days ago
+
+            const mockCompany = {
+                _id: companyId,
+                name: 'Test Company',
+                deletedAt: deletedDate,
+            };
+
+            const mockExec = jest.fn().mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+
+            const result = await service.checkDeletionStatus(companyId);
+
+            expect(result.isDeleted).toBe(true);
+            expect(result.daysRemaining).toBe(20);
+            expect(result.deletedAt).toBe(deletedDate);
+        });
+
+        it('should return 0 days remaining when company deleted more than 30 days ago', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const deletedDate = new Date();
+            deletedDate.setDate(deletedDate.getDate() - 35); // Deleted 35 days ago
+
+            const mockCompany = {
+                _id: companyId,
+                name: 'Test Company',
+                deletedAt: deletedDate,
+            };
+
+            const mockExec = jest.fn().mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+
+            const result = await service.checkDeletionStatus(companyId);
+
+            expect(result.isDeleted).toBe(true);
+            expect(result.daysRemaining).toBe(0);
+        });
+
+        it('should throw NotFoundException when company does not exist', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+
+            const mockExec = jest.fn().mockResolvedValue(null);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+
+            await expect(service.checkDeletionStatus(companyId)).rejects.toThrow(NotFoundException);
         });
     });
 });
