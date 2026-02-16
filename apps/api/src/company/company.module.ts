@@ -5,6 +5,7 @@ import { CompanyService } from './company.service';
 import { UsersModule } from '../user/user.module';
 import { PostModule } from '../post/post.module';
 import { ForumModule } from '../forum/forum.module';
+import { NotificationModule } from '../notification/notification.module';
 import { ApplicationModule } from '../application/application.module';
 import { PaginationService } from 'src/common/pagination/pagination.service';
 import { Post, PostSchema } from '../post/post.schema';
@@ -19,6 +20,7 @@ import { Message, MessageSchema } from '../forum/message/message.schema';
         forwardRef(() => PostModule),
         forwardRef(() => ForumModule),
         forwardRef(() => ApplicationModule),
+        NotificationModule,
         MongooseModule.forFeature([
             { name: Post.name, schema: PostSchema },
             { name: Application.name, schema: ApplicationSchema },

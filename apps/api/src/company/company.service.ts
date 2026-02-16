@@ -13,6 +13,7 @@ import { Forum } from '../forum/forum.schema';
 import { Topic } from '../forum/topic/topic.schema';
 import { Message } from '../forum/message/message.schema';
 import { ForumService } from '../forum/forum.service';
+import { NotificationService } from '../notification/notification.service';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { PaginationResult } from '../common/pagination/dto/paginationResult';
 import { PaginationDto } from '../common/pagination/dto/pagination.dto';
@@ -56,6 +57,7 @@ export class CompanyService {
         @InjectModel(Message.name) private readonly messageModel: Model<Message>,
         @Inject(forwardRef(() => PostService)) private readonly postService: PostService,
         @Inject(forwardRef(() => ForumService)) private readonly forumService: ForumService,
+        private readonly notificationService: NotificationService,
         private readonly paginationService: PaginationService,
     ) {}
     populateField = '_id title description duration startDate minSalary maxSalary sector keySkills adress type';
@@ -398,14 +400,38 @@ export class CompanyService {
             return;
         }
 
-        const postsToDelete = await this.postModel.find({ company: { $in: companyIds } }).select('_id');
+        const postsToDelete = await this.postModel.find({ company: { $in: companyIds } }).select('_id title');
         const postIds = postsToDelete.map((p) => p._id);
 
         if (postIds.length > 0) {
+            const applicationsToDelete = await this.applicationModel
+                .find({ post: { $in: postIds } })
+                .populate('student', '_id')
+                .populate('post', 'title')
+                .select('student post')
+                .lean()
+                .exec();
+
+            for (const application of applicationsToDelete) {
+                try {
+                    await this.notificationService.create({
+                        userId: application.student._id,
+                        message: `Votre candidature pour le poste "${application.post.title}" a été supprimée car l'entreprise a été définitivement supprimée.`,
+                    });
+                } catch (error) {
+                    this.logger.error(
+                        `Failed to send notification to student ${application.student._id} for deleted application`,
+                        error,
+                    );
+                }
+            }
+
             const deletedApplications = await this.applicationModel.deleteMany({
                 post: { $in: postIds },
             });
-            this.logger.log(`${deletedApplications.deletedCount} deleted applications`);
+            this.logger.log(
+                `${deletedApplications.deletedCount} deleted applications (${applicationsToDelete.length} notifications sent)`,
+            );
         }
 
         if (postIds.length > 0) {

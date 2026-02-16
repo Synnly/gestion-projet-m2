@@ -10,6 +10,7 @@ import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
 import { NafCode } from '../../../src/company/nafCodes.enum';
 import { PostService } from '../../../src/post/post.service';
 import { ForumService } from '../../../src/forum/forum.service';
+import { NotificationService } from '../../../src/notification/notification.service';
 import { Post } from '../../../src/post/post.schema';
 import { Application } from '../../../src/application/application.schema';
 import { Forum } from '../../../src/forum/forum.schema';
@@ -37,6 +38,7 @@ describe('CompanyService', () => {
     };
 
     const mockApplicationModel = {
+        find: jest.fn(),
         deleteMany: jest.fn(),
     };
 
@@ -63,6 +65,10 @@ describe('CompanyService', () => {
     };
 
     const mockForumService = {
+        create: jest.fn(),
+    };
+
+    const mockNotificationService = {
         create: jest.fn(),
     };
 
@@ -111,6 +117,10 @@ describe('CompanyService', () => {
                 {
                     provide: ForumService,
                     useValue: mockForumService,
+                },
+                {
+                    provide: NotificationService,
+                    useValue: mockNotificationService,
                 },
             ],
         }).compile();
@@ -1381,9 +1391,24 @@ describe('CompanyService', () => {
             });
 
             mockPostModel.find.mockReturnValue({
-                select: jest.fn().mockResolvedValue([{ _id: postId1 }, { _id: postId2 }]),
+                select: jest.fn().mockResolvedValue([{ _id: postId1, title: 'Post 1' }, { _id: postId2, title: 'Post 2' }]),
             });
 
+            // Mock des applications avec students et posts
+            const mockApplications = [
+                { student: { _id: 'student1' }, post: { title: 'Post 1' } },
+                { student: { _id: 'student2' }, post: { title: 'Post 1' } },
+                { student: { _id: 'student3' }, post: { title: 'Post 2' } },
+            ];
+
+            const mockApplicationQuery = {
+                populate: jest.fn().mockReturnThis(),
+                select: jest.fn().mockReturnThis(),
+                lean: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(mockApplications),
+            };
+
+            mockApplicationModel.find.mockReturnValue(mockApplicationQuery);
             mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 5 });
             mockPostModel.deleteMany.mockResolvedValue({ deletedCount: 2 });
 
@@ -1399,6 +1424,7 @@ describe('CompanyService', () => {
             mockTopicModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
             mockForumModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
             mockCompanyModel.deleteMany.mockResolvedValue({ deletedCount: 2 });
+            mockNotificationService.create.mockResolvedValue(undefined);
 
             await service.handleCompanyCleanupCron();
 
@@ -1408,6 +1434,20 @@ describe('CompanyService', () => {
 
             expect(mockPostModel.find).toHaveBeenCalledWith({
                 company: { $in: [companyId1, companyId2] },
+            });
+
+            // Vérifier que les applications ont été récupérées avec populate
+            expect(mockApplicationModel.find).toHaveBeenCalledWith({
+                post: { $in: [postId1, postId2] },
+            });
+            expect(mockApplicationQuery.populate).toHaveBeenCalledWith('student', '_id');
+            expect(mockApplicationQuery.populate).toHaveBeenCalledWith('post', 'title');
+
+            // Vérifier que les notifications ont été envoyées
+            expect(mockNotificationService.create).toHaveBeenCalledTimes(3);
+            expect(mockNotificationService.create).toHaveBeenCalledWith({
+                userId: 'student1',
+                message: expect.stringContaining('Post 1'),
             });
 
             expect(mockApplicationModel.deleteMany).toHaveBeenCalledWith({
@@ -1464,8 +1504,10 @@ describe('CompanyService', () => {
 
             expect(mockCompanyModel.find).toHaveBeenCalled();
             expect(mockPostModel.find).toHaveBeenCalled();
+            expect(mockApplicationModel.find).not.toHaveBeenCalled();
             expect(mockApplicationModel.deleteMany).not.toHaveBeenCalled();
             expect(mockPostModel.deleteMany).not.toHaveBeenCalled();
+            expect(mockNotificationService.create).not.toHaveBeenCalled();
             expect(mockForumModel.find).toHaveBeenCalled();
             expect(mockCompanyModel.deleteMany).toHaveBeenCalledWith({
                 _id: { $in: [companyId] },
@@ -1486,10 +1528,24 @@ describe('CompanyService', () => {
             });
 
             mockPostModel.find.mockReturnValue({
-                select: jest.fn().mockResolvedValue([{ _id: 'post1' }]),
+                select: jest.fn().mockResolvedValue([{ _id: 'post1', title: 'Post 1' }]),
             });
 
+            // Mock des applications
+            const mockApplicationQuery = {
+                populate: jest.fn().mockReturnThis(),
+                select: jest.fn().mockReturnThis(),
+                lean: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue([
+                    { student: { _id: 'student1' }, post: { title: 'Post 1' } },
+                    { student: { _id: 'student2' }, post: { title: 'Post 1' } },
+                    { student: { _id: 'student3' }, post: { title: 'Post 1' } },
+                ]),
+            };
+
+            mockApplicationModel.find.mockReturnValue(mockApplicationQuery);
             mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 3 });
+            mockNotificationService.create.mockResolvedValue(undefined);
             mockPostModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
 
             mockForumModel.find.mockReturnValue({
@@ -1513,6 +1569,54 @@ describe('CompanyService', () => {
 
             expect(mockCompanyModel.deleteMany).toHaveBeenCalledWith({
                 _id: { $in: ['oldCompany1', 'oldCompany2'] },
+            });
+        });
+
+        it('should continue cleanup even if notification sending fails', async () => {
+            const companyId = 'company1';
+            const postId = 'post1';
+
+            mockCompanyModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: companyId, name: 'Test Company' }]),
+            });
+
+            mockPostModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: postId, title: 'Test Post' }]),
+            });
+
+            // Mock des applications
+            const mockApplicationQuery = {
+                populate: jest.fn().mockReturnThis(),
+                select: jest.fn().mockReturnThis(),
+                lean: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue([
+                    { student: { _id: 'student1' }, post: { title: 'Test Post' } },
+                ]),
+            };
+
+            mockApplicationModel.find.mockReturnValue(mockApplicationQuery);
+            mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+
+            // Simuler une erreur lors de l'envoi de notification
+            mockNotificationService.create.mockRejectedValue(new Error('Notification service down'));
+
+            mockPostModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+            mockForumModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([]),
+            });
+            mockCompanyModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+
+            // Ne devrait pas lancer d'erreur
+            await expect(service.handleCompanyCleanupCron()).resolves.not.toThrow();
+
+            // Les candidatures doivent quand même être supprimées
+            expect(mockApplicationModel.deleteMany).toHaveBeenCalledWith({
+                post: { $in: [postId] },
+            });
+
+            // L'entreprise doit quand même être supprimée
+            expect(mockCompanyModel.deleteMany).toHaveBeenCalledWith({
+                _id: { $in: [companyId] },
             });
         });
     });
