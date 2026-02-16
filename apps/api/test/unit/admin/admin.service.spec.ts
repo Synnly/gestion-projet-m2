@@ -1934,4 +1934,235 @@ describe('AdminService', () => {
                 service['importAllCollectionsStreaming'](importId, 'test-file.json.gz', false),
             ).rejects.toThrow(new HttpException('Import cancelled by user', HttpStatus.CONFLICT));
         });
-    });});
+    });
+
+    describe('cleanupOrphanedJobs', () => {
+        it('should cancel all pending and in-progress exports', async () => {
+            const mockUpdateMany = jest.fn().mockResolvedValue({ modifiedCount: 2 });
+            exportModel.updateMany = mockUpdateMany;
+            importModel.updateMany = jest.fn().mockResolvedValue({ modifiedCount: 1 });
+
+            await service['cleanupOrphanedJobs']();
+
+            expect(mockUpdateMany).toHaveBeenCalledWith(
+                { status: { $in: [ExportStatus.PENDING, ExportStatus.IN_PROGRESS] } },
+                expect.objectContaining({
+                    $set: expect.objectContaining({
+                        status: ExportStatus.CANCELLED,
+                    }),
+                }),
+            );
+        });
+
+        it('should cancel all pending and in-progress imports', async () => {
+            const mockUpdateMany = jest.fn().mockResolvedValue({ modifiedCount: 3 });
+            exportModel.updateMany = jest.fn().mockResolvedValue({ modifiedCount: 0 });
+            importModel.updateMany = mockUpdateMany;
+
+            await service['cleanupOrphanedJobs']();
+
+            expect(mockUpdateMany).toHaveBeenCalledWith(
+                { status: { $in: [ImportStatus.PENDING, ImportStatus.IN_PROGRESS] } },
+                expect.objectContaining({
+                    $set: expect.objectContaining({
+                        status: ImportStatus.CANCELLED,
+                    }),
+                }),
+            );
+        });
+
+        it('should not throw error if cleanup fails', async () => {
+            const error = new Error('Database error');
+            exportModel.updateMany = jest.fn().mockRejectedValue(error);
+            importModel.updateMany = jest.fn().mockResolvedValue({ modifiedCount: 0 });
+
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            await expect(service['cleanupOrphanedJobs']()).resolves.not.toThrow();
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith('Error cleaning up orphaned jobs:', error);
+            consoleErrorSpy.mockRestore();
+        });
+    });
+
+    describe('performImport with clearExisting', () => {
+        it('should call cleanupOrphanedJobs when clearExisting is true', async () => {
+            const importId = new Types.ObjectId().toString();
+            const mockImport = {
+                _id: importId,
+                status: ImportStatus.PENDING,
+                adminId: new Types.ObjectId(),
+                fileKey: 'test-import.json.gz',
+                save: jest.fn().mockResolvedValue(true),
+            };
+
+            MockImportModel.findById = jest.fn().mockResolvedValue(mockImport);
+
+            jest.spyOn(service as any, 'importAllCollectionsStreaming').mockResolvedValue({
+                totalDocuments: 100,
+                collectionsCount: 5,
+            });
+
+            const cleanupSpy = jest.spyOn(service as any, 'cleanupOrphanedJobs').mockResolvedValue(undefined);
+            jest.spyOn(service as any, 'markImportCompleted').mockResolvedValue(undefined);
+            jest.spyOn(service as any, 'sendImportCompletedEmail').mockResolvedValue(undefined);
+
+            await service['performImport'](importId, true);
+
+            expect(cleanupSpy).toHaveBeenCalled();
+        });
+
+        it('should not call cleanupOrphanedJobs when clearExisting is false', async () => {
+            const importId = new Types.ObjectId().toString();
+            const mockImport = {
+                _id: importId,
+                status: ImportStatus.PENDING,
+                adminId: new Types.ObjectId(),
+                fileKey: 'test-import.json.gz',
+                save: jest.fn().mockResolvedValue(true),
+            };
+
+            MockImportModel.findById = jest.fn().mockResolvedValue(mockImport);
+
+            jest.spyOn(service as any, 'importAllCollectionsStreaming').mockResolvedValue({
+                totalDocuments: 100,
+                collectionsCount: 5,
+            });
+
+            const cleanupSpy = jest.spyOn(service as any, 'cleanupOrphanedJobs').mockResolvedValue(undefined);
+            jest.spyOn(service as any, 'markImportCompleted').mockResolvedValue(undefined);
+            jest.spyOn(service as any, 'sendImportCompletedEmail').mockResolvedValue(undefined);
+
+            await service['performImport'](importId, false);
+
+            expect(cleanupSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('convertToExtendedJSON', () => {
+        it('should convert ObjectId to Extended JSON format', () => {
+            const objectId = new Types.ObjectId();
+            const result = service['convertToExtendedJSON'](objectId);
+
+            expect(result).toEqual({ $oid: objectId.toString() });
+        });
+
+        it('should convert Date to Extended JSON format', () => {
+            const date = new Date('2024-01-01T00:00:00.000Z');
+            const result = service['convertToExtendedJSON'](date);
+
+            expect(result).toEqual({ $date: date.toISOString() });
+        });
+
+        it('should convert array with ObjectIds', () => {
+            const objectId1 = new Types.ObjectId();
+            const objectId2 = new Types.ObjectId();
+            const array = [objectId1, objectId2];
+
+            const result = service['convertToExtendedJSON'](array);
+
+            expect(result).toEqual([{ $oid: objectId1.toString() }, { $oid: objectId2.toString() }]);
+        });
+
+        it('should convert nested objects with ObjectIds and Dates', () => {
+            const objectId = new Types.ObjectId();
+            const date = new Date('2024-01-01T00:00:00.000Z');
+            const obj = {
+                _id: objectId,
+                createdAt: date,
+                name: 'test',
+                nested: {
+                    id: objectId,
+                },
+            };
+
+            const result = service['convertToExtendedJSON'](obj);
+
+            expect(result).toEqual({
+                _id: { $oid: objectId.toString() },
+                createdAt: { $date: date.toISOString() },
+                name: 'test',
+                nested: {
+                    id: { $oid: objectId.toString() },
+                },
+            });
+        });
+
+        it('should return null and undefined as-is', () => {
+            expect(service['convertToExtendedJSON'](null)).toBeNull();
+            expect(service['convertToExtendedJSON'](undefined)).toBeUndefined();
+        });
+
+        it('should return primitive values as-is', () => {
+            expect(service['convertToExtendedJSON']('string')).toBe('string');
+            expect(service['convertToExtendedJSON'](123)).toBe(123);
+            expect(service['convertToExtendedJSON'](true)).toBe(true);
+        });
+    });
+
+    describe('convertFromExtendedJSON', () => {
+        it('should convert Extended JSON ObjectId to ObjectId', () => {
+            const objectIdString = new Types.ObjectId().toString();
+            const extendedJson = { $oid: objectIdString };
+
+            const result = service['convertFromExtendedJSON'](extendedJson);
+
+            expect(result).toBeInstanceOf(Types.ObjectId);
+            expect(result.toString()).toBe(objectIdString);
+        });
+
+        it('should convert Extended JSON Date to Date', () => {
+            const dateString = '2024-01-01T00:00:00.000Z';
+            const extendedJson = { $date: dateString };
+
+            const result = service['convertFromExtendedJSON'](extendedJson);
+
+            expect(result).toBeInstanceOf(Date);
+            expect(result.toISOString()).toBe(dateString);
+        });
+
+        it('should convert array with Extended JSON ObjectIds', () => {
+            const objectId1 = new Types.ObjectId().toString();
+            const objectId2 = new Types.ObjectId().toString();
+            const array = [{ $oid: objectId1 }, { $oid: objectId2 }];
+
+            const result = service['convertFromExtendedJSON'](array);
+
+            expect(result[0]).toBeInstanceOf(Types.ObjectId);
+            expect(result[1]).toBeInstanceOf(Types.ObjectId);
+            expect(result[0].toString()).toBe(objectId1);
+            expect(result[1].toString()).toBe(objectId2);
+        });
+
+        it('should convert nested objects with Extended JSON', () => {
+            const objectIdString = new Types.ObjectId().toString();
+            const dateString = '2024-01-01T00:00:00.000Z';
+            const obj = {
+                _id: { $oid: objectIdString },
+                createdAt: { $date: dateString },
+                name: 'test',
+                nested: {
+                    id: { $oid: objectIdString },
+                },
+            };
+
+            const result = service['convertFromExtendedJSON'](obj);
+
+            expect(result._id).toBeInstanceOf(Types.ObjectId);
+            expect(result.createdAt).toBeInstanceOf(Date);
+            expect(result.name).toBe('test');
+            expect(result.nested.id).toBeInstanceOf(Types.ObjectId);
+        });
+
+        it('should return null and undefined as-is', () => {
+            expect(service['convertFromExtendedJSON'](null)).toBeNull();
+            expect(service['convertFromExtendedJSON'](undefined)).toBeUndefined();
+        });
+
+        it('should return primitive values as-is', () => {
+            expect(service['convertFromExtendedJSON']('string')).toBe('string');
+            expect(service['convertFromExtendedJSON'](123)).toBe(123);
+            expect(service['convertFromExtendedJSON'](true)).toBe(true);
+        });
+    });
+});

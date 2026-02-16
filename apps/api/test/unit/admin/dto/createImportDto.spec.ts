@@ -55,6 +55,26 @@ describe('CreateImportDto', () => {
         expect(typeof dto.clearExisting).toBe('boolean');
     });
 
+    it('should preserve boolean true when already a boolean', async () => {
+        const plain = { clearExisting: true };
+        const dto = plainToInstance(CreateImportDto, plain);
+
+        const errors = await validate(dto);
+        expect(errors).toHaveLength(0);
+        expect(dto.clearExisting).toBe(true);
+        expect(typeof dto.clearExisting).toBe('boolean');
+    });
+
+    it('should preserve boolean false when already a boolean', async () => {
+        const plain = { clearExisting: false };
+        const dto = plainToInstance(CreateImportDto, plain);
+
+        const errors = await validate(dto);
+        expect(errors).toHaveLength(0);
+        expect(dto.clearExisting).toBe(false);
+        expect(typeof dto.clearExisting).toBe('boolean');
+    });
+
     it('should fail validation when clearExisting is an invalid string', async () => {
         const plain = { clearExisting: 'invalid' };
         const dto = plainToInstance(CreateImportDto, plain);
