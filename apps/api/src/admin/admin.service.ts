@@ -604,6 +604,10 @@ export class AdminService {
                 clearExisting,
             );
 
+            if (clearExisting) {
+                await this.cleanupOrphanedJobs();
+            }
+
             // Mark import as completed
             await this.markImportCompleted(importJob, collectionsCount, totalDocuments);
 
@@ -801,6 +805,47 @@ export class AdminService {
         const path = require('path');
         const importsDir = this.configService.get<string>('IMPORTS_DIR') || './imports';
         return path.join(importsDir, filename);
+    }
+
+    /**
+     * Clean up exports and imports with PENDING or IN_PROGRESS status after clearExisting import.
+     * These jobs were likely restored from a backup but their background processes no longer exist.
+     */
+    private async cleanupOrphanedJobs(): Promise<void> {
+        try {
+            // Cancel all pending or in-progress exports
+            await this.exportModel.updateMany(
+                { 
+                    status: { 
+                        $in: [ExportStatus.PENDING, ExportStatus.IN_PROGRESS] 
+                    } 
+                },
+                { 
+                    $set: { 
+                        status: ExportStatus.CANCELLED,
+                        completedAt: new Date()
+                    } 
+                }
+            );
+
+            // Cancel all pending or in-progress imports (except the current one)
+            await this.importModel.updateMany(
+                { 
+                    status: { 
+                        $in: [ImportStatus.PENDING, ImportStatus.IN_PROGRESS] 
+                    } 
+                },
+                { 
+                    $set: { 
+                        status: ImportStatus.CANCELLED,
+                        completedAt: new Date()
+                    } 
+                }
+            );
+        } catch (error) {
+            // Log error but don't fail the import
+            console.error('Error cleaning up orphaned jobs:', error);
+        }
     }
 
     /**

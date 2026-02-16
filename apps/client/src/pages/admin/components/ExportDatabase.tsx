@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 import { toast } from 'react-toastify';
 import {
@@ -16,10 +17,11 @@ import {
 import {
     ExportFormat,
     ExportStatus,
+    ImportStatus,
     type ExportListItem,
 } from '../../../types/exportImportDB.types';
 import { createExport, listExports, cancelExport, downloadExport } from '../../../apis/export';
-import { createImport } from '../../../apis/import';
+import { createImport, getImportStatus } from '../../../apis/import';
 
 export default function ExportDatabase() {
     const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
@@ -30,44 +32,137 @@ export default function ExportDatabase() {
     const [exports, setExports] = useState<ExportListItem[]>([]);
     const [isLoadingExports, setIsLoadingExports] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [pendingImportId, setPendingImportId] = useState<string | null>(null);
+    const [importStatusMessage, setImportStatusMessage] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const authFetch = UseAuthFetch();
+    const authFetchRef = useRef(authFetch);
+    const navigate = useNavigate();
 
-    // Load exports on mount and when switching to export tab
+    // Update authFetch ref when it changes
     useEffect(() => {
-        if (activeTab === 'export') {
-            loadExports();
-        }
-    }, [activeTab]);
+        authFetchRef.current = authFetch;
+    }, [authFetch]);
 
-    // Auto-refresh exports every 5 seconds if there are exports in progress or pending
-    useEffect(() => {
-        if (activeTab !== 'export') return;
-
-        const hasActiveExports = exports.some(
-            (exp) => exp.status === ExportStatus.PENDING || exp.status === ExportStatus.IN_PROGRESS,
-        );
-
-        if (!hasActiveExports) return;
-
-        const interval = setInterval(() => {
-            loadExports();
-        }, 5000); // Poll every 5 seconds
-
-        return () => clearInterval(interval);
-    }, [activeTab, exports]);
-
-    const loadExports = async () => {
+    const loadExports = useCallback(async () => {
         setIsLoadingExports(true);
         try {
-            const data = await listExports(authFetch);
+            const data = await listExports(authFetchRef.current);
             setExports(data);
         } catch (error) {
             console.error('Erreur lors du chargement des exports:', error);
         } finally {
             setIsLoadingExports(false);
         }
-    };
+    }, []); // No dependencies - uses ref
+
+    useEffect(() => {
+        if (activeTab === 'export') {
+            loadExports();
+        }
+    }, [activeTab, loadExports]);
+
+    // Poll exports status every 5 seconds when on export tab
+    useEffect(() => {
+        if (activeTab !== 'export') return;
+        
+        // Ne pas démarrer le polling si un import est en cours (import avec clearExisting)
+        if (pendingImportId) return;
+
+        // Start polling regardless of current exports state
+        const interval = setInterval(() => {
+            loadExports();
+        }, 5000); 
+
+        return () => clearInterval(interval);
+    }, [activeTab, pendingImportId, loadExports]);
+
+    // Poll import status when pendingImportId is set (import with clearExisting)
+    useEffect(() => {
+        if (!pendingImportId) return;
+
+        let pollAttempts = 0;
+        const maxPollAttempts = 200; // Maximum 10 minutes (200 * 3 seconds)
+
+        const checkImportStatus = async () => {
+            try {
+                pollAttempts++;
+                
+                // Timeout après 10 minutes
+                if (pollAttempts > maxPollAttempts) {
+                    setImportStatusMessage('Timeout atteint. Redirection vers la page de connexion...');
+                    localStorage.setItem('import_success_message', 
+                        'L\'import prend plus de temps que prévu. Veuillez vérifier les emails ou contacter un administrateur.');
+                    
+                    setTimeout(() => {
+                        navigate('/signin');
+                    }, 3000);
+                    setPendingImportId(null);
+                    return;
+                }
+
+                const status = await getImportStatus(authFetchRef.current, pendingImportId);
+                
+                if (status.status === ImportStatus.COMPLETED) {
+                    setImportStatusMessage('Import terminé avec succès. Redirection vers la page de connexion...');
+                    localStorage.setItem('import_success_message', 
+                        'Import terminé avec succès. Veuillez vous reconnecter.');
+                    
+                    setTimeout(() => {
+                        navigate('/signin');
+                    }, 2000);
+                    setPendingImportId(null);
+                } else if (status.status === ImportStatus.FAILED) {
+                    setImportStatusMessage('Import échoué. Redirection vers la page de connexion...');
+                    localStorage.setItem('import_success_message', 
+                        'L\'import a échoué. Veuillez vous reconnecter.');
+                    
+                    setTimeout(() => {
+                        navigate('/signin');
+                    }, 2000);
+                    setPendingImportId(null);
+                } else if (status.status === ImportStatus.CANCELLED) {
+                    setImportStatusMessage('Import annulé. Redirection vers la page de connexion...');
+                    localStorage.setItem('import_success_message', 
+                        'L\'import a été annulé. Veuillez vous reconnecter.');
+                    
+                    setTimeout(() => {
+                        navigate('/signin');
+                    }, 2000);
+                    setPendingImportId(null);
+                } else {
+                    // Still in progress or pending
+                    const statusText = status.status === ImportStatus.IN_PROGRESS 
+                        ? 'en cours d\'exécution' 
+                        : 'en attente';
+                    setImportStatusMessage(`Import ${statusText}... Vous serez redirigé une fois terminé.`);
+                }
+            } catch (error: any) {
+                console.error('Erreur lors de la vérification du statut d\'import:', error);
+                
+                pollAttempts++;
+                
+                if (pollAttempts > 5 || error?.status === 401 || error?.status === 403) {
+                    setImportStatusMessage('Import probablement terminé. Redirection vers la page de connexion...');
+                    localStorage.setItem('import_success_message', 
+                        'Import terminé.');
+                    
+                    setTimeout(() => {
+                        navigate('/signin');
+                    }, 2000);
+                    setPendingImportId(null);
+                }
+            }
+        };
+
+        // Check immediately
+        checkImportStatus();
+
+        // Then poll every 3 seconds
+        const interval = setInterval(checkImportStatus, 3000);
+
+        return () => clearInterval(interval);
+    }, [pendingImportId, navigate]);
 
     const handleDownloadExport = async (exportId: string) => {
         setActionLoading(exportId);
@@ -106,7 +201,7 @@ export default function ExportDatabase() {
                 result.message = "Export initié. Vous recevrez un email lorsque l'export sera prêt.";
             }
             toast.success(result.message);
-            loadExports(); // Reload the list to show the new export
+            loadExports();
         } catch (error) {
             toast.error("Erreur lors de la création de l'export");
             console.error(error);
@@ -121,7 +216,6 @@ export default function ExportDatabase() {
             return;
         }
 
-        // Validate file type
         const validExtensions = ['.json', '.gz'];
         const hasValidExtension = validExtensions.some((ext) => file.name.toLowerCase().endsWith(ext));
 
@@ -130,8 +224,7 @@ export default function ExportDatabase() {
             return;
         }
 
-        // Validate file size (500MB limit)
-        const maxSize = 500 * 1024 * 1024; // 500MB in bytes
+        const maxSize = 500 * 1024 * 1024;
         if (file.size > maxSize) {
             toast.error('Le fichier est trop volumineux. Taille maximale: 500 MB');
             return;
@@ -157,7 +250,21 @@ export default function ExportDatabase() {
             if (result.message === 'Import initiated. You will receive an email when the import is complete.') {
                 result.message = "Import initié. Vous recevrez un email lorsque l'import sera terminé.";
             }
-            toast.success(result.message);
+            
+            if (clearExisting) {
+                // Vider la liste des exports car la DB va être effacée
+                setExports([]);
+                // Start polling for import completion
+                setPendingImportId(result.importId);
+                setImportStatusMessage('Import en cours... Veuillez patienter.');
+                toast.info(
+                    result.message + " Veuillez patienter, vous serez redirigé une fois l'import terminé.",
+                    { autoClose: 7000 }
+                );
+            } else {
+                toast.success(result.message);
+            }
+            
             setSelectedFile(null);
             setClearExisting(false);
             setShowWarningModal(false);
@@ -422,6 +529,19 @@ export default function ExportDatabase() {
                                 L'import sera effectué en arrière-plan. Vous recevrez un email lorsqu'il sera terminé.
                             </p>
 
+                            {/* Message de statut pour l'import en cours avec clearExisting */}
+                            {pendingImportId && importStatusMessage && (
+                                <div className="alert alert-info mb-4">
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <div>
+                                        <p className="font-semibold">{importStatusMessage}</p>
+                                        <p className="text-sm">
+                                            L'import avec écrasement est en cours. Ne fermez pas cette page.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="form-control w-full mb-4">
                                 <label className="label">
                                     <span className="label-text">Fichier d'import</span>
@@ -433,7 +553,7 @@ export default function ExportDatabase() {
                                     className="file-input file-input-bordered w-full"
                                     accept=".json,.gz,.json.gz"
                                     onChange={handleFileChange}
-                                    disabled={isCreating}
+                                    disabled={isCreating || !!pendingImportId}
                                 />
                                 {selectedFile && (
                                     <label className="label">
@@ -452,7 +572,7 @@ export default function ExportDatabase() {
                                         className="checkbox checkbox-warning"
                                         checked={clearExisting}
                                         onChange={(e) => setClearExisting(e.target.checked)}
-                                        disabled={isCreating}
+                                        disabled={isCreating || !!pendingImportId}
                                     />
                                     <div className="flex flex-col">
                                         <span className="label-text font-semibold">
@@ -470,12 +590,12 @@ export default function ExportDatabase() {
                                 <button
                                     className="btn btn-primary"
                                     onClick={handleCreateImport}
-                                    disabled={isCreating || !selectedFile}
+                                    disabled={isCreating || !selectedFile || !!pendingImportId}
                                 >
-                                    {isCreating ? (
+                                    {isCreating || pendingImportId ? (
                                         <>
                                             <Loader2 className="w-4 h-4 animate-spin" />
-                                            Import en cours...
+                                            {pendingImportId ? 'Import en cours...' : 'Import en cours...'}
                                         </>
                                     ) : (
                                         <>
@@ -501,7 +621,7 @@ export default function ExportDatabase() {
                                 </li>
                                 <li>
                                     <strong>Mode Écrasement:</strong> Toutes les données existantes seront supprimées
-                                    avant l'import
+                                    avant l'import. <span className="text-error font-semibold">⚠️ Vous devrez attendre la fin de l'import sur cette page avant d'être redirigé.</span>
                                 </li>
                                 <li>Formats acceptés: .json, .json.gz (fichiers exportés depuis ce système)</li>
                             </ul>
@@ -527,6 +647,15 @@ export default function ExportDatabase() {
                                 <br />
                                 Toutes les données actuelles de la base de données seront définitivement supprimées avant
                                 l'import.
+                            </span>
+                        </div>
+                        <div className="alert alert-warning mt-4">
+                            <AlertCircle className="w-5 h-5" />
+                            <span>
+                                <strong>⚠️ Vous serez déconnecté une fois l'import terminé</strong>
+                                <br />
+                                L'import avec écrasement supprime tous les tokens de session. Vous devrez attendre la fin
+                                de l'import sur cette page, puis vous serez automatiquement redirigé vers la page de connexion.
                             </span>
                         </div>
                         <p className="mt-4">Êtes-vous absolument certain de vouloir continuer ?</p>
