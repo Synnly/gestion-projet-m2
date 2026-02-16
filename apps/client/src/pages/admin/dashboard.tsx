@@ -4,7 +4,7 @@ import ImportStudent from './components/importStudent';
 import ManageStudents from './components/ManageStudents';
 import { StatsPage } from './components/stats/Stats';
 import ValidateCompanies from './components/ValidateCompanies';
-import ReportsList from './components/ReportsList';
+import ReportsList from './components/reportsList';
 
 
 export function AdminDashboard() {
