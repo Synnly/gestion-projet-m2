@@ -1,6 +1,7 @@
 import { Navbar } from '../common/navbar/Navbar';
 import { AdminTabs } from './components/AdminTabs';
 import ImportStudent from './components/importStudent';
+import ManageStudents from './components/ManageStudents';
 import { StatsPage } from './components/stats/Stats';
 import ValidateCompanies from './components/ValidateCompanies';
 import { StudentList } from './components/StudentList.tsx';
@@ -12,6 +13,11 @@ export function AdminDashboard() {
             id: 'import-students',
             label: 'Import Étudiants',
             content: <ImportStudent />,
+        },
+        {
+            id: 'manage-students',
+            label: 'Liste Étudiants',
+            content: <ManageStudents />,
         },
         {
             id: 'validate-companies',

@@ -11,6 +11,7 @@ describe('StudentController', () => {
     let controller: StudentController;
     const mockService = {
         findAll: jest.fn(),
+        findAllForAdmin: jest.fn(),
         findOne: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
@@ -67,6 +68,16 @@ describe('StudentController', () => {
         expect(res.data).toHaveLength(1);
         expect(res.data[0]).toHaveProperty('email', 'a@b.c');
         expect(res.total).toBe(1);
+    });
+
+    it('findAllForAdmin returns all students including soft-deleted ones', async () => {
+        mockService.findAllForAdmin.mockResolvedValue([
+            { email: 'a@b.c', deletedAt: null },
+            { email: 'd@e.f', deletedAt: new Date() },
+        ]);
+        const res = await controller.findAllForAdmin();
+        expect(res).toHaveLength(2);
+        expect(mockService.findAllForAdmin).toHaveBeenCalled();
     });
 
     it('findOne throws NotFoundException when no student', async () => {

@@ -43,7 +43,7 @@ import { PaginationResult } from '../common/pagination/dto/paginationResult';
  * Exposes REST endpoints to create, read, update and delete student resources.
  */
 export class StudentController {
-    constructor(private readonly studentService: StudentService) {}
+    constructor(private readonly studentService: StudentService) { }
 
     /**
      * Return a list of all students.
@@ -63,6 +63,19 @@ export class StudentController {
             ...students,
             data: students.data.map((s) => plainToInstance(StudentDto, s, { excludeExtraneousValues: true })),
         };
+    }
+
+    /**
+     * Return a list of all students including soft-deleted ones.
+     * @returns An array of `StudentDto` objects.
+     */
+    @Get('/admin/all')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN) // Réservé aux admins
+    async findAllForAdmin(): Promise<StudentDto[]> {
+        // Tu dois créer cette méthode dans ton service (voir étape suivante)
+        const students = await this.studentService.findAllForAdmin();
+        return students.map(s => plainToInstance(StudentDto, s, { excludeExtraneousValues: true }));
     }
 
     /**

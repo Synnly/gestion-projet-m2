@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { StudentService } from '../../../src/student/student.service';
 import { Student } from '../../../src/student/student.schema';
+import { Application } from '../../../src/application/application.schema';
 import { Role } from '../../../src/common/roles/roles.enum';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { MailerService } from '../../../src/mailer/mailer.service';
@@ -21,6 +22,13 @@ describe('StudentService', () => {
         findOneAndUpdate: jest.fn(),
         insertMany: jest.fn(),
         aggregate: jest.fn(),
+        deleteMany: jest.fn(),
+    } as any;
+
+    const mockApplicationModel = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        deleteMany: jest.fn(),
     } as any;
 
     const TEST_MAX_ROWS = 1000;
@@ -50,6 +58,7 @@ describe('StudentService', () => {
             providers: [
                 StudentService,
                 { provide: getModelToken(Student.name), useValue: mockModel },
+                { provide: getModelToken(Application.name), useValue: mockApplicationModel },
                 { provide: ConfigService, useValue: mockConfigService },
                 { provide: MailerService, useValue: mockMailerService },
                 {
@@ -87,6 +96,18 @@ describe('StudentService', () => {
 
         const res = await service.findAll(query);
         expect(mockPaginationService.paginate).toHaveBeenCalled();
+        expect(res).toEqual(expected);
+    });
+
+    it('findAllForAdmin returns all students including soft-deleted ones', async () => {
+        const expected = [
+            { email: 'a@b.c', deletedAt: null },
+            { email: 'd@e.f', deletedAt: new Date() },
+        ];
+        mockModel.find.mockReturnValue({ exec: jest.fn().mockResolvedValue(expected) });
+
+        const res = await service.findAllForAdmin();
+        expect(mockModel.find).toHaveBeenCalledWith();
         expect(res).toEqual(expected);
     });
 
@@ -519,6 +540,65 @@ describe('StudentService', () => {
 
             expect(result).toHaveLength(2);
             expect(result).toEqual(dtos);
+        });
+    });
+
+    describe('handleCron', () => {
+        it('should do nothing when no students to delete', async () => {
+            mockModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([]),
+            });
+
+            await service.handleCron();
+
+            expect(mockModel.find).toHaveBeenCalled();
+            expect(mockApplicationModel.deleteMany).not.toHaveBeenCalled();
+            expect(mockModel.deleteMany).not.toHaveBeenCalled();
+        });
+
+        it('should delete students and related applications when students older than 30 days exist', async () => {
+            const studentId1 = 'student1';
+            const studentId2 = 'student2';
+
+            mockModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: studentId1 }, { _id: studentId2 }]),
+            });
+
+            mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 5 });
+            mockModel.deleteMany.mockResolvedValue({ deletedCount: 2 });
+
+            await service.handleCron();
+
+            expect(mockModel.find).toHaveBeenCalledWith({
+                deletedAt: { $lte: expect.any(Date) },
+            });
+
+            expect(mockApplicationModel.deleteMany).toHaveBeenCalledWith({
+                student: { $in: [studentId1, studentId2] },
+            });
+
+            expect(mockModel.deleteMany).toHaveBeenCalledWith({
+                _id: { $in: [studentId1, studentId2] },
+            });
+        });
+
+        it('should handle the full cleanup process correctly', async () => {
+            const oldDate = new Date();
+            oldDate.setDate(oldDate.getDate() - 35);
+
+            const studentsToDelete = [{ _id: 'oldStudent1' }, { _id: 'oldStudent2' }, { _id: 'oldStudent3' }];
+
+            mockModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue(studentsToDelete),
+            });
+
+            mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 10 });
+            mockModel.deleteMany.mockResolvedValue({ deletedCount: 3 });
+
+            await service.handleCron();
+
+            expect(mockApplicationModel.deleteMany).toHaveBeenCalled();
+            expect(mockModel.deleteMany).toHaveBeenCalled();
         });
     });
 });
