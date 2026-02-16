@@ -255,7 +255,7 @@ export class CompanyService {
         const now = new Date();
         const daysSinceDeletion = Math.floor((now.getTime() - deletedAt.getTime()) / (1000 * 60 * 60 * 24));
 
-        if (daysSinceDeletion > 30) {
+        if (daysSinceDeletion >= 30) {
             throw new BadRequestException(
                 'La période de restauration de 30 jours a expiré. Votre compte sera définitivement supprimé prochainement.',
             );
