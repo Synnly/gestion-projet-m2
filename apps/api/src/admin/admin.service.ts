@@ -336,7 +336,6 @@ export class AdminService {
                 return;
             }
 
-            const downloadUrl = `${this.configService.get<string>('FRONTEND_URL')}/admin/exports/${exportJob._id}`;
             const { from, name } = this.getFromAddress();
 
             await this.mailerService['mailerProvider'].sendMail({
@@ -347,7 +346,6 @@ export class AdminService {
                 context: {
                     fromName: name,
                     exportId: exportJob._id.toString(),
-                    downloadUrl,
                     fileSize: this.formatFileSize(exportJob.fileSize || 0),
                     collectionsCount: exportJob.collectionsCount,
                     documentsCount: exportJob.documentsCount,
