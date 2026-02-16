@@ -164,5 +164,37 @@ describe('UserService', () => {
             expect(refreshTokenModel.deleteMany).toHaveBeenCalledWith({ userId: 'user123' });
             expect(mailerService.sendAccountBanEmail).toHaveBeenCalled();
         });
+
+        it('should update reports to resolved when banning a user with messages', async () => {
+            const mockMessages = [
+                { _id: 'message1' },
+                { _id: 'message2' },
+            ];
+
+            mockUserModel.findOneAndUpdate.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockUser),
+            });
+            mockRefreshTokenModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+            mockMessageModel.find.mockReturnValue({
+                select: jest.fn().mockReturnValue({
+                    exec: jest.fn().mockResolvedValue(mockMessages),
+                }),
+            });
+            mockReportModel.updateMany.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 3 }),
+            });
+            mockMailerService.sendAccountBanEmail.mockResolvedValue(null);
+
+            await service.ban('user123', 'Spam');
+
+            expect(messageModel.find).toHaveBeenCalledWith({ authorId: 'user123' });
+            expect(reportModel.updateMany).toHaveBeenCalledWith(
+                {
+                    messageId: { $in: ['message1', 'message2'] },
+                    status: { $ne: 'resolved' }
+                },
+                { $set: { status: 'resolved' } }
+            );
+        });
     });
 });

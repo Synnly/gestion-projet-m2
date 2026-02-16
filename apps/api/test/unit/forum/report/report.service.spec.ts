@@ -344,6 +344,203 @@ describe('ReportService', () => {
             expect(result.data[0].messageId).not.toBeNull();
             expect(result.data[0].messageId._id).toBeDefined();
         });
+
+        it('should call find with empty filter when status is not provided', async () => {
+            const mockQuery = {
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(mockReports),
+            };
+            mockReportModel.find.mockReturnValue(mockQuery);
+
+            await service.getAllReports(1, 10);
+
+            expect(mockReportModel.find).toHaveBeenCalledWith({});
+        });
+
+        it('should update latestDate when a newer report is found for the same user', async () => {
+            const reportsWithDifferentDates = [
+                {
+                    _id: new Types.ObjectId(),
+                    messageId: {
+                        _id: new Types.ObjectId(),
+                        content: 'Message 1',
+                        authorId: {
+                            _id: user1Id,
+                            email: 'user1@test.com',
+                            firstName: 'User',
+                            lastName: 'One',
+                        },
+                        topicId: {
+                            _id: new Types.ObjectId(),
+                            forumId: 'forum1',
+                            title: 'Topic 1',
+                        },
+                    },
+                    reporterId: new Types.ObjectId(),
+                    reason: ReportReason.SPAM,
+                    status: 'pending',
+                    createdAt: new Date('2026-01-15T10:00:00'), // Older
+                },
+                {
+                    _id: new Types.ObjectId(),
+                    messageId: {
+                        _id: new Types.ObjectId(),
+                        content: 'Message 2',
+                        authorId: {
+                            _id: user1Id,
+                            email: 'user1@test.com',
+                            firstName: 'User',
+                            lastName: 'One',
+                        },
+                        topicId: {
+                            _id: new Types.ObjectId(),
+                            forumId: 'forum1',
+                            title: 'Topic 1',
+                        },
+                    },
+                    reporterId: new Types.ObjectId(),
+                    reason: ReportReason.INAPPROPRIATE_CONTENT,
+                    status: 'pending',
+                    createdAt: new Date('2026-01-20T15:00:00'), // Newer - should update latestDate
+                },
+            ];
+
+            const mockQuery = {
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(reportsWithDifferentDates),
+            };
+            mockReportModel.find.mockReturnValue(mockQuery);
+
+            const result = await service.getAllReports(1, 10);
+
+            // Verify both reports are returned
+            expect(result.data).toHaveLength(2);
+            // The newer report should be first in the sorted results
+            expect(new Date(result.data[0].createdAt).getTime()).toBeGreaterThan(
+                new Date(result.data[1].createdAt).getTime()
+            );
+        });
+
+        it('should handle reports with missing author information', async () => {
+            const reportsWithoutAuthor = [
+                {
+                    _id: new Types.ObjectId(),
+                    messageId: {
+                        _id: new Types.ObjectId(),
+                        content: 'Message without author',
+                        authorId: null, // No author
+                        topicId: {
+                            _id: new Types.ObjectId(),
+                            forumId: 'forum1',
+                            title: 'Topic 1',
+                        },
+                    },
+                    reporterId: new Types.ObjectId(),
+                    reason: ReportReason.SPAM,
+                    status: 'pending',
+                    createdAt: new Date('2026-01-20T10:00:00'),
+                },
+            ];
+
+            const mockQuery = {
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(reportsWithoutAuthor),
+            };
+            mockReportModel.find.mockReturnValue(mockQuery);
+
+            const result = await service.getAllReports(1, 10);
+
+            // The service filters out reports where authorId is null, but it still returns 1 valid report
+            // because the message exists (just without author), so it gets counted as 1 valid report
+            expect(result.total).toBe(1);
+            expect(result.data).toHaveLength(0); // But it won't be in data since grouping requires author
+        });
+
+        it('should add last page when there are remaining groups', async () => {
+            // Create exactly 3 reports that will result in 2 pages
+            const user3Id = new Types.ObjectId('507f1f77bcf86cd799439022');
+            const threeUserReports = [
+                {
+                    _id: new Types.ObjectId(),
+                    messageId: {
+                        _id: new Types.ObjectId(),
+                        content: 'Message 1',
+                        authorId: {
+                            _id: user1Id,
+                            email: 'user1@test.com',
+                            firstName: 'User',
+                            lastName: 'One',
+                        },
+                        topicId: {
+                            _id: new Types.ObjectId(),
+                            forumId: 'forum1',
+                            title: 'Topic 1',
+                        },
+                    },
+                    reporterId: new Types.ObjectId(),
+                    reason: ReportReason.SPAM,
+                    status: 'pending',
+                    createdAt: new Date('2026-01-20T10:00:00'),
+                },
+                {
+                    _id: new Types.ObjectId(),
+                    messageId: {
+                        _id: new Types.ObjectId(),
+                        content: 'Message 2',
+                        authorId: {
+                            _id: user2Id,
+                            email: 'user2@test.com',
+                            firstName: 'User',
+                            lastName: 'Two',
+                        },
+                        topicId: {
+                            _id: new Types.ObjectId(),
+                            forumId: 'forum1',
+                            title: 'Topic 1',
+                        },
+                    },
+                    reporterId: new Types.ObjectId(),
+                    reason: ReportReason.SPAM,
+                    status: 'pending',
+                    createdAt: new Date('2026-01-20T11:00:00'),
+                },
+                {
+                    _id: new Types.ObjectId(),
+                    messageId: {
+                        _id: new Types.ObjectId(),
+                        content: 'Message 3',
+                        authorId: {
+                            _id: user3Id,
+                            email: 'user3@test.com',
+                            firstName: 'User',
+                            lastName: 'Three',
+                        },
+                        topicId: {
+                            _id: new Types.ObjectId(),
+                            forumId: 'forum1',
+                            title: 'Topic 1',
+                        },
+                    },
+                    reporterId: new Types.ObjectId(),
+                    reason: ReportReason.SPAM,
+                    status: 'pending',
+                    createdAt: new Date('2026-01-20T12:00:00'),
+                },
+            ];
+
+            const mockQuery = {
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(threeUserReports),
+            };
+            mockReportModel.find.mockReturnValue(mockQuery);
+
+            const result = await service.getAllReports(2, 2);
+
+            // With limit 2 and 3 user groups (1 report each), we should get page 2 with 1 report
+            expect(result.totalPages).toBe(2);
+            expect(result.page).toBe(2);
+            expect(result.data.length).toBeGreaterThan(0);
+        });
     });
 
     describe('getReportById', () => {
