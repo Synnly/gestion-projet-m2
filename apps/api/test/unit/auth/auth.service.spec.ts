@@ -460,51 +460,77 @@ describe('AuthService', () => {
     });
 
     describe('login - account pending deletion check', () => {
-        it('should throw AccountPendingDeletionException when company account is soft-deleted within 30 days and login is called', async () => {
+        it('should generate tokens with deletedAt when company account is soft-deleted within 30 days', async () => {
             const company = await createMockCompany({ role: Role.COMPANY });
             const deletedAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000); // 10 days ago
             company.deletedAt = deletedAt;
             mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
 
-            try {
-                await service.login(company.email, company.plainPassword);
-                fail('Should have thrown AccountPendingDeletionException');
-            } catch (error) {
-                expect(error).toBeInstanceOf(AccountPendingDeletionException);
-                expect(error.userId).toBe(company._id.toString());
-                expect(error.daysRemaining).toBe(20); // 30 - 10 = 20
-                expect(error.deletedAt).toEqual(deletedAt);
-            }
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(company.email, company.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+            // Verify that the JWT was signed with deletedAt in the payload
+            expect(mockJwtService.signAsync).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    deletedAt: deletedAt,
+                }),
+            );
         });
 
-        it('should throw AccountPendingDeletionException with correct days remaining when account deleted 5 days ago', async () => {
+        it('should generate tokens with deletedAt when account deleted 5 days ago', async () => {
             const company = await createMockCompany({ role: Role.COMPANY });
             const deletedAt = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000); // 5 days ago
             company.deletedAt = deletedAt;
             mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
 
-            try {
-                await service.login(company.email, company.plainPassword);
-                fail('Should have thrown AccountPendingDeletionException');
-            } catch (error) {
-                expect(error).toBeInstanceOf(AccountPendingDeletionException);
-                expect(error.daysRemaining).toBe(25); // 30 - 5 = 25
-            }
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(company.email, company.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+            expect(mockJwtService.signAsync).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    deletedAt: deletedAt,
+                }),
+            );
         });
 
-        it('should throw AccountPendingDeletionException with 1 day remaining when account deleted 29 days ago', async () => {
+        it('should generate tokens with deletedAt when account deleted 29 days ago', async () => {
             const company = await createMockCompany({ role: Role.COMPANY });
             const deletedAt = new Date(Date.now() - 29 * 24 * 60 * 60 * 1000); // 29 days ago
             company.deletedAt = deletedAt;
             mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
 
-            try {
-                await service.login(company.email, company.plainPassword);
-                fail('Should have thrown AccountPendingDeletionException');
-            } catch (error) {
-                expect(error).toBeInstanceOf(AccountPendingDeletionException);
-                expect(error.daysRemaining).toBe(1); // 30 - 29 = 1
-            }
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(company.email, company.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+            expect(mockJwtService.signAsync).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    deletedAt: deletedAt,
+                }),
+            );
         });
 
         it('should throw ForbiddenException when company account is soft-deleted more than 30 days ago and login is called', async () => {
@@ -591,20 +617,29 @@ describe('AuthService', () => {
             expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
         });
 
-        it('should throw AccountPendingDeletionException with 0 days remaining calculation edge case', async () => {
+        it('should generate tokens with deletedAt for edge case of 29.5 days ago', async () => {
             const company = await createMockCompany({ role: Role.COMPANY });
             // Set deletedAt to exactly 29.5 days ago (should round to 29 days, leaving 1 day)
             const deletedAt = new Date(Date.now() - 29.5 * 24 * 60 * 60 * 1000);
             company.deletedAt = deletedAt;
             mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
 
-            try {
-                await service.login(company.email, company.plainPassword);
-                fail('Should have thrown AccountPendingDeletionException');
-            } catch (error) {
-                expect(error).toBeInstanceOf(AccountPendingDeletionException);
-                expect(error.daysRemaining).toBeGreaterThanOrEqual(0);
-            }
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(company.email, company.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+            expect(mockJwtService.signAsync).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    deletedAt: deletedAt,
+                }),
+            );
         });
     });
 });

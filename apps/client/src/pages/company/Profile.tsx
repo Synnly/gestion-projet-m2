@@ -5,6 +5,7 @@ import { useGetCompanyProfile } from '../../hooks/useGetCompanyProfile';
 import { userStore } from '../../stores/userStore';
 import { Navbar } from '../common/navbar/Navbar';
 import { DeleteAccountModal } from './components/DeleteAccountModal';
+import { DeleteAccountSuccessModal } from './components/DeleteAccountSuccessModal';
 
 export function CompanyProfile() {
     // Récupérer l'ID de l'utilisateur connecté depuis le token
@@ -21,6 +22,7 @@ export function CompanyProfile() {
     const logoBlob = useBlob(profile?.logo ?? '');
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     useEffect(() => {
         if (!logoBlob) {
@@ -36,10 +38,11 @@ export function CompanyProfile() {
 
     const handleDeleteSuccess = () => {
         setShowDeleteModal(false);
-        // Afficher un message de succès et déconnecter l'utilisateur
-        alert(
-            'Votre compte a été marqué pour suppression. Vous disposez de 30 jours pour le restaurer en vous reconnectant.',
-        );
+        setShowSuccessModal(true);
+    };
+
+    const handleSuccessModalConfirm = () => {
+        setShowSuccessModal(false);
         logout();
         navigate('/signin');
     };
@@ -164,6 +167,10 @@ export function CompanyProfile() {
                     onClose={() => setShowDeleteModal(false)}
                     onSuccess={handleDeleteSuccess}
                 />
+            )}
+
+            {showSuccessModal && (
+                <DeleteAccountSuccessModal onConfirm={handleSuccessModalConfirm} />
             )}
         </div>
     );

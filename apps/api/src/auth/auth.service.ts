@@ -5,12 +5,12 @@ import * as bcrypt from 'bcrypt';
 import { AccessTokenPayload, RefreshToken, RefreshTokenDocument, RefreshTokenPayload } from './refreshToken.schema';
 import { Role } from '../common/roles/roles.enum';
 import { InvalidCredentialsException } from '../common/exceptions/invalidCredentials.exception';
-import { AccountPendingDeletionException } from '../common/exceptions/accountPendingDeletion.exception';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
-import { User, UserDocument } from '../user/user.schema';
+import { CompanyUserDocument, User, UserDocument } from '../user/user.schema';
 import { MailerService } from 'src/mailer/mailer.service';
+import { Company } from 'src/company/company.schema';
 
 /**
  * Service handling authentication logic
@@ -48,13 +48,14 @@ export class AuthService {
 
     /**
      * Generates access and refresh tokens for the user
+     * For soft-deleted Company accounts within the 30-day grace period, tokens are still generated
+     * with the deletedAt field included in the payload. The client will handle redirection to the restoration page.
      * @param email The email of the user attempting to log in.
      * @param password The password of the user.
      * @returns A Promise that resolves to an object containing the access and refresh tokens.
      * @throws {NotFoundException} If the user with the specified email is not found.
      * @throws {InvalidCredentialsException} If the provided credentials are invalid.
-     * @throws {ForbiddenException} If the user with the specified email is banned.
-     * @throws {AccountPendingDeletionException} If the user account is pending deletion.
+     * @throws {ForbiddenException} If the user with the specified email is banned or if the soft-deletion grace period has expired.
      */
     async login(email: string, password: string): Promise<{ access: string; refresh: string }> {
         const user = await this.userModel.findOne({ email: email });
@@ -67,27 +68,25 @@ export class AuthService {
         if (user.ban) throw new ForbiddenException(`User with email ${email} is banned for '${user.ban.reason}'`);
 
         // Check if account is soft-deleted (pending deletion) - only applies to Company accounts
-        if (user.role === Role.COMPANY) {
-            const companyUser = user as any; // Company accounts have deletedAt field
-            if (companyUser.deletedAt) {
+        // If the 30-day grace period has expired, prevent login entirely
+        // Otherwise, generate tokens and let the client handle the restoration flow
+        if (user.role === Role.COMPANY && 'deletedAt' in user) {
+            const deletedAt = user.deletedAt as Date | undefined;
+            if (deletedAt) {
                 const now = new Date();
                 const daysSinceDeletion = Math.floor(
-                    (now.getTime() - companyUser.deletedAt.getTime()) / (1000 * 60 * 60 * 24),
+                    (now.getTime() - deletedAt.getTime()) / (1000 * 60 * 60 * 24),
                 );
                 const daysRemaining = Math.max(0, 30 - daysSinceDeletion);
 
-                if (daysRemaining > 0) {
-                    throw new AccountPendingDeletionException(
-                        user._id.toString(),
-                        daysRemaining,
-                        companyUser.deletedAt,
-                    );
-                } else {
+                if (daysRemaining === 0) {
                     // Account should be deleted, prevent login
                     throw new ForbiddenException(
                         "Votre compte a été définitivement supprimé. Veuillez contacter le support si vous pensez qu'il s'agit d'une erreur.",
                     );
                 }
+                // If daysRemaining > 0, continue with login and include deletedAt in token
+                // The client will handle redirecting to the restoration page
             }
         }
 
@@ -144,6 +143,8 @@ export class AuthService {
             rti: rti,
             isVerified: user.isVerified,
             isValid: user.isValid,
+            // Include deletedAt if the account is soft-deleted (for Company accounts)
+            deletedAt: user.role === Role.COMPANY && 'deletedAt' in user ? (user.deletedAt as Date | undefined) : undefined,
         };
 
         return this.jwtService.signAsync(accessTokenPayload);

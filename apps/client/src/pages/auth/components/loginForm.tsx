@@ -1,11 +1,10 @@
 import { useForm } from 'react-hook-form';
 
 import { useLogin } from '../../../hooks/useLogin';
-import { NavLink, useNavigate } from 'react-router';
+import { NavLink } from 'react-router';
 import { FormInput } from '../../common/form/FormInput';
 import { CustomForm } from '../../common/form/CustomForm';
 import { FormSubmit } from '../../common/form/FormSubmit';
-import { AccountDeletionWarning } from '../AccountDeletionWarning';
 import type { companyFormLogin } from '../../../types/Login.types';
 
 export const LoginForm = () => {
@@ -16,22 +15,10 @@ export const LoginForm = () => {
     } = useForm<companyFormLogin>({
         mode: 'onSubmit',
     });
-    const { login, isPending, isError, error, reset, pendingDeletionData, clearPendingDeletion } = useLogin();
-    const navigate = useNavigate();
+    const { login, isPending, isError, error, reset } = useLogin();
 
     const onSubmit = async (data: companyFormLogin): Promise<void> => {
         login(data);
-    };
-
-    const handleRestore = () => {
-        // Rediriger après la restauration sans recharger entièrement la page
-        clearPendingDeletion();
-        navigate('/');
-    };
-
-    const handleLogout = () => {
-        clearPendingDeletion();
-        navigate('/signin');
     };
 
     return (
@@ -65,8 +52,8 @@ export const LoginForm = () => {
                     </div>
                     <FormSubmit
                         isPending={isPending}
-                        isError={isError && !pendingDeletionData}
-                        error={error?.message === 'ACCOUNT_PENDING_DELETION' ? null : error}
+                        isError={isError}
+                        error={error}
                         title="Se connecter"
                         pendingTitle="connexion..."
                         className="bg-primary rounded-lg cursor-pointer w-full text-black"
@@ -78,16 +65,6 @@ export const LoginForm = () => {
                     </NavLink>
                 </div>
             </div>
-
-            {/* Modal d'avertissement de suppression */}
-            {pendingDeletionData && (
-                <AccountDeletionWarning
-                    userId={pendingDeletionData.userId}
-                    daysRemaining={pendingDeletionData.daysRemaining}
-                    onRestore={handleRestore}
-                    onLogout={handleLogout}
-                />
-            )}
         </>
     );
 };

@@ -30,6 +30,9 @@ describe('CompanyService', () => {
         findOneAndDelete: jest.fn(),
         updateOne: jest.fn(),
         deleteMany: jest.fn(),
+        db: {
+            startSession: jest.fn(),
+        },
     };
 
     const mockPostModel = {
@@ -1356,6 +1359,20 @@ describe('CompanyService', () => {
     });
 
     describe('handleCompanyCleanupCron', () => {
+        let mockSession: any;
+
+        beforeEach(() => {
+            // Mock session with withTransaction
+            mockSession = {
+                withTransaction: jest.fn(async (callback) => {
+                    // Execute the callback function directly
+                    return await callback();
+                }),
+                endSession: jest.fn(),
+            };
+            mockCompanyModel.db.startSession.mockResolvedValue(mockSession);
+        });
+
         it('should do nothing when no companies to delete', async () => {
             mockCompanyModel.find.mockReturnValue({
                 select: jest.fn().mockResolvedValue([]),
@@ -1410,20 +1427,37 @@ describe('CompanyService', () => {
 
             mockApplicationModel.find.mockReturnValue(mockApplicationQuery);
             mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 5 });
-            mockPostModel.deleteMany.mockResolvedValue({ deletedCount: 2 });
+            
+            // Mock for deleteMany with session support
+            mockPostModel.deleteMany.mockReturnValue({
+                session: jest.fn().mockResolvedValue({ deletedCount: 2 }),
+            });
 
             mockForumModel.find.mockReturnValue({
-                select: jest.fn().mockResolvedValue([{ _id: forumId1 }]),
+                select: jest.fn().mockReturnThis(),
+                session: jest.fn().mockResolvedValue([{ _id: forumId1 }]),
             });
 
             mockTopicModel.find.mockReturnValue({
-                select: jest.fn().mockResolvedValue([{ _id: topicId1 }]),
+                select: jest.fn().mockReturnThis(),
+                session: jest.fn().mockResolvedValue([{ _id: topicId1 }]),
             });
 
-            mockMessageModel.deleteMany.mockResolvedValue({ deletedCount: 10 });
-            mockTopicModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
-            mockForumModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
-            mockCompanyModel.deleteMany.mockResolvedValue({ deletedCount: 2 });
+            mockMessageModel.deleteMany.mockReturnValue({
+                session: jest.fn().mockResolvedValue({ deletedCount: 10 }),
+            });
+            
+            mockTopicModel.deleteMany.mockReturnValue({
+                session: jest.fn().mockResolvedValue({ deletedCount: 1 }),
+            });
+            
+            mockForumModel.deleteMany.mockReturnValue({
+                session: jest.fn().mockResolvedValue({ deletedCount: 1 }),
+            });
+            
+            mockCompanyModel.deleteMany.mockReturnValue({
+                session: jest.fn().mockResolvedValue({ deletedCount: 2 }),
+            });
             mockNotificationService.create.mockResolvedValue(undefined);
 
             await service.handleCompanyCleanupCron();
@@ -1495,10 +1529,13 @@ describe('CompanyService', () => {
             });
 
             mockForumModel.find.mockReturnValue({
-                select: jest.fn().mockResolvedValue([]),
+                select: jest.fn().mockReturnThis(),
+                session: jest.fn().mockResolvedValue([]),
             });
 
-            mockCompanyModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+            mockCompanyModel.deleteMany.mockReturnValue({
+                session: jest.fn().mockResolvedValue({ deletedCount: 1 }),
+            });
 
             await service.handleCompanyCleanupCron();
 
@@ -1546,20 +1583,36 @@ describe('CompanyService', () => {
             mockApplicationModel.find.mockReturnValue(mockApplicationQuery);
             mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 3 });
             mockNotificationService.create.mockResolvedValue(undefined);
-            mockPostModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+            
+            mockPostModel.deleteMany.mockReturnValue({
+                session: jest.fn().mockResolvedValue({ deletedCount: 1 }),
+            });
 
             mockForumModel.find.mockReturnValue({
-                select: jest.fn().mockResolvedValue([{ _id: 'forum1' }]),
+                select: jest.fn().mockReturnThis(),
+                session: jest.fn().mockResolvedValue([{ _id: 'forum1' }]),
             });
 
             mockTopicModel.find.mockReturnValue({
-                select: jest.fn().mockResolvedValue([{ _id: 'topic1' }]),
+                select: jest.fn().mockReturnThis(),
+                session: jest.fn().mockResolvedValue([{ _id: 'topic1' }]),
             });
 
-            mockMessageModel.deleteMany.mockResolvedValue({ deletedCount: 5 });
-            mockTopicModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
-            mockForumModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
-            mockCompanyModel.deleteMany.mockResolvedValue({ deletedCount: 2 });
+            mockMessageModel.deleteMany.mockReturnValue({
+                session: jest.fn().mockResolvedValue({ deletedCount: 5 }),
+            });
+            
+            mockTopicModel.deleteMany.mockReturnValue({
+                session: jest.fn().mockResolvedValue({ deletedCount: 1 }),
+            });
+            
+            mockForumModel.deleteMany.mockReturnValue({
+                session: jest.fn().mockResolvedValue({ deletedCount: 1 }),
+            });
+            
+            mockCompanyModel.deleteMany.mockReturnValue({
+                session: jest.fn().mockResolvedValue({ deletedCount: 2 }),
+            });
 
             await service.handleCompanyCleanupCron();
 
@@ -1600,11 +1653,18 @@ describe('CompanyService', () => {
             // Simuler une erreur lors de l'envoi de notification
             mockNotificationService.create.mockRejectedValue(new Error('Notification service down'));
 
-            mockPostModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
-            mockForumModel.find.mockReturnValue({
-                select: jest.fn().mockResolvedValue([]),
+            mockPostModel.deleteMany.mockReturnValue({
+                session: jest.fn().mockResolvedValue({ deletedCount: 1 }),
             });
-            mockCompanyModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+            
+            mockForumModel.find.mockReturnValue({
+                select: jest.fn().mockReturnThis(),
+                session: jest.fn().mockResolvedValue([]),
+            });
+            
+            mockCompanyModel.deleteMany.mockReturnValue({
+                session: jest.fn().mockResolvedValue({ deletedCount: 1 }),
+            });
 
             // Ne devrait pas lancer d'erreur
             await expect(service.handleCompanyCleanupCron()).resolves.not.toThrow();

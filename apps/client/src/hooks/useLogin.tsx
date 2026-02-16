@@ -1,14 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { userStore } from '../stores/userStore';
 import { useLocation, useNavigate } from 'react-router';
-import { useState } from 'react';
 import type { companyFormLogin } from '../types/Login.types';
-
-interface PendingDeletionData {
-    userId: string;
-    daysRemaining: number;
-    deletedAt: string;
-}
 
 function translateMessage(message: string): string {
     if (message === 'Invalid email or password') return 'email ou mot de passe invalide.';
@@ -33,7 +26,6 @@ export const useLogin = () => {
     const navigate = useNavigate();
     const lastLocationRoute = lastLocation.state?.from;
     const API_URL = import.meta.env.VITE_APIURL || 'http://localhost:3000';
-    const [pendingDeletionData, setPendingDeletionData] = useState<PendingDeletionData | null>(null);
 
     const { mutateAsync, isPending, isError, error, reset } = useMutation({
         mutationFn: async (data: companyFormLogin) => {
@@ -47,18 +39,6 @@ export const useLogin = () => {
             });
             if (!res.ok) {
                 const errorData = await res.json();
-                
-                // Check if this is an account pending deletion error
-                if (errorData.error === 'ACCOUNT_PENDING_DELETION') {
-                    const deletionInfo: PendingDeletionData = {
-                        userId: errorData.userId,
-                        daysRemaining: errorData.daysRemaining,
-                        deletedAt: errorData.deletedAt,
-                    };
-                    setPendingDeletionData(deletionInfo);
-                    throw new Error('ACCOUNT_PENDING_DELETION');
-                }
-                
                 throw new Error(translateMessage(errorData.message));
             }
             return res;
@@ -66,13 +46,18 @@ export const useLogin = () => {
     });
 
     const login = async (data: companyFormLogin) => {
-        setPendingDeletionData(null); // Reset pending deletion data
         const res = await mutateAsync(data);
         if (res.ok) {
             const accessToken = await res.text();
             setAccess(accessToken);
             const user = getAccess(accessToken);
             if (!user) throw new Error('Erreur lors de la récupération des informations utilisateur.');
+
+            // Check if the account is soft-deleted (pending deletion)
+            if (user.deletedAt) {
+                navigate('/account-restore');
+                return;
+            }
 
             // Force verification for students
             if (user.role === 'STUDENT') {
@@ -91,5 +76,5 @@ export const useLogin = () => {
         }
     };
 
-    return { login, isPending, isError, error, reset, pendingDeletionData, clearPendingDeletion: () => setPendingDeletionData(null) };
+    return { login, isPending, isError, error, reset };
 };
