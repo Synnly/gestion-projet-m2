@@ -24,9 +24,9 @@ export const LoginForm = () => {
     };
 
     const handleRestore = () => {
-        // Recharger la page pour se reconnecter
+        // Rediriger après la restauration sans recharger entièrement la page
         clearPendingDeletion();
-        window.location.reload();
+        navigate('/');
     };
 
     const handleLogout = () => {
