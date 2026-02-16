@@ -31,10 +31,7 @@ describe('NotificationService', () => {
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
-            providers: [
-                NotificationService,
-                { provide: getModelToken(Notification.name), useValue: mockModel },
-            ],
+            providers: [NotificationService, { provide: getModelToken(Notification.name), useValue: mockModel }],
         }).compile();
 
         service = module.get<NotificationService>(NotificationService);
@@ -141,11 +138,7 @@ describe('NotificationService', () => {
 
             const result = await service.update(id, dto);
 
-            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
-                id,
-                { $set: dto },
-                { new: true }
-            );
+            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(id, { $set: dto }, { new: true });
             expect(result).toEqual(updatedNotification);
         });
 
@@ -173,11 +166,7 @@ describe('NotificationService', () => {
 
             const result = await service.markAsRead(id);
 
-            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(
-                id,
-                { $set: { read: true } },
-                { new: true }
-            );
+            expect(mockModel.findByIdAndUpdate).toHaveBeenCalledWith(id, { $set: { read: true } }, { new: true });
             expect(result).toEqual(readNotification);
         });
     });
@@ -195,7 +184,7 @@ describe('NotificationService', () => {
 
             expect(mockModel.updateMany).toHaveBeenCalledWith(
                 { userId: new Types.ObjectId(userId), read: false },
-                { $set: { read: true } }
+                { $set: { read: true } },
             );
             expect(result).toBe(modifiedCount);
         });

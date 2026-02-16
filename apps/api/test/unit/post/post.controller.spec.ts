@@ -74,6 +74,12 @@ describe('PostController', () => {
     });
 
     describe('findAll', () => {
+        const mockRequest = {
+            user: {
+                sub: 'someUserId',
+            },
+        };
+
         it('should return a paginated result of posts when findAll is called', async () => {
             const paginationResult = {
                 data: [mockPost],
@@ -86,7 +92,7 @@ describe('PostController', () => {
             };
             mockPostService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll({ page: 1, limit: 10 } as any);
+            const result = await controller.findAll({ page: 1, limit: 10 } as any, mockRequest as any);
 
             expect(result.data).toHaveLength(1);
             expect(result.data[0].title).toBe('Développeur Full Stack');
@@ -106,7 +112,7 @@ describe('PostController', () => {
             };
             mockPostService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll({ page: 1, limit: 10 } as any);
+            const result = await controller.findAll({ page: 1, limit: 10 } as any, mockRequest as any);
 
             expect(result.data).toHaveLength(0);
             expect(result.total).toBe(0);
@@ -133,13 +139,95 @@ describe('PostController', () => {
             };
             mockPostService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll({ page: 1, limit: 10 } as any);
+            const result = await controller.findAll({ page: 1, limit: 10 } as any, mockRequest as any);
 
             expect(result.data).toHaveLength(2);
             expect(result.data[0].title).toBe('Développeur Full Stack');
             expect(result.data[1].title).toBe('Développeur Backend');
             expect(result.total).toBe(2);
             expect(service.findAll).toHaveBeenCalledTimes(1);
+        });
+
+        it('should set showHidden to true when user is COMPANY and matches query.company', async () => {
+            const companyId = '507f1f77bcf86cd799439099';
+            const mockCompanyRequest = {
+                user: {
+                    sub: companyId,
+                    role: 'COMPANY',
+                },
+            };
+            const paginationResult = {
+                data: [mockPost],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPostService.findAll.mockResolvedValue(paginationResult);
+
+            await controller.findAll({ page: 1, limit: 10, company: companyId } as any, mockCompanyRequest as any);
+
+            expect(service.findAll).toHaveBeenCalledWith({ page: 1, limit: 10, company: companyId }, true);
+        });
+
+        it('should set showHidden to false when user is COMPANY but does not match query.company', async () => {
+            const mockCompanyRequest = {
+                user: {
+                    sub: '507f1f77bcf86cd799439099',
+                    role: 'COMPANY',
+                },
+            };
+            const paginationResult = {
+                data: [mockPost],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPostService.findAll.mockResolvedValue(paginationResult);
+
+            await controller.findAll(
+                { page: 1, limit: 10, company: 'different-company-id' } as any,
+                mockCompanyRequest as any,
+            );
+
+            expect(service.findAll).toHaveBeenCalledWith(
+                { page: 1, limit: 10, company: 'different-company-id' },
+                false,
+            );
+        });
+
+        it('should set showHidden to false when user is not COMPANY', async () => {
+            const mockStudentRequest = {
+                user: {
+                    sub: '507f1f77bcf86cd799439099',
+                    role: 'STUDENT',
+                },
+            };
+            const paginationResult = {
+                data: [mockPost],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPostService.findAll.mockResolvedValue(paginationResult);
+
+            await controller.findAll(
+                { page: 1, limit: 10, company: '507f1f77bcf86cd799439099' } as any,
+                mockStudentRequest as any,
+            );
+
+            expect(service.findAll).toHaveBeenCalledWith(
+                { page: 1, limit: 10, company: '507f1f77bcf86cd799439099' },
+                false,
+            );
         });
     });
 

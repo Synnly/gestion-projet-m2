@@ -1,5 +1,5 @@
 import { redirect } from 'react-router-dom';
-import { userStore } from '../store/userStore'; // ton zustand store
+import { userStore } from '../stores/userStore'; // ton zustand store
 
 interface FetchOptions<TData = unknown> {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
@@ -37,7 +37,7 @@ export const UseAuthFetch = () => {
                 const res = await fetch(url, {
                     method: options?.method || 'GET',
                     headers: headers,
-                    body: options?.data,
+                    body: options?.data as any,
                     credentials: 'include',
                 });
 

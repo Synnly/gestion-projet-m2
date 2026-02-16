@@ -193,7 +193,12 @@ describe('S3Controller', () => {
             const result = await controller.generateDownloadUrl(fileName, mockRequest);
 
             // signature now accepts optional postId as fourth parameter; expect undefined when not provided
-            expect(s3Service.generatePresignedDownloadUrl).toHaveBeenCalledWith(fileName, 'user123', undefined, undefined);
+            expect(s3Service.generatePresignedDownloadUrl).toHaveBeenCalledWith(
+                fileName,
+                'user123',
+                undefined,
+                undefined,
+            );
             expect(result).toEqual(mockResult);
         });
 

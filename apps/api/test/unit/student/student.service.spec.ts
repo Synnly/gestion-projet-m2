@@ -6,6 +6,7 @@ import { Role } from '../../../src/common/roles/roles.enum';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { MailerService } from '../../../src/mailer/mailer.service';
 import { ConfigService } from '@nestjs/config';
+import { CreateStudentDto } from 'src/student/dto/createStudent.dto';
 
 describe('StudentService', () => {
     let service: StudentService;
@@ -98,6 +99,27 @@ describe('StudentService', () => {
         );
     });
 
+    it('create logs error and continues when mailer fails', async () => {
+        const dto = { email: 'x@y.z' } as any;
+
+        const mockCreatedStudent = {
+            email: 'x@y.z',
+            firstName: 'Test',
+            role: Role.STUDENT,
+        } as any;
+
+        mockModel.create.mockResolvedValue(mockCreatedStudent);
+        mockMailerService.sendAccountCreationEmail.mockRejectedValue(new Error('Mail error'));
+
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+        await service.create(dto);
+
+        expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to send welcome email to x@y.z:', expect.any(Error));
+
+        consoleErrorSpy.mockRestore();
+    });
+
     it('update updates existing student when found', async () => {
         const saveMock = jest.fn().mockResolvedValue(undefined);
         const studentDoc: any = { save: saveMock, set: jest.fn() };
@@ -106,6 +128,15 @@ describe('StudentService', () => {
         await service.update('1', { email: 'new@e.mail' } as any);
         expect(mockModel.findOne).toHaveBeenCalledWith({ _id: '1', deletedAt: { $exists: false } });
         expect(saveMock).toHaveBeenCalled();
+    });
+
+    it('update returns undefined when student not found', async () => {
+        mockModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+        const result = await service.update('1', { email: 'new@e.mail' } as any);
+
+        expect(result).toBeUndefined();
+        expect(mockModel.findOne).toHaveBeenCalledWith({ _id: '1', deletedAt: { $exists: false } });
     });
 
     it('remove resolves when document updated', async () => {
@@ -225,6 +256,35 @@ describe('StudentService', () => {
             expect(mockModel.insertMany.mock.calls[0][0].length).toBe(2);
             expect(result).toEqual({ added: 2, skipped: 2 });
         });
+
+        it('should rethrow error when insertMany fails', async () => {
+            mockModel.find.mockResolvedValue([]);
+            mockModel.insertMany.mockRejectedValue(new Error('Database error'));
+
+            await expect(service.createMany(dtos, false)).rejects.toThrow('Database error');
+        });
+
+        it('should log errors when sending emails fails for some students', async () => {
+            mockModel.find.mockResolvedValue([]);
+            mockModel.insertMany.mockResolvedValue(dtos);
+            mockMailerService.sendAccountCreationEmail
+                .mockResolvedValueOnce(true)
+                .mockRejectedValueOnce(new Error('Email error'))
+                .mockResolvedValueOnce(true)
+                .mockResolvedValueOnce(true);
+
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            const result = await service.createMany(dtos, false);
+
+            expect(result.added).toBe(4);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                expect.stringContaining('Failed to send email to'),
+                expect.any(Error),
+            );
+
+            consoleErrorSpy.mockRestore();
+        });
     });
 
     describe('parseFileContent', () => {
@@ -295,6 +355,142 @@ describe('StudentService', () => {
 
             const result = await service.parseFileContent(file);
             expect(result).toHaveLength(TEST_MAX_ROWS);
+        });
+
+        it('should throw BadRequestException with "Invalid CSV file format" for CSV_INVALID_OPTION error', async () => {
+            const csvContent = 'email,firstName\ntest@test.com,John';
+            const file = createMockFile(csvContent, 'text/csv');
+
+            // Mock csv-parse to throw CSV_INVALID_OPTION error
+            const csvParse = require('csv-parse/sync');
+            const originalParse = csvParse.parse;
+            const csvError: any = new Error('CSV parsing error');
+            csvError.code = 'CSV_INVALID_OPTION';
+            csvParse.parse = jest.fn().mockImplementation(() => {
+                throw csvError;
+            });
+
+            await expect(service.parseFileContent(file)).rejects.toThrow(BadRequestException);
+            await expect(service.parseFileContent(file)).rejects.toThrow('Invalid CSV file format');
+
+            // Restore original
+            csvParse.parse = originalParse;
+        });
+
+        it('should throw BadRequestException with "Invalid CSV file format" for error with CSV in message', async () => {
+            const csvContent = 'email,firstName\ntest@test.com,John';
+            const file = createMockFile(csvContent, 'text/csv');
+
+            // Mock csv-parse to throw error with CSV in message
+            const csvParse = require('csv-parse/sync');
+            const originalParse = csvParse.parse;
+            csvParse.parse = jest.fn().mockImplementation(() => {
+                throw new Error('CSV Record inconsistency');
+            });
+
+            await expect(service.parseFileContent(file)).rejects.toThrow(BadRequestException);
+            await expect(service.parseFileContent(file)).rejects.toThrow('Invalid CSV file format');
+
+            // Restore original
+            csvParse.parse = originalParse;
+        });
+    });
+
+    describe('checkConflicts', () => {
+        const dtos: CreateStudentDto[] = [
+            {
+                email: 'new1@test.com',
+                firstName: 'New1',
+                lastName: 'User1',
+                studentNumber: 'NEW001',
+            },
+            {
+                email: 'new2@test.com',
+                firstName: 'New2',
+                lastName: 'User2',
+                studentNumber: 'NEW002',
+            },
+        ];
+
+        it('should throw ConflictException with email conflicts when skipExistingRecords is false', async () => {
+            const existingStudent = {
+                email: 'new1@test.com',
+                studentNumber: 'EXISTING',
+            };
+            mockModel.find.mockResolvedValue([existingStudent]);
+
+            try {
+                await service.checkConflicts(dtos, false);
+                fail('Should have thrown ConflictException');
+            } catch (error) {
+                expect(error).toBeInstanceOf(ConflictException);
+                const responseMessage = Array.isArray(error.response.message)
+                    ? error.response.message.join(' ')
+                    : error.response.message;
+                expect(responseMessage).toContain('Existing emails');
+                expect(responseMessage).toContain('new1@test.com');
+            }
+        });
+
+        it('should throw ConflictException with student number conflicts when skipExistingRecords is false', async () => {
+            const existingStudent = {
+                email: 'different@test.com',
+                studentNumber: 'NEW001',
+            };
+            mockModel.find.mockResolvedValue([existingStudent]);
+
+            try {
+                await service.checkConflicts(dtos, false);
+                fail('Should have thrown ConflictException');
+            } catch (error) {
+                expect(error).toBeInstanceOf(ConflictException);
+                const responseMessage = Array.isArray(error.response.message)
+                    ? error.response.message.join(' ')
+                    : error.response.message;
+                expect(responseMessage).toContain('Existing student numbers');
+                expect(responseMessage).toContain('NEW001');
+            }
+        });
+
+        it('should throw ConflictException with both email and student number conflicts', async () => {
+            const existingStudents = [
+                { email: 'new1@test.com', studentNumber: 'EXISTING1' },
+                { email: 'different@test.com', studentNumber: 'NEW002' },
+            ];
+            mockModel.find.mockResolvedValue(existingStudents);
+
+            try {
+                await service.checkConflicts(dtos, false);
+                fail('Should have thrown ConflictException');
+            } catch (error) {
+                expect(error).toBeInstanceOf(ConflictException);
+                const responseMessage = Array.isArray(error.response.message)
+                    ? error.response.message.join(' ')
+                    : error.response.message;
+                expect(responseMessage).toContain('Existing emails');
+                expect(responseMessage).toContain('Existing student numbers');
+                expect(responseMessage).toContain('new1@test.com');
+                expect(responseMessage).toContain('NEW002');
+            }
+        });
+
+        it('should filter out conflicts when skipExistingRecords is true', async () => {
+            const existingStudents = [{ email: 'new1@test.com', studentNumber: 'EXISTING' }];
+            mockModel.find.mockResolvedValue(existingStudents);
+
+            const result = await service.checkConflicts(dtos, true);
+
+            expect(result).toHaveLength(1);
+            expect(result[0].email).toBe('new2@test.com');
+        });
+
+        it('should return all dtos when no conflicts exist', async () => {
+            mockModel.find.mockResolvedValue([]);
+
+            const result = await service.checkConflicts(dtos, false);
+
+            expect(result).toHaveLength(2);
+            expect(result).toEqual(dtos);
         });
     });
 });

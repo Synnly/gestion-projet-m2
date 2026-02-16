@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 import { Home } from 'lucide-react';
 
 export default function FAQ() {
-    const SUPPORT_EMAIL = (import.meta.env.VITE_SUPPORT_EMAIL as string);
-    const LEGAL_EMAIL = (import.meta.env.VITE_LEGAL_EMAIL as string);
+    const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL as string;
+    const LEGAL_EMAIL = import.meta.env.VITE_LEGAL_EMAIL as string;
 
     return (
         <main className="max-w-4xl mx-auto py-12 px-6">
@@ -16,7 +16,9 @@ export default function FAQ() {
 
                     <div>
                         <h1 className="text-3xl font-semibold">FAQ</h1>
-                        <p className="text-sm text-base-content/70 mt-1">Questions fréquentes — réponses claires et concises.</p>
+                        <p className="text-sm text-base-content/70 mt-1">
+                            Questions fréquentes — réponses claires et concises.
+                        </p>
                     </div>
                 </div>
             </header>
@@ -54,7 +56,7 @@ export default function FAQ() {
                             <Link to="/complete-profil" className="link link-hover">
                                 Mon profil
                             </Link>
-                             pour mettre à jour vos informations, votre CV et photo.
+                            pour mettre à jour vos informations, votre CV et photo.
                         </p>
                     </div>
                 </div>

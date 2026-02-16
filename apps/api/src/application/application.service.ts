@@ -169,7 +169,7 @@ export class ApplicationService {
         try {
             await this.notificationService.create({
                 userId: application.student._id,
-                message: `Le statut de votre candidature pour le poste : ${application.post.title} a été mis à jour.`
+                message: `Le statut de votre candidature pour le poste : ${application.post.title} a été mis à jour.`,
             });
         } catch (error) {
             console.error('Failed to send notification for application status update:', error);

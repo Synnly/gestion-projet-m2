@@ -1,32 +1,25 @@
 import './App.css';
-import { createBrowserRouter, redirect, RouterProvider, Navigate } from 'react-router';
+import { createBrowserRouter, redirect, RouterProvider } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { CompanySignup } from './auth/companySignup/index';
-import { Login } from './auth/Login/index';
-import { CompleteProfil } from './company/completeProfil/index';
-import { CompanyProfile } from './company/profile/index';
-import { EditCompanyProfile } from './company/editProfile/index';
-import { ChangePassword } from './company/editProfile/changePassword/index';
-import { protectedMiddleware } from './middleware/protectAuthMiddleware';
-import { completeProfilMiddleware } from './middleware/completeProfilMiddleware';
-import { notAuthMiddleWare } from './middleware/notAuthMiddleware';
-import { VerifyEmail } from './user/verifyMail';
-import { userStore } from './store/userStore';
-import { ForgotPassword } from './user/ForgotPassword';
-import { ProtectedRoutesByRole } from './protectedRoutes/protectedRouteByRole';
-import { AuthRoutes } from './protectedRoutes/authRoutes/authRoutes';
-import { VerifiedRoutes } from './protectedRoutes/verifiedRoute';
-import { CompanyForumRoute } from './protectedRoutes/companyForumRoute';
-import { InternshipPage } from './pages/internship/InternshipPage';
-import InternshipDetailPage from './pages/internship/InternshipDetailPage';
+import { Login } from './pages/auth/Login';
+import { CompanySignup } from './pages/auth/companySignup';
+import { protectedMiddleware } from './middlewares/protectAuthMiddleware';
+import { completeProfilMiddleware } from './middlewares/completeProfilMiddleware';
+import { notAuthMiddleWare } from './middlewares/notAuthMiddleware';
+import { VerifyEmail } from './pages/user/VerifyMail';
+import { ForgotPassword } from './pages/user/ForgotPasword';
+import { ProtectedRoutesByRole } from './routings/protectedRouteByRole/ProtectedRouteByRole';
+import { AuthRoutes } from './routings/authRoutes/authRoutes';
+import { VerifiedRoutes } from './routings/verifiedRoute/VerifiedRoute';
+import { CompanyForumRoute } from './routings/companyForumRoute/CompanyForumRoute';
+import { InternshipPage } from './pages/internships/InternshipPage';
+import InternshipDetailPage from './pages/internships/InternshipDetailPage';
 import CreatePostPage from './pages/posts/CreatePostPage';
 import UpdatePostPage from './pages/posts/UpdatePostPage';
-import { updatePostLoader } from './loaders/updatePostLoader';
+import { updatePostLoader } from './middlewares/updatePostLoader';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { InternshipApply } from './pages/internship/InternshipApply';
-import { DarkModeProvider } from './components/darkMode/DarkModeProvider';
-import MainLayout from './components/layout/MainLayout';
+import { InternshipApply } from './pages/internships/InternshipApply';
 import TermsOfUse from './pages/legal/TermsOfUse';
 import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 import CookiePolicy from './pages/legal/CookiePolicy';
@@ -35,22 +28,25 @@ import About from './pages/legal/About';
 import Contact from './pages/legal/Contact';
 import FAQ from './pages/legal/FAQ';
 import Help from './pages/legal/Help';
-import { internshipLoader } from './loaders/intershipLoader';
-import { AdminDashboard } from './admin/dashboard';
-import ApplicationPage from './pages/applications/ApplicationPage';
-import ApplicationDetailPage from './pages/applications/ApplicationDetailPage';
-import { StudentDashboard } from './student/dashboard';
-import { ChangePassword as StudentChangePassword } from './student/changePassword';
-import { ApplicationList } from './company/applicationList/ApplicationList.tsx';
-import TopicDetailPage from './pages/forum/TopicDetailPage';
-import { MainForumPage } from './pages/forums/MainForumPage.tsx';
-import { ForumPage } from './pages/forums/ForumPage.tsx';
-import LandingPage from './pages/landing-page/LandingPage.tsx';
-import { EditStudentProfile } from './student/profile/EditStudentProfile.tsx';
-import { StudentProfile } from './student/profile/StudentProfile.tsx';
-import { PublicStudentProfile } from './student/profile/PublicStudentProfile.tsx';
-import { PendingValidation } from './pages/PendingValidation.tsx';
-import ImportStudent from './admin/importStudent.tsx';
+import { internshipLoader } from './middlewares/intershipLoader';
+import { MainForumPage } from './pages/forums/MainForumPage';
+import { ForumPage } from './pages/forums/ForumPage';
+import LandingPage from './pages/landing-page/LandingPage';
+import { PendingValidation } from './pages/company/PendingValidation';
+import ImportStudent from './pages/admin/components/importStudent';
+import { AdminDashboard } from './pages/admin/dashboard';
+import { DarkModeProvider } from './pages/common/darkMode/DarkModeProvider';
+import { ApplicationList } from './pages/company/ApplicationList';
+import { CompleteProfil } from './pages/company/CompleteProfil';
+import { EditCompanyProfile } from './pages/company/EditProfile';
+import { CompanyProfile } from './pages/company/Profile';
+import TopicDetailPage from './pages/forums/TopicDetailPage';
+import { MainLayout } from './pages/layout/MainLayout';
+import { ChangePassword } from './pages/student/components/ChangePassword';
+import { userStore } from './stores/userStore';
+import { EditStudentProfile } from './pages/student/EditStudentProfile';
+import { PublicStudentProfile } from './pages/student/PublicStudentProfile';
+import { StudentProfile } from './pages/student/StudentProfile';
 
 const VITE_API = import.meta.env.VITE_APIURL;
 
@@ -81,7 +77,7 @@ function App() {
                 { path: 'privacy', element: <PrivacyPolicy /> },
                 { path: 'cookies', element: <CookiePolicy /> },
                 { path: 'safety', element: <SafetyCompliance /> },
-                
+
                 {
                     loader: notAuthMiddleWare,
                     children: [
@@ -93,7 +89,7 @@ function App() {
                             handle: { title: 'Mot de passe oublié' },
                         },
                         {
-                            path: 'company/signup',
+                            path: '/signup',
                             element: <CompanySignup />,
                             handle: { title: 'Inscription entreprise' },
                         },
@@ -106,10 +102,10 @@ function App() {
                         { path: 'verify', element: <VerifyEmail />, handle: { title: 'Vérifier votre mail' } },
                         { path: 'home', element: <InternshipPage />, handle: { title: 'Accueil' } },
 
-                        { 
-                            path: 'pending-validation', 
-                            element: <PendingValidation />, 
-                            handle: { title: 'Compte en cours de validation' } 
+                        {
+                            path: 'pending-validation',
+                            element: <PendingValidation />,
+                            handle: { title: 'Compte en cours de validation' },
                         },
                         {
                             path: 'complete-profil',
@@ -132,12 +128,8 @@ function App() {
                                 },
                                 {
                                     path: 'profile/change-password',
-                                    element: <ChangePassword />,
+                                    element: <ChangePassword subtitle={''} isFirstTime={false} />,
                                     handle: { title: 'Changer le mot de passe' },
-                                },
-                                {
-                                    element: <VerifiedRoutes redirectPath="/company/dashboard" />,
-                                    children: [],
                                 },
                                 {
                                     path: 'offers/add',
@@ -162,6 +154,16 @@ function App() {
                                             path: 'edit',
                                             element: <EditStudentProfile />,
                                             handle: { title: 'Éditer le profil' },
+                                        },
+                                        {
+                                            path: 'change-password',
+                                            element: (
+                                                <ChangePassword
+                                                    subtitle="Choisissez un nouveau mot de passe sécurisé"
+                                                    isFirstTime={false}
+                                                />
+                                            ),
+                                            handle: { title: 'Changer le mot de passe' },
                                         },
                                     ],
                                 },
@@ -221,9 +223,7 @@ function App() {
                                     path: 'dashboard',
                                     element: <AdminDashboard />,
                                     handle: { title: 'Tableau de bord admin' },
-                                    children: [
-                                        { index: true, element: <ImportStudent /> },
-                                    ],
+                                    children: [{ index: true, element: <ImportStudent /> }],
                                 },
                             ],
                         },
@@ -233,22 +233,16 @@ function App() {
                             children: [
                                 {
                                     path: 'changePassword',
-                                    element: <StudentChangePassword />,
+                                    element: (
+                                        <ChangePassword
+                                            subtitle="Pour des raisons de sécurité, vous devez changer votre mot de passe lors de votre première
+                                                            connexion."
+                                            isFirstTime={true}
+                                        />
+                                    ),
                                     handle: { title: 'Changer le mot de passe' },
                                 },
-                                {
-                                    path: 'dashboard',
-                                    element: <StudentDashboard />,
-                                    children: [
-                                        { index: true, element: <ApplicationPage /> },
-                                        { path: ':applicationId', element: <ApplicationDetailPage /> },
-                                    ],
-                                },
                             ],
-                        },
-                        {
-                            path: 'applications',
-                            element: <Navigate to="/student/dashboard" replace />,
                         },
                         {
                             path: 'forums',
