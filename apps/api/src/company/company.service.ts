@@ -376,17 +376,11 @@ export class CompanyService {
      * Also deletes all related data: posts, applications, forums, topics, and messages.
      */
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-    // for tests
-    // @Cron('*/10 * * * * *')
     async handleCompanyCleanupCron() {
         this.logger.debug('Starting company cleanup cron job');
 
         const dateLimite = new Date();
         dateLimite.setDate(dateLimite.getDate() - 30);
-
-        // for tests
-        // dateLimite.setMinutes(dateLimite.getMinutes() - 1);
-
         const companiesToDelete = await this.companyModel
             .find({
                 deletedAt: { $lte: dateLimite },
