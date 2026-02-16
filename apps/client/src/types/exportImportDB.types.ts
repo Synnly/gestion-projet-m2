@@ -51,6 +51,18 @@ export interface ExportCancelledResponse {
     exportId: string;
 }
 
+export interface ExportListItem {
+    exportId: string;
+    status: ExportStatus;
+    fileUrl?: string;
+    fileSize?: number;
+    collectionsCount?: number;
+    documentsCount?: number;
+    startedAt?: string;
+    completedAt?: string;
+    createdAt: string;
+}
+
 // Import types
 export interface CreateImportDto {
     clearExisting?: boolean;

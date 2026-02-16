@@ -435,6 +435,15 @@ export class AdminService {
     }
 
     /**
+     * Get all exports for a specific admin
+     * @param adminId ID of the admin
+     * @returns List of export jobs
+     */
+    async getExportsByAdmin(adminId: string): Promise<DatabaseExportDocument[]> {
+        return this.exportModel.find({ adminId }).sort({ createdAt: -1 }).exec();
+    }
+
+    /**
      * Generic method to cancel an ongoing operation (export or import)
      * @param jobId ID of the job to cancel
      * @param model The model to query

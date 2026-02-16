@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 import { toast } from 'react-toastify';
 import {
@@ -8,11 +8,17 @@ import {
     FileText,
     AlertCircle,
     Upload,
+    RefreshCw,
+    Clock,
+    CheckCircle2,
+    XCircle,
 } from 'lucide-react';
 import {
     ExportFormat,
+    ExportStatus,
+    type ExportListItem,
 } from '../../../types/exportImportDB.types';
-import { createExport } from '../../../apis/export';
+import { createExport, listExports, cancelExport, downloadExport } from '../../../apis/export';
 import { createImport } from '../../../apis/import';
 
 export default function ExportDatabase() {
@@ -21,8 +27,74 @@ export default function ExportDatabase() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [clearExisting, setClearExisting] = useState(false);
     const [showWarningModal, setShowWarningModal] = useState(false);
+    const [exports, setExports] = useState<ExportListItem[]>([]);
+    const [isLoadingExports, setIsLoadingExports] = useState(false);
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const authFetch = UseAuthFetch();
+
+    // Load exports on mount and when switching to export tab
+    useEffect(() => {
+        if (activeTab === 'export') {
+            loadExports();
+        }
+    }, [activeTab]);
+
+    // Auto-refresh exports every 5 seconds if there are exports in progress or pending
+    useEffect(() => {
+        if (activeTab !== 'export') return;
+
+        const hasActiveExports = exports.some(
+            (exp) => exp.status === ExportStatus.PENDING || exp.status === ExportStatus.IN_PROGRESS,
+        );
+
+        if (!hasActiveExports) return;
+
+        const interval = setInterval(() => {
+            loadExports();
+        }, 5000); // Poll every 5 seconds
+
+        return () => clearInterval(interval);
+    }, [activeTab, exports]);
+
+    const loadExports = async () => {
+        setIsLoadingExports(true);
+        try {
+            const data = await listExports(authFetch);
+            setExports(data);
+        } catch (error) {
+            console.error('Erreur lors du chargement des exports:', error);
+        } finally {
+            setIsLoadingExports(false);
+        }
+    };
+
+    const handleDownloadExport = async (exportId: string) => {
+        setActionLoading(exportId);
+        try {
+            await downloadExport(authFetch, exportId);
+            toast.success('Téléchargement en cours...');
+        } catch (error) {
+            toast.error('Erreur lors du téléchargement de l\'export');
+            console.error(error);
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const handleCancelExport = async (exportId: string) => {
+        setActionLoading(exportId);
+        try {
+            await cancelExport(authFetch, exportId);
+            toast.success('Export annulé avec succès');
+            loadExports();
+        } catch (error) {
+            toast.error('Erreur lors de l\'annulation de l\'export');
+            console.error(error);
+        } finally {
+            setActionLoading(null);
+        }
+    };
 
     const handleCreateExport = async () => {
         setIsCreating(true);
@@ -34,6 +106,7 @@ export default function ExportDatabase() {
                 result.message = "Export initié. Vous recevrez un email lorsque l'export sera prêt.";
             }
             toast.success(result.message);
+            loadExports(); // Reload the list to show the new export
         } catch (error) {
             toast.error("Erreur lors de la création de l'export");
             console.error(error);
@@ -105,6 +178,63 @@ export default function ExportDatabase() {
         return `${mb.toFixed(2)} MB`;
     };
 
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('fr-FR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
+    const getStatusBadge = (status: ExportStatus) => {
+        const statusConfig = {
+            [ExportStatus.PENDING]: {
+                color: 'badge-warning',
+                icon: <Clock className="w-4 h-4" />,
+                text: 'En attente',
+            },
+            [ExportStatus.IN_PROGRESS]: {
+                color: 'badge-info',
+                icon: <Loader2 className="w-4 h-4 animate-spin" />,
+                text: 'En cours',
+            },
+            [ExportStatus.COMPLETED]: {
+                color: 'badge-success',
+                icon: <CheckCircle2 className="w-4 h-4" />,
+                text: 'Terminé',
+            },
+            [ExportStatus.CANCELLED]: {
+                color: 'badge-neutral',
+                icon: <XCircle className="w-4 h-4" />,
+                text: 'Annulé',
+            },
+            [ExportStatus.FAILED]: {
+                color: 'badge-error',
+                icon: <AlertCircle className="w-4 h-4" />,
+                text: 'Échoué',
+            },
+        };
+
+        const config = statusConfig[status];
+        return (
+            <div className={`badge ${config.color} gap-2 p-3`}>
+                {config.icon}
+                <span>{config.text}</span>
+            </div>
+        );
+    };
+
+    const canCancel = (status: ExportStatus) => {
+        return status === ExportStatus.PENDING || status === ExportStatus.IN_PROGRESS;
+    };
+
+    const canDownload = (status: ExportStatus) => {
+        return status === ExportStatus.COMPLETED;
+    };
+
     return (
         <div className="container mx-auto p-6">
             <h1 className="text-3xl font-bold mb-6">Gestion de la Base de Données</h1>
@@ -166,6 +296,115 @@ export default function ExportDatabase() {
                                 <li>Les exports incluent toutes les collections de la base de données</li>
                                 <li>Format: JSON</li>
                             </ul>
+                        </div>
+                    </div>
+
+                    {/* Historique des exports */}
+                    <div className="card bg-base-100 shadow-xl mt-6">
+                        <div className="card-body">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="card-title">Historique des exports</h2>
+                                <button
+                                    className="btn btn-ghost btn-sm gap-2"
+                                    onClick={loadExports}
+                                    disabled={isLoadingExports}
+                                >
+                                    <RefreshCw className={`w-4 h-4 ${isLoadingExports ? 'animate-spin' : ''}`} />
+                                    Actualiser
+                                </button>
+                            </div>
+
+                            {isLoadingExports && exports.length === 0 ? (
+                                <div className="flex justify-center items-center py-12">
+                                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                </div>
+                            ) : exports.length === 0 ? (
+                                <div className="text-center py-12 text-gray-500">
+                                    <Database className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                                    <p>Aucun export disponible</p>
+                                    <p className="text-sm">Créez votre premier export ci-dessus</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="table table-zebra">
+                                        <thead>
+                                            <tr>
+                                                <th>Date de création</th>
+                                                <th>Statut</th>
+                                                <th>Collections</th>
+                                                <th>Documents</th>
+                                                <th>Taille</th>
+                                                <th>Complété le</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {exports.map((exp) => (
+                                                <tr key={exp.exportId}>
+                                                    <td>
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium">
+                                                                {formatDate(exp.createdAt)}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td>{getStatusBadge(exp.status)}</td>
+                                                    <td>
+                                                        <span className="font-mono">{exp.collectionsCount ?? '-'}</span>
+                                                    </td>
+                                                    <td>
+                                                        <span className="font-mono">
+                                                            {exp.documentsCount?.toLocaleString() ?? '-'}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span className="font-mono">{formatFileSize(exp.fileSize)}</span>
+                                                    </td>
+                                                    <td>
+                                                        {exp.completedAt ? (
+                                                            <span className="text-sm">{formatDate(exp.completedAt)}</span>
+                                                        ) : (
+                                                            '-'
+                                                        )}
+                                                    </td>
+                                                    <td>
+                                                        <div className="flex gap-2">
+                                                            {canDownload(exp.status) && (
+                                                                <button
+                                                                    className="btn btn-success btn-sm gap-2"
+                                                                    onClick={() => handleDownloadExport(exp.exportId)}
+                                                                    disabled={actionLoading === exp.exportId}
+                                                                >
+                                                                    {actionLoading === exp.exportId ? (
+                                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                                    ) : (
+                                                                        <Download className="w-4 h-4" />
+                                                                    )}
+                                                                    Télécharger
+                                                                </button>
+                                                            )}
+                                                            {canCancel(exp.status) && (
+                                                                <button
+                                                                    className="btn btn-error btn-sm gap-2"
+                                                                    onClick={() => handleCancelExport(exp.exportId)}
+                                                                    disabled={actionLoading === exp.exportId}
+                                                                >
+                                                                    {actionLoading === exp.exportId ? (
+                                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                                    ) : (
+                                                                        <XCircle className="w-4 h-4" />
+                                                                    )}
+                                                                    Annuler
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </>

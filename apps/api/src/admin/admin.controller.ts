@@ -27,6 +27,7 @@ import {
     ExportInitiatedResponseDto,
     ExportStatusResponseDto,
     ExportCancelledResponseDto,
+    ExportListItemDto,
 } from './dto/exportResponseDto';
 import {
     ImportInitiatedResponseDto,
@@ -133,6 +134,29 @@ export class AdminController {
         });
 
         return new StreamableFile(stream);
+    }
+
+    /**
+     * List all exports for the authenticated admin.
+     * @param req Authenticated request containing user info
+     * @returns List of export jobs
+     */
+    @Get('exports')
+    async listExports(@Req() req: Request): Promise<ExportListItemDto[]> {
+        const adminId = ((req as any).user.sub || (req as any).user._id).toString();
+        const exports = await this.adminService.getExportsByAdmin(adminId);
+
+        return exports.map((exp) => ({
+            exportId: exp._id.toString(),
+            status: exp.status,
+            fileUrl: exp.fileUrl,
+            fileSize: exp.fileSize,
+            collectionsCount: exp.collectionsCount,
+            documentsCount: exp.documentsCount,
+            startedAt: exp.startedAt,
+            completedAt: exp.completedAt,
+            createdAt: exp.createdAt!,
+        }));
     }
 
     // ========== IMPORT ENDPOINTS ==========

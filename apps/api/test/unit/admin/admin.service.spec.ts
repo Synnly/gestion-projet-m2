@@ -305,6 +305,51 @@ describe('AdminService', () => {
         });
     });
 
+    describe('getExportsByAdmin', () => {
+        it('should return list of exports for admin', async () => {
+            const adminId = new Types.ObjectId().toString();
+            const mockExports = [
+                {
+                    _id: new Types.ObjectId(),
+                    adminId: adminId,
+                    status: ExportStatus.COMPLETED,
+                    createdAt: new Date('2026-02-01'),
+                },
+                {
+                    _id: new Types.ObjectId(),
+                    adminId: adminId,
+                    status: ExportStatus.IN_PROGRESS,
+                    createdAt: new Date('2026-02-02'),
+                },
+            ];
+
+            MockExportModel.find.mockReturnValue({
+                sort: jest.fn().mockReturnValue({
+                    exec: jest.fn().mockResolvedValue(mockExports),
+                }),
+            });
+
+            const result = await service.getExportsByAdmin(adminId);
+
+            expect(result).toEqual(mockExports);
+            expect(MockExportModel.find).toHaveBeenCalledWith({ adminId });
+        });
+
+        it('should return empty array if no exports', async () => {
+            const adminId = new Types.ObjectId().toString();
+
+            MockExportModel.find.mockReturnValue({
+                sort: jest.fn().mockReturnValue({
+                    exec: jest.fn().mockResolvedValue([]),
+                }),
+            });
+
+            const result = await service.getExportsByAdmin(adminId);
+
+            expect(result).toEqual([]);
+        });
+    });
+
     describe('cancelExport', () => {
         it('should cancel a pending export', async () => {
             const exportId = new Types.ObjectId().toString();

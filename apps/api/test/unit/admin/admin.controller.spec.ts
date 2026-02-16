@@ -17,6 +17,7 @@ describe('AdminController', () => {
     const mockAdminService = {
         initiateExport: jest.fn(),
         getExportStatus: jest.fn(),
+        getExportsByAdmin: jest.fn(),
         cancelExport: jest.fn(),
         downloadExport: jest.fn(),
         initiateImport: jest.fn(),
@@ -204,6 +205,58 @@ describe('AdminController', () => {
             );
 
             await expect(controller.downloadExport(exportId, mockResponse)).rejects.toThrow(HttpException);
+        });
+    });
+
+    describe('listExports', () => {
+        it('should return list of exports for admin', async () => {
+            const adminId = new Types.ObjectId();
+            const mockRequest = {
+                user: { _id: adminId },
+            } as any;
+
+            const mockExports = [
+                {
+                    _id: new Types.ObjectId(),
+                    status: ExportStatus.COMPLETED,
+                    fileUrl: '/api/admin/export/1/download',
+                    fileSize: 1024,
+                    collectionsCount: 10,
+                    documentsCount: 100,
+                    startedAt: new Date(),
+                    completedAt: new Date(),
+                    createdAt: new Date(),
+                },
+                {
+                    _id: new Types.ObjectId(),
+                    status: ExportStatus.IN_PROGRESS,
+                    startedAt: new Date(),
+                    createdAt: new Date(),
+                },
+            ];
+
+            mockAdminService.getExportsByAdmin.mockResolvedValue(mockExports);
+
+            const result = await controller.listExports(mockRequest);
+
+            expect(result).toHaveLength(2);
+            expect(result[0].exportId).toBe(mockExports[0]._id.toString());
+            expect(result[0].status).toBe(ExportStatus.COMPLETED);
+            expect(result[1].status).toBe(ExportStatus.IN_PROGRESS);
+            expect(service.getExportsByAdmin).toHaveBeenCalledWith(adminId.toString());
+        });
+
+        it('should return empty array if no exports', async () => {
+            const adminId = new Types.ObjectId();
+            const mockRequest = {
+                user: { _id: adminId },
+            } as any;
+
+            mockAdminService.getExportsByAdmin.mockResolvedValue([]);
+
+            const result = await controller.listExports(mockRequest);
+
+            expect(result).toEqual([]);
         });
     });
 

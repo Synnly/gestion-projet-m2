@@ -222,6 +222,50 @@ describe('Admin Export Integration Tests', () => {
         });
     });
 
+    describe('GET /api/admin/exports', () => {
+        it('should list all exports for admin', async () => {
+            // Create multiple exports
+            await exportModel.create([
+                {
+                    adminId,
+                    status: ExportStatus.COMPLETED,
+                    createdAt: new Date(),
+                },
+                {
+                    adminId,
+                    status: ExportStatus.IN_PROGRESS,
+                    createdAt: new Date(),
+                },
+                {
+                    adminId,
+                    status: ExportStatus.PENDING,
+                    createdAt: new Date(),
+                },
+            ]);
+
+            const response = await request(app.getHttpServer())
+                .get('/api/admin/exports')
+                .set('Authorization', `Bearer ${adminAccessToken}`)
+                .expect(200);
+
+            expect(Array.isArray(response.body)).toBe(true);
+            expect(response.body).toHaveLength(3);
+            expect(response.body[0]).toHaveProperty('exportId');
+            expect(response.body[0]).toHaveProperty('status');
+            expect(response.body[0]).toHaveProperty('createdAt');
+        });
+
+        it('should return empty array if no exports', async () => {
+            const response = await request(app.getHttpServer())
+                .get('/api/admin/exports')
+                .set('Authorization', `Bearer ${adminAccessToken}`)
+                .expect(200);
+
+            expect(Array.isArray(response.body)).toBe(true);
+            expect(response.body).toHaveLength(0);
+        });
+    });
+
     describe('DELETE /api/admin/export/:exportId', () => {
         it('should cancel a pending export', async () => {
             const exportJob = await exportModel.create({
