@@ -1,7 +1,6 @@
 import {
     ImportInitiatedResponseDto,
     ImportStatusResponseDto,
-    ImportListItemDto,
     ImportCancelledResponseDto,
 } from '../../../../src/admin/dto/importResponseDto';
 import { ImportStatus } from '../../../../src/admin/database-import.schema';
@@ -95,84 +94,6 @@ describe('ImportResponseDto', () => {
 
                 expect(dto.status).toBe(status);
             });
-        });
-    });
-
-    describe('ImportListItemDto', () => {
-        it('should create a valid ImportListItemDto with all properties', () => {
-            const createdAt = new Date('2026-02-08T09:00:00Z');
-            const dto = new ImportListItemDto();
-            dto.importId = '507f1f77bcf86cd799439011';
-            dto.status = ImportStatus.COMPLETED;
-            dto.filename = 'database-backup.json.gz';
-            dto.fileSize = 2097152;
-            dto.collectionsCount = 20;
-            dto.documentsCount = 5000;
-            dto.startedAt = new Date('2026-02-08T10:00:00Z');
-            dto.completedAt = new Date('2026-02-08T10:10:00Z');
-            dto.createdAt = createdAt;
-
-            expect(dto).toBeDefined();
-            expect(dto.importId).toBe('507f1f77bcf86cd799439011');
-            expect(dto.status).toBe(ImportStatus.COMPLETED);
-            expect(dto.filename).toBe('database-backup.json.gz');
-            expect(dto.fileSize).toBe(2097152);
-            expect(dto.collectionsCount).toBe(20);
-            expect(dto.documentsCount).toBe(5000);
-            expect(dto.createdAt).toBe(createdAt);
-        });
-
-        it('should create a valid ImportListItemDto with minimal properties', () => {
-            const createdAt = new Date('2026-02-08T09:00:00Z');
-            const dto = new ImportListItemDto();
-            dto.importId = '507f1f77bcf86cd799439011';
-            dto.status = ImportStatus.PENDING;
-            dto.createdAt = createdAt;
-
-            expect(dto).toBeDefined();
-            expect(dto.importId).toBe('507f1f77bcf86cd799439011');
-            expect(dto.status).toBe(ImportStatus.PENDING);
-            expect(dto.createdAt).toBe(createdAt);
-            expect(dto.filename).toBeUndefined();
-        });
-
-        it('should have required createdAt property', () => {
-            const dto = new ImportListItemDto();
-            dto.importId = '507f1f77bcf86cd799439011';
-            dto.status = ImportStatus.IN_PROGRESS;
-            dto.createdAt = new Date();
-
-            expect(dto).toHaveProperty('createdAt');
-            expect(dto.createdAt).toBeInstanceOf(Date);
-        });
-
-        it('should support listing imports in different states', () => {
-            const createdAt = new Date();
-            const dto1 = new ImportListItemDto();
-            dto1.importId = '1';
-            dto1.status = ImportStatus.COMPLETED;
-            dto1.collectionsCount = 10;
-            dto1.documentsCount = 1000;
-            dto1.createdAt = createdAt;
-
-            const dto2 = new ImportListItemDto();
-            dto2.importId = '2';
-            dto2.status = ImportStatus.IN_PROGRESS;
-            dto2.startedAt = new Date();
-            dto2.createdAt = createdAt;
-
-            const dto3 = new ImportListItemDto();
-            dto3.importId = '3';
-            dto3.status = ImportStatus.FAILED;
-            dto3.completedAt = new Date();
-            dto3.createdAt = createdAt;
-
-            const imports = [dto1, dto2, dto3];
-
-            expect(imports).toHaveLength(3);
-            expect(imports[0].status).toBe(ImportStatus.COMPLETED);
-            expect(imports[1].status).toBe(ImportStatus.IN_PROGRESS);
-            expect(imports[2].status).toBe(ImportStatus.FAILED);
         });
     });
 

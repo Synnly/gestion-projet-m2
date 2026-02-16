@@ -46,18 +46,6 @@ export interface ExportStatusResponse {
     errorMessage?: string;
 }
 
-export interface ExportListItem {
-    exportId: string;
-    status: ExportStatus;
-    fileUrl?: string;
-    fileSize?: number;
-    collectionsCount?: number;
-    documentsCount?: number;
-    startedAt?: string;
-    completedAt?: string;
-    createdAt: string;
-}
-
 export interface ExportCancelledResponse {
     message: string;
     exportId: string;
@@ -84,18 +72,6 @@ export interface ImportStatusResponse {
     startedAt?: string;
     completedAt?: string;
     errorMessage?: string;
-}
-
-export interface ImportListItem {
-    importId: string;
-    status: ImportStatus;
-    filename?: string;
-    fileSize?: number;
-    collectionsCount?: number;
-    documentsCount?: number;
-    startedAt?: string;
-    completedAt?: string;
-    createdAt: string;
 }
 
 export interface ImportCancelledResponse {

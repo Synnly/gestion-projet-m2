@@ -3,7 +3,6 @@ import type {
     CreateExportDto,
     ExportCancelledResponse,
     ExportInitiatedResponse,
-    ExportListItem,
     ExportStatusResponse,
 } from '../types/exportImportDB.types';
 const API_URL = import.meta.env.VITE_APIURL;
@@ -28,23 +27,6 @@ export const createExport = async (
 
     if (!response.ok) {
         throw new Error("Erreur lors de l'initiation de l'export");
-    }
-
-    return response.json();
-};
-
-/**
- * Get all exports for the current admin
- * @param authFetch Authenticated fetch function
- * @returns List of exports
- */
-export const listExports = async (authFetch: ReturnType<typeof UseAuthFetch>): Promise<ExportListItem[]> => {
-    const response = await authFetch(`${API_URL}/api/admin/exports`, {
-        method: 'GET',
-    });
-
-    if (!response.ok) {
-        throw new Error('Erreur lors du chargement des exports');
     }
 
     return response.json();

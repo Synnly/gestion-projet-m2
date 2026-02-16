@@ -26,13 +26,11 @@ import { CreateImportDto } from './dto/createImportDto';
 import {
     ExportInitiatedResponseDto,
     ExportStatusResponseDto,
-    ExportListItemDto,
     ExportCancelledResponseDto,
 } from './dto/exportResponseDto';
 import {
     ImportInitiatedResponseDto,
     ImportStatusResponseDto,
-    ImportListItemDto,
     ImportCancelledResponseDto,
 } from './dto/importResponseDto';
 import { AuthGuard } from '../auth/auth.guard';
@@ -97,29 +95,6 @@ export class AdminController {
             completedAt: exportJob.completedAt,
             errorMessage: exportJob.errorMessage,
         };
-    }
-
-    /**
-     * List all exports for the authenticated admin.
-     * @param req Authenticated request containing user info
-     * @returns List of export jobs
-     */
-    @Get('exports')
-    async listExports(@Req() req: Request): Promise<ExportListItemDto[]> {
-        const adminId = ((req as any).user.sub || (req as any).user._id).toString();
-        const exports = await this.adminService.getExportsByAdmin(adminId);
-
-        return exports.map((exp) => ({
-            exportId: exp._id.toString(),
-            status: exp.status,
-            fileUrl: exp.fileUrl,
-            fileSize: exp.fileSize,
-            collectionsCount: exp.collectionsCount,
-            documentsCount: exp.documentsCount,
-            startedAt: exp.startedAt,
-            completedAt: exp.completedAt,
-            createdAt: exp.createdAt!,
-        }));
     }
 
     /**
@@ -220,29 +195,6 @@ export class AdminController {
             completedAt: importJob.completedAt,
             errorMessage: importJob.errorMessage,
         };
-    }
-
-    /**
-     * List all imports for the authenticated admin.
-     * @param req Authenticated request containing user info
-     * @returns List of import jobs
-     */
-    @Get('imports')
-    async listImports(@Req() req: Request): Promise<ImportListItemDto[]> {
-        const adminId = ((req as any).user.sub || (req as any).user._id).toString();
-        const imports = await this.adminService.getImportsByAdmin(adminId);
-
-        return imports.map((imp) => ({
-            importId: imp._id.toString(),
-            status: imp.status,
-            filename: imp.filename,
-            fileSize: imp.fileSize,
-            collectionsCount: imp.collectionsCount,
-            documentsCount: imp.documentsCount,
-            startedAt: imp.startedAt,
-            completedAt: imp.completedAt,
-            createdAt: imp.createdAt!,
-        }));
     }
 
     /**

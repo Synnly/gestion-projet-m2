@@ -1,7 +1,6 @@
 import {
     ExportInitiatedResponseDto,
     ExportStatusResponseDto,
-    ExportListItemDto,
     ExportCancelledResponseDto,
 } from '../../../../src/admin/dto/exportResponseDto';
 import { ExportStatus } from '../../../../src/admin/database-export.schema';
@@ -99,85 +98,6 @@ describe('ExportResponseDto', () => {
             expect(dto.startedAt).toEqual(startedAt);
             expect(dto.completedAt).toBeUndefined();
             expect(dto.fileUrl).toBeUndefined();
-        });
-    });
-
-    describe('ExportListItemDto', () => {
-        it('should create an instance with required properties', () => {
-            const createdAt = new Date('2026-02-07T09:00:00Z');
-            const dto = new ExportListItemDto();
-            
-            dto.exportId = '507f1f77bcf86cd799439011';
-            dto.status = ExportStatus.PENDING;
-            dto.createdAt = createdAt;
-
-            expect(dto.exportId).toBe('507f1f77bcf86cd799439011');
-            expect(dto.status).toBe(ExportStatus.PENDING);
-            expect(dto.createdAt).toEqual(createdAt);
-        });
-
-        it('should create an instance with all properties', () => {
-            const createdAt = new Date('2026-02-07T09:00:00Z');
-            const startedAt = new Date('2026-02-07T10:00:00Z');
-            const completedAt = new Date('2026-02-07T10:05:00Z');
-            
-            const dto = new ExportListItemDto();
-            dto.exportId = '507f1f77bcf86cd799439011';
-            dto.status = ExportStatus.COMPLETED;
-            dto.fileUrl = '/api/admin/export/507f1f77bcf86cd799439011/download';
-            dto.fileSize = 2048000;
-            dto.collectionsCount = 15;
-            dto.documentsCount = 5000;
-            dto.startedAt = startedAt;
-            dto.completedAt = completedAt;
-            dto.createdAt = createdAt;
-
-            expect(dto.exportId).toBe('507f1f77bcf86cd799439011');
-            expect(dto.status).toBe(ExportStatus.COMPLETED);
-            expect(dto.fileUrl).toBe('/api/admin/export/507f1f77bcf86cd799439011/download');
-            expect(dto.fileSize).toBe(2048000);
-            expect(dto.collectionsCount).toBe(15);
-            expect(dto.documentsCount).toBe(5000);
-            expect(dto.startedAt).toEqual(startedAt);
-            expect(dto.completedAt).toEqual(completedAt);
-            expect(dto.createdAt).toEqual(createdAt);
-        });
-
-        it('should handle different export statuses', () => {
-            const createdAt = new Date();
-            
-            const statuses = [
-                ExportStatus.PENDING,
-                ExportStatus.IN_PROGRESS,
-                ExportStatus.COMPLETED,
-                ExportStatus.FAILED,
-                ExportStatus.CANCELLED,
-            ];
-
-            statuses.forEach((status) => {
-                const dto = new ExportListItemDto();
-                dto.exportId = '507f1f77bcf86cd799439011';
-                dto.status = status;
-                dto.createdAt = createdAt;
-
-                expect(dto.status).toBe(status);
-            });
-        });
-
-        it('should allow optional properties to remain undefined', () => {
-            const createdAt = new Date();
-            const dto = new ExportListItemDto();
-            
-            dto.exportId = '507f1f77bcf86cd799439011';
-            dto.status = ExportStatus.PENDING;
-            dto.createdAt = createdAt;
-
-            expect(dto.fileUrl).toBeUndefined();
-            expect(dto.fileSize).toBeUndefined();
-            expect(dto.collectionsCount).toBeUndefined();
-            expect(dto.documentsCount).toBeUndefined();
-            expect(dto.startedAt).toBeUndefined();
-            expect(dto.completedAt).toBeUndefined();
         });
     });
 

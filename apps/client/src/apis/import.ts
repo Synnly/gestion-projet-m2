@@ -3,7 +3,6 @@ import type {
     CreateImportDto,
     ImportCancelledResponse,
     ImportInitiatedResponse,
-    ImportListItem,
     ImportStatusResponse,
 } from '../types/exportImportDB.types';
 
@@ -32,23 +31,6 @@ export const createImport = async (
 
     if (!response.ok) {
         throw new Error("Erreur lors de l'initiation de l'import");
-    }
-
-    return response.json();
-};
-
-/**
- * Get all imports for the current admin
- * @param authFetch Authenticated fetch function
- * @returns List of imports
- */
-export const listImports = async (authFetch: ReturnType<typeof UseAuthFetch>): Promise<ImportListItem[]> => {
-    const response = await authFetch(`${API_URL}/api/admin/imports`, {
-        method: 'GET',
-    });
-
-    if (!response.ok) {
-        throw new Error('Erreur lors du chargement des imports');
     }
 
     return response.json();

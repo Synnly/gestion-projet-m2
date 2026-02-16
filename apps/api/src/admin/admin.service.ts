@@ -4,7 +4,7 @@ import { Admin } from './admin.schema';
 import { CreateAdminDto } from './dto/createAdminDto';
 import { CreateExportDto } from './dto/createExportDto';
 import { CreateImportDto } from './dto/createImportDto';
-import { Model, Connection } from 'mongoose';
+import { Model, Connection, Types } from 'mongoose';
 import { Role } from '../common/roles/roles.enum';
 import { AdminUserDocument } from '../user/user.schema';
 import { DatabaseExport, DatabaseExportDocument, ExportStatus } from './database-export.schema';
@@ -432,15 +432,6 @@ export class AdminService {
      */
     async getExportStatus(exportId: string): Promise<DatabaseExportDocument | null> {
         return this.exportModel.findById(exportId).exec();
-    }
-
-    /**
-     * Get all exports for a specific admin
-     * @param adminId ID of the admin
-     * @returns List of export jobs
-     */
-    async getExportsByAdmin(adminId: string): Promise<DatabaseExportDocument[]> {
-        return this.exportModel.find({ adminId }).sort({ createdAt: -1 }).exec();
     }
 
     /**
@@ -895,15 +886,6 @@ export class AdminService {
      */
     async getImportStatus(importId: string): Promise<DatabaseImportDocument | null> {
         return this.importModel.findById(importId).exec();
-    }
-
-    /**
-     * Get all imports for a specific admin
-     * @param adminId ID of the admin
-     * @returns List of import jobs
-     */
-    async getImportsByAdmin(adminId: string): Promise<DatabaseImportDocument[]> {
-        return this.importModel.find({ adminId }).sort({ createdAt: -1 }).exec();
     }
 
     /**

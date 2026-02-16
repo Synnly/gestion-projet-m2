@@ -17,12 +17,10 @@ describe('AdminController', () => {
     const mockAdminService = {
         initiateExport: jest.fn(),
         getExportStatus: jest.fn(),
-        getExportsByAdmin: jest.fn(),
         cancelExport: jest.fn(),
         downloadExport: jest.fn(),
         initiateImport: jest.fn(),
         getImportStatus: jest.fn(),
-        getImportsByAdmin: jest.fn(),
         cancelImport: jest.fn(),
     };
 
@@ -136,58 +134,6 @@ describe('AdminController', () => {
 
             expect(result.status).toBe(ExportStatus.FAILED);
             expect(result.errorMessage).toBe('Database connection failed');
-        });
-    });
-
-    describe('listExports', () => {
-        it('should return list of exports for admin', async () => {
-            const adminId = new Types.ObjectId();
-            const mockRequest = {
-                user: { _id: adminId },
-            } as any;
-
-            const mockExports = [
-                {
-                    _id: new Types.ObjectId(),
-                    status: ExportStatus.COMPLETED,
-                    fileUrl: '/api/admin/export/1/download',
-                    fileSize: 1024,
-                    collectionsCount: 10,
-                    documentsCount: 100,
-                    startedAt: new Date(),
-                    completedAt: new Date(),
-                    createdAt: new Date(),
-                },
-                {
-                    _id: new Types.ObjectId(),
-                    status: ExportStatus.IN_PROGRESS,
-                    startedAt: new Date(),
-                    createdAt: new Date(),
-                },
-            ];
-
-            mockAdminService.getExportsByAdmin.mockResolvedValue(mockExports);
-
-            const result = await controller.listExports(mockRequest);
-
-            expect(result).toHaveLength(2);
-            expect(result[0].exportId).toBe(mockExports[0]._id.toString());
-            expect(result[0].status).toBe(ExportStatus.COMPLETED);
-            expect(result[1].status).toBe(ExportStatus.IN_PROGRESS);
-            expect(service.getExportsByAdmin).toHaveBeenCalledWith(adminId.toString());
-        });
-
-        it('should return empty array if no exports', async () => {
-            const adminId = new Types.ObjectId();
-            const mockRequest = {
-                user: { _id: adminId },
-            } as any;
-
-            mockAdminService.getExportsByAdmin.mockResolvedValue([]);
-
-            const result = await controller.listExports(mockRequest);
-
-            expect(result).toEqual([]);
         });
     });
 
@@ -384,59 +330,6 @@ describe('AdminController', () => {
 
             expect(result.status).toBe(ImportStatus.FAILED);
             expect(result.errorMessage).toBe('Invalid JSON format in import file');
-        });
-    });
-
-    describe('listImports', () => {
-        it('should return list of imports for admin', async () => {
-            const adminId = new Types.ObjectId();
-            const mockRequest = {
-                user: { _id: adminId },
-            } as any;
-
-            const mockImports = [
-                {
-                    _id: new Types.ObjectId(),
-                    status: ImportStatus.COMPLETED,
-                    filename: 'backup1.json.gz',
-                    fileSize: 2048,
-                    collectionsCount: 15,
-                    documentsCount: 2500,
-                    startedAt: new Date(),
-                    completedAt: new Date(),
-                    createdAt: new Date(),
-                },
-                {
-                    _id: new Types.ObjectId(),
-                    status: ImportStatus.IN_PROGRESS,
-                    filename: 'backup2.json.gz',
-                    startedAt: new Date(),
-                    createdAt: new Date(),
-                },
-            ];
-
-            mockAdminService.getImportsByAdmin.mockResolvedValue(mockImports);
-
-            const result = await controller.listImports(mockRequest);
-
-            expect(result).toHaveLength(2);
-            expect(result[0].importId).toBe(mockImports[0]._id.toString());
-            expect(result[0].status).toBe(ImportStatus.COMPLETED);
-            expect(result[1].status).toBe(ImportStatus.IN_PROGRESS);
-            expect(service.getImportsByAdmin).toHaveBeenCalledWith(adminId.toString());
-        });
-
-        it('should return empty array if no imports', async () => {
-            const adminId = new Types.ObjectId();
-            const mockRequest = {
-                user: { _id: adminId },
-            } as any;
-
-            mockAdminService.getImportsByAdmin.mockResolvedValue([]);
-
-            const result = await controller.listImports(mockRequest);
-
-            expect(result).toEqual([]);
         });
     });
 

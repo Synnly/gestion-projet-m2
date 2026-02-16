@@ -25,21 +25,6 @@ export class ImportStatusResponseDto {
 }
 
 /**
- * Response DTO for listing imports
- */
-export class ImportListItemDto {
-    importId: string;
-    status: ImportStatus;
-    filename?: string;
-    fileSize?: number;
-    collectionsCount?: number;
-    documentsCount?: number;
-    startedAt?: Date;
-    completedAt?: Date;
-    createdAt: Date;
-}
-
-/**
  * Response DTO when an import is cancelled
  */
 export class ImportCancelledResponseDto {
