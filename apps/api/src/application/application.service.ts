@@ -317,4 +317,52 @@ export class ApplicationService {
             .distinct('post')
             .exec();
     }
+
+    /**
+     * Mark all applications for a specific post as "NoFollowUp" and send notifications to affected students.
+     * This method is called when a post is hidden (isVisible set to false).
+     * @param postId The id of the post whose applications should be marked as NoFollowUp
+     * @returns A promise that resolves when all updates and notifications are complete
+     */
+    async markApplicationsAsNoFollowUp(postId: Types.ObjectId): Promise<void> {
+        // Find all applications for this post that are not already marked as NoFollowUp
+        const applications = await this.applicationModel
+            .find({
+                post: postId,
+                deletedAt: { $exists: false },
+                status: { $ne: ApplicationStatus.NoFollowUp },
+            })
+            .populate([
+                { path: 'post', select: 'title _id' },
+                { path: 'student', select: '_id' },
+            ])
+            .exec();
+
+        // Update all applications to NoFollowUp status
+        if (applications.length > 0) {
+            await this.applicationModel.updateMany(
+                {
+                    post: postId,
+                    deletedAt: { $exists: false },
+                    status: { $ne: ApplicationStatus.NoFollowUp },
+                },
+                { $set: { status: ApplicationStatus.NoFollowUp } },
+            );
+
+            // Send notifications to affected students
+            for (const application of applications) {
+                try {
+                    await this.notificationService.create({
+                        userId: application.student._id,
+                        message: `L'annonce "${application.post.title}" pour laquelle vous avez candidaté a été masquée. Votre candidature est marquée "Sans suite".`,
+                    });
+                } catch (error) {
+                    console.error(
+                        `Failed to send notification to student ${application.student._id} for post ${postId}:`,
+                        error,
+                    );
+                }
+            }
+        }
+    }
 }
