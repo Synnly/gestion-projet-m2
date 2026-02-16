@@ -64,7 +64,6 @@ export class StudentController {
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN) // Réservé aux admins
     async findAllForAdmin(): Promise<StudentDto[]> {
-        // Tu dois créer cette méthode dans ton service (voir étape suivante)
         const students = await this.studentService.findAllForAdmin();
         return students.map(s => plainToInstance(StudentDto, s, { excludeExtraneousValues: true }));
     }
