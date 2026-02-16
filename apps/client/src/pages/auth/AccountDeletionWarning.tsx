@@ -55,9 +55,12 @@ export function AccountDeletionWarning({ userId, daysRemaining, onRestore, onLog
 
                     <div className="bg-success bg-opacity-20 p-4 rounded-lg border border-success">
                         <h4 className="font-semibold mb-2 text-base-900">Vous pouvez encore restaurer votre compte</h4>
-                        <p className="text-sm">
+                        <p className="text-sm mb-2">
                             Si vous avez changé d'avis, cliquez sur le bouton ci-dessous pour annuler la suppression
                             et récupérer l'accès complet à votre compte.
+                        </p>
+                        <p className="text-sm text-base-900 font-semibold mt-2">
+                            Important : Seul votre compte sera restauré. Les données supprimées (offres de stage, candidatures, messages du forum) ne pourront pas être récupérées.
                         </p>
                     </div>
 
