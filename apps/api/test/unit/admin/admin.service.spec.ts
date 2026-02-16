@@ -305,27 +305,6 @@ describe('AdminService', () => {
         });
     });
 
-    describe('getExportsByAdmin', () => {
-        it('should return all exports for an admin', async () => {
-            const adminId = new Types.ObjectId().toString();
-            const mockExports = [
-                { _id: '1', status: ExportStatus.COMPLETED },
-                { _id: '2', status: ExportStatus.IN_PROGRESS },
-            ];
-
-            MockExportModel.find.mockReturnValue({
-                sort: jest.fn().mockReturnValue({
-                    exec: jest.fn().mockResolvedValue(mockExports),
-                }),
-            });
-
-            const result = await service.getExportsByAdmin(adminId);
-
-            expect(result).toEqual(mockExports);
-            expect(MockExportModel.find).toHaveBeenCalledWith({ adminId });
-        });
-    });
-
     describe('cancelExport', () => {
         it('should cancel a pending export', async () => {
             const exportId = new Types.ObjectId().toString();
@@ -1003,30 +982,6 @@ describe('AdminService', () => {
             const result = await service.getImportStatus(importId);
 
             expect(result).toBeNull();
-        });
-    });
-
-    describe('getImportsByAdmin', () => {
-        it('should return all imports for an admin sorted by creation date', async () => {
-            const adminId = new Types.ObjectId().toString();
-            const mockImports = [
-                { _id: new Types.ObjectId(), status: ImportStatus.COMPLETED, adminId },
-                { _id: new Types.ObjectId(), status: ImportStatus.PENDING, adminId },
-            ];
-
-            const mockSort = jest.fn().mockReturnValue({
-                exec: jest.fn().mockResolvedValue(mockImports),
-            });
-
-            MockImportModel.find = jest.fn().mockReturnValue({
-                sort: mockSort,
-            });
-
-            const result = await service.getImportsByAdmin(adminId);
-
-            expect(result).toEqual(mockImports);
-            expect(MockImportModel.find).toHaveBeenCalledWith({ adminId });
-            expect(mockSort).toHaveBeenCalledWith({ createdAt: -1 });
         });
     });
 

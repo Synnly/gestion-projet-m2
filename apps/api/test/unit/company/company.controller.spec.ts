@@ -1216,7 +1216,6 @@ describe('CompanyController', () => {
 
             const result = await controller.getPublicProfile('507f1f77bcf86cd799439011');
 
-            console.log(result);
             expect(company).toEqual(result);
             expect(service.findOne).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
             expect(service.findOne).toHaveBeenCalledTimes(1);

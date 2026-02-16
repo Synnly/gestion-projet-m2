@@ -56,7 +56,6 @@ export class AuthService {
      */
     async login(email: string, password: string): Promise<{ access: string; refresh: string }> {
         const user = await this.userModel.findOne({ email: email });
-        console.log(user);
         if (!user) throw new NotFoundException(`User with email ${email} not found`);
 
         if (!(await bcrypt.compare(password, user.password))) {
@@ -107,9 +106,7 @@ export class AuthService {
         }
 
         // Fetch the current user document to get the latest role
-        console.log('Generating access token for user ID:', userId);
         const user = await this.userModel.findOne({ _id: userId });
-        console.log('User found for access token generation:', user);
         if (!user) {
             throw new InvalidCredentialsException('User not found');
         }
