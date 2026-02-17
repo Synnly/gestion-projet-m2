@@ -8,12 +8,38 @@ export const fetchStudents = async (
     limit: number = 10,
 ): Promise<PaginationResult<studentProfile>> => {
     const API_URL = import.meta.env.VITE_APIURL;
-    const response = await authFetch(`${API_URL}/api/students?page=${page}&limit=${limit}`, {
+    const response = await authFetch(`${API_URL}/api/students/admin/all?page=${page}&limit=${limit}`, {
         method: 'GET',
     });
 
     if (!response.ok) {
         throw new Error('Failed to fetch students');
+    }
+
+    return response.json();
+};
+
+export const deleteStudent = async (authFetch: ReturnType<typeof UseAuthFetch>, studentId: string) => {
+    const API_URL = import.meta.env.VITE_APIURL;
+    const response = await authFetch(`${API_URL}/api/students/${studentId}`, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to delete student');
+    }
+
+    return response.json();
+};
+
+export const deleteAllStudents = async (authFetch: ReturnType<typeof UseAuthFetch>) => {
+    const API_URL = import.meta.env.VITE_APIURL;
+    const response = await authFetch(`${API_URL}/api/students/admin/all`, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to delete all students');
     }
 
     return response.json();

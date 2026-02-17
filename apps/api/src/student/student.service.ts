@@ -43,7 +43,7 @@ export class StudentService {
 
     /**
      * Find all students that are not soft-deleted.
-     * @returns A promise resolving to an array of `Student` documents.
+     * @returns A promise resolving to a paginated array of `Student` documents.
      */
     async findAll(query: PaginationDto): Promise<PaginationResult<Student>> {
         const { page, limit, sort, ...filters } = query;
@@ -56,11 +56,16 @@ export class StudentService {
     }
 
     /**
-     * Find all students (soft-deleted too). Used for admin purposes.
-     * @returns A promise resolving to an array of `Student` documents, including soft-deleted ones.
+     * Find all students. Used for admin purposes.
+     * @returns A promise resolving to a paginated array of `Student` documents, including soft-deleted ones.
      */
-    async findAllForAdmin(): Promise<Student[]> {
-        return this.studentModel.find().exec();
+    async findAllForAdmin(query: PaginationDto): Promise<PaginationResult<Student>> {
+        const { page, limit, sort, ...filters } = query;
+        const qb = new QueryBuilder<Student>({ ...filters, showHidden: true } as any, this.geoService);
+        const filter = await qb.build();
+        const sortQuery = qb.buildSort(sort);
+
+        return this.paginationService.paginate(this.model, filter, page, limit, [], sortQuery);
     }
 
     /**
@@ -195,12 +200,22 @@ export class StudentService {
      * @throws NotFoundException if the student does not exist or is already deleted.
      */
     async remove(id: string): Promise<void> {
+        await this.applicationModel.updateMany({ student: id }, { $set: { deletedAt: new Date() } }).exec();
+
         const updated = await this.studentModel
             .findOneAndUpdate({ _id: id, deletedAt: { $exists: false } }, { $set: { deletedAt: new Date() } })
             .exec();
 
         if (!updated) throw new NotFoundException('Student not found or already deleted');
         return;
+    }
+
+    /**
+     * Soft-delete all students by setting `deletedAt`
+     */
+    async removeAll(): Promise<void> {
+        await this.applicationModel.updateMany({}, { $set: { deletedAt: new Date() } }).exec();
+        await this.studentModel.findOneAndUpdate({}, { $set: { deletedAt: new Date() } }).exec();
     }
 
     /**
@@ -284,41 +299,36 @@ export class StudentService {
      * Cron job that runs every day at midnight to permanently delete students that have been soft-deleted for more than 30 days.
      */
     @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-    // for tests
-    // @Cron('*/10 * * * * *')
     async handleCron() {
-        this.logger.debug('🧹 Début du nettoyage des données orphelines...');
+        this.logger.debug('Début du nettoyage des données orphelines...');
 
         const dateLimite = new Date();
         dateLimite.setDate(dateLimite.getDate() - 30);
 
-        // for tests
-        // dateLimite.setMinutes(dateLimite.getMinutes() - 1);
+        const studentsToDelete = await this.studentModel
+            .find({
+                deletedAt: { $lte: dateLimite },
+            })
+            .select('_id');
 
-        const studentsToDelete = await this.studentModel.find({
-            deletedAt: { $lte: dateLimite }
-        }).select('_id');
-
-        const studentIds = studentsToDelete.map(s => s._id);
+        const studentIds = studentsToDelete.map((s) => s._id);
 
         if (studentIds.length === 0) {
-            this.logger.debug('Rien à nettoyer aujourd\'hui.');
+            this.logger.debug("Rien à nettoyer aujourd'hui.");
             return;
         }
 
         this.logger.log(`Found ${studentIds.length} students to purge.`);
 
         const deletedApps = await this.applicationModel.deleteMany({
-            student: { $in: studentIds }
+            student: { $in: studentIds },
         });
         this.logger.log(`- ${deletedApps.deletedCount} candidatures supprimées.`);
 
         const deletedStudents = await this.studentModel.deleteMany({
-            _id: { $in: studentIds }
+            _id: { $in: studentIds },
         });
 
         this.logger.log(`Nettoyage terminé : ${deletedStudents.deletedCount} étudiants supprimés définitivement.`);
-
-
     }
 }
