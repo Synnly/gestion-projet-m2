@@ -121,7 +121,7 @@ export function useImportManagement(authFetch: any, onClearExports: () => void) 
             return;
         }
 
-        const maxSize = 500 * 1024 * 1024;
+        const maxSize = 5000 * 1024 * 1024; // 5GB en octets
         if (file.size > maxSize) {
             toast.error('Le fichier est trop volumineux. Taille maximale: 500 MB');
             return;

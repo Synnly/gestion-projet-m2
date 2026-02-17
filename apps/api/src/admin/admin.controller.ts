@@ -39,6 +39,7 @@ import { RolesGuard } from '../common/roles/roles.guard';
 import { Roles } from '../common/roles/roles.decorator';
 import { Role } from '../common/roles/roles.enum';
 
+const IMPORT_SIZE_MAX = 5000 * 1024 * 1024; // 5GO max
 /**
  * Controller handling admin-specific operations.
  * All routes require admin authentication.
@@ -175,7 +176,7 @@ export class AdminController {
         @UploadedFile(
             new ParseFilePipe({
                 validators: [
-                    new MaxFileSizeValidator({ maxSize: 500 * 1024 * 1024 }), // 500MB max
+                    new MaxFileSizeValidator({ maxSize: IMPORT_SIZE_MAX }), // 500MB max
                     new FileTypeValidator({ fileType: /\.(json|gz|json\.gz)$/ }),
                 ],
             }),
