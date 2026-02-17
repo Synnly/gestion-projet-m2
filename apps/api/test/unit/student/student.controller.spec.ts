@@ -71,13 +71,24 @@ describe('StudentController', () => {
     });
 
     it('findAllForAdmin returns all students including soft-deleted ones', async () => {
-        mockService.findAllForAdmin.mockResolvedValue([
-            { email: 'a@b.c', deletedAt: null },
-            { email: 'd@e.f', deletedAt: new Date() },
-        ]);
-        const res = await controller.findAllForAdmin();
-        expect(res).toHaveLength(2);
-        expect(mockService.findAllForAdmin).toHaveBeenCalled();
+        const paginatedResult = {
+            data: [
+                { email: 'a@b.c', deletedAt: null },
+                { email: 'd@e.f', deletedAt: new Date() },
+            ],
+            total: 2,
+            page: 1,
+            limit: 10,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
+        };
+        mockService.findAllForAdmin.mockResolvedValue(paginatedResult);
+        const query = { page: 1, limit: 10 } as any;
+        const res = await controller.findAllForAdmin(query);
+        expect(res.data).toHaveLength(2);
+        expect(res.total).toBe(2);
+        expect(mockService.findAllForAdmin).toHaveBeenCalledWith(query);
     });
 
     it('findOne throws NotFoundException when no student', async () => {

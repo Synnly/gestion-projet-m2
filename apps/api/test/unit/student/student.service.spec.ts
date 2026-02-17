@@ -29,6 +29,7 @@ describe('StudentService', () => {
         find: jest.fn(),
         findOne: jest.fn(),
         deleteMany: jest.fn(),
+        updateMany: jest.fn(),
     } as any;
 
     const TEST_MAX_ROWS = 1000;
@@ -100,14 +101,23 @@ describe('StudentService', () => {
     });
 
     it('findAllForAdmin returns all students including soft-deleted ones', async () => {
-        const expected = [
-            { email: 'a@b.c', deletedAt: null },
-            { email: 'd@e.f', deletedAt: new Date() },
-        ];
-        mockModel.find.mockReturnValue({ exec: jest.fn().mockResolvedValue(expected) });
+        const query = { page: 1, limit: 10 } as any;
+        const expected = {
+            data: [
+                { email: 'a@b.c', deletedAt: null },
+                { email: 'd@e.f', deletedAt: new Date() },
+            ],
+            total: 2,
+            page: 1,
+            limit: 10,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
+        };
+        mockPaginationService.paginate.mockResolvedValue(expected);
 
-        const res = await service.findAllForAdmin();
-        expect(mockModel.find).toHaveBeenCalledWith();
+        const res = await service.findAllForAdmin(query);
+        expect(mockPaginationService.paginate).toHaveBeenCalled();
         expect(res).toEqual(expected);
     });
 
@@ -189,9 +199,14 @@ describe('StudentService', () => {
     });
 
     it('remove resolves when document updated', async () => {
+        mockApplicationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
         mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: '1' }) });
 
         await expect(service.remove('1')).resolves.toBeUndefined();
+        expect(mockApplicationModel.updateMany).toHaveBeenCalledWith(
+            { student: '1' },
+            { $set: { deletedAt: expect.any(Date) } },
+        );
         expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(
             { _id: '1', deletedAt: { $exists: false } },
             { $set: { deletedAt: expect.any(Date) } },
@@ -199,6 +214,7 @@ describe('StudentService', () => {
     });
 
     it('remove calls findOneAndUpdate and throws when not found', async () => {
+        mockApplicationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
         mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
 
         await expect(service.remove('1')).rejects.toThrow();
