@@ -31,7 +31,7 @@ export type studentProfile = {
     /** Student's default cv object in the storage service. */
     defaultCv?: string;
 
-    deletedAt: boolean;
+    deletedAt: string;
 };
 
 export const editProfilForm = z.object({

@@ -54,6 +54,10 @@ export default function ManageStudents() {
         setIsDeleteLoading(true);
         try {
             await deleteStudent(authFetch, studentToDelete._id);
+            const updatedStudents: studentProfile[] = students.map((student) =>
+                student._id === studentToDelete._id ? { ...student, deletedAt: new Date().toISOString() } : student,
+            );
+            setStudents(updatedStudents);
             toast.success(`Compte de ${studentToDelete.firstName} désactivé. Suppression dans 30 jours.`);
         } catch (error) {
             console.error(error);

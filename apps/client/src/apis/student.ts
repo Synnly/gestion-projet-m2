@@ -28,13 +28,12 @@ export const deleteStudent = async (authFetch: ReturnType<typeof UseAuthFetch>, 
     if (!response.ok) {
         throw new Error('Failed to delete student');
     }
-
-    return response.json();
+    return;
 };
 
 export const deleteAllStudents = async (authFetch: ReturnType<typeof UseAuthFetch>) => {
     const API_URL = import.meta.env.VITE_APIURL;
-    const response = await authFetch(`${API_URL}/api/students/admin/all`, {
+    const response = await authFetch(`${API_URL}/api/students`, {
         method: 'DELETE',
     });
 
@@ -42,5 +41,5 @@ export const deleteAllStudents = async (authFetch: ReturnType<typeof UseAuthFetc
         throw new Error('Failed to delete all students');
     }
 
-    return response.json();
+    return;
 };
