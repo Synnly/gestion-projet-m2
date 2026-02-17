@@ -1,4 +1,4 @@
-import { Navbar } from '../navbar/Navbar.tsx';
+import { Navbar } from '../navbar/Navbar';
 import { CircleQuestionMark } from 'lucide-react';
 
 export const NotFound = () => {
