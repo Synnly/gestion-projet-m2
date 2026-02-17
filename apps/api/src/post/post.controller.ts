@@ -12,6 +12,7 @@ import {
     ValidationPipe,
     Query,
     Req,
+    Delete,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostDto } from './dto/post.dto';
@@ -69,6 +70,7 @@ export class PostController {
      * @returns A paginated result containing `PostDto` instances
      */
     @Get()
+    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     async findAll(
         @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
@@ -98,6 +100,7 @@ export class PostController {
      * @returns The found post converted to `PostDto`
      */
     @Get('/:id')
+    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     async findOne(@Param('id', ParseObjectIdPipe) id: string): Promise<PostDto> {
         const post = await this.postService.findOne(id);
@@ -141,5 +144,16 @@ export class PostController {
     ) {
         const updated = await this.postService.update(dto, companyId, id);
         return plainToInstance(PostDto, updated);
+    }
+
+    @Delete(':id')
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async delete(
+        @Param('companyId', ParseObjectIdPipe) companyId: string,
+        @Param('id', ParseObjectIdPipe) id: string,
+    ): Promise<void> {
+        await this.postService.delete(id);
     }
 }

@@ -901,4 +901,73 @@ describe('Post Integration Tests', () => {
             expect(res.body.total).toBe(1);
         });
     });
+
+    describe('DELETE /api/company/:companyId/posts/:id - Delete Post', () => {
+        it('should delete post and soft-delete associated applications when authorized', async () => {
+            const post = await createPost({
+                title: 'Post to delete',
+                description: 'Will be deleted',
+                keySkills: ['None'],
+                type: PostType.Presentiel,
+            });
+
+            const application = await applicationModel.create({
+                student: studentId,
+                post: post._id,
+                company: companyId,
+                status: ApplicationStatus.Pending,
+                cv: 'cv.pdf',
+            });
+
+            post.applications = [application._id];
+            await post.save();
+
+            await request(app.getHttpServer())
+                .delete(buildPostsPath(`/${post._id}`))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(204);
+
+            const deletedPost = await postModel.findById(post._id);
+            expect(deletedPost).toBeNull();
+
+            const deletedApp = await applicationModel.findById(application._id);
+            expect(deletedApp).toBeDefined();
+
+            expect(deletedApp.deletedAt).toEqual(expect.any(Date));
+        });
+
+        it('should return 404 when trying to delete a non-existent post', async () => {
+            const nonExistentId = new Types.ObjectId();
+            await request(app.getHttpServer())
+                .delete(buildPostsPath(`/${nonExistentId}`))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(404);
+        });
+
+        it('should return 403 when trying to delete in context of another company', async () => {
+            const otherCompanyId = new Types.ObjectId();
+            const post = await createPost({
+                title: 'Post',
+                description: 'Desc',
+                keySkills: ['None'],
+            });
+
+            await request(app.getHttpServer())
+                .delete(buildPostsPath(`/${post._id}`, otherCompanyId))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(403);
+        });
+
+        it('should return 401 when no authorization provided', async () => {
+            const post = await createPost({
+                title: 'Post',
+                description: 'Desc',
+                keySkills: ['None'],
+            });
+
+            await request(app.getHttpServer())
+                .delete(buildPostsPath(`/${post._id}`))
+                .expect(401);
+        });
+    });
 });
