@@ -80,6 +80,8 @@ export class CompanyDto {
 
     @Expose()
     description?: string;
+
+    @Expose()
     createdAt: Date;
 
     @Expose()
@@ -93,6 +95,8 @@ export class CompanyDto {
         rejectedAt?: Date;
         modifiedAt?: Date;
     };
+
+    @Expose()
     role: 'COMPANY';
 
     /**

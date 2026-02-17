@@ -248,5 +248,98 @@ describe('MessageService', () => {
 
             expect(forumModel.findByIdAndUpdate).not.toHaveBeenCalled();
         });
+
+        it('should not send notification when parent message author is the same as the new message author', async () => {
+            const createDto: CreateMessageDto = {
+                content: 'Reply Content',
+                authorId: mockAuthorId.toString(),
+                parentMessageId: new Types.ObjectId().toString(),
+            };
+
+            const createdMessage = { ...mockMessage, ...createDto, _id: mockMessage._id };
+
+            messageModel.create.mockResolvedValue(createdMessage);
+            topicModel.findByIdAndUpdate.mockResolvedValue({
+                ...mockTopic,
+                forumId: mockForumId,
+            });
+            const mockForum = { _id: mockForumId, company: { _id: new Types.ObjectId() } };
+            forumModel.findByIdAndUpdate.mockResolvedValue(mockForum);
+
+            // Parent message author is the same as the new message author
+            const replyMessage = { authorId: { _id: mockAuthorId } };
+            messageModel.findById.mockReturnValue({
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(replyMessage),
+            });
+
+            await service.sendMessage(mockTopicId.toString(), createDto);
+
+            // Notification should not be sent when same author
+            expect(mockNotificationService.create).not.toHaveBeenCalled();
+        });
+
+        it('should not send notification when parent message is not found', async () => {
+            const createDto: CreateMessageDto = {
+                content: 'Reply Content',
+                authorId: mockAuthorId.toString(),
+                parentMessageId: new Types.ObjectId().toString(),
+            };
+
+            const createdMessage = { ...mockMessage, ...createDto, _id: mockMessage._id };
+
+            messageModel.create.mockResolvedValue(createdMessage);
+            topicModel.findByIdAndUpdate.mockResolvedValue({
+                ...mockTopic,
+                forumId: mockForumId,
+            });
+            const mockForum = { _id: mockForumId, company: { _id: new Types.ObjectId() } };
+            forumModel.findByIdAndUpdate.mockResolvedValue(mockForum);
+
+            // Parent message not found
+            messageModel.findById.mockReturnValue({
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(null),
+            });
+
+            await service.sendMessage(mockTopicId.toString(), createDto);
+
+            expect(mockNotificationService.create).not.toHaveBeenCalled();
+        });
+
+        it('should use general forum link when company is not defined', async () => {
+            const parentAuthorId = new Types.ObjectId();
+            const createDto: CreateMessageDto = {
+                content: 'Reply Content',
+                authorId: mockAuthorId.toString(),
+                parentMessageId: new Types.ObjectId().toString(),
+            };
+
+            const createdMessage = { ...mockMessage, ...createDto, _id: mockMessage._id };
+
+            messageModel.create.mockResolvedValue(createdMessage);
+            topicModel.findByIdAndUpdate.mockResolvedValue({
+                ...mockTopic,
+                forumId: mockForumId,
+            });
+            // Forum without company (general forum)
+            const mockForum = { _id: mockForumId, company: undefined };
+            forumModel.findByIdAndUpdate.mockResolvedValue(mockForum);
+
+            const replyMessage = { authorId: { _id: parentAuthorId } };
+            messageModel.findById.mockReturnValue({
+                populate: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue(replyMessage),
+            });
+
+            await service.sendMessage(mockTopicId.toString(), createDto);
+
+            // Should use 'general' as company part
+            expect(mockNotificationService.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    returnLink: expect.stringContaining('/forums/general/'),
+                }),
+            );
+        });
     });
 });

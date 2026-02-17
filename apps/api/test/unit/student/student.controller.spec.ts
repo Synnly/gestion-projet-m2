@@ -11,6 +11,7 @@ describe('StudentController', () => {
     let controller: StudentController;
     const mockService = {
         findAll: jest.fn(),
+        findAllForAdmin: jest.fn(),
         findOne: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
@@ -19,7 +20,7 @@ describe('StudentController', () => {
         parseFileContent: jest.fn(),
     } as any;
 
-    const TEST_MAX_ROWS = 1000; 
+    const TEST_MAX_ROWS = 1000;
     const TEST_MAX_SIZE = 2 * 1024 * 1024;
     const mockConfigService = {
         get: jest.fn((key: string) => {
@@ -27,7 +28,7 @@ describe('StudentController', () => {
             if (key === 'IMPORT_MAX_ROWS') return TEST_MAX_ROWS; // 1000 records
             return null;
         }),
-    };;
+    };
 
     beforeEach(async () => {
         const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
@@ -55,6 +56,16 @@ describe('StudentController', () => {
         const res = await controller.findAll();
         expect(res).toHaveLength(1);
         expect(res[0]).toHaveProperty('email', 'a@b.c');
+    });
+
+    it('findAllForAdmin returns all students including soft-deleted ones', async () => {
+        mockService.findAllForAdmin.mockResolvedValue([
+            { email: 'a@b.c', deletedAt: null },
+            { email: 'd@e.f', deletedAt: new Date() },
+        ]);
+        const res = await controller.findAllForAdmin();
+        expect(res).toHaveLength(2);
+        expect(mockService.findAllForAdmin).toHaveBeenCalled();
     });
 
     it('findOne throws NotFoundException when no student', async () => {
@@ -122,44 +133,44 @@ describe('StudentController', () => {
 
         it('should throw BadRequestException if parseFileContent throws (e.g. invalid JSON)', async () => {
             mockService.parseFileContent.mockRejectedValue(new BadRequestException('Invalid file format'));
-            
+
             await expect(controller.import(mockFile)).rejects.toThrow('Invalid file format');
         });
 
         it('should throw BadRequestException if content parsed is not an array (logic from service)', async () => {
             mockService.parseFileContent.mockRejectedValue(new BadRequestException('JSON content must be an array'));
-            
+
             await expect(controller.import(mockFile)).rejects.toThrow('JSON content must be an array');
         });
 
         it('should SKIP invalid DTOs (e.g. invalid email) and return skipped count', async () => {
             const invalidData = [{ firstName: 'Toto', lastName: 'Test', email: 'invalid-email' }];
-            
+
             mockService.parseFileContent.mockResolvedValue(invalidData);
-            
+
             mockService.createMany.mockResolvedValue({ added: 0, skipped: 0 });
 
             const result = await controller.import(mockFile);
 
-            expect(mockService.createMany).toHaveBeenCalledWith([], false); 
+            expect(mockService.createMany).toHaveBeenCalledWith([], false);
             expect(result).toEqual({ added: 0, skipped: 1 });
         });
 
         it('should SKIP duplicates found within the file itself', async () => {
             const duplicateData = [
-                { email: 'a@a.com', studentNumber: '1', firstName: 'John', lastName: 'Doe' }, 
-                { email: 'a@a.com', studentNumber: '2', firstName: 'Jane', lastName: 'Doe' }
+                { email: 'a@a.com', studentNumber: '1', firstName: 'John', lastName: 'Doe' },
+                { email: 'a@a.com', studentNumber: '2', firstName: 'Jane', lastName: 'Doe' },
             ];
-            
+
             mockService.parseFileContent.mockResolvedValue(duplicateData);
-            
+
             mockService.createMany.mockResolvedValue({ added: 1, skipped: 0 });
 
             const result = await controller.import(mockFile);
 
             expect(mockService.createMany).toHaveBeenCalledWith(
-                expect.arrayContaining([expect.objectContaining({ email: 'a@a.com', studentNumber: '1' })]), 
-                false
+                expect.arrayContaining([expect.objectContaining({ email: 'a@a.com', studentNumber: '1' })]),
+                false,
             );
             expect(mockService.createMany.mock.calls[0][0]).toHaveLength(1);
 
@@ -167,28 +178,48 @@ describe('StudentController', () => {
         });
 
         it('should call service.createMany with correct params on success', async () => {
-            const validData = [{
-                firstName: 'Toto',
-                lastName: 'Test',
-                email: 'toto@univ.fr',
-                studentNumber: '1'
-            }];
-            
+            const validData = [
+                {
+                    firstName: 'Toto',
+                    lastName: 'Test',
+                    email: 'toto@univ.fr',
+                    studentNumber: '1',
+                },
+            ];
+
             mockService.parseFileContent.mockResolvedValue(validData);
             mockService.createMany.mockResolvedValue({ added: 1, skipped: 0 });
 
-            await controller.import(mockFile); 
+            await controller.import(mockFile);
 
             expect(mockService.createMany).toHaveBeenCalledWith(expect.any(Array), false);
         });
 
         it('should throw BadRequestException if service throws "Too many records"', async () => {
-            mockService.parseFileContent.mockRejectedValue(
-                new BadRequestException('File contains too many records')
-            );
+            mockService.parseFileContent.mockRejectedValue(new BadRequestException('File contains too many records'));
 
             await expect(controller.import(mockFile)).rejects.toThrow(/too many records/);
             expect(mockService.createMany).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('updateProfile', () => {
+        it('should call studentService.update with studentId and dto', async () => {
+            mockService.update.mockResolvedValue(undefined);
+            const dto = { firstName: 'Updated', lastName: 'Name' } as any;
+
+            await controller.updateProfile('student123', dto);
+
+            expect(mockService.update).toHaveBeenCalledWith('student123', dto);
+        });
+
+        it('should return undefined on success (NO_CONTENT)', async () => {
+            mockService.update.mockResolvedValue(undefined);
+            const dto = { firstName: 'Updated' } as any;
+
+            const result = await controller.updateProfile('student123', dto);
+
+            expect(result).toBeUndefined();
         });
     });
 });

@@ -13,8 +13,8 @@ import { Post, PostSchema } from '../post/post.schema';
             { name: Application.name, schema: ApplicationSchema },
             { name: Post.name, schema: PostSchema },
         ]),
-     
-       UsersModule, 
+
+        UsersModule,
     ],
     controllers: [StatsController],
     providers: [StatsService],

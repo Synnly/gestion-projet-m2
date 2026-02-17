@@ -56,7 +56,6 @@ export class CompanyController {
         );
     }
 
-
     /**
      * Retrieves companies pending validation with pagination
      * Requires ADMIN role
@@ -117,7 +116,12 @@ export class CompanyController {
     ) {
         await this.companyService.update(companyId, {
             isValid: false,
-            rejected: { isRejected: true, rejectionReason: dto.rejectionReason, rejectedAt: new Date(), modifiedAt: undefined },
+            rejected: {
+                isRejected: true,
+                rejectionReason: dto.rejectionReason,
+                rejectedAt: new Date(),
+                modifiedAt: undefined,
+            },
         });
     }
 
@@ -212,10 +216,12 @@ export class CompanyController {
         const posts = company.posts ?? [];
         return new CompanyDto({
             ...company,
-            rejected: company.rejected ? {
-                ...company.rejected,
-                rejectionReason: company.rejected.rejectionReason ?? '',
-            } : { isRejected: false, rejectionReason: undefined, rejectedAt: undefined },
+            rejected: company.rejected
+                ? {
+                      ...company.rejected,
+                      rejectionReason: company.rejected.rejectionReason ?? '',
+                  }
+                : { isRejected: false, rejectionReason: undefined, rejectedAt: undefined },
             posts: posts.map((post: PostDocument) => new PostDto(post)),
         });
     }
