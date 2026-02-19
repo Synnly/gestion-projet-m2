@@ -94,3 +94,24 @@ export const rejectCompany = async (
         throw new Error('Erreur lors du rejet');
     }
 };
+
+export const fetchCompanies = async (
+    authFetch: ReturnType<typeof UseAuthFetch>,
+    page: number = 1,
+    limit: number = 10,
+): Promise<PaginatedCompanyResponse> => {
+    const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+    });
+
+    const response = await authFetch(`${API_URL}/api/companies?${queryParams.toString()}`, {
+        method: 'GET',
+    });
+
+    if (!response.ok) {
+        throw new Error('Erreur lors du chargement des entreprises');
+    }
+
+    return response.json();
+};

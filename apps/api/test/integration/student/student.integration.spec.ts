@@ -2,17 +2,21 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { MongooseModule } from '@nestjs/mongoose';
+import { MongooseModule, getModelToken } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { UsersModule } from '../../../src/user/user.module';
 import { StudentModule } from '../../../src/student/student.module';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
 import { Role } from '../../../src/common/roles/roles.enum';
 import { ConfigModule } from '@nestjs/config';
+import { Student } from '../../../src/student/student.schema';
+import { StudentUserDocument } from '../../../src/user/user.schema';
 
 describe('Student Integration', () => {
     let mongod: MongoMemoryServer;
     let app: INestApplication;
+    let studentModel: Model<StudentUserDocument>;
 
     beforeAll(async () => {
         mongod = await MongoMemoryServer.create();
@@ -47,8 +51,10 @@ describe('Student Integration', () => {
             .compile();
 
         app = moduleRef.createNestApplication();
-        app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
+        app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
         await app.init();
+
+        studentModel = moduleRef.get<Model<StudentUserDocument>>(getModelToken(Student.name));
     });
 
     afterAll(async () => {
@@ -65,10 +71,12 @@ describe('Student Integration', () => {
         };
 
         await request(app.getHttpServer()).post('/api/students').send(dto).expect(201);
+        await studentModel.updateOne({ email: dto.email }, { isVerified: true, isValid: true });
 
         const res = await request(app.getHttpServer()).get('/api/students').expect(200);
-        expect(Array.isArray(res.body)).toBeTruthy();
-        expect(res.body.find((s: any) => s.email === dto.email)).toBeDefined();
+        expect(res.body.data).toBeDefined();
+        expect(Array.isArray(res.body.data)).toBe(true);
+        expect(res.body.data.find((s: any) => s.email === dto.email)).toBeDefined();
     });
 
     it('POST /api/students -> fails validation when firstName is missing', async () => {
@@ -101,9 +109,10 @@ describe('Student Integration', () => {
         };
 
         await request(app.getHttpServer()).post('/api/students').send(dto).expect(201);
+        await studentModel.updateOne({ email: dto.email }, { isVerified: true, isValid: true });
 
         const allStudents = await request(app.getHttpServer()).get('/api/students').expect(200);
-        const createdStudent = allStudents.body.find((s: any) => s.email === dto.email);
+        const createdStudent = allStudents.body.data.find((s: any) => s.email === dto.email);
 
         const res = await request(app.getHttpServer()).get(`/api/students/${createdStudent._id}`).expect(200);
         expect(res.body.email).toBe(dto.email);
@@ -123,9 +132,10 @@ describe('Student Integration', () => {
         };
 
         await request(app.getHttpServer()).post('/api/students').send(dto).expect(201);
+        await studentModel.updateOne({ email: dto.email }, { isVerified: true, isValid: true });
 
         const allStudents = await request(app.getHttpServer()).get('/api/students').expect(200);
-        const createdStudent = allStudents.body.find((s: any) => s.email === dto.email);
+        const createdStudent = allStudents.body.data.find((s: any) => s.email === dto.email);
 
         const updateDto = {
             firstName: 'New',
@@ -148,16 +158,17 @@ describe('Student Integration', () => {
         };
 
         await request(app.getHttpServer()).post('/api/students').send(dto).expect(201);
+        await studentModel.updateOne({ email: dto.email }, { isVerified: true, isValid: true });
 
         const beforeDelete = await request(app.getHttpServer()).get('/api/students').expect(200);
-        const countBefore = beforeDelete.body.length;
-        const createdStudent = beforeDelete.body.find((s: any) => s.email === dto.email);
+        const countBefore = beforeDelete.body.total;
+        const createdStudent = beforeDelete.body.data.find((s: any) => s.email === dto.email);
 
         await request(app.getHttpServer()).delete(`/api/students/${createdStudent._id}`).expect(204);
 
         // List should have one less student after deletion
         const afterDelete = await request(app.getHttpServer()).get('/api/students').expect(200);
-        expect(afterDelete.body.length).toBe(countBefore - 1);
+        expect(afterDelete.body.total).toBe(countBefore - 1);
 
         // Deleted student should not be found by ID
         const getById = await request(app.getHttpServer()).get(`/api/students/${createdStudent._id}`);
