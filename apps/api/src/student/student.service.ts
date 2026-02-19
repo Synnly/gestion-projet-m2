@@ -215,7 +215,7 @@ export class StudentService {
      */
     async removeAll(): Promise<void> {
         await this.applicationModel.updateMany({}, { $set: { deletedAt: new Date() } }).exec();
-        await this.studentModel.findOneAndUpdate({}, { $set: { deletedAt: new Date() } }).exec();
+        await this.studentModel.updateMany({}, { $set: { deletedAt: new Date() } }).exec();
     }
 
     /**
