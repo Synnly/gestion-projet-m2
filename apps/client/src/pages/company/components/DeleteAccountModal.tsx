@@ -63,7 +63,7 @@ export function DeleteAccountModal({ companyId, companyName, onClose, onSuccess 
                         <AlertTriangle className="h-6 w-6 shrink-0" />
                         <div>
                             <h3 className="font-bold">Attention !</h3>
-                            <div className="text-sm">Cette action est réversible pendant 30 jours.</div>
+                            <div className="text-sm">Cette action est réversible pendant 30 jours. Mais les données associées à votre compte ne seront pas récupérables.</div>
                         </div>
                     </div>
 
