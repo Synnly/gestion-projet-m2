@@ -182,6 +182,10 @@ export class AdminService {
         gzipStream.write('{\n');
 
         for (const collInfo of collections) {
+            //ignore refreshToken collection
+            if (collInfo.name === 'refreshtokens') {
+                continue;
+            }
             const collName = collInfo.name;
 
             // Check for cancellation
