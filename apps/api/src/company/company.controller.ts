@@ -42,18 +42,25 @@ export class CompanyController {
 
     /**
      * Retrieves all companies
-     * @returns An array of all companies
+     * @param query Pagination parameters
+     * @returns A paginated array of all companies
      */
     @Get('')
     @HttpCode(HttpStatus.OK)
-    async findAll(): Promise<CompanyDto[]> {
-        const companies = await this.companyService.findAll();
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async findAll(
+        @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        query: PaginationDto,
+    ): Promise<PaginationResult<CompanyDto>> {
+        const companies = await this.companyService.findAll(query);
 
-        return companies.map((company) =>
-            plainToInstance(CompanyDto, company, {
-                excludeExtraneousValues: true,
-            }),
-        );
+        return {
+            ...companies,
+            data: companies.data.map((company) =>
+                plainToInstance(CompanyDto, company, { excludeExtraneousValues: true }),
+            ),
+        };
     }
 
     /**
@@ -264,7 +271,7 @@ export class CompanyController {
     @Get('/:companyId/public-profile')
     @HttpCode(HttpStatus.OK)
     async getPublicProfile(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyDto> {
-        const company = this.companyService.findOne(companyId);
+        const company = await this.companyService.findOne(companyId);
         return plainToInstance(CompanyDto, company, {
             excludeExtraneousValues: true,
         });

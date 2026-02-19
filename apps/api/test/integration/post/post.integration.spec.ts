@@ -901,4 +901,41 @@ describe('Post Integration Tests', () => {
             expect(res.body.total).toBe(1);
         });
     });
+
+    describe('DELETE /api/company/:companyId/posts/:id - Delete Post', () => {
+        
+        it('should return 404 when trying to delete a non-existent post', async () => {
+            const nonExistentId = new Types.ObjectId();
+            await request(app.getHttpServer())
+                .delete(buildPostsPath(`/${nonExistentId}`))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(404);
+        });
+
+        it('should return 403 when trying to delete in context of another company', async () => {
+            const otherCompanyId = new Types.ObjectId();
+            const post = await createPost({
+                title: 'Post',
+                description: 'Desc',
+                keySkills: ['None'],
+            });
+
+            await request(app.getHttpServer())
+                .delete(buildPostsPath(`/${post._id}`, otherCompanyId))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(403);
+        });
+
+        it('should return 401 when no authorization provided', async () => {
+            const post = await createPost({
+                title: 'Post',
+                description: 'Desc',
+                keySkills: ['None'],
+            });
+
+            await request(app.getHttpServer())
+                .delete(buildPostsPath(`/${post._id}`))
+                .expect(401);
+        });
+    });
 });

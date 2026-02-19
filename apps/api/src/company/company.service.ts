@@ -5,7 +5,6 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { Company } from './company.schema';
-import { CompanyUserDocument } from '../user/user.schema';
 import { PostService } from '../post/post.service';
 import { Post } from '../post/post.schema';
 import { Application } from '../application/application.schema';
@@ -17,6 +16,8 @@ import { NotificationService } from '../notification/notification.service';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { PaginationResult } from '../common/pagination/dto/paginationResult';
 import { PaginationDto } from '../common/pagination/dto/pagination.dto';
+import { QueryBuilder } from '../common/pagination/query.builder';
+import { GeoService } from '../common/geography/geo.service';
 
 /**
  * Service handling business logic for company operations
@@ -47,41 +48,52 @@ export class CompanyService {
      * @param messageModel - Injected Mongoose model for Message operations
      * @param postService - Injected PostService for managing related posts
      * @param forumService - Injected ForumService for managing related forums
+     * @param paginationService - Injected PaginationService for handling pagination logic
+     * @param geoService - Injected GeoService for geocoding addresses when needed
      */
     constructor(
-        @InjectModel(Company.name) private readonly companyModel: Model<CompanyUserDocument>,
         @InjectModel(Post.name) private readonly postModel: Model<Post>,
         @InjectModel(Application.name) private readonly applicationModel: Model<Application>,
         @InjectModel(Forum.name) private readonly forumModel: Model<Forum>,
         @InjectModel(Topic.name) private readonly topicModel: Model<Topic>,
         @InjectModel(Message.name) private readonly messageModel: Model<Message>,
+        @InjectModel(Company.name) private readonly companyModel: Model<Company>,
         @Inject(forwardRef(() => PostService)) private readonly postService: PostService,
         @Inject(forwardRef(() => ForumService)) private readonly forumService: ForumService,
         private readonly notificationService: NotificationService,
         private readonly paginationService: PaginationService,
+        private readonly geoService: GeoService,
     ) {}
     populateField = '_id title description duration startDate minSalary maxSalary sector keySkills adress type';
+
     /**
      * Retrieves all active (non-deleted) companies
      *
      * Uses soft-delete pattern, only returning companies where deletedAt field does not exist.
      *
-     * @returns Promise resolving to an array of all active companies
-     *
-     * @example
-     * ```typescript
-     * const companies = await companyService.findAll();
-     * console.log(`Found ${companies.length} active companies`);
+     * @returns Promise resolving to a paginated array of all active companies
      * ```
      */
-    async findAll(): Promise<Company[]> {
-        return this.companyModel
-            .find({ deletedAt: { $exists: false } })
-            .populate({
-                path: 'posts',
-                select: this.populateField,
-            })
-            .exec();
+    async findAll(query: PaginationDto): Promise<PaginationResult<Company>> {
+        const { page, limit, sort, ...filters } = query;
+        const qb = new QueryBuilder<Company>({ ...filters, showHidden: true } as any, this.geoService);
+        const filter = await qb.build();
+        filter.deletedAt = { $exists: false };
+        const sortQuery = qb.buildSort(sort);
+
+        return this.paginationService.paginate(
+            this.companyModel,
+            filter,
+            page,
+            limit,
+            [
+                {
+                    path: 'posts',
+                    select: this.populateField,
+                },
+            ],
+            sortQuery,
+        );
     }
 
     /**

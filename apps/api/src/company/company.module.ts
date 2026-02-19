@@ -13,6 +13,7 @@ import { Application, ApplicationSchema } from '../application/application.schem
 import { Forum, ForumSchema } from '../forum/forum.schema';
 import { Topic, TopicSchema } from '../forum/topic/topic.schema';
 import { Message, MessageSchema } from '../forum/message/message.schema';
+import { GeoService } from '../common/geography/geo.service';
 
 @Module({
     imports: [
@@ -30,7 +31,7 @@ import { Message, MessageSchema } from '../forum/message/message.schema';
         ]),
     ],
     controllers: [CompanyController],
-    providers: [CompanyService, PaginationService],
+    providers: [CompanyService, PaginationService, GeoService],
     exports: [CompanyService],
 })
 export class CompanyModule {}

@@ -8,6 +8,8 @@ import Spinner from '../common/Spinner/Spinner';
 import ToastProvider from '../common/ui/toast/ToastProvider';
 import InternshipDetail from './components/InternshipDetail';
 import InternshipList from './components/InternshipList';
+import { useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 export function InternshipPage() {
     const navigation = useNavigation();
@@ -23,6 +25,15 @@ export function InternshipPage() {
     };
 
     const access = userStore((s) => s.access);
+
+     // Vérifier si un message d'import réussi existe dans le localStorage
+    useEffect(() => {
+        const importMessage = localStorage.getItem('import_success_message');
+        if (importMessage) {
+            toast.info(importMessage, { autoClose: 5000 });
+            localStorage.removeItem('import_success_message');
+        }
+    }, []);
 
     return (
         <div className="flex flex-col h-screen">
