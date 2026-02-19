@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { ImportStatus } from '../../../../types/exportImportDB.types';
-import { createImport, getImportStatus } from '../../../../apis/import';
+import { ImportStatus } from '../types/exportImportDB.types';
+import { createImport, getImportStatus } from '../apis/import';
 
 export function useImportManagement(authFetch: any, onClearExports: () => void) {
     const [isCreating, setIsCreating] = useState(false);
@@ -14,28 +14,25 @@ export function useImportManagement(authFetch: any, onClearExports: () => void) 
     const authFetchRef = useRef(authFetch);
     const navigate = useNavigate();
 
-    // Update authFetch ref when it changes
     useEffect(() => {
         authFetchRef.current = authFetch;
     }, [authFetch]);
 
-    // Poll import status when pendingImportId is set
     useEffect(() => {
         if (!pendingImportId) return;
 
         let pollAttempts = 0;
-        const maxPollAttempts = 200; // Maximum 10 minutes (200 * 3 seconds)
+        const maxPollAttempts = 200;
 
         const checkImportStatus = async () => {
             try {
                 pollAttempts++;
 
-                // Timeout après 10 minutes
                 if (pollAttempts > maxPollAttempts) {
                     setImportStatusMessage('Timeout atteint. Redirection vers la page de connexion...');
                     localStorage.setItem(
                         'import_success_message',
-                        'L\'import prend plus de temps que prévu. Veuillez vérifier les emails ou contacter un administrateur.'
+                        "L'import prend plus de temps que prévu. Veuillez vérifier les emails ou contacter un administrateur.",
                     );
 
                     setTimeout(() => {
@@ -51,7 +48,7 @@ export function useImportManagement(authFetch: any, onClearExports: () => void) 
                     setImportStatusMessage('Import terminé avec succès. Redirection vers la page de connexion...');
                     localStorage.setItem(
                         'import_success_message',
-                        'Import terminé avec succès. Veuillez vous reconnecter.'
+                        'Import terminé avec succès. Veuillez vous reconnecter.',
                     );
 
                     setTimeout(() => {
@@ -60,7 +57,7 @@ export function useImportManagement(authFetch: any, onClearExports: () => void) 
                     setPendingImportId(null);
                 } else if (status.status === ImportStatus.FAILED) {
                     setImportStatusMessage('Import échoué. Redirection vers la page de connexion...');
-                    localStorage.setItem('import_success_message', 'L\'import a échoué. Veuillez vous reconnecter.');
+                    localStorage.setItem('import_success_message', "L'import a échoué. Veuillez vous reconnecter.");
 
                     setTimeout(() => {
                         navigate('/signin');
@@ -68,25 +65,32 @@ export function useImportManagement(authFetch: any, onClearExports: () => void) 
                     setPendingImportId(null);
                 } else if (status.status === ImportStatus.CANCELLED) {
                     setImportStatusMessage('Import annulé. Redirection vers la page de connexion...');
-                    localStorage.setItem(
-                        'import_success_message',
-                        'L\'import a été annulé. Veuillez vous reconnecter.'
-                    );
+                    localStorage.setItem('import_success_message', "L'import a été annulé. Veuillez vous reconnecter.");
 
                     setTimeout(() => {
                         navigate('/signin');
                     }, 2000);
                     setPendingImportId(null);
                 } else {
-                    // Still in progress or pending
                     const statusText =
-                        status.status === ImportStatus.IN_PROGRESS ? 'en cours d\'exécution' : 'en attente';
+                        status.status === ImportStatus.IN_PROGRESS ? "en cours d'exécution" : 'en attente';
                     setImportStatusMessage(`Import ${statusText}... Vous serez redirigé une fois terminé.`);
                 }
             } catch (error: any) {
-                console.error('Erreur lors de la vérification du statut d\'import:', error);
+                console.error("Erreur lors de la vérification du statut d'import:", error);
 
-                if (pollAttempts > 5 || error?.status === 401 || error?.status === 403) {
+                if (error?.status === 401 || error?.message === 'Session expirée') {
+                    setImportStatusMessage('Session expirée. Redirection vers la page de connexion...');
+                    localStorage.setItem(
+                        'import_success_message',
+                        'Votre session a expiré. L\'import continue en arrière-plan. Reconnectez-vous pour vérifier son statut.'
+                    );
+
+                    setTimeout(() => {
+                        navigate('/signin');
+                    }, 2000);
+                    setPendingImportId(null);
+                } else if (pollAttempts > 5 || error?.status === 403) {
                     setImportStatusMessage('Import probablement terminé. Redirection vers la page de connexion...');
                     localStorage.setItem('import_success_message', 'Import terminé.');
 
@@ -98,10 +102,8 @@ export function useImportManagement(authFetch: any, onClearExports: () => void) 
             }
         };
 
-        // Check immediately
         checkImportStatus();
 
-        // Then poll every 3 seconds
         const interval = setInterval(checkImportStatus, 3000);
 
         return () => clearInterval(interval);
@@ -152,10 +154,9 @@ export function useImportManagement(authFetch: any, onClearExports: () => void) 
                 onClearExports();
                 setPendingImportId(result.importId);
                 setImportStatusMessage('Import en cours... Veuillez patienter.');
-                toast.info(
-                    result.message + " Veuillez patienter, vous serez redirigé une fois l'import terminé.",
-                    { autoClose: 7000 }
-                );
+                toast.info(result.message + " Veuillez patienter, vous serez redirigé une fois l'import terminé.", {
+                    autoClose: 7000,
+                });
             } else {
                 toast.success(result.message);
             }

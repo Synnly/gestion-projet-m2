@@ -37,7 +37,6 @@ export default function ImportTab({
                         L'import sera effectué en arrière-plan. Vous recevrez un email lorsqu'il sera terminé.
                     </p>
 
-                    {/* Message de statut pour l'import en cours avec clearExisting */}
                     {pendingImportId && importStatusMessage && (
                         <div className="alert alert-info mb-4">
                             <Loader2 className="w-5 h-5 animate-spin" />
@@ -126,7 +125,7 @@ export default function ImportTab({
                             <strong>Mode Écrasement:</strong> Toutes les données existantes seront supprimées avant
                             l'import.{' '}
                             <span className="text-error font-semibold">
-                                ⚠️ Vous devrez attendre la fin de l'import sur cette page avant d'être redirigé.
+                                Vous devrez attendre la fin de l'import sur cette page avant d'être redirigé.
                             </span>
                         </li>
                         <li>Formats acceptés: .json, .json.gz (fichiers exportés depuis ce système)</li>

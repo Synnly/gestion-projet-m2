@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 import { Download, Upload } from 'lucide-react';
-import { useExportManagement } from './hooks/useExportManagement';
-import { useImportManagement } from './hooks/useImportManagement';
+import { useExportManagement } from '../../../hooks/useExportManagement';
+import { useImportManagement } from '../../../hooks/useImportManagement';
 import ExportTab from './ExportTab';
 import ImportTab from './ImportTab';
 import WarningModal from './WarningModal';

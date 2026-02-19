@@ -31,7 +31,7 @@ export default function WarningModal({ isOpen, onCancel, onConfirm }: WarningMod
                 <div className="alert alert-warning mt-4">
                     <AlertCircle className="w-5 h-5" />
                     <span>
-                        <strong>⚠️ Vous serez déconnecté une fois l'import terminé</strong>
+                        <strong>Vous serez déconnecté une fois l'import terminé</strong>
                         <br />
                         L'import avec écrasement supprime tous les tokens de session. Vous devrez attendre la fin de
                         l'import sur cette page, puis vous serez automatiquement redirigé vers la page de connexion.
