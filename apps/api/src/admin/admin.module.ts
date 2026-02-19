@@ -1,9 +1,22 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
 import { AdminService } from './admin.service';
+import { AdminController } from './admin.controller';
 import { UsersModule } from '../user/user.module';
+import { DatabaseExport, DatabaseExportSchema } from './database-export.schema';
+import { DatabaseImport, DatabaseImportSchema } from './database-import.schema';
+import { MailerModule } from '../mailer/mailer.module';
 
 @Module({
-    imports: [UsersModule],
+    imports: [
+        UsersModule,
+        MailerModule.register(),
+        MongooseModule.forFeature([
+            { name: DatabaseExport.name, schema: DatabaseExportSchema },
+            { name: DatabaseImport.name, schema: DatabaseImportSchema },
+        ]),
+    ],
+    controllers: [AdminController],
     providers: [AdminService],
     exports: [AdminService],
 })

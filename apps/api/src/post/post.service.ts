@@ -238,4 +238,30 @@ export class PostService {
             )
             .exec();
     }
+
+    /**
+     * Delete a post by id and all its associated applications. Notify applicants about the deletion.
+     * @param postId Post id
+     * @returns A promise that resolves when the operation is complete
+     * @throws NotFoundException if the post does not exist
+     */
+    async delete(postId: string): Promise<void> {
+        const post = await this.postModel.findById(postId).exec();
+        if (!post) {
+            throw new NotFoundException(`Post with id ${postId} not found`);
+        }
+
+        await this.postModel.findOneAndUpdate(
+            { _id: new Types.ObjectId(postId), deletedAt: { $exists: false } },
+            { $set: { deletedAt: new Date() } },
+        );
+
+        // Delete all applications associated with this post
+        for (const applicationId of post.applications) {
+            await this.applicationService.deleteAndSendNotification(
+                applicationId.toString(),
+                `L'annonce ${post.title} pour laquelle vous avez postulé a été supprimée.`,
+            );
+        }
+    }
 }
