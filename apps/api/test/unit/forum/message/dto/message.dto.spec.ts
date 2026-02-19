@@ -5,6 +5,61 @@ import { MessageDto } from '../../../../../src/forum/message/dto/messageDto';
 import { Role } from '../../../../../src/common/roles/roles.enum';
 
 describe('MessageDto', () => {
+    describe('class instantiation', () => {
+        it('should create an instance with new operator', () => {
+            const dto = new MessageDto();
+
+            expect(dto).toBeDefined();
+            expect(dto).toBeInstanceOf(MessageDto);
+        });
+
+        it('should allow setting properties after instantiation', () => {
+            const dto = new MessageDto();
+            const testId = new Types.ObjectId();
+            const testDate = new Date();
+
+            dto._id = testId;
+            dto.content = 'Test content';
+            dto.createdAt = testDate;
+
+            expect(dto._id).toBe(testId);
+            expect(dto.content).toBe('Test content');
+            expect(dto.createdAt).toBe(testDate);
+        });
+
+        it('should allow setting authorId property', () => {
+            const dto = new MessageDto();
+            const authorData = {
+                _id: new Types.ObjectId(),
+                firstName: 'John',
+                lastName: 'Doe',
+                email: 'john@test.com',
+                role: Role.STUDENT,
+            } as any;
+
+            dto.authorId = authorData;
+
+            expect(dto.authorId).toBe(authorData);
+        });
+
+        it('should allow setting optional parentMessageId', () => {
+            const dto = new MessageDto();
+            const parentDto = new MessageDto();
+            parentDto.content = 'Parent message';
+
+            dto.parentMessageId = parentDto;
+
+            expect(dto.parentMessageId).toBe(parentDto);
+            expect(dto.parentMessageId?.content).toBe('Parent message');
+        });
+
+        it('should have undefined parentMessageId by default', () => {
+            const dto = new MessageDto();
+
+            expect(dto.parentMessageId).toBeUndefined();
+        });
+    });
+
     describe('transformation and validation', () => {
         it('should transform message with student author', () => {
             const messageId = new Types.ObjectId();

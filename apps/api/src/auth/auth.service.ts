@@ -106,7 +106,7 @@ export class AuthService {
         }
 
         // Fetch the current user document to get the latest role
-        const user = await this.userModel.findById(userId);
+        const user = await this.userModel.findOne({ _id: userId });
         if (!user) {
             throw new InvalidCredentialsException('User not found');
         }

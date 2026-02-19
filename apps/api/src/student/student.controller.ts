@@ -33,6 +33,8 @@ import { StudentOwnerGuard } from '../common/roles/studentOwner.guard';
 import { FileSizeValidationPipe } from '../common/pipes/file-size-validation.pipe';
 import { FileTypeValidationPipe } from '../common/pipes/file-type-validation.pipe';
 import { StudentEditGuard } from '../common/roles/studentEdit.guard';
+import { PaginationDto } from '../common/pagination/dto/pagination.dto';
+import { PaginationResult } from '../common/pagination/dto/paginationResult';
 
 @Controller('/api/students')
 /**
@@ -41,31 +43,45 @@ import { StudentEditGuard } from '../common/roles/studentEdit.guard';
  * Exposes REST endpoints to create, read, update and delete student resources.
  */
 export class StudentController {
-    constructor(private readonly studentService: StudentService) { }
+    constructor(private readonly studentService: StudentService) {}
 
     /**
      * Return a list of all students.
-     * @returns An array of `StudentDto` objects.
+     * @returns A paginated array of `StudentDto` objects.
      */
     @Get('')
     @UseGuards(AuthGuard, RolesGuard)
     @HttpCode(HttpStatus.OK)
     @Roles(Role.COMPANY, Role.ADMIN)
-    async findAll(): Promise<StudentDto[]> {
-        const students = await this.studentService.findAll();
-        return students.map((s) => plainToInstance(StudentDto, s, { excludeExtraneousValues: true }));
+    async findAll(
+        @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        query: PaginationDto,
+    ): Promise<PaginationResult<StudentDto>> {
+        const students = await this.studentService.findAll(query);
+
+        return {
+            ...students,
+            data: students.data.map((s) => plainToInstance(StudentDto, s, { excludeExtraneousValues: true })),
+        };
     }
 
     /**
      * Return a list of all students including soft-deleted ones.
-     * @returns An array of `StudentDto` objects.
+     * @returns A paginated array of `StudentDto` objects.
      */
     @Get('/admin/all')
     @UseGuards(AuthGuard, RolesGuard)
-    @Roles(Role.ADMIN) // Réservé aux admins
-    async findAllForAdmin(): Promise<StudentDto[]> {
-        const students = await this.studentService.findAllForAdmin();
-        return students.map(s => plainToInstance(StudentDto, s, { excludeExtraneousValues: true }));
+    @Roles(Role.ADMIN)
+    async findAllForAdmin(
+        @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        query: PaginationDto,
+    ): Promise<PaginationResult<StudentDto>> {
+        const students = await this.studentService.findAllForAdmin(query);
+
+        return {
+            ...students,
+            data: students.data.map((s) => plainToInstance(StudentDto, s, { excludeExtraneousValues: true })),
+        };
     }
 
     /**
@@ -214,5 +230,16 @@ export class StudentController {
     @HttpCode(HttpStatus.NO_CONTENT)
     async remove(@Param('studentId', ParseObjectIdPipe) studentId: string) {
         await this.studentService.remove(studentId);
+    }
+
+    /**
+     * Soft-delete all students. Requires admin role.
+     */
+    @Delete('')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async removeAll() {
+        await this.studentService.removeAll();
     }
 }

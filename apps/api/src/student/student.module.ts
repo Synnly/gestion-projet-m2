@@ -3,6 +3,8 @@ import { MailerModule } from '../mailer/mailer.module';
 import { UsersModule } from '../user/user.module';
 import { StudentController } from './student.controller';
 import { StudentService } from './student.service';
+import { GeoService } from '../common/geography/geo.service';
+import { PaginationService } from '../common/pagination/pagination.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Application, ApplicationSchema } from 'src/application/application.schema';
 import { Message, MessageSchema } from 'src/forum/message/message.schema';
@@ -13,12 +15,12 @@ import { Message, MessageSchema } from 'src/forum/message/message.schema';
             { name: Application.name, schema: ApplicationSchema },
             { name: Message.name, schema: MessageSchema }, // Optionnel : pour les messages
             // Si Student n'est pas fourni par UsersModule, décommente la ligne ci-dessous :
-            // { name: Student.name, schema: StudentSchema } 
+            // { name: Student.name, schema: StudentSchema }
         ]),
-        UsersModule, 
+        UsersModule,
         MailerModule.register()],
     controllers: [StudentController],
-    providers: [StudentService],
+    providers: [StudentService, GeoService, PaginationService],
     exports: [StudentService],
 })
 /**
