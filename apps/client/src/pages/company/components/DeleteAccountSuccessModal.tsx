@@ -9,10 +9,6 @@ export function DeleteAccountSuccessModal({ onConfirm }: DeleteAccountSuccessMod
         <div className="modal modal-open">
             <div className="modal-box max-w-2xl">
                 <div className="flex flex-col items-center text-center space-y-6">
-                    <div className="w-20 h-20 bg-success bg-opacity-20 rounded-full flex items-center justify-center">
-                        <CheckCircle className="h-12 w-12 text-success" />
-                    </div>
-
                     <h3 className="font-bold text-2xl text-base-900">
                         Votre compte a été marqué pour suppression
                     </h3>

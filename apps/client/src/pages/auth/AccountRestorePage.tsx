@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { AlertTriangle, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, CheckCircle, XCircle } from 'lucide-react';
 import { userStore } from '../../stores/userStore';
 import { UseAuthFetch } from '../../hooks/useAuthFetch';
 import { restoreCompanyAccount } from '../../apis/company';
@@ -19,11 +19,13 @@ export function AccountRestorePage() {
     const user = access ? getUserInfo(access) : null;
 
     useEffect(() => {
-        // Redirect if user is not logged in or account is not soft-deleted
         if (!user || !user.deletedAt) {
-            navigate('/signin');
-            return;
+            navigate('/signin', { replace: true });
         }
+    }, []);
+
+    useEffect(() => {
+        if (!user || !user.deletedAt) return;
 
         // Calculate days remaining
         const deletedAt = new Date(user.deletedAt);
@@ -37,9 +39,9 @@ export function AccountRestorePage() {
         // If no days remaining, logout
         if (remaining === 0) {
             logout();
-            navigate('/signin');
+            navigate('/signin', { replace: true });
         }
-    }, [user, navigate, logout]);
+    }, [user?.deletedAt]);
 
     const handleRestore = async () => {
         if (!user) return;
@@ -49,8 +51,7 @@ export function AccountRestorePage() {
 
         try {
             await restoreCompanyAccount(authFetch, user.id);
-            // Refresh the page to get a new token without deletedAt
-            window.location.href = '/home';
+                        navigate('/home');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Une erreur est survenue');
         } finally {
@@ -72,9 +73,7 @@ export function AccountRestorePage() {
             <div className="card max-w-3xl w-full bg-base-200 shadow-xl">
                 <div className="card-body">
                     <div className="flex flex-col items-center text-center space-y-6">
-                        <div className="w-20 h-20 bg-warning bg-opacity-20 rounded-full flex items-center justify-center">
-                            <AlertTriangle className="h-12 w-12 text-warning" />
-                        </div>
+                        
 
                         <h1 className="text-3xl font-bold text-base-900">
                             Votre compte est en attente de suppression

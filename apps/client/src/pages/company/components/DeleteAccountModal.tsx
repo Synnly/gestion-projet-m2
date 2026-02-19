@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AlertTriangle, XCircle } from 'lucide-react';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 import { deleteCompanyAccount } from '../../../apis/company';
+import { userStore } from '../../../stores/userStore';
 
 interface DeleteAccountModalProps {
     companyId: string;
@@ -15,6 +16,7 @@ export function DeleteAccountModal({ companyId, companyName, onClose, onSuccess 
     const [error, setError] = useState<string | null>(null);
     const [confirmText, setConfirmText] = useState('');
     const authFetch = UseAuthFetch();
+    const setUserToken = userStore((state) => state.set);
 
     const handleDelete = async () => {
         if (confirmText !== companyName) {
@@ -27,6 +29,22 @@ export function DeleteAccountModal({ companyId, companyName, onClose, onSuccess 
 
         try {
             await deleteCompanyAccount(authFetch, companyId);
+            
+            const apiUrl = import.meta.env.VITE_APIURL || 'http://localhost:3000';
+            try {
+                const refreshRes = await fetch(`${apiUrl}/api/auth/refresh`, {
+                    method: 'POST',
+                    credentials: 'include',
+                });
+
+                if (refreshRes.ok) {
+                    const newAccessToken = await refreshRes.text();
+                    setUserToken(newAccessToken);
+                }
+            } catch (refreshErr) {
+                console.error('Failed to refresh token after deletion:', refreshErr);
+            }
+            
             onSuccess();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Une erreur est survenue');

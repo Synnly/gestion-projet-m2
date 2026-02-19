@@ -11,7 +11,6 @@ export function CompanyProfile() {
     // Récupérer l'ID de l'utilisateur connecté depuis le token
     const access = userStore((state) => state.access);
     const getUserInfo = userStore((state) => state.get);
-    const logout = userStore((state) => state.logout);
     const userInfo = access ? getUserInfo(access) : null;
     const navigate = useNavigate();
 
@@ -43,8 +42,7 @@ export function CompanyProfile() {
 
     const handleSuccessModalConfirm = () => {
         setShowSuccessModal(false);
-        logout();
-        navigate('/signin');
+        navigate('/account-restore');
     };
 
     return (
