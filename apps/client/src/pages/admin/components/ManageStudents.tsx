@@ -72,7 +72,13 @@ export default function ManageStudents() {
         setIsDeleteLoading(true);
         try {
             await deleteAllStudents(authFetch);
+            const updatedStudents: studentProfile[] = students.map((student) => ({
+                ...student,
+                deletedAt: new Date().toISOString(),
+            }));
+            setStudents(updatedStudents);
             toast.success(`Tous les comptes étudiants désactivés. Suppression dans 30 jours.`);
+            setIsDeleteAllModalOpen(false);
         } catch (error) {
             console.error(error);
             toast.error('Erreur technique');
