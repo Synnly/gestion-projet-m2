@@ -30,7 +30,15 @@ export const createImport = async (
     });
 
     if (!response.ok) {
-        throw new Error("Erreur lors de l'initiation de l'import");
+        let errorMessage = "Erreur lors de l'initiation de l'import";
+        try {
+            const errorData = await response.json();
+            if (errorData.message) {
+                errorMessage = errorData.message;
+            }
+        } catch {
+        }
+        throw new Error(errorMessage);
     }
 
     return response.json();

@@ -115,17 +115,17 @@ export function useImportManagement(authFetch: any, onClearExports: () => void) 
             return;
         }
 
-        const validExtensions = ['.json', '.gz'];
+        const validExtensions = ['.json', '.gz', '.json.gz'];
         const hasValidExtension = validExtensions.some((ext) => file.name.toLowerCase().endsWith(ext));
 
         if (!hasValidExtension) {
-            toast.error('Type de fichier invalide. Seuls les fichiers .json et .json.gz sont acceptés.');
+            toast.error('Type de fichier invalide. Seuls les fichiers .json, .gz et .json.gz sont acceptés.');
             return;
         }
 
         const maxSize = 5000 * 1024 * 1024; // 5GB en octets
         if (file.size > maxSize) {
-            toast.error('Le fichier est trop volumineux. Taille maximale: 500 MB');
+            toast.error('Le fichier est trop volumineux. Taille maximale: 5 GB');
             return;
         }
 
@@ -167,8 +167,9 @@ export function useImportManagement(authFetch: any, onClearExports: () => void) 
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
-        } catch (error) {
-            toast.error("Erreur lors de la création de l'import");
+        } catch (error: any) {
+            const errorMessage = error?.message || "Erreur lors de la création de l'import";
+            toast.error(errorMessage);
             console.error(error);
         } finally {
             setIsCreating(false);
