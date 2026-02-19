@@ -4,6 +4,7 @@ import ImportStudent from './components/importStudent';
 import ManageStudents from './components/ManageStudents';
 import { StatsPage } from './components/stats/Stats';
 import ValidateCompanies from './components/ValidateCompanies';
+import ExportDatabase from './components/ExportDatabase';
 import { CompanyList } from './components/CompanyList.tsx';
 
 export function AdminDashboard() {
@@ -17,6 +18,11 @@ export function AdminDashboard() {
             id: 'validate-companies',
             label: 'Validation Entreprises',
             content: <ValidateCompanies />,
+        },
+        {
+            id: 'export-database',
+            label: 'Export Base de Données',
+            content: <ExportDatabase />,
         },
         {
             id: 'stats',
