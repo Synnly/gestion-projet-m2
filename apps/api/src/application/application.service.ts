@@ -317,4 +317,40 @@ export class ApplicationService {
             .distinct('post')
             .exec();
     }
+
+    /**
+     * Soft delete an application by its ID and send a notification to the student.
+     * @param id The unique identifier of the application
+     * @param message Optional custom message for the notification
+     * @returns A promise that resolves when the deletion and notification are complete
+     * @throws NotFoundException if the application does not exist
+     */
+    async deleteAndSendNotification(id: string, message?: string): Promise<void> {
+        const application = await this.applicationModel
+            .findOne({ _id: new Types.ObjectId(id), deletedAt: { $exists: false } })
+            .populate([
+                { path: 'student', select: '_id' },
+                { path: 'post', select: 'title _id' },
+            ])
+            .exec();
+
+        if (!application) {
+            throw new NotFoundException(`Application with id ${id} not found`);
+        }
+
+        await this.applicationModel.findOneAndUpdate(
+            { _id: new Types.ObjectId(id), deletedAt: { $exists: false } },
+            { $set: { deletedAt: new Date() } },
+        );
+
+        // Send notification to student about application deletion
+        try {
+            await this.notificationService.create({
+                userId: application.student._id,
+                message: message ?? `Votre candidature pour le poste : ${application.post.title} a été supprimée.`,
+            });
+        } catch (error) {
+            console.error('Failed to send notification for application deletion:', error);
+        }
+    }
 }

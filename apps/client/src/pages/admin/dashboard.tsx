@@ -5,6 +5,7 @@ import ManageStudents from './components/ManageStudents';
 import { StatsPage } from './components/stats/Stats';
 import ValidateCompanies from './components/ValidateCompanies';
 import ExportDatabase from './components/ExportDatabase';
+import { CompanyList } from './components/CompanyList.tsx';
 
 export function AdminDashboard() {
     const tabs = [
@@ -12,11 +13,6 @@ export function AdminDashboard() {
             id: 'import-students',
             label: 'Import Étudiants',
             content: <ImportStudent />,
-        },
-        {
-            id: 'manage-students',
-            label: 'Liste Étudiants',
-            content: <ManageStudents />,
         },
         {
             id: 'validate-companies',
@@ -32,6 +28,16 @@ export function AdminDashboard() {
             id: 'stats',
             label: 'Statistiques',
             content: <StatsPage />,
+        },
+        {
+            id: 'manage-students',
+            label: 'Gérer les Étudiants',
+            content: <ManageStudents />,
+        },
+        {
+            id: 'manage-companies',
+            label: 'Gérer les Entreprises',
+            content: <CompanyList />,
         },
     ];
 

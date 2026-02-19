@@ -18,6 +18,7 @@ describe('ApplicationService', () => {
     mockApplicationModel.find = jest.fn();
     mockApplicationModel.findOne = jest.fn();
     mockApplicationModel.aggregate = jest.fn();
+    mockApplicationModel.findOneAndUpdate = jest.fn();
 
     const mockStudentService = {
         findOne: jest.fn(),
@@ -673,6 +674,68 @@ describe('ApplicationService', () => {
             const result = await service.getPostIdsByStudent(studentId.toString());
 
             expect(result).toEqual(duplicatePostIds);
+        });
+    });
+
+    describe('deleteAndSendNotification', () => {
+        const appIdStr = '507f1f77bcf86cd799439099';
+        const mockApp = {
+            _id: new Types.ObjectId(appIdStr),
+            post: { title: 'Titre Poste', _id: new Types.ObjectId() },
+            student: { _id: new Types.ObjectId() },
+        };
+
+        it('should soft delete and notify student with default message', async () => {
+            const exec = jest.fn().mockResolvedValue(mockApp);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+            mockApplicationModel.findOneAndUpdate.mockResolvedValue({});
+            mockNotificationService.create.mockResolvedValue({});
+
+            await service.deleteAndSendNotification(appIdStr);
+
+            expect(mockApplicationModel.findOne).toHaveBeenCalledWith({
+                _id: new Types.ObjectId(appIdStr),
+                deletedAt: { $exists: false },
+            });
+            expect(mockApplicationModel.findOneAndUpdate).toHaveBeenCalledWith(
+                { _id: new Types.ObjectId(appIdStr), deletedAt: { $exists: false } },
+                { $set: { deletedAt: expect.any(Date) } },
+            );
+            expect(mockNotificationService.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: mockApp.student._id,
+                    message: `Votre candidature pour le poste : ${mockApp.post.title} a été supprimée.`,
+                }),
+            );
+        });
+
+        it('should use custom message if provided', async () => {
+            const exec = jest.fn().mockResolvedValue(mockApp);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+            mockApplicationModel.findOneAndUpdate.mockResolvedValue({});
+            mockNotificationService.create.mockResolvedValue({});
+
+            const customMsg = 'Custom Message';
+            await service.deleteAndSendNotification(appIdStr, customMsg);
+
+            expect(mockNotificationService.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: mockApp.student._id,
+                    message: customMsg,
+                }),
+            );
+        });
+
+        it('should throw NotFoundException if application not found', async () => {
+            const exec = jest.fn().mockResolvedValue(null);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+
+            await expect(service.deleteAndSendNotification(appIdStr)).rejects.toThrow(NotFoundException);
+            expect(mockApplicationModel.findOneAndUpdate).not.toHaveBeenCalled();
+            expect(mockNotificationService.create).not.toHaveBeenCalled();
         });
     });
 });

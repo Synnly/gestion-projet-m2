@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import MDEditor from '@uiw/react-md-editor';
-import { Pen, Eye } from 'lucide-react';
-import { useRef, useEffect } from 'react';
+import { Pen, Eye, Trash } from 'lucide-react';
+import { useRef, useEffect, useState } from 'react';
 import { NavLink } from 'react-router';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 import { useInternshipStore } from '../../../stores/useInternshipStore';
@@ -9,13 +9,19 @@ import { userStore } from '../../../stores/userStore';
 import type { Internship } from '../../../types/internship.types';
 import { ApplicationStatus } from './ApplicationStatus';
 import { ApplicationStatusChecker } from './InternshipApplyChecker';
+import { DeletionModal } from './DeletionModal.tsx';
+import { deletePost } from '../../../apis/post.ts';
+import { toast } from 'react-toastify';
 
 const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }> = ({
     internship,
     applyable = true,
 }) => {
+    const [modalOpen, setModalOpen] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     const authFetch = UseAuthFetch();
     const setDetailHeight = useInternshipStore((s) => s.setDetailHeight);
+    const removeInternshipsByIds = useInternshipStore((s) => s.removeInternshipsByIds);
     const rootRef = useRef<HTMLDivElement | null>(null);
     const access = userStore((state) => state.access);
     const get = userStore((state) => state.get);
@@ -51,7 +57,7 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
 
     const studentId = payload?.id;
 
-    const { data: application, isLoading } = useQuery({
+    const { data: application, isLoading: queryIsLoading } = useQuery({
         queryKey: ['application', studentId, internship._id],
 
         queryFn: async () => {
@@ -77,6 +83,28 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
         enabled: !!studentId && !!internship._id,
         staleTime: 1 * 60 * 1000, // 1 minute
     });
+
+    const onCancel = () => {
+        setModalOpen(false);
+    };
+
+    const onDelete = async () => {
+        setIsLoading(true);
+        const companyId = get(access)?.id;
+        if (!companyId) return;
+
+        try {
+            await deletePost(companyId, internship._id);
+            removeInternshipsByIds([internship._id]);
+            toast.success('Annonce supprimée avec succès');
+        } catch (error) {
+            toast.error("Erreur lors de la suppression de l'annonce");
+            console.error(error);
+        } finally {
+            setModalOpen(false);
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="flex flex-col flex-1">
@@ -124,7 +152,7 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                         {applyable && ((payload && payload.role === 'STUDENT') || !payload) && (
                             <ApplicationStatusChecker
                                 application={application}
-                                isLoading={isLoading}
+                                isLoading={queryIsLoading}
                                 postId={internship._id}
                                 isPostVisible={internship.isVisible ?? true}
                             />
@@ -135,6 +163,9 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                                 <a className="btn grow" href={`/internship/${internship._id}/edit`}>
                                     Modifier <Pen />
                                 </a>
+                                <button className="btn grow" onClick={() => setModalOpen(true)}>
+                                    Supprimer <Trash />
+                                </button>
                                 <a className="btn grow" href={`/internship/${internship._id}/applications`}>
                                     Consulter les candidatures <Eye />
                                 </a>
@@ -190,6 +221,9 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                     </div>
                 </div>
             </div>
+            {modalOpen && (
+                <DeletionModal onCancel={onCancel} onValidate={onDelete} isLoading={isLoading} post={internship} />
+            )}
         </div>
     );
 };

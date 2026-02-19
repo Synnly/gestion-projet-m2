@@ -96,122 +96,183 @@ describe('CompanyController', () => {
 
     describe('findAll', () => {
         it('should return an array of 2 CompanyDto when findAll is called with 2 existing companies in database', async () => {
-            const companies = [
-                {
-                    _id: '507f1f77bcf86cd799439011',
-                    email: 'test@example.com',
-                    name: 'Test Company',
-                    siretNumber: '12345678901234',
-                },
-                {
-                    _id: '507f1f77bcf86cd799439012',
-                    email: 'test2@example.com',
-                    name: 'Test Company 2',
-                },
-            ];
+            const paginationResult = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439011',
+                        email: 'test@example.com',
+                        name: 'Test Company',
+                        siretNumber: '12345678901234',
+                    },
+                    {
+                        _id: '507f1f77bcf86cd799439012',
+                        email: 'test2@example.com',
+                        name: 'Test Company 2',
+                    },
+                ],
+                total: 2,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
 
-            mockCompanyService.findAll.mockResolvedValue(companies);
+            mockCompanyService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll();
+            const query = { page: 1, limit: 10 } as any;
+            const result = await controller.findAll(query);
 
-            expect(result).toHaveLength(2);
-            expect(result[0]).toBeInstanceOf(CompanyDto);
-            expect(result[0]._id).toBe('507f1f77bcf86cd799439011');
-            expect(result[1]._id).toBe('507f1f77bcf86cd799439012');
+            expect(result.data).toHaveLength(2);
+            expect(result.data[0]).toBeInstanceOf(CompanyDto);
+            expect(result.data[0]._id).toBe('507f1f77bcf86cd799439011');
+            expect(result.data[1]._id).toBe('507f1f77bcf86cd799439012');
+            expect(result.total).toBe(2);
+            expect(service.findAll).toHaveBeenCalledWith(query);
             expect(service.findAll).toHaveBeenCalledTimes(1);
         });
 
         it('should return CompanyDto[] when called and map data', async () => {
-            const companies = [
-                {
-                    _id: '507f1f77bcf86cd799439011',
-                    email: 'test@example.com',
-                    name: 'Test Company',
-                    posts: [{ _id: 'p1', title: 'Post 1' }],
-                },
-            ];
+            const paginationResult = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439011',
+                        email: 'test@example.com',
+                        name: 'Test Company',
+                        posts: [{ _id: 'p1', title: 'Post 1' }],
+                    },
+                ],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
 
-            mockCompanyService.findAll.mockResolvedValue(companies);
+            mockCompanyService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll();
+            const query = { page: 1, limit: 10 } as any;
+            const result = await controller.findAll(query);
 
-            expect(result).toHaveLength(1);
-            expect(result[0]).toBeInstanceOf(CompanyDto);
-            expect(result[0].posts).toBeDefined();
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0]).toBeInstanceOf(CompanyDto);
+            expect(result.data[0].posts).toBeDefined();
         });
 
         it('should return an empty array when findAll is called with no companies existing in database', async () => {
-            mockCompanyService.findAll.mockResolvedValue([]);
+            const paginationResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            };
 
-            const result = await controller.findAll();
+            mockCompanyService.findAll.mockResolvedValue(paginationResult);
 
-            expect(result).toEqual([]);
+            const query = { page: 1, limit: 10 } as any;
+            const result = await controller.findAll(query);
+
+            expect(result.data).toEqual([]);
+            expect(result.total).toBe(0);
+            expect(service.findAll).toHaveBeenCalledWith(query);
             expect(service.findAll).toHaveBeenCalledTimes(1);
         });
 
         it('should return company with all optional fields when findAll is called with company containing all optional fields in database', async () => {
-            const companies = [
-                {
-                    _id: '507f1f77bcf86cd799439011',
-                    email: 'test@example.com',
-                    name: 'Test Company',
-                    siretNumber: '12345678901234',
-                    nafCode: '6202A',
-                    structureType: StructureType.PrivateCompany,
-                    legalStatus: LegalStatus.SARL,
-                    streetNumber: '10',
-                    streetName: 'Rue de Test',
-                    postalCode: '75001',
-                    city: 'Paris',
-                    country: 'France',
-                },
-            ];
+            const paginationResult = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439011',
+                        email: 'test@example.com',
+                        name: 'Test Company',
+                        siretNumber: '12345678901234',
+                        nafCode: '6202A',
+                        structureType: StructureType.PrivateCompany,
+                        legalStatus: LegalStatus.SARL,
+                        streetNumber: '10',
+                        streetName: 'Rue de Test',
+                        postalCode: '75001',
+                        city: 'Paris',
+                        country: 'France',
+                    },
+                ],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
 
-            mockCompanyService.findAll.mockResolvedValue(companies);
+            mockCompanyService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll();
+            const query = { page: 1, limit: 10 } as any;
+            const result = await controller.findAll(query);
 
-            expect(result).toHaveLength(1);
-            expect(result[0].siretNumber).toBe('12345678901234');
-            expect(result[0].nafCode).toBe('6202A');
-            expect(result[0].structureType).toBe(StructureType.PrivateCompany);
-            expect(result[0].legalStatus).toBe(LegalStatus.SARL);
-            expect(result[0].streetNumber).toBe('10');
-            expect(result[0].streetName).toBe('Rue de Test');
-            expect(result[0].postalCode).toBe('75001');
-            expect(result[0].city).toBe('Paris');
-            expect(result[0].country).toBe('France');
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0].siretNumber).toBe('12345678901234');
+            expect(result.data[0].nafCode).toBe('6202A');
+            expect(result.data[0].structureType).toBe(StructureType.PrivateCompany);
+            expect(result.data[0].legalStatus).toBe(LegalStatus.SARL);
+            expect(result.data[0].streetNumber).toBe('10');
+            expect(result.data[0].streetName).toBe('Rue de Test');
+            expect(result.data[0].postalCode).toBe('75001');
+            expect(result.data[0].city).toBe('Paris');
+            expect(result.data[0].country).toBe('France');
         });
 
         it('should return all companies when findAll is called with existing companies', async () => {
-            const mockCompanies = [{ id: '1', name: 'TestCo' }];
-            mockCompanyService.findAll.mockResolvedValue(mockCompanies);
+            const paginationResult = {
+                data: [{ id: '1', name: 'TestCo' }],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
 
-            const result = await controller.findAll();
+            mockCompanyService.findAll.mockResolvedValue(paginationResult);
 
-            expect(result).toHaveLength(1);
-            expect(result[0]).toBeInstanceOf(CompanyDto);
+            const query = { page: 1, limit: 10 } as any;
+            const result = await controller.findAll(query);
+
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0]).toBeInstanceOf(CompanyDto);
         });
 
         it('should return company with only required fields when findAll is called with company containing minimal fields in database', async () => {
-            const companies = [
-                {
-                    _id: '507f1f77bcf86cd799439011',
-                    email: 'test@example.com',
-                    name: 'Test Company',
-                },
-            ];
+            const paginationResult = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439011',
+                        email: 'test@example.com',
+                        name: 'Test Company',
+                    },
+                ],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
 
-            mockCompanyService.findAll.mockResolvedValue(companies);
+            mockCompanyService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll();
+            const query = { page: 1, limit: 10 } as any;
+            const result = await controller.findAll(query);
 
-            expect(result).toHaveLength(1);
-            expect(result[0]._id).toBe('507f1f77bcf86cd799439011');
-            expect(result[0].email).toBe('test@example.com');
-            expect(result[0].name).toBe('Test Company');
-            expect(result[0].siretNumber).toBeUndefined();
-            expect(result[0].nafCode).toBeUndefined();
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0]._id).toBe('507f1f77bcf86cd799439011');
+            expect(result.data[0].email).toBe('test@example.com');
+            expect(result.data[0].name).toBe('Test Company');
+            expect(result.data[0].siretNumber).toBeUndefined();
+            expect(result.data[0].nafCode).toBeUndefined();
         });
     });
 
@@ -982,35 +1043,45 @@ describe('CompanyController', () => {
             it('should throw error when findAll is called and service throws database error', async () => {
                 mockCompanyService.findAll.mockRejectedValue(new Error('Database error'));
 
-                await expect(controller.findAll()).rejects.toThrow('Database error');
+                const query = { page: 1, limit: 10 } as any;
+                await expect(controller.findAll(query)).rejects.toThrow('Database error');
             });
 
             it('should return companies successfully when findAll is called with undefined optional fields', async () => {
-                const companies = [
-                    {
-                        _id: '507f1f77bcf86cd799439011',
-                        email: 'test@example.com',
-                        name: 'Test Company',
-                        siretNumber: undefined,
-                        nafCode: undefined,
-                        structureType: undefined,
-                        legalStatus: undefined,
-                        streetNumber: undefined,
-                        streetName: undefined,
-                        postalCode: undefined,
-                        city: undefined,
-                        country: undefined,
-                        isValid: undefined,
-                    },
-                ];
+                const paginationResult = {
+                    data: [
+                        {
+                            _id: '507f1f77bcf86cd799439011',
+                            email: 'test@example.com',
+                            name: 'Test Company',
+                            siretNumber: undefined,
+                            nafCode: undefined,
+                            structureType: undefined,
+                            legalStatus: undefined,
+                            streetNumber: undefined,
+                            streetName: undefined,
+                            postalCode: undefined,
+                            city: undefined,
+                            country: undefined,
+                            isValid: undefined,
+                        },
+                    ],
+                    total: 1,
+                    page: 1,
+                    limit: 10,
+                    totalPages: 1,
+                    hasNext: false,
+                    hasPrev: false,
+                };
 
-                mockCompanyService.findAll.mockResolvedValue(companies);
+                mockCompanyService.findAll.mockResolvedValue(paginationResult);
 
-                const result = await controller.findAll();
+                const query = { page: 1, limit: 10 } as any;
+                const result = await controller.findAll(query);
 
-                expect(result).toHaveLength(1);
-                expect(result[0].siretNumber).toBeUndefined();
-                expect(result[0].isValid).toBeUndefined();
+                expect(result.data).toHaveLength(1);
+                expect(result.data[0].siretNumber).toBeUndefined();
+                expect(result.data[0].isValid).toBeUndefined();
             });
         });
     });
@@ -1068,39 +1139,56 @@ describe('CompanyController', () => {
         });
 
         it('should verify company is not in list successfully when performing findAll remove findAll operations', async () => {
-            const companiesBeforeDelete = [
-                {
-                    _id: '507f1f77bcf86cd799439011',
-                    email: 'delete-test@example.com',
-                    name: 'Delete Test Company',
-                },
-                {
-                    _id: '507f1f77bcf86cd799439012',
-                    email: 'keep@example.com',
-                    name: 'Keep Company',
-                },
-            ];
+            const companiesBeforeDelete = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439011',
+                        email: 'delete-test@example.com',
+                        name: 'Delete Test Company',
+                    },
+                    {
+                        _id: '507f1f77bcf86cd799439012',
+                        email: 'keep@example.com',
+                        name: 'Keep Company',
+                    },
+                ],
+                total: 2,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
 
-            const companiesAfterDelete = [
-                {
-                    _id: '507f1f77bcf86cd799439012',
-                    email: 'keep@example.com',
-                    name: 'Keep Company',
-                },
-            ];
+            const companiesAfterDelete = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439012',
+                        email: 'keep@example.com',
+                        name: 'Keep Company',
+                    },
+                ],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
 
             mockCompanyService.findAll.mockResolvedValueOnce(companiesBeforeDelete);
             mockCompanyService.remove.mockResolvedValue(undefined);
             mockCompanyService.findAll.mockResolvedValueOnce(companiesAfterDelete);
 
-            const beforeDelete = await controller.findAll();
-            expect(beforeDelete).toHaveLength(2);
+            const query = { page: 1, limit: 10 } as any;
+            const beforeDelete = await controller.findAll(query);
+            expect(beforeDelete.data).toHaveLength(2);
 
             await controller.remove('507f1f77bcf86cd799439011');
 
-            const afterDelete = await controller.findAll();
-            expect(afterDelete).toHaveLength(1);
-            expect(afterDelete[0]._id).toBe('507f1f77bcf86cd799439012');
+            const afterDelete = await controller.findAll(query);
+            expect(afterDelete.data).toHaveLength(1);
+            expect(afterDelete.data[0]._id).toBe('507f1f77bcf86cd799439012');
         });
 
         it('should handle deletion successfully when remove is called with non-existent company id', async () => {
@@ -1150,27 +1238,36 @@ describe('CompanyController', () => {
 
     describe('Response transformation', () => {
         it('should transform company entities to DTOs successfully when findAll is called', async () => {
-            const companies = [
-                {
-                    _id: '507f1f77bcf86cd799439011',
-                    email: 'test1@example.com',
-                    password: 'hashedPassword1',
-                    name: 'Company 1',
-                },
-                {
-                    _id: '507f1f77bcf86cd799439012',
-                    email: 'test2@example.com',
-                    password: 'hashedPassword2',
-                    name: 'Company 2',
-                },
-            ];
+            const paginationResult = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439011',
+                        email: 'test1@example.com',
+                        password: 'hashedPassword1',
+                        name: 'Company 1',
+                    },
+                    {
+                        _id: '507f1f77bcf86cd799439012',
+                        email: 'test2@example.com',
+                        password: 'hashedPassword2',
+                        name: 'Company 2',
+                    },
+                ],
+                total: 2,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
 
-            mockCompanyService.findAll.mockResolvedValue(companies);
+            mockCompanyService.findAll.mockResolvedValue(paginationResult);
 
-            const result = await controller.findAll();
+            const query = { page: 1, limit: 10 } as any;
+            const result = await controller.findAll(query);
 
-            expect(result.every((company) => company instanceof CompanyDto)).toBe(true);
-            expect(result).toHaveLength(2);
+            expect(result.data.every((company) => company instanceof CompanyDto)).toBe(true);
+            expect(result.data).toHaveLength(2);
         });
 
         it('should transform company entity to DTO successfully when findOne is called', async () => {

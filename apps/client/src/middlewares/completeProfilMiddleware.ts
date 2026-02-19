@@ -116,9 +116,11 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
                     throw redirect(`/home`);
                 }
             } catch (error) {
-                console.error(`Error while checking company validation status for company ${payload.id}:`, error);
-                // Allow navigation to continue to avoid degrading UX on transient failures.
-                return;
+                if (error instanceof Error) {
+                    console.error(`Error while checking company validation status for company ${payload.id}:`, error);
+                } else {
+                    throw error;
+                }
             }
         }
 
