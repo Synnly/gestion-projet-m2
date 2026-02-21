@@ -35,10 +35,11 @@ export class CreateCompanyDto extends CreateUserDto {
     @IsEnum(LegalStatus)
     legalStatus?: LegalStatus;
 
+    /** Physical address of the company */
     @IsOptional()
     @IsString()
-    address?: string;
-    /** Street number of the company address */
+    address: string;
+
     /** Optional logo URL or path for the company */
     @IsOptional()
     @IsString()

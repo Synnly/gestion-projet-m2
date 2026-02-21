@@ -18,7 +18,7 @@ describe('UpdateCompanyDto - decorator branches', () => {
 
     it('should validate all optional string address fields when provided', async () => {
         const dto = new UpdateCompanyDto({
-            address: '123, Main Street',
+            address: '42 Avenue Test, 69000 Lyon, France',
             logo: 'http://example.com/new-logo.png',
         });
 
@@ -63,7 +63,7 @@ describe('UpdateCompanyDto', () => {
                 nafCode: NafCode.NAF_62_01Z,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SAS,
-                address: '123, Main Street',
+                address: '42 Valid St, 75001 Paris, France',
                 isValid: true,
                 logo: 'https://example.com/logo.png',
             });
@@ -266,9 +266,19 @@ describe('UpdateCompanyDto', () => {
     describe('Address validation', () => {
         it('should pass validation when all address fields are valid', async () => {
             const dto = new UpdateCompanyDto({
-                address: '123,Main street',
+                address: '123 Main Street, 75001 Paris, France',
             });
 
+            const errors = await validate(dto);
+            expect(errors.length).toBe(0);
+        });
+
+        it('should pass validation when address is empty string as field is optional', async () => {
+            const dto = new UpdateCompanyDto({
+                address: '',
+            });
+
+            // Empty strings pass validation for optional @IsString() fields without @IsNotEmpty()
             const errors = await validate(dto);
             expect(errors.length).toBe(0);
         });

@@ -22,6 +22,7 @@ export default function CreatePostPage() {
         email: profile.email ?? '',
         name: profile.name ?? '',
         logo: profile.logo,
+        address: profile.address ?? '',
     };
 
     return (

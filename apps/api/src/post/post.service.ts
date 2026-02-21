@@ -44,10 +44,8 @@ export class PostService {
         let location: { type: 'Point'; coordinates: [number, number] } | null = null;
         const company = await this.companyService.findOne(companyId);
         if (!dto.adress) {
-            const addressParts = [company?.address].filter(Boolean);
-            dto.adress = addressParts.join(' ');
+            dto.adress = company?.address ?? '';
         }
-
         const coordinates = await this.geoService.geocodeAddress(dto.adress);
 
         if (coordinates) {

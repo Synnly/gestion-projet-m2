@@ -118,7 +118,7 @@ describe('Company Integration Tests', () => {
                 nafCode: NafCode.NAF_62_01Z,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SAS,
-                address: '123 Main Street',
+                address: '123 Main Street,75001 Paris France',
             };
 
             await request(app.getHttpServer())
@@ -497,6 +497,7 @@ describe('Company Integration Tests', () => {
 
             const updated = await companyModel.findById(company._id).lean();
             expect(updated?.name).toBe('New Name');
+            expect(updated?.address).toBe('789 Pine Road,13000 Marseille France');
             expect(updated?.structureType).toBe(StructureType.NGO);
         });
 

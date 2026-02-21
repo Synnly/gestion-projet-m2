@@ -511,13 +511,13 @@ describe('CreateCompanyDto', () => {
                     role: 'COMPANY' as any,
                     password: 'Password123!',
                     name: 'Test Company',
-                    streetNumber: 10 as any,
+                    address: 10 as any,
                 });
 
                 const errors = await validate(dto);
                 expect(errors.length).toBeGreaterThan(0);
-                const streetNumberError = errors.find((e) => e.property === 'streetNumber');
-                expect(streetNumberError).toBeDefined();
+                const addressError = errors.find((e) => e.property === 'address');
+                expect(addressError).toBeDefined();
             });
         });
 

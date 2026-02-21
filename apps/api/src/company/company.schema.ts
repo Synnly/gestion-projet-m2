@@ -88,9 +88,10 @@ export class Company {
     @Prop({ required: false, enum: LegalStatus })
     legalStatus?: LegalStatus;
 
-    /** Street number of the company address */
+    /** Physical address of the company */
     @Prop({ required: false, trim: true })
     address: string;
+
     /** Optional logo URL or path for the company */
     @Prop({ required: false, trim: true })
     logo?: string;
