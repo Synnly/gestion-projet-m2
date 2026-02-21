@@ -44,13 +44,7 @@ export class PostService {
         let location: { type: 'Point'; coordinates: [number, number] } | null = null;
         const company = await this.companyService.findOne(companyId);
         if (!dto.adress) {
-            const addressParts = [
-                company?.streetNumber,
-                company?.streetName,
-                company?.postalCode,
-                company?.city,
-                company?.country,
-            ].filter(Boolean);
+            const addressParts = [company?.address].filter(Boolean);
             dto.adress = addressParts.join(' ');
         }
 
@@ -76,7 +70,7 @@ export class PostService {
             .findById(saved._id)
             .populate({
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus address logo',
             })
             .exec();
 
@@ -112,7 +106,7 @@ export class PostService {
 
         const companyPopulate = {
             path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+            select: '_id name siretNumber nafCode structureType legalStatus address logo location',
         };
 
         // Ensure sensible defaults if the DTO omitted values
@@ -149,7 +143,7 @@ export class PostService {
 
         const companyPopulate = {
             path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+            select: '_id name siretNumber nafCode structureType legalStatus address logo location',
         };
 
         return this.paginationService.paginate(
@@ -176,7 +170,7 @@ export class PostService {
             .findOneAndUpdate({ _id: postId, company: new Types.ObjectId(companyId) }, { $set: dto }, { new: true })
             .populate({
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus address logo',
             })
             .exec();
 
@@ -201,7 +195,7 @@ export class PostService {
             .findById(id)
             .populate({
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus address logo',
             })
             .exec();
     }

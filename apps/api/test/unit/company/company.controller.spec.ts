@@ -193,11 +193,7 @@ describe('CompanyController', () => {
                         nafCode: '6202A',
                         structureType: StructureType.PrivateCompany,
                         legalStatus: LegalStatus.SARL,
-                        streetNumber: '10',
-                        streetName: 'Rue de Test',
-                        postalCode: '75001',
-                        city: 'Paris',
-                        country: 'France',
+                        address: '10 Rue de Test, 75001 Paris, France',
                     },
                 ],
                 total: 1,
@@ -218,11 +214,7 @@ describe('CompanyController', () => {
             expect(result.data[0].nafCode).toBe('6202A');
             expect(result.data[0].structureType).toBe(StructureType.PrivateCompany);
             expect(result.data[0].legalStatus).toBe(LegalStatus.SARL);
-            expect(result.data[0].streetNumber).toBe('10');
-            expect(result.data[0].streetName).toBe('Rue de Test');
-            expect(result.data[0].postalCode).toBe('75001');
-            expect(result.data[0].city).toBe('Paris');
-            expect(result.data[0].country).toBe('France');
+            expect(result.data[0].address).toBe('10 Rue de Test, 75001 Paris, France');
         });
 
         it('should return all companies when findAll is called with existing companies', async () => {
@@ -328,11 +320,7 @@ describe('CompanyController', () => {
                 nafCode: '6202A',
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '10 Rue de Test, 75001 Paris, France',
             };
 
             mockCompanyService.findOne.mockResolvedValue(company);
@@ -394,11 +382,7 @@ describe('CompanyController', () => {
                 nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -608,11 +592,7 @@ describe('CompanyController', () => {
                 email: 'address@example.com',
                 password: 'Password123!',
                 name: 'Address Company',
-                streetNumber: '123',
-                streetName: 'Main Street',
-                postalCode: '12345',
-                city: 'Test City',
-                country: 'Test Country',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -627,7 +607,7 @@ describe('CompanyController', () => {
                 email: 'partial@example.com',
                 password: 'Password123!',
                 name: 'Partial Address Company',
-                city: 'Test City',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -714,11 +694,7 @@ describe('CompanyController', () => {
 
         it('should update company address fields successfully when update is called with new address fields', async () => {
             const updateDto = new UpdateCompanyDto({
-                streetNumber: '456',
-                streetName: 'New Street',
-                postalCode: '54321',
-                city: 'New City',
-                country: 'New Country',
+                address: '20 Avenue de Test, 75002 Paris, France',
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -749,11 +725,7 @@ describe('CompanyController', () => {
                 nafCode: '9999Z',
                 structureType: StructureType.NGO,
                 legalStatus: LegalStatus.OTHER,
-                streetNumber: '999',
-                streetName: 'Complete Street',
-                postalCode: '99999',
-                city: 'Complete City',
-                country: 'Complete Country',
+                address: '20 Avenue de Test, 75002 Paris, France',
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -984,11 +956,7 @@ describe('CompanyController', () => {
                     name: 'Empty Fields Company',
                     siretNumber: '',
                     nafCode: '',
-                    streetNumber: '',
-                    streetName: '',
-                    postalCode: '',
-                    city: '',
-                    country: '',
+                    address: '',
                 });
 
                 mockCompanyService.create.mockResolvedValue(undefined);
@@ -1058,11 +1026,7 @@ describe('CompanyController', () => {
                             nafCode: undefined,
                             structureType: undefined,
                             legalStatus: undefined,
-                            streetNumber: undefined,
-                            streetName: undefined,
-                            postalCode: undefined,
-                            city: undefined,
-                            country: undefined,
+                            address: undefined,
                             isValid: undefined,
                         },
                     ],

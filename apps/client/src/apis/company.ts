@@ -7,8 +7,7 @@ export interface Company {
     name: string;
     email: string;
     siretNumber?: string;
-    city?: string;
-    postalCode?: string;
+    address: string;
     structureType?: string;
     legalStatus?: string;
     isValid: boolean;

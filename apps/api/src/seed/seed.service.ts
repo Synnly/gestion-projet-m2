@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { AdminService } from '../admin/admin.service';
 import { CreateAdminDto } from '../admin/dto/createAdminDto';
 import { ForumService } from '../forum/forum.service';
@@ -19,11 +19,15 @@ export class SeedService {
      * If the file cannot be written, an error is logged and the admin is not created.
      */
     async run() {
+        Logger.log('Starting database seeding process...');
         // Create a default admin if none exist
-        if ((await this.adminService.count()) === 0) {
+        const adminCount = await this.adminService.count();
+        Logger.log(`Current admin user count: ${adminCount}`);
+        if (adminCount === 0) {
             const password = randomBytes(64).toString('hex');
 
             try {
+                Logger.log('No admin users found. Creating default admin with email:');
                 fs.writeFileSync(
                     'ADMIN-CREDENTIALS.txt',
                     'CHANGE THE DEFAULT PASSWORD AND DELETE THIS FILE AS SOON AS POSSIBLE :\n' + password,
@@ -31,7 +35,7 @@ export class SeedService {
 
                 await this.adminService.create(new CreateAdminDto({ email: 'admin@admin.admin', password }));
             } catch (error) {
-                console.error(
+                Logger.error(
                     'Failed to write ADMIN-CREDENTIALS.txt file during seeding:',
                     error,
                     '. Default admin not created.',

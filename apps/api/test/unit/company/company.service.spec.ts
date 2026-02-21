@@ -197,11 +197,7 @@ describe('CompanyService', () => {
                 nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '10 Rue de Test, 75001 Paris, France',
             };
 
             mockExec.mockResolvedValue(company);
@@ -295,11 +291,7 @@ describe('CompanyService', () => {
                 nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyModel.create.mockResolvedValue({
@@ -412,39 +404,13 @@ describe('CompanyService', () => {
             await expect(service.create(createDto)).rejects.toThrow('Validation error');
         });
 
-        it('should create company when create is called with a partial address', async () => {
-            const createDto = new CreateCompanyDto({
-                email: 'test@example.com',
-                role: 'COMPANY' as any,
-                password: 'Password123!',
-                name: 'Test Company',
-                city: 'Paris',
-                country: 'France',
-            });
-
-            mockCompanyModel.create.mockResolvedValue({
-                _id: '507f1f77bcf86cd799439011',
-                ...createDto,
-            });
-
-            await service.create(createDto);
-
-            const createdArg = mockCompanyModel.create.mock.calls[0][0];
-            expect(createdArg).toEqual(expect.objectContaining({ city: 'Paris', country: 'France' }));
-            // Password hashing is handled by User schema pre-save hook
-        });
-
         it('should create company when create is called with a complete address', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'test@example.com',
                 role: 'COMPANY' as any,
                 password: 'Password123!',
                 name: 'Test Company',
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyModel.create.mockResolvedValue({
@@ -457,11 +423,7 @@ describe('CompanyService', () => {
             const createdArg = mockCompanyModel.create.mock.calls[0][0];
             expect(createdArg).toEqual(
                 expect.objectContaining({
-                    streetNumber: '10',
-                    streetName: 'Rue de Test',
-                    postalCode: '75001',
-                    city: 'Paris',
-                    country: 'France',
+                    address: createDto.address,
                 }),
             );
             // Password hashing is handled by User schema pre-save hook
@@ -542,7 +504,7 @@ describe('CompanyService', () => {
         it('should update a company when update is called with multiple fields', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
-                city: 'Paris',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             const mockCompany = { save: jest.fn().mockResolvedValue(true) };
@@ -617,11 +579,7 @@ describe('CompanyService', () => {
 
         it('should update company address fields when update is called with new address data', async () => {
             const updateDto = new UpdateCompanyDto({
-                streetNumber: '456',
-                streetName: 'New Street',
-                postalCode: '54321',
-                city: 'New City',
-                country: 'New Country',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
@@ -641,11 +599,7 @@ describe('CompanyService', () => {
                 nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.NGO,
                 legalStatus: LegalStatus.OTHER,
-                streetNumber: '999',
-                streetName: 'Complete Street',
-                postalCode: '99999',
-                city: 'Complete City',
-                country: 'Complete Country',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             const mockCompany = { save: jest.fn().mockResolvedValue(true) };
@@ -1062,8 +1016,7 @@ describe('CompanyService', () => {
                 emailContact: 'newemail@test.com',
                 website: 'https://newsite.com',
                 telephone: '+33123456789',
-                city: 'Lyon',
-                country: 'France',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyModel.updateOne.mockReturnValue({

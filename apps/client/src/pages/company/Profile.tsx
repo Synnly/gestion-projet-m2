@@ -104,26 +104,10 @@ export function CompanyProfile() {
                             </div>
 
                             {/* Adresse */}
-                            {(profile.streetNumber ||
-                                profile.streetName ||
-                                profile.postalCode ||
-                                profile.city ||
-                                profile.country) && (
+                            {profile.address && (
                                 <div className="bg-base-200 rounded-lg shadow p-6">
                                     <h3 className="text-lg font-semibold text-base-900 mb-4">Adresse</h3>
-                                    <div className="text-base-700 space-y-1">
-                                        {profile.streetNumber || profile.streetName ? (
-                                            <p>
-                                                {profile.streetNumber} {profile.streetName}
-                                            </p>
-                                        ) : null}
-                                        {profile.postalCode || profile.city ? (
-                                            <p>
-                                                {profile.postalCode} {profile.city}
-                                            </p>
-                                        ) : null}
-                                        {profile.country && <p>{profile.country}</p>}
-                                    </div>
+                                    <div className="text-base-700 space-y-1">{<p>{profile.address}</p>}</div>
                                 </div>
                             )}
                         </div>

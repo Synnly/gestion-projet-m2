@@ -61,11 +61,7 @@ describe('PostService', () => {
 
     const mockCompanyService = {
         findOne: jest.fn().mockResolvedValue({
-            streetNumber: '10',
-            streetName: 'Rue de Test',
-            postalCode: '75001',
-            city: 'Paris',
-            country: 'France',
+            address: '123 Rue de Paris, 75000 Paris, France',
         }),
     };
 
@@ -325,7 +321,7 @@ describe('PostService', () => {
             expect(mockPostModel.findById).toHaveBeenCalledWith(validObjectId);
             expect(populateMock).toHaveBeenCalledWith({
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus address logo',
             });
             expect(execMock).toHaveBeenCalledTimes(1);
         });
@@ -559,7 +555,7 @@ describe('PostService', () => {
                 [
                     {
                         path: 'company',
-                        select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+                        select: '_id name siretNumber nafCode structureType legalStatus address logo location',
                     },
                 ],
                 expect.anything(),
