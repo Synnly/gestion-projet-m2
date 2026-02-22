@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MailerModule } from '../mailer/mailer.module';
 import { UsersModule } from '../user/user.module';
 import { StudentController } from './student.controller';
@@ -15,14 +15,12 @@ import { AuthModule } from '../auth/auth.module';
     imports: [
         MongooseModule.forFeature([
             { name: Application.name, schema: ApplicationSchema },
-            { name: Message.name, schema: MessageSchema }, // Optionnel : pour les messages
-            // Si Student n'est pas fourni par UsersModule, décommente la ligne ci-dessous :
-            // { name: Student.name, schema: StudentSchema }
+            { name: Message.name, schema: MessageSchema },
         ]),
         UsersModule,
         MailerModule.register(),
         NotificationModule,
-        AuthModule,
+        forwardRef(() => AuthModule),
     ],
     controllers: [StudentController],
     providers: [StudentService, GeoService, PaginationService],

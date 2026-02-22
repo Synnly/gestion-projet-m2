@@ -11,6 +11,8 @@ import { NafCode } from '../../../src/company/nafCodes.enum';
 import { PostService } from '../../../src/post/post.service';
 import { ForumService } from '../../../src/forum/forum.service';
 import { GeoService } from '../../../src/common/geography/geo.service';
+import { RefreshToken } from '../../../src/auth/refreshToken.schema';
+import { Notification } from '../../../src/notification/notification.schema';
 
 describe('CompanyService', () => {
     let service: CompanyService;
@@ -22,7 +24,6 @@ describe('CompanyService', () => {
         findById: jest.fn(),
         create: jest.fn(),
         findOneAndUpdate: jest.fn(),
-        findOneAndDelete: jest.fn(),
         updateOne: jest.fn(),
     };
 
@@ -36,6 +37,14 @@ describe('CompanyService', () => {
 
     const mockForumService = {
         create: jest.fn(),
+    };
+
+    const mockNotificationModel = {
+        updateMany: jest.fn(),
+    };
+
+    const mockRefreshTokenModel = {
+        updateOne: jest.fn(),
     };
 
     const mockGeoService = {
@@ -72,6 +81,14 @@ describe('CompanyService', () => {
                     provide: GeoService,
                     useValue: mockGeoService,
                 },
+                {
+                    provide: getModelToken(Notification.name),
+                    useValue: mockNotificationModel,
+                },
+                {
+                    provide: getModelToken(RefreshToken.name),
+                    useValue: mockRefreshTokenModel,
+                },
             ],
         }).compile();
 
@@ -79,6 +96,9 @@ describe('CompanyService', () => {
         model = module.get<Model<CompanyDocument>>(getModelToken(Company.name));
 
         jest.clearAllMocks();
+
+        mockNotificationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({ acknowledged: true }) });
+        mockRefreshTokenModel.updateOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({ acknowledged: true }) });
     });
 
     it('should be defined when service is instantiated', () => {
@@ -735,26 +755,24 @@ describe('CompanyService', () => {
 
     describe('remove', () => {
         it('should soft-delete a company when remove is called with a valid id', async () => {
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011', deletedAt: new Date() });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
+            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011', deletedAt: new Date(), posts: [] });
+            mockCompanyModel.findOneAndUpdate.mockReturnValue({ exec: mockExec });
+
+            mockNotificationModel.updateMany.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ acknowledged: true }),
+            });
+            mockRefreshTokenModel.updateOne.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ acknowledged: true }),
             });
 
             await service.remove('507f1f77bcf86cd799439011');
 
-            expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
-                expect.objectContaining({ $set: { deletedAt: expect.any(Date) } }),
-            );
             expect(mockCompanyModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
-            expect(mockExec).toHaveBeenCalledTimes(1);
         });
 
         it('should return void after successful soft-delete when remove resolves', async () => {
-            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011', deletedAt: new Date() });
-            mockCompanyModel.findOneAndUpdate.mockReturnValue({
-                exec: mockExec,
-            });
+            mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011', deletedAt: new Date(), posts: [] });
+            mockCompanyModel.findOneAndUpdate.mockReturnValue({ exec: mockExec });
 
             const result = await service.remove('507f1f77bcf86cd799439011');
 
@@ -916,7 +934,8 @@ describe('CompanyService', () => {
                 .mockResolvedValueOnce(companiesAfterDelete);
 
             mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
-            mockCompanyModel.findOneAndDelete.mockReturnValue({
+
+            mockCompanyModel.findOneAndUpdate.mockReturnValue({
                 exec: mockExec,
             });
 

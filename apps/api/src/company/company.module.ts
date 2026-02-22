@@ -10,7 +10,13 @@ import { NotificationModule } from '../notification/notification.module';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-    imports: [UsersModule, forwardRef(() => PostModule), forwardRef(() => ForumModule), NotificationModule, AuthModule],
+    imports: [
+        UsersModule,
+        forwardRef(() => PostModule),
+        forwardRef(() => ForumModule),
+        NotificationModule,
+        forwardRef(() => AuthModule),
+    ],
     controllers: [CompanyController],
     providers: [CompanyService, PaginationService, GeoService],
     exports: [CompanyService],

@@ -15,6 +15,7 @@ import { NafCode } from '../../../src/company/nafCodes.enum';
 import { Role } from '../../../src/common/roles/roles.enum';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
+import { NotificationModule } from '../../../src/notification/notification.module';
 
 describe('Company Integration Tests', () => {
     let app: INestApplication;
@@ -39,6 +40,7 @@ describe('Company Integration Tests', () => {
                 JwtModule.register({ secret: JWT_SECRET, signOptions: { expiresIn: '1h' } }),
                 AuthModule,
                 CompanyModule,
+                NotificationModule,
             ],
         })
             .overrideProvider('ConfigService')
@@ -241,11 +243,8 @@ describe('Company Integration Tests', () => {
             };
 
             await request(app.getHttpServer()).post('/api/companies').send(dto).expect(201);
-            
-            await request(app.getHttpServer())
-                .post('/api/companies')
-                .send(dto)
-                .expect(409);
+
+            await request(app.getHttpServer()).post('/api/companies').send(dto).expect(409);
         });
 
         it('should reject unknown fields (forbidNonWhitelisted)', async () => {
@@ -1544,8 +1543,22 @@ describe('Company Integration Tests', () => {
     describe('ADMIN Endpoints - Validation Flow', () => {
         it('should list companies pending validation', async () => {
             await companyModel.create([
-                { email: 'pending1@test.com', password: 'hash', name: 'P1', isValid: false, role: Role.COMPANY, isVerified: true },
-                { email: 'valid@test.com', password: 'hash', name: 'V1', isValid: true, role: Role.COMPANY, isVerified: true },
+                {
+                    email: 'pending1@test.com',
+                    password: 'hash',
+                    name: 'P1',
+                    isValid: false,
+                    role: Role.COMPANY,
+                    isVerified: true,
+                },
+                {
+                    email: 'valid@test.com',
+                    password: 'hash',
+                    name: 'V1',
+                    isValid: true,
+                    role: Role.COMPANY,
+                    isVerified: true,
+                },
             ]);
 
             const res = await request(app.getHttpServer())
@@ -1559,7 +1572,12 @@ describe('Company Integration Tests', () => {
 
         it('should validate a company', async () => {
             const company = await companyModel.create({
-                email: 'to-validate@test.com', password: 'hash', name: 'To Validate', isValid: false, role: Role.COMPANY, isVerified: true
+                email: 'to-validate@test.com',
+                password: 'hash',
+                name: 'To Validate',
+                isValid: false,
+                role: Role.COMPANY,
+                isVerified: true,
             });
 
             await request(app.getHttpServer())
@@ -1575,7 +1593,12 @@ describe('Company Integration Tests', () => {
 
         it('should reject a company with a reason', async () => {
             const company = await companyModel.create({
-                email: 'to-reject@test.com', password: 'hash', name: 'To Reject', isValid: false, role: Role.COMPANY, isVerified: true
+                email: 'to-reject@test.com',
+                password: 'hash',
+                name: 'To Reject',
+                isValid: false,
+                role: Role.COMPANY,
+                isVerified: true,
             });
 
             await request(app.getHttpServer())
@@ -1594,7 +1617,12 @@ describe('Company Integration Tests', () => {
     describe('Public Profile Endpoints', () => {
         it('should get public profile (authenticated)', async () => {
             const company = await companyModel.create({
-                email: 'public-p@test.com', password: 'hash', name: 'Public P', isValid: true, role: Role.COMPANY, isVerified: true
+                email: 'public-p@test.com',
+                password: 'hash',
+                name: 'Public P',
+                isValid: true,
+                role: Role.COMPANY,
+                isVerified: true,
             });
 
             const res = await request(app.getHttpServer())
@@ -1607,7 +1635,12 @@ describe('Company Integration Tests', () => {
 
         it('should update public profile as owner', async () => {
             const company = await companyModel.create({
-                email: 'update-p@test.com', password: 'hash', name: 'Update P', isValid: true, role: Role.COMPANY, isVerified: true
+                email: 'update-p@test.com',
+                password: 'hash',
+                name: 'Update P',
+                isValid: true,
+                role: Role.COMPANY,
+                isVerified: true,
             });
 
             await request(app.getHttpServer())

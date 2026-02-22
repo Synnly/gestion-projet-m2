@@ -15,7 +15,7 @@ import { MailerModule } from '../mailer/mailer.module';
     imports: [
         MongooseModule.forFeature([{ name: Application.name, schema: ApplicationSchema }]),
         forwardRef(() => PostModule),
-        StudentModule,
+        forwardRef(() => StudentModule),
         NotificationModule,
         MailerModule.register(),
         S3Module.register({ provider: StorageProviderType.MINIO }),

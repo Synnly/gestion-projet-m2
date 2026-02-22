@@ -58,6 +58,7 @@ export class ForumController {
         @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
         query: PaginationDto,
     ): Promise<PaginationResult<ForumDto>> {
+        console.log('Received query:', query);
         const forums = await this.forumService.findAll(query);
         return {
             ...forums,

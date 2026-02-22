@@ -10,6 +10,8 @@ import { ConfigService } from '@nestjs/config';
 import { GeoService } from '../../../src/common/geography/geo.service';
 import { PaginationService } from '../../../src/common/pagination/pagination.service';
 import { CreateStudentDto } from 'src/student/dto/createStudent.dto';
+import { Notification } from '../../../src/notification/notification.schema';
+import { RefreshToken } from '../../../src/auth/refreshToken.schema';
 
 describe('StudentService', () => {
     let service: StudentService;
@@ -54,12 +56,29 @@ describe('StudentService', () => {
         paginate: jest.fn(),
     };
 
+    const mockNotificationModel = {
+        updateMany: jest.fn(),
+    };
+
+    const mockRefreshTokenModel = {
+        updateMany: jest.fn(),
+        updateOne: jest.fn(),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 StudentService,
                 { provide: getModelToken(Student.name), useValue: mockModel },
                 { provide: getModelToken(Application.name), useValue: mockApplicationModel },
+                {
+                    provide: getModelToken(Notification.name),
+                    useValue: mockNotificationModel,
+                },
+                {
+                    provide: getModelToken(RefreshToken.name),
+                    useValue: mockRefreshTokenModel,
+                },
                 { provide: ConfigService, useValue: mockConfigService },
                 { provide: MailerService, useValue: mockMailerService },
                 {
@@ -76,6 +95,10 @@ describe('StudentService', () => {
         service = module.get<StudentService>(StudentService);
         mailerService = module.get<MailerService>(MailerService);
         jest.clearAllMocks();
+
+        mockNotificationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({ acknowledged: true }) });
+        mockRefreshTokenModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({ acknowledged: true }) });
+        mockRefreshTokenModel.updateOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({ acknowledged: true }) });
     });
 
     it('should be defined', () => {
@@ -200,6 +223,9 @@ describe('StudentService', () => {
 
     it('remove resolves when document updated', async () => {
         mockApplicationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+        mockNotificationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+        mockRefreshTokenModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+        mockRefreshTokenModel.updateOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
         mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: '1' }) });
 
         await expect(service.remove('1')).resolves.toBeUndefined();
@@ -215,6 +241,9 @@ describe('StudentService', () => {
 
     it('remove calls findOneAndUpdate and throws when not found', async () => {
         mockApplicationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+        mockNotificationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+        mockRefreshTokenModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+        mockRefreshTokenModel.updateOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
         mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
 
         await expect(service.remove('1')).rejects.toThrow();
