@@ -9,7 +9,6 @@ export const CompanyList = () => {
     const [companies, setCompanies] = useState<Company[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [total, setTotal] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const itemsPerPage = 10;
 
@@ -22,7 +21,6 @@ export const CompanyList = () => {
                 const data = await fetchCompanies(authFetch, page, itemsPerPage);
                 setCompanies(data.data);
                 setTotalPages(data.totalPages);
-                setTotal(data.total);
             } catch (error) {
                 toast.error('Erreur lors du chargement des entreprises');
                 console.error(error);
@@ -44,7 +42,7 @@ export const CompanyList = () => {
     };
 
     return (
-        <div className="container mx-auto">
+        <div className="container p-6 mx-auto">
             <h1 className="text-3xl font-bold mb-6">Gérer les entreprises</h1>
 
             {isLoading ? (

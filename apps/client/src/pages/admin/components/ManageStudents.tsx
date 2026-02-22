@@ -144,7 +144,8 @@ export default function ManageStudents() {
     };
 
     return (
-        <div className="container mx-auto">
+        <div className="container p-6 mx-auto">
+            <h1 className="text-3xl font-bold mb-6">Gérer les étudiants</h1>
             <div>
                 {isLoading ? (
                     <div className="flex justify-center py-10">

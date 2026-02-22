@@ -47,7 +47,7 @@ export function AdminDashboard() {
             <div className="p-8 bg-base-100">
                 <div className="max-w-full mx-auto">
                     <h1 className="text-3xl font-bold mb-6">Administration</h1>
-                    <div className="bg-base-100 rounded-lg shadow">
+                    <div>
                         <AdminTabs tabs={tabs} defaultTabId="import-students" />
                     </div>
                 </div>
