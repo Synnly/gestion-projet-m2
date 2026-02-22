@@ -225,7 +225,7 @@ export const CompleteProfil = () => {
                                         <GenericAutocomplete<NominatimAddress>
                                             {...field}
                                             label="Adresse complète"
-                                            placeholder="Tapez votre adresse..."
+                                            placeholder="Selectionnez l'adresse de votre siège social"
                                             isAutocompleteEnabled={true}
                                             fetcher={addressFetcher}
                                             getLabel={getAddressLabel}

@@ -1,18 +1,17 @@
 import { forwardRef, type ReactElement } from 'react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import type { GenericProps } from '../../../../types/genericAutoCompleteAdressType';
 import { useDebounce } from '../../../../hooks/useDebounce';
 import { useAutocomplete } from '../../../../hooks/useAutoComplete';
+import { Check, X } from 'lucide-react';
 const Inner = <T,>(
     { isAutocompleteEnabled = true, value, onChange, error, label, fetcher, getLabel, ...rest }: GenericProps<T>,
     ref: React.Ref<HTMLInputElement>,
 ) => {
     const [searchTerm, setSearchTerm] = useState(value || '');
+    const [isValid, setIsValid] = useState(!!value || false);
     const [isOpen, setIsOpen] = useState(false);
     const debouncedSearch = useDebounce(searchTerm, 400);
-    useEffect(() => {
-        setSearchTerm(value || '');
-    }, [value]);
 
     const canRunAutocomplete = isAutocompleteEnabled && fetcher && getLabel;
 
@@ -28,7 +27,8 @@ const Inner = <T,>(
 
         if (canRunAutocomplete) {
             setIsOpen(true);
-            onChange('');
+            setIsValid(false);
+            onChange(null);
         } else {
             setIsOpen(false);
             onChange(val);
@@ -41,7 +41,7 @@ const Inner = <T,>(
 
         setSearchTerm(fullValue);
         setIsOpen(false);
-
+        setIsValid(true);
         onChange(fullValue);
     };
     return (
@@ -52,7 +52,7 @@ const Inner = <T,>(
                 </label>
             )}
 
-            <div className="relative">
+            <div className="relative flex flex-row items-center gap-1 ">
                 <input
                     {...rest}
                     ref={ref}
@@ -62,13 +62,18 @@ const Inner = <T,>(
                     onFocus={() => isAutocompleteEnabled && setIsOpen(true)}
                     autoComplete="off"
                 />
+                {isAutocompleteEnabled && isValid ? (
+                    <Check className="text-green-800" />
+                ) : (
+                    <X className="text-red-600" />
+                )}
                 {isAutocompleteEnabled && isLoading && (
-                    <span className="loading loading-spinner loading-xs absolute right-3 top-4"></span>
+                    <span className="loading loading-spinner loading-xs right-3 top-4"></span>
                 )}
             </div>
 
             {isAutocompleteEnabled && getLabel && isOpen && suggestions && suggestions.length > 0 && (
-                <ul className="menu bg-base-100 absolute z-[100] w-full shadow-2xl border border-base-300 mt-1 rounded-box p-2 max-h-60 overflow-y-auto">
+                <ul className="menu bg-base-100 absolute z-100 w-full shadow-2xl border border-base-300 mt-1 rounded-box p-2 max-h-60 overflow-y-auto">
                     {suggestions.map((item, idx) => (
                         <li key={idx}>
                             <button type="button" onClick={() => handleSelect(item)} className="py-2 hover:bg-base-200">

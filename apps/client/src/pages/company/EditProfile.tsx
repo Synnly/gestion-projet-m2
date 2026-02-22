@@ -26,7 +26,7 @@ import { CustomSelect } from '../common/inputs/select/select';
 import { GenericAutocomplete } from '../common/inputs/textInput/genericAutoComplete';
 import type { NominatimAddress } from '../../apis/autoCompleteAddress';
 import { FormSubmit } from '../common/form/FormSubmit';
-
+import { addressFetcher, getAddressLabel } from '../../apis/autoCompleteAddress';
 export function EditCompanyProfile() {
     const navigate = useNavigate();
     const API_URL = import.meta.env.VITE_APIURL;
@@ -251,7 +251,9 @@ export function EditCompanyProfile() {
                                             {...field}
                                             label="Adresse complète"
                                             placeholder="Tapez votre adresse..."
-                                            isAutocompleteEnabled={false}
+                                            isAutocompleteEnabled={true}
+                                            fetcher={addressFetcher}
+                                            getLabel={getAddressLabel}
                                             error={fieldState.error?.message}
                                         />
                                     )}
