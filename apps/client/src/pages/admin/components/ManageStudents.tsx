@@ -87,12 +87,14 @@ export default function ManageStudents() {
         }
     };
 
-    const filteredStudents = students.filter(
-        (student) =>
-            (student.lastName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-            (student.firstName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-            (student.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()),
-    );
+    const filteredStudents = students
+        ? students.filter(
+              (student) =>
+                  (student.lastName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                  (student.firstName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                  (student.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()),
+          )
+        : [];
 
     return (
         <div className="container mx-auto">

@@ -55,7 +55,7 @@ export const CompanyList = () => {
                 <div className="flex justify-center items-center py-12">
                     <span className="loading loading-spinner loading-lg"></span>
                 </div>
-            ) : companies.length === 0 ? (
+            ) : !companies || companies.length === 0 ? (
                 <div className="text-center py-12 bg-base-200 rounded-lg">
                     <p className="text-lg">Aucune entreprise inscrite</p>
                 </div>
