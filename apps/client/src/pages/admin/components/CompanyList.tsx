@@ -47,10 +47,6 @@ export const CompanyList = () => {
         <div className="container mx-auto">
             <h1 className="text-3xl font-bold mb-6">Gérer les entreprises</h1>
 
-            <div className="mb-4 text-sm">
-                Total: <span className="font-semibold">{total}</span> entreprise(s) inscrite(s)
-            </div>
-
             {isLoading ? (
                 <div className="flex justify-center items-center py-12">
                     <span className="loading loading-spinner loading-lg"></span>
