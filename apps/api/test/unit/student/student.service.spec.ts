@@ -4,7 +4,7 @@ import { StudentService } from '../../../src/student/student.service';
 import { Student } from '../../../src/student/student.schema';
 import { Application } from '../../../src/application/application.schema';
 import { Role } from '../../../src/common/roles/roles.enum';
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { MailerService } from '../../../src/mailer/mailer.service';
 import { ConfigService } from '@nestjs/config';
 import { GeoService } from '../../../src/common/geography/geo.service';
@@ -221,33 +221,90 @@ describe('StudentService', () => {
         expect(mockModel.findOne).toHaveBeenCalledWith({ _id: '1', deletedAt: { $exists: false } });
     });
 
-    it('remove resolves when document updated', async () => {
-        mockApplicationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
-        mockNotificationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
-        mockRefreshTokenModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
-        mockRefreshTokenModel.updateOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
-        mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: '1' }) });
+    describe('remove', () => {
+        const STUDENT_ID = '507f1f77bcf86cd799439011';
 
-        await expect(service.remove('1')).resolves.toBeUndefined();
-        expect(mockApplicationModel.updateMany).toHaveBeenCalledWith(
-            { student: '1' },
-            { $set: { deletedAt: expect.any(Date) } },
-        );
-        expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(
-            { _id: '1', deletedAt: { $exists: false } },
-            { $set: { deletedAt: expect.any(Date) } },
-        );
-    });
+        beforeEach(() => {
+            mockApplicationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+            mockNotificationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+            mockRefreshTokenModel.updateOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+        });
 
-    it('remove calls findOneAndUpdate and throws when not found', async () => {
-        mockApplicationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
-        mockNotificationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
-        mockRefreshTokenModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
-        mockRefreshTokenModel.updateOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
-        mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+        it('should resolve to undefined when student is found and soft-deleted', async () => {
+            mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: STUDENT_ID }) });
 
-        await expect(service.remove('1')).rejects.toThrow();
-        expect(mockModel.findOneAndUpdate).toHaveBeenCalled();
+            await expect(service.remove(STUDENT_ID)).resolves.toBeUndefined();
+        });
+
+        it('should call findOneAndUpdate with correct filter and soft-delete payload', async () => {
+            mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: STUDENT_ID }) });
+
+            await service.remove(STUDENT_ID);
+
+            expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(
+                { _id: STUDENT_ID, deletedAt: { $exists: false } },
+                { $set: { deletedAt: expect.any(Date) } },
+            );
+        });
+
+        it('should soft-delete related applications after student is deleted', async () => {
+            mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: STUDENT_ID }) });
+
+            await service.remove(STUDENT_ID);
+
+            expect(mockApplicationModel.updateMany).toHaveBeenCalledWith(
+                { student: STUDENT_ID },
+                { $set: { deletedAt: expect.any(Date) } },
+            );
+        });
+
+        it('should soft-delete related notifications after student is deleted', async () => {
+            mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: STUDENT_ID }) });
+
+            await service.remove(STUDENT_ID);
+
+            expect(mockNotificationModel.updateMany).toHaveBeenCalledWith(
+                { userId: STUDENT_ID },
+                { $set: { deletedAt: expect.any(Date) } },
+            );
+        });
+
+        it('should expire the refresh token after student is deleted', async () => {
+            mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: STUDENT_ID }) });
+
+            await service.remove(STUDENT_ID);
+
+            expect(mockRefreshTokenModel.updateOne).toHaveBeenCalledWith(
+                { userId: STUDENT_ID },
+                { $set: { expiresAt: expect.any(Date) } },
+            );
+        });
+
+        it('should throw NotFoundException with correct message when student not found', async () => {
+            mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+            await expect(service.remove(STUDENT_ID)).rejects.toThrow(NotFoundException);
+            await expect(service.remove(STUDENT_ID)).rejects.toThrow('Student not found or already deleted');
+        });
+
+        it('should not update related models when student is not found', async () => {
+            mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+            await expect(service.remove(STUDENT_ID)).rejects.toThrow();
+
+            expect(mockApplicationModel.updateMany).not.toHaveBeenCalled();
+            expect(mockNotificationModel.updateMany).not.toHaveBeenCalled();
+            expect(mockRefreshTokenModel.updateOne).not.toHaveBeenCalled();
+        });
+
+        it('should throw when findOneAndUpdate encounters a database error', async () => {
+            mockModel.findOneAndUpdate.mockReturnValue({
+                exec: jest.fn().mockRejectedValue(new Error('Database error')),
+            });
+
+            await expect(service.remove(STUDENT_ID)).rejects.toThrow('Database error');
+            expect(mockModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe('createMany', () => {

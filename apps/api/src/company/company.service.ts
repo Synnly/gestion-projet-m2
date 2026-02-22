@@ -217,7 +217,7 @@ export class CompanyService {
         }
 
         await this.notificationModel.updateMany({ userId: id }, { $set: { deletedAt: new Date() } }).exec();
-        await this.refreshTokenModel.updateOne({ userId: id }, { $set: { deletedAt: new Date() } }).exec();
+        await this.refreshTokenModel.updateOne({ userId: id }, { $set: { expiresAt: new Date() } }).exec();
         for (const postId of updated.posts ?? []) {
             await this.postService.delete(postId.toString());
         }
