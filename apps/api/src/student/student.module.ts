@@ -8,6 +8,8 @@ import { PaginationService } from '../common/pagination/pagination.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Application, ApplicationSchema } from 'src/application/application.schema';
 import { Message, MessageSchema } from 'src/forum/message/message.schema';
+import { NotificationModule } from '../notification/notification.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
@@ -18,7 +20,10 @@ import { Message, MessageSchema } from 'src/forum/message/message.schema';
             // { name: Student.name, schema: StudentSchema }
         ]),
         UsersModule,
-        MailerModule.register()],
+        MailerModule.register(),
+        NotificationModule,
+        AuthModule,
+    ],
     controllers: [StudentController],
     providers: [StudentService, GeoService, PaginationService],
     exports: [StudentService],
