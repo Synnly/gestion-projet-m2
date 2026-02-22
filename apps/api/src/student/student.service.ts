@@ -205,15 +205,16 @@ export class StudentService {
      * @throws NotFoundException if the student does not exist or is already deleted.
      */
     async remove(id: string): Promise<void> {
-        await this.applicationModel.updateMany({ student: id }, { $set: { deletedAt: new Date() } }).exec();
-        await this.notificationModel.updateMany({ userId: id }, { $set: { deletedAt: new Date() } }).exec();
-        await this.refreshTokenModel.updateOne({ userId: id }, { $set: { expiresAt: new Date() } }).exec();
-
         const updated = await this.studentModel
             .findOneAndUpdate({ _id: id, deletedAt: { $exists: false } }, { $set: { deletedAt: new Date() } })
             .exec();
 
         if (!updated) throw new NotFoundException('Student not found or already deleted');
+
+        await this.applicationModel.updateMany({ student: id }, { $set: { deletedAt: new Date() } }).exec();
+        await this.notificationModel.updateMany({ userId: id }, { $set: { deletedAt: new Date() } }).exec();
+        await this.refreshTokenModel.updateOne({ userId: id }, { $set: { expiresAt: new Date() } }).exec();
+
         return;
     }
 
@@ -224,7 +225,10 @@ export class StudentService {
         await this.applicationModel.updateMany({}, { $set: { deletedAt: new Date() } }).exec();
 
         // Removal of notifications and refresh tokens of all students
-        const students = await this.studentModel.find().select('_id').exec();
+        const students = await this.studentModel
+            .find({ deletedAt: { $exists: false } })
+            .select('_id')
+            .exec();
         const studentIds = students.map((s) => s._id);
         if (studentIds.length > 0) {
             await this.notificationModel

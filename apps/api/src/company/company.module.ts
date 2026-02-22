@@ -6,9 +6,11 @@ import { PostModule } from '../post/post.module';
 import { ForumModule } from '../forum/forum.module';
 import { PaginationService } from 'src/common/pagination/pagination.service';
 import { GeoService } from '../common/geography/geo.service';
+import { NotificationModule } from '../notification/notification.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-    imports: [UsersModule, forwardRef(() => PostModule), forwardRef(() => ForumModule)],
+    imports: [UsersModule, forwardRef(() => PostModule), forwardRef(() => ForumModule), NotificationModule, AuthModule],
     controllers: [CompanyController],
     providers: [CompanyService, PaginationService, GeoService],
     exports: [CompanyService],

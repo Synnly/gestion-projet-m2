@@ -215,6 +215,16 @@ export class CompanyController {
     }
 
     /**
+     * Soft deletes all companies.
+     */
+    @Delete('')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async removeAll() {
+        await this.companyService.removeAll();
+    }
+
+    /**
      * Maps a Company entity to a CompanyDto with nested PostDtos
      * @param company The company entity to map
      * @returns The mapped CompanyDto

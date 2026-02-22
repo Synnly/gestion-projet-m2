@@ -12,6 +12,8 @@ import { PaginationResult } from '../common/pagination/dto/paginationResult';
 import { PaginationDto } from '../common/pagination/dto/pagination.dto';
 import { QueryBuilder } from '../common/pagination/query.builder';
 import { GeoService } from '../common/geography/geo.service';
+import { RefreshToken } from '../auth/refreshToken.schema';
+import { Notification } from '../notification/notification.schema';
 
 /**
  * Service handling business logic for company operations
@@ -42,6 +44,8 @@ export class CompanyService {
         @InjectModel(Company.name) private readonly companyModel: Model<Company>,
         @Inject(forwardRef(() => PostService)) private readonly postService: PostService,
         @Inject(forwardRef(() => ForumService)) private readonly forumService: ForumService,
+        @InjectModel(Notification.name) private readonly notificationModel: Model<Notification>,
+        @InjectModel(RefreshToken.name) private readonly refreshTokenModel: Model<RefreshToken>,
         private readonly paginationService: PaginationService,
         private readonly geoService: GeoService,
     ) {}
@@ -188,10 +192,8 @@ export class CompanyService {
     }
 
     /**
-     * Permanently removes a company from the database
-     *
-     * This performs a hard delete operation, removing the company document entirely.
-     * Only affects companies that have not been previously soft-deleted.
+     * Soft deletes a company from the database. Also marks related notifications and refresh tokens as deleted, and
+     * deletes associated posts. May be slow for companies with many posts due to sequential deletion of posts
      *
      * @param id - The MongoDB ObjectId of the company to delete
      * @returns Promise resolving to void upon successful deletion
@@ -213,6 +215,53 @@ export class CompanyService {
         if (!updated) {
             throw new NotFoundException('Company not found or already deleted');
         }
+
+        await this.notificationModel.updateMany({ userId: id }, { $set: { deletedAt: new Date() } }).exec();
+        await this.refreshTokenModel.updateOne({ userId: id }, { $set: { deletedAt: new Date() } }).exec();
+        for (const postId of updated.posts ?? []) {
+            await this.postService.delete(postId.toString());
+        }
+        return;
+    }
+
+    /**
+     * Soft deletes all companies from the database. Also marks all notifications and refresh tokens as deleted, and
+     * deletes all associated posts. May be slow due to sequential deletion of posts
+     *
+     * @remarks This method may be very slow if there are many companies and posts, as it deletes posts sequentially.
+     * Use with caution in production environments. Consider removing students BEFORE companies to avoid sending mails
+     * and improve performance.
+     *
+     * @returns Promise resolving to void upon successful deletion of all companies
+     */
+    async removeAll(): Promise<void> {
+        const companies = await this.companyModel.find({ deletedAt: { $exists: false } }).exec();
+        const companyIds = companies.map((company) => company._id.toString());
+        const companyPosts = companies.reduce(
+            (acc, company) => {
+                acc[company._id.toString()] = company.posts?.map((post) => post.toString()) ?? [];
+                return acc;
+            },
+            {} as Record<string, string[]>,
+        );
+
+        if (Object.values(companyPosts).some((posts) => posts.length > 0)) {
+            await this.notificationModel
+                .updateMany({ userId: { $in: companyIds } }, { $set: { deletedAt: new Date() } })
+                .exec();
+            await this.refreshTokenModel
+                .updateMany({ userId: { $in: companyIds } }, { $set: { deletedAt: new Date() } })
+                .exec();
+        }
+
+        for (const companyId in companyPosts) {
+            for (const postId of companyPosts[companyId]) {
+                await this.postService.delete(postId);
+            }
+        }
+        await this.companyModel
+            .updateMany({ deletedAt: { $exists: false } }, { $set: { deletedAt: new Date() } })
+            .exec();
         return;
     }
 
