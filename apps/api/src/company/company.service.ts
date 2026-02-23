@@ -52,9 +52,7 @@ export class CompanyService {
     populateField = '_id title description duration startDate minSalary maxSalary sector keySkills adress type';
 
     /**
-     * Retrieves all active (non-deleted) companies
-     *
-     * Uses soft-delete pattern, only returning companies where deletedAt field does not exist.
+     * Retrieves all companies, even those that are soft-deleted, with pagination and optional filtering
      *
      * @returns Promise resolving to a paginated array of all active companies
      * ```
@@ -249,7 +247,7 @@ export class CompanyService {
                 .updateMany({ userId: { $in: companyIds } }, { $set: { deletedAt: new Date() } })
                 .exec();
             await this.refreshTokenModel
-                .updateMany({ userId: { $in: companyIds } }, { $set: { deletedAt: new Date() } })
+                .updateMany({ userId: { $in: companyIds } }, { $set: { expiresAt: new Date() } })
                 .exec();
         }
 

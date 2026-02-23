@@ -928,7 +928,7 @@ describe('CompanyService', () => {
             );
             expect(mockRefreshTokenModel.updateMany).toHaveBeenCalledWith(
                 { userId: { $in: [companyId] } },
-                { $set: { deletedAt: expect.any(Date) } },
+                { $set: { expiresAt: expect.any(Date) } },
             );
         });
 

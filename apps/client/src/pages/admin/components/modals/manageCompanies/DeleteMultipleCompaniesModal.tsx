@@ -11,7 +11,6 @@ interface Props {
 
 export const DeleteMultipleCompaniesModal = ({ companies, onConfirm, onCancel, isLoading = false }: Props) => {
     const [canConfirm, setCanConfirm] = useState(false);
-    console.log(companies);
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         setCanConfirm(e.target.value === 'Confirmer');
     };

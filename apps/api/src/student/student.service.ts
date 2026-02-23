@@ -235,7 +235,7 @@ export class StudentService {
                 .updateMany({ userId: { $in: studentIds } }, { $set: { deletedAt: new Date() } })
                 .exec();
             await this.refreshTokenModel
-                .updateMany({ userId: { $in: studentIds } }, { $set: { deletedAt: new Date() } })
+                .updateMany({ userId: { $in: studentIds } }, { $set: { expiresAt: new Date() } })
                 .exec();
         }
 

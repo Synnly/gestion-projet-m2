@@ -823,7 +823,7 @@ describe('Company Integration Tests', () => {
             await request(app.getHttpServer())
                 .delete('/api/companies')
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
-                .expect(200);
+                .expect(204);
 
             const remaining = await companyModel.find({ deletedAt: { $exists: false } });
             expect(remaining).toHaveLength(0);
@@ -851,7 +851,7 @@ describe('Company Integration Tests', () => {
             await request(app.getHttpServer())
                 .delete('/api/companies')
                 .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
-                .expect(200);
+                .expect(204);
         });
 
         it('should create company with minimal required fields only', async () => {

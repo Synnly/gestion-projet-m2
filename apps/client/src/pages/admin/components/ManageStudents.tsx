@@ -223,7 +223,10 @@ export default function ManageStudents() {
                     <DeleteMultipleStudentsModal
                         students={studentToDelete ? [studentToDelete] : studentsToDelete}
                         onConfirm={handleDeleteMultipleConfirm}
-                        onCancel={() => setIsDeleteMultipleModalOpen(false)}
+                        onCancel={() => {
+                            setIsDeleteMultipleModalOpen(false);
+                            setStudentToDelete(null);
+                        }}
                     />
                 )}
             </div>

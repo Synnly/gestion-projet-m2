@@ -220,6 +220,7 @@ export class CompanyController {
     @Delete('')
     @UseGuards(AuthGuard, RolesGuard)
     @Roles(Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
     async removeAll() {
         await this.companyService.removeAll();
     }
