@@ -1,4 +1,4 @@
-import { CheckCircle, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 
 interface DeleteAccountSuccessModalProps {
     onConfirm: () => void;
