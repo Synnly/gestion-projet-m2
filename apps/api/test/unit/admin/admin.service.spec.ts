@@ -3,9 +3,7 @@ import { getModelToken, getConnectionToken } from '@nestjs/mongoose';
 import { AdminService } from '../../../src/admin/admin.service';
 import { Admin } from '../../../src/admin/admin.schema';
 import { CreateAdminDto } from '../../../src/admin/dto/createAdminDto';
-<<<<<<< reports
 import { Report } from '../../../src/forum/report/report.schema';
-=======
 import { DatabaseExport, ExportStatus } from '../../../src/admin/database-export.schema';
 import { DatabaseImport, ImportStatus } from '../../../src/admin/database-import.schema';
 import { MailerService } from '../../../src/mailer/mailer.service';
@@ -14,7 +12,6 @@ import { NotFoundException, HttpException, HttpStatus, InternalServerErrorExcept
 import { Types } from 'mongoose';
 import { Readable } from 'stream';
 import * as zlib from 'zlib';
->>>>>>> dev
 
 describe('AdminService', () => {
     let service: AdminService;
@@ -111,10 +108,10 @@ describe('AdminService', () => {
                     useValue: MockAdminModel,
                 },
                 {
-<<<<<<< reports
                     provide: getModelToken(Report.name),
                     useValue: MockAdminModel,
-=======
+                },
+                {
                     provide: getModelToken(DatabaseExport.name),
                     useValue: MockExportModel,
                 },
@@ -133,7 +130,6 @@ describe('AdminService', () => {
                 {
                     provide: ConfigService,
                     useValue: mockConfigService,
->>>>>>> dev
                 },
             ],
         }).compile();
@@ -152,13 +148,13 @@ describe('AdminService', () => {
     afterEach(async () => {
         jest.clearAllMocks();
         jest.restoreAllMocks();
-        
+
         // Cleanup any test export files
         try {
             const fs = require('fs');
             const path = require('path');
             const exportsDir = './test-exports';
-            
+
             if (fs.existsSync(exportsDir)) {
                 const files = fs.readdirSync(exportsDir);
                 for (const file of files) {
@@ -185,7 +181,7 @@ describe('AdminService', () => {
             const fs = require('fs');
             const path = require('path');
             const exportsDir = './test-exports';
-            
+
             if (fs.existsSync(exportsDir)) {
                 const files = fs.readdirSync(exportsDir);
                 for (const file of files) {
@@ -273,11 +269,11 @@ describe('AdminService', () => {
             expect(result).toBeDefined();
             expect(result.status).toBe(ExportStatus.PENDING);
             expect(result.adminId.toString()).toBe(adminId);
-            
+
             // Verify performExport was called in background
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await new Promise((resolve) => setTimeout(resolve, 10));
             expect(performExportSpy).toHaveBeenCalledWith(result._id.toString());
-            
+
             // Restore the original implementation
             performExportSpy.mockRestore();
         });
@@ -526,7 +522,7 @@ describe('AdminService', () => {
 
             // Mock exportAllCollectionsStreaming to throw error
             jest.spyOn(service as any, 'exportAllCollectionsStreaming').mockRejectedValue(
-                new InternalServerErrorException('Database connection not available')
+                new InternalServerErrorException('Database connection not available'),
             );
 
             // performExport should not throw but handle the error internally
@@ -552,7 +548,7 @@ describe('AdminService', () => {
 
             // Mock exportAllCollectionsStreaming to throw cancellation error
             jest.spyOn(service as any, 'exportAllCollectionsStreaming').mockRejectedValue(
-                new HttpException('Export cancelled by user', HttpStatus.CONFLICT)
+                new HttpException('Export cancelled by user', HttpStatus.CONFLICT),
             );
 
             // performExport should not throw but handle cancellation gracefully
@@ -570,7 +566,9 @@ describe('AdminService', () => {
             const originalConnection = service['connection'];
             service['connection'] = null as any;
 
-            await expect(service['exportAllCollectionsStreaming'](exportId)).rejects.toThrow(InternalServerErrorException);
+            await expect(service['exportAllCollectionsStreaming'](exportId)).rejects.toThrow(
+                InternalServerErrorException,
+            );
 
             service['connection'] = originalConnection;
         });
@@ -580,27 +578,26 @@ describe('AdminService', () => {
             const originalConnection = service['connection'];
             service['connection'] = { db: null } as any;
 
-            await expect(service['exportAllCollectionsStreaming'](exportId)).rejects.toThrow(InternalServerErrorException);
+            await expect(service['exportAllCollectionsStreaming'](exportId)).rejects.toThrow(
+                InternalServerErrorException,
+            );
 
             service['connection'] = originalConnection;
         });
 
         it('should handle multiple collections and process them sequentially', async () => {
             const exportId = new Types.ObjectId().toString();
-            
+
             // Mock collections
-            const mockCollections = [
-                { name: 'users' },
-                { name: 'posts' },
-                { name: 'comments' },
-            ];
+            const mockCollections = [{ name: 'users' }, { name: 'posts' }, { name: 'comments' }];
 
             mockConnection.db.listCollections.mockReturnValue({
                 toArray: jest.fn().mockResolvedValue(mockCollections),
             });
 
             // Track how many times we check for cancellation (one per collection)
-            const checkCancellationSpy = jest.spyOn(service as any, 'checkCancellationDuringOperation')
+            const checkCancellationSpy = jest
+                .spyOn(service as any, 'checkCancellationDuringOperation')
                 .mockResolvedValue(false);
 
             // Mock cursors for each collection
@@ -646,11 +643,9 @@ describe('AdminService', () => {
 
         it('should write comma separator between documents in a collection', async () => {
             const exportId = new Types.ObjectId().toString();
-            
+
             // Mock a single collection with multiple documents
-            const mockCollections = [
-                { name: 'users' },
-            ];
+            const mockCollections = [{ name: 'users' }];
 
             mockConnection.db.listCollections.mockReturnValue({
                 toArray: jest.fn().mockResolvedValue(mockCollections),
@@ -701,12 +696,9 @@ describe('AdminService', () => {
 
         it('should throw HttpException when export is cancelled during processing', async () => {
             const exportId = new Types.ObjectId().toString();
-            
+
             // Mock collections
-            const mockCollections = [
-                { name: 'users' },
-                { name: 'posts' },
-            ];
+            const mockCollections = [{ name: 'users' }, { name: 'posts' }];
 
             mockConnection.db.listCollections.mockReturnValue({
                 toArray: jest.fn().mockResolvedValue(mockCollections),
@@ -725,7 +717,7 @@ describe('AdminService', () => {
 
             const fs = require('fs');
             jest.spyOn(fs.promises, 'mkdir').mockResolvedValue(undefined);
-            
+
             // Mock write stream with all required methods
             const mockWriteStream = {
                 on: jest.fn().mockReturnThis(),
@@ -753,8 +745,6 @@ describe('AdminService', () => {
             }
         });
     });
-
-
 
     describe('getExportPath', () => {
         it('should return correct export path', () => {
@@ -969,10 +959,6 @@ describe('AdminService', () => {
             expect(result).toBe('1.75 GB');
         });
     });
-
-
-
-
 
     // ========== IMPORT TESTS ==========
 
@@ -1249,7 +1235,10 @@ describe('AdminService', () => {
             const fileKey = 'test-import.json.gz';
 
             const mockData = {
-                users: [{ _id: '1', name: 'User 1' }, { _id: '2', name: 'User 2' }],
+                users: [
+                    { _id: '1', name: 'User 1' },
+                    { _id: '2', name: 'User 2' },
+                ],
                 posts: [{ _id: '1', title: 'Post 1' }],
             };
 
