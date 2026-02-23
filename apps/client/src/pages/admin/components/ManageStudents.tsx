@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 import { toast } from 'react-toastify';
 import { Trash2, UserX, UserCheck } from 'lucide-react';
-import DeleteStudentModal from './modals/manageStudents/DeleteStudentModal.tsx';
 import type { studentProfile } from '../../../types/student.types.ts';
 import { deleteAllStudents, deleteStudent, fetchStudents } from '../../../apis/student.ts';
 import Pagination from '../../common/ui/pagination/Pagination.tsx';
@@ -15,7 +14,6 @@ export default function ManageStudents() {
     const [totalPages, setTotalPages] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [studentToDelete, setStudentToDelete] = useState<studentProfile | null>(null);
-    const [isDeleteLoading, setIsDeleteLoading] = useState(false);
     const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
     const [isDeleteMultipleModalOpen, setIsDeleteMultipleModalOpen] = useState(false);
     const [studentsToDelete, setStudentsToDelete] = useState<studentProfile[]>([]);
@@ -51,33 +49,17 @@ export default function ManageStudents() {
         }
     };
 
-    const handleDeleteConfirm = async () => {
-        if (!studentToDelete) return;
-
-        setIsDeleteLoading(true);
-        try {
-            await deleteStudent(authFetch, studentToDelete._id);
-            const updatedStudents: studentProfile[] = students.map((student) =>
-                student._id === studentToDelete._id ? { ...student, deletedAt: new Date().toISOString() } : student,
-            );
-            setStudents(updatedStudents);
-            toast.success(`Compte de ${studentToDelete.firstName} désactivé. Suppression dans 30 jours.`);
-        } catch (error) {
-            console.error(error);
-            toast.error('Erreur technique');
-        } finally {
-            setStudentToDelete(null);
-            setIsDeleteLoading(false);
-        }
-    };
-
     const handleDeleteMultipleConfirm = async () => {
-        if (!studentsToDelete) return;
+        let tempStudentsToDelete;
+        if (studentToDelete) {
+            tempStudentsToDelete = [studentToDelete];
+        } else if (studentsToDelete.length > 0) {
+            tempStudentsToDelete = studentsToDelete;
+        } else return;
 
-        setIsDeleteLoading(true);
         let nbErrors = 0;
         let studentsDeleted: studentProfile[] = [];
-        for (const student of studentsToDelete) {
+        for (const student of tempStudentsToDelete) {
             try {
                 await deleteStudent(authFetch, student._id);
                 studentsDeleted.push(student);
@@ -86,6 +68,8 @@ export default function ManageStudents() {
                 nbErrors++;
             }
         }
+        if (studentToDelete) setStudentToDelete(null);
+
         const updatedStudents: studentProfile[] = students.map((student) =>
             studentsDeleted.some((s) => s._id === student._id)
                 ? { ...student, deletedAt: new Date().toISOString() }
@@ -101,15 +85,13 @@ export default function ManageStudents() {
             toast.success(`Tous les comptes sélectionnés désactivés. Suppression dans 30 jours.`);
         } else {
             toast.warning(
-                `${studentsToDelete.length - nbErrors} compte(s) désactivé(s) avec succès, mais ${nbErrors} compte(s) n'ont pas pu être supprimé(s). Veuillez réessayer pour les comptes restants.`,
+                `${tempStudentsToDelete.length - nbErrors} compte(s) désactivé(s) avec succès, mais ${nbErrors} compte(s) n'ont pas pu être supprimé(s). Veuillez réessayer pour les comptes restants.`,
             );
         }
-        setIsDeleteLoading(false);
         setIsDeleteMultipleModalOpen(false);
     };
 
     const handleDeleteAllConfirm = async () => {
-        setIsDeleteLoading(true);
         try {
             await deleteAllStudents(authFetch);
             const updatedStudents: studentProfile[] = students.map((student) => ({
@@ -122,8 +104,6 @@ export default function ManageStudents() {
         } catch (error) {
             console.error(error);
             toast.error('Erreur technique');
-        } finally {
-            setIsDeleteLoading(false);
         }
         clearSelectedStudents();
     };
@@ -231,14 +211,6 @@ export default function ManageStudents() {
                     </div>
                 )}
 
-                {studentToDelete && (
-                    <DeleteStudentModal
-                        studentName={`${studentToDelete.firstName} ${studentToDelete.lastName}`}
-                        onConfirm={handleDeleteConfirm}
-                        onCancel={() => setStudentToDelete(null)}
-                        isLoading={isDeleteLoading}
-                    />
-                )}
                 {isDeleteAllModalOpen && (
                     <DeleteAllStudentsModal
                         onConfirm={handleDeleteAllConfirm}
@@ -247,9 +219,9 @@ export default function ManageStudents() {
                         }}
                     />
                 )}
-                {isDeleteMultipleModalOpen && (
+                {(isDeleteMultipleModalOpen || studentToDelete) && (
                     <DeleteMultipleStudentsModal
-                        students={studentsToDelete}
+                        students={studentToDelete ? [studentToDelete] : studentsToDelete}
                         onConfirm={handleDeleteMultipleConfirm}
                         onCancel={() => setIsDeleteMultipleModalOpen(false)}
                     />

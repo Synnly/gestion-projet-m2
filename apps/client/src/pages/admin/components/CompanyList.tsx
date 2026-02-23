@@ -174,22 +174,22 @@ export const CompanyList = () => {
                                         <td>{company.city || 'N/A'}</td>
                                         <td className="w-0 text-center" colSpan={isScheduledForDeletion ? 2 : 1}>
                                             {company.deletedAt ? (
-                                                <span className="self-center badge badge-error w-max">
+                                                <span className="self-center badge badge-error w-max text-xs">
                                                     <UserX className="h-3 w-3" />
                                                     Désactivée
                                                 </span>
                                             ) : company.isValid ? (
-                                                <span className="badge badge-success w-max">
+                                                <span className="badge badge-success w-max text-xs">
                                                     <UserCheck className="h-3 w-3" />
                                                     Actif
                                                 </span>
                                             ) : company.rejected?.isRejected ? (
-                                                <span className="badge badge-error w-max">
+                                                <span className="badge badge-error w-max text-xs">
                                                     <X className="h-3 w-3" />
                                                     Rejetée
                                                 </span>
                                             ) : (
-                                                <span className="badge badge-warning w-max">
+                                                <span className="badge badge-warning w-max text-xs">
                                                     <Clock className="h-3 w-3" />
                                                     En attente
                                                 </span>
