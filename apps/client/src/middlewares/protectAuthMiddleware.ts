@@ -1,3 +1,4 @@
+import { redirect } from 'react-router';
 import { UseAuthFetch } from '../hooks/useAuthFetch';
 import { userStore } from '../stores/userStore';
 
@@ -7,12 +8,12 @@ import { userStore } from '../stores/userStore';
  * @param {Request} param0.request - The request object.
  * @returns {Promise<Response|void>} - Redirects to signin if not authenticated, or to complete-profil if profile is incomplete.
  */
-export async function protectedMiddleware(): Promise<string | void> {
+export async function protectedMiddleware(): Promise<Response | string | void> {
     const API_URL = import.meta.env.VITE_APIURL;
     const { access, set: setAccess, logout } = userStore.getState();
     const authFetch = UseAuthFetch();
     if (!access) {
-        return;
+        return redirect("/signin");
     }
 
     const refreshRes = await authFetch(`${API_URL}/api/auth/refresh`, {

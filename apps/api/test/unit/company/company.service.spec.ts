@@ -10,6 +10,7 @@ import { UpdateCompanyDto } from '../../../src/company/dto/updateCompany.dto';
 import { NafCode } from '../../../src/company/nafCodes.enum';
 import { PostService } from '../../../src/post/post.service';
 import { ForumService } from '../../../src/forum/forum.service';
+import { GeoService } from '../../../src/common/geography/geo.service';
 
 describe('CompanyService', () => {
     let service: CompanyService;
@@ -35,6 +36,10 @@ describe('CompanyService', () => {
 
     const mockForumService = {
         create: jest.fn(),
+    };
+
+    const mockGeoService = {
+        geocodeAddress: jest.fn().mockResolvedValue([2.3522, 48.8566]),
     };
 
     const setupFindOnePopulate = () => {
@@ -63,6 +68,10 @@ describe('CompanyService', () => {
                     provide: ForumService,
                     useValue: mockForumService,
                 },
+                {
+                    provide: GeoService,
+                    useValue: mockGeoService,
+                },
             ],
         }).compile();
 
@@ -77,31 +86,55 @@ describe('CompanyService', () => {
     });
 
     describe('findAll', () => {
-        it('should call companyModel.find with filter and populate posts', async () => {
-            const mockCompanies = [{ _id: '1', name: 'C1', posts: [] }];
-            const mockQuery = {
-                populate: jest.fn().mockReturnThis(),
-                exec: jest.fn().mockResolvedValue(mockCompanies),
+        it('should return paginated companies', async () => {
+            const paginationResult = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439011',
+                        email: 'test@example.com',
+                        password: 'hashedPassword',
+                        name: 'Test Company',
+                    },
+                ],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
             };
-            mockCompanyModel.find.mockReturnValue(mockQuery);
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
 
-            const result = await service.findAll();
+            const result = await service.findAll({ page: 1, limit: 10 } as any);
 
-            expect(mockCompanyModel.find).toHaveBeenCalledWith({ deletedAt: { $exists: false } });
-            expect(mockQuery.populate).toHaveBeenCalledWith({ path: 'posts', select: service.populateField });
-            expect(result).toEqual(mockCompanies);
+            expect(result).toEqual(paginationResult);
+            expect(result.data).toHaveLength(1);
+            expect(mockPaginationService.paginate).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.any(Object), // filters
+                1,
+                10,
+                expect.any(Array), // populate
+                expect.anything(), // sort
+            );
         });
 
-        it('should handle empty results', async () => {
-            const mockQuery = {
-                populate: jest.fn().mockReturnThis(),
-                exec: jest.fn().mockResolvedValue([]),
+        it('should return empty result when no companies found', async () => {
+            const paginationResult = {
+                data: [],
+                total: 0,
+                page: 1,
+                limit: 10,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
             };
-            mockCompanyModel.find.mockReturnValue(mockQuery);
+            mockPaginationService.paginate.mockResolvedValue(paginationResult);
 
-            const result = await service.findAll();
+            const result = await service.findAll({ page: 1, limit: 10 } as any);
 
-            expect(result).toEqual([]);
+            expect(result.data).toHaveLength(0);
+            expect(result.total).toBe(0);
         });
     });
 
@@ -840,51 +873,60 @@ describe('CompanyService', () => {
         });
 
         it('should verify company is removed from findAll after deletion when remove is called', async () => {
-            const companiesBeforeDelete = [
-                {
-                    _id: '507f1f77bcf86cd799439011',
-                    email: 'delete-test@example.com',
-                    name: 'Delete Test Company',
-                },
-                {
-                    _id: '507f1f77bcf86cd799439012',
-                    email: 'keep@example.com',
-                    name: 'Keep Company',
-                },
-            ];
-
-            const companiesAfterDelete = [
-                {
-                    _id: '507f1f77bcf86cd799439012',
-                    email: 'keep@example.com',
-                    name: 'Keep Company',
-                },
-            ];
-
-            const mockQueryBefore = {
-                populate: jest.fn().mockReturnThis(),
-                exec: jest.fn().mockResolvedValue(companiesBeforeDelete),
+            const companiesBeforeDelete = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439011',
+                        email: 'delete-test@example.com',
+                        name: 'Delete Test Company',
+                    },
+                    {
+                        _id: '507f1f77bcf86cd799439012',
+                        email: 'keep@example.com',
+                        name: 'Keep Company',
+                    },
+                ],
+                total: 2,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
             };
 
-            const mockQueryAfter = {
-                populate: jest.fn().mockReturnThis(),
-                exec: jest.fn().mockResolvedValue(companiesAfterDelete),
+            const companiesAfterDelete = {
+                data: [
+                    {
+                        _id: '507f1f77bcf86cd799439012',
+                        email: 'keep@example.com',
+                        name: 'Keep Company',
+                    },
+                ],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
             };
 
-            mockCompanyModel.find.mockReturnValueOnce(mockQueryBefore).mockReturnValueOnce(mockQueryAfter);
+            // findAll relies on paginationService, so we must mock paginate instead of model.find
+            mockPaginationService.paginate
+                .mockResolvedValueOnce(companiesBeforeDelete)
+                .mockResolvedValueOnce(companiesAfterDelete);
 
             mockExec.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' });
             mockCompanyModel.findOneAndDelete.mockReturnValue({
                 exec: mockExec,
             });
 
-            const beforeDelete = await service.findAll();
-            expect(beforeDelete).toHaveLength(2);
+            const beforeDelete = await service.findAll({ page: 1, limit: 10 } as any);
+            expect(beforeDelete.data).toHaveLength(2);
 
             await service.remove('507f1f77bcf86cd799439011');
 
-            const afterDelete = await service.findAll();
-            expect(afterDelete).toHaveLength(1);
+            const afterDelete = await service.findAll({ page: 1, limit: 10 } as any);
+            expect(afterDelete.data).toHaveLength(1);
         });
     });
 

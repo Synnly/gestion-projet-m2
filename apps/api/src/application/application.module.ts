@@ -9,6 +9,7 @@ import { S3Module } from '../s3/s3.module';
 import { StorageProviderType } from '../s3/s3.constants';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { NotificationModule } from 'src/notification/notification.module';
+import { MailerModule } from '../mailer/mailer.module';
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { NotificationModule } from 'src/notification/notification.module';
         forwardRef(() => PostModule),
         StudentModule,
         NotificationModule,
+        MailerModule.register(),
         S3Module.register({ provider: StorageProviderType.MINIO }),
     ],
     controllers: [ApplicationController],

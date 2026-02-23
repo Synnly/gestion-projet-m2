@@ -2,10 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { StudentService } from '../../../src/student/student.service';
 import { Student } from '../../../src/student/student.schema';
+import { Application } from '../../../src/application/application.schema';
 import { Role } from '../../../src/common/roles/roles.enum';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { MailerService } from '../../../src/mailer/mailer.service';
 import { ConfigService } from '@nestjs/config';
+import { GeoService } from '../../../src/common/geography/geo.service';
+import { PaginationService } from '../../../src/common/pagination/pagination.service';
 import { CreateStudentDto } from 'src/student/dto/createStudent.dto';
 
 describe('StudentService', () => {
@@ -18,6 +21,15 @@ describe('StudentService', () => {
         create: jest.fn(),
         findOneAndUpdate: jest.fn(),
         insertMany: jest.fn(),
+        aggregate: jest.fn(),
+        deleteMany: jest.fn(),
+    } as any;
+
+    const mockApplicationModel = {
+        find: jest.fn(),
+        findOne: jest.fn(),
+        deleteMany: jest.fn(),
+        updateMany: jest.fn(),
     } as any;
 
     const TEST_MAX_ROWS = 1000;
@@ -34,13 +46,30 @@ describe('StudentService', () => {
         sendAccountCreationEmail: jest.fn().mockResolvedValue(true),
     };
 
+    const mockGeoService = {
+        geocodeAddress: jest.fn().mockResolvedValue([2.3522, 48.8566]),
+    };
+
+    const mockPaginationService = {
+        paginate: jest.fn(),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
                 StudentService,
                 { provide: getModelToken(Student.name), useValue: mockModel },
+                { provide: getModelToken(Application.name), useValue: mockApplicationModel },
                 { provide: ConfigService, useValue: mockConfigService },
                 { provide: MailerService, useValue: mockMailerService },
+                {
+                    provide: GeoService,
+                    useValue: mockGeoService,
+                },
+                {
+                    provide: PaginationService,
+                    useValue: mockPaginationService,
+                },
             ],
         }).compile();
 
@@ -53,12 +82,42 @@ describe('StudentService', () => {
         expect(service).toBeDefined();
     });
 
-    it('findAll calls model.find with deletedAt filter', async () => {
-        const expected = [{ email: 'a@b.c' }];
-        mockModel.find.mockReturnValue({ exec: jest.fn().mockResolvedValue(expected) });
+    it('findAll calls paginationService.paginate with deletedAt filter', async () => {
+        const query = { page: 1, limit: 10 } as any;
+        const expected = {
+            data: [{ email: 'a@b.c' }],
+            total: 1,
+            page: 1,
+            limit: 10,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
+        };
+        mockPaginationService.paginate.mockResolvedValue(expected);
 
-        const res = await service.findAll();
-        expect(mockModel.find).toHaveBeenCalledWith({ deletedAt: { $exists: false } });
+        const res = await service.findAll(query);
+        expect(mockPaginationService.paginate).toHaveBeenCalled();
+        expect(res).toEqual(expected);
+    });
+
+    it('findAllForAdmin returns all students including soft-deleted ones', async () => {
+        const query = { page: 1, limit: 10 } as any;
+        const expected = {
+            data: [
+                { email: 'a@b.c', deletedAt: null },
+                { email: 'd@e.f', deletedAt: new Date() },
+            ],
+            total: 2,
+            page: 1,
+            limit: 10,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
+        };
+        mockPaginationService.paginate.mockResolvedValue(expected);
+
+        const res = await service.findAllForAdmin(query);
+        expect(mockPaginationService.paginate).toHaveBeenCalled();
         expect(res).toEqual(expected);
     });
 
@@ -140,9 +199,14 @@ describe('StudentService', () => {
     });
 
     it('remove resolves when document updated', async () => {
+        mockApplicationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
         mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: '1' }) });
 
         await expect(service.remove('1')).resolves.toBeUndefined();
+        expect(mockApplicationModel.updateMany).toHaveBeenCalledWith(
+            { student: '1' },
+            { $set: { deletedAt: expect.any(Date) } },
+        );
         expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(
             { _id: '1', deletedAt: { $exists: false } },
             { $set: { deletedAt: expect.any(Date) } },
@@ -150,6 +214,7 @@ describe('StudentService', () => {
     });
 
     it('remove calls findOneAndUpdate and throws when not found', async () => {
+        mockApplicationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
         mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
 
         await expect(service.remove('1')).rejects.toThrow();
@@ -491,6 +556,65 @@ describe('StudentService', () => {
 
             expect(result).toHaveLength(2);
             expect(result).toEqual(dtos);
+        });
+    });
+
+    describe('handleCron', () => {
+        it('should do nothing when no students to delete', async () => {
+            mockModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([]),
+            });
+
+            await service.handleCron();
+
+            expect(mockModel.find).toHaveBeenCalled();
+            expect(mockApplicationModel.deleteMany).not.toHaveBeenCalled();
+            expect(mockModel.deleteMany).not.toHaveBeenCalled();
+        });
+
+        it('should delete students and related applications when students older than 30 days exist', async () => {
+            const studentId1 = 'student1';
+            const studentId2 = 'student2';
+
+            mockModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: studentId1 }, { _id: studentId2 }]),
+            });
+
+            mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 5 });
+            mockModel.deleteMany.mockResolvedValue({ deletedCount: 2 });
+
+            await service.handleCron();
+
+            expect(mockModel.find).toHaveBeenCalledWith({
+                deletedAt: { $lte: expect.any(Date) },
+            });
+
+            expect(mockApplicationModel.deleteMany).toHaveBeenCalledWith({
+                student: { $in: [studentId1, studentId2] },
+            });
+
+            expect(mockModel.deleteMany).toHaveBeenCalledWith({
+                _id: { $in: [studentId1, studentId2] },
+            });
+        });
+
+        it('should handle the full cleanup process correctly', async () => {
+            const oldDate = new Date();
+            oldDate.setDate(oldDate.getDate() - 35);
+
+            const studentsToDelete = [{ _id: 'oldStudent1' }, { _id: 'oldStudent2' }, { _id: 'oldStudent3' }];
+
+            mockModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue(studentsToDelete),
+            });
+
+            mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 10 });
+            mockModel.deleteMany.mockResolvedValue({ deletedCount: 3 });
+
+            await service.handleCron();
+
+            expect(mockApplicationModel.deleteMany).toHaveBeenCalled();
+            expect(mockModel.deleteMany).toHaveBeenCalled();
         });
     });
 });

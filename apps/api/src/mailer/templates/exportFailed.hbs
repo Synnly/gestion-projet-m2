@@ -1,0 +1,39 @@
+<html>
+    <head>
+        <meta charset='utf-8' />
+        <meta name='viewport' content='width=device-width,initial-scale=1' />
+    </head>
+    <body style='margin:0;padding:0;background-color:#f3f4f6;font-family:Arial,Helvetica,sans-serif;'>
+        <table role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%'>
+            <tr>
+                <td align='center' style='padding:24px 10px;'>
+                    <table
+                        role='presentation'
+                        border='0'
+                        cellpadding='0'
+                        cellspacing='0'
+                        width='600'
+                        style='max-width:600px;background:#ffffff;border-radius:8px;overflow:hidden;'
+                    >
+                        <tr>
+                            <td style='padding:24px; text-align:left;'>
+                                <h1 style='margin:0 0 8px;font-size:20px;color:#dc2626;'>❌ Database Export Failed</h1>
+                                <p style='margin:0 0 16px;color:#6b7280;'>Unfortunately, your database export encountered an error and could not be completed.</p>
+
+                                <div style='background:#fef2f2;padding:16px;border-radius:6px;margin:16px 0;border-left:4px solid #dc2626;'>
+                                    <p style='margin:0 0 8px;color:#374151;'><strong>Export ID:</strong> {{exportId}}</p>
+                                    <p style='margin:0 0 0;color:#374151;'><strong>Error:</strong> {{errorMessage}}</p>
+                                </div>
+
+                                <p style='color:#6b7280;margin:12px 0 0;font-size:14px;'>Please try again or contact support if the problem persists.</p>
+
+                                <hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0;' />
+                                <p style='color:#9ca3af;font-size:12px;margin:0;'>This is an automated message from {{fromName}}.</p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>

@@ -11,6 +11,7 @@ import { ApplicationQueryBuilder } from '../common/pagination/applicationQuery.b
 import { ApplicationPaginationDto } from 'src/common/pagination/dto/applicationPagination.dto';
 import { Post } from '../post/post.schema';
 import { NotificationService } from 'src/notification/notification.service';
+import { MailerService } from '../mailer/mailer.service';
 
 @Injectable()
 export class ApplicationService {
@@ -21,6 +22,8 @@ export class ApplicationService {
      * @param studentService - Injected StudentService for managing related students
      * @param s3Service - Injected S3Service for handling S3 operations
      * @param paginationService - Injected PaginationService for managing pagination
+     * @param notificationService - Injected NotificationService for managing notifications
+     * @param mailerService - Injected MailerService for sending emails
      */
     constructor(
         @InjectModel('Application') private readonly applicationModel: Model<ApplicationDocument>,
@@ -29,6 +32,7 @@ export class ApplicationService {
         private readonly s3Service: S3Service,
         private readonly paginationService: PaginationService,
         private readonly notificationService: NotificationService,
+        private readonly mailerService: MailerService,
     ) {}
 
     /** Fields to populate when retrieving related Post documents */
@@ -148,6 +152,7 @@ export class ApplicationService {
     /**
      * Update the status of an existing application.
      * Send a notification to the student about the status update.
+     * Send an email to the student if the application is accepted or rejected.
      * @param id The unique identifier of the application
      * @param status The new status to set for the application
      * @returns A promise that resolves when the update is complete
@@ -157,8 +162,8 @@ export class ApplicationService {
         const application = await this.applicationModel
             .findOne({ _id: id, deletedAt: { $exists: false } })
             .populate([
-                { path: 'post', select: 'title _id' },
-                { path: 'student', select: '_id' },
+                { path: 'post', select: 'title _id company', populate: { path: 'company', select: 'name' } },
+                { path: 'student', select: '_id firstName lastName email' },
             ])
             .exec();
         if (!application) throw new NotFoundException(`Application with id ${id} not found`);
@@ -173,6 +178,30 @@ export class ApplicationService {
             });
         } catch (error) {
             console.error('Failed to send notification for application status update:', error);
+        }
+
+        // Send email to student if application is accepted or rejected
+        try {
+            const studentData = application.student as any; // Cast needed for discriminator type
+            if (status === ApplicationStatus.Accepted) {
+                await this.mailerService.sendApplicationAcceptedEmail(
+                    studentData.email,
+                    studentData.firstName,
+                    studentData.lastName,
+                    application.post.title,
+                    (application.post as any).company?.name || 'l\'entreprise',
+                );
+            } else if (status === ApplicationStatus.Rejected) {
+                await this.mailerService.sendApplicationRejectedEmail(
+                    studentData.email,
+                    studentData.firstName,
+                    studentData.lastName,
+                    application.post.title,
+                    (application.post as any).company?.name || 'l\'entreprise',
+                );
+            }
+        } catch (error) {
+            console.error('Failed to send email for application status update:', error);
         }
     }
 
@@ -316,5 +345,41 @@ export class ApplicationService {
             .find({ student: new Types.ObjectId(studentId) })
             .distinct('post')
             .exec();
+    }
+
+    /**
+     * Soft delete an application by its ID and send a notification to the student.
+     * @param id The unique identifier of the application
+     * @param message Optional custom message for the notification
+     * @returns A promise that resolves when the deletion and notification are complete
+     * @throws NotFoundException if the application does not exist
+     */
+    async deleteAndSendNotification(id: string, message?: string): Promise<void> {
+        const application = await this.applicationModel
+            .findOne({ _id: new Types.ObjectId(id), deletedAt: { $exists: false } })
+            .populate([
+                { path: 'student', select: '_id' },
+                { path: 'post', select: 'title _id' },
+            ])
+            .exec();
+
+        if (!application) {
+            throw new NotFoundException(`Application with id ${id} not found`);
+        }
+
+        await this.applicationModel.findOneAndUpdate(
+            { _id: new Types.ObjectId(id), deletedAt: { $exists: false } },
+            { $set: { deletedAt: new Date() } },
+        );
+
+        // Send notification to student about application deletion
+        try {
+            await this.notificationService.create({
+                userId: application.student._id,
+                message: message ?? `Votre candidature pour le poste : ${application.post.title} a été supprimée.`,
+            });
+        } catch (error) {
+            console.error('Failed to send notification for application deletion:', error);
+        }
     }
 }

@@ -64,17 +64,16 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
         const modifiedAt = newProfile.profile?.rejected?.modifiedAt;
 
         // Vérifier si l'entreprise a modifié son profil après le rejet
-        console.log('isRejected:', isRejected, 'rejectedAt:', rejectedAt, 'modifiedAt:', modifiedAt);
         const hasModifiedAfterRejection =
             !isRejected || (rejectedAt && modifiedAt && new Date(modifiedAt) > new Date(rejectedAt));
-        console.log('hasModifiedAfterRejection:', hasModifiedAfterRejection);
+
         // Si rejeté mais modifié après rejet et profil complet, considérer comme en attente de validation
-        if (hasModifiedAfterRejection && isComplete) {
-            if (pathname !== '/pending-validation') {
-                throw redirect('/pending-validation');
-            }
-            return;
-        }
+        // if (hasModifiedAfterRejection && isComplete) {
+        //     if (pathname !== '/pending-validation') {
+        //         throw redirect('/pending-validation');
+        //     }
+        //     return;
+        // }
 
         // Si rejeté et pas encore modifié, redirect vers complete-profil
         if (isRejected && !hasModifiedAfterRejection && pathname !== '/complete-profil') {
@@ -117,9 +116,11 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
                     throw redirect(`/home`);
                 }
             } catch (error) {
-                console.error(`Error while checking company validation status for company ${payload.id}:`, error);
-                // Allow navigation to continue to avoid degrading UX on transient failures.
-                return;
+                if (error instanceof Error) {
+                    console.error(`Error while checking company validation status for company ${payload.id}:`, error);
+                } else {
+                    throw error;
+                }
             }
         }
 

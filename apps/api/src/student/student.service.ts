@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateStudentDto } from './dto/createStudent.dto';
@@ -14,6 +14,13 @@ import * as chardet from 'chardet';
 import * as iconv from 'iconv-lite';
 import { parse } from 'csv-parse/sync';
 import { ConfigService } from '@nestjs/config';
+import { PaginationDto } from '../common/pagination/dto/pagination.dto';
+import { PaginationResult } from '../common/pagination/dto/paginationResult';
+import { QueryBuilder } from '../common/pagination/query.builder';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { GeoService } from '../common/geography/geo.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Application } from 'src/application/application.schema';
 
 @Injectable()
 /**
@@ -22,18 +29,43 @@ import { ConfigService } from '@nestjs/config';
  * Provides methods to find, create, update and soft-delete student records in the database.
  */
 export class StudentService {
+    private readonly logger = new Logger(StudentService.name);
+
     constructor(
         @InjectModel(Student.name) private readonly studentModel: Model<StudentUserDocument>,
+        @InjectModel(Student.name) private readonly model: Model<Student>,
+        @InjectModel(Application.name) private readonly applicationModel: Model<Application>,
         private readonly mailerService: MailerService,
         private readonly configService: ConfigService,
+        private readonly geoService: GeoService,
+        private readonly paginationService: PaginationService,
     ) {}
 
     /**
      * Find all students that are not soft-deleted.
-     * @returns A promise resolving to an array of `Student` documents.
+     * @returns A promise resolving to a paginated array of `Student` documents.
      */
-    async findAll(): Promise<Student[]> {
-        return this.studentModel.find({ deletedAt: { $exists: false } }).exec();
+    async findAll(query: PaginationDto): Promise<PaginationResult<Student>> {
+        const { page, limit, sort, ...filters } = query;
+        const qb = new QueryBuilder<Student>({ ...filters, showHidden: true } as any, this.geoService);
+        const filter = await qb.build();
+        filter.deletedAt = { $exists: false };
+        const sortQuery = qb.buildSort(sort);
+
+        return this.paginationService.paginate(this.model, filter, page, limit, [], sortQuery);
+    }
+
+    /**
+     * Find all students. Used for admin purposes.
+     * @returns A promise resolving to a paginated array of `Student` documents, including soft-deleted ones.
+     */
+    async findAllForAdmin(query: PaginationDto): Promise<PaginationResult<Student>> {
+        const { page, limit, sort, ...filters } = query;
+        const qb = new QueryBuilder<Student>({ ...filters, showHidden: true } as any, this.geoService);
+        const filter = await qb.build();
+        const sortQuery = qb.buildSort(sort);
+
+        return this.paginationService.paginate(this.model, filter, page, limit, [], sortQuery);
     }
 
     /**
@@ -168,12 +200,22 @@ export class StudentService {
      * @throws NotFoundException if the student does not exist or is already deleted.
      */
     async remove(id: string): Promise<void> {
+        await this.applicationModel.updateMany({ student: id }, { $set: { deletedAt: new Date() } }).exec();
+
         const updated = await this.studentModel
             .findOneAndUpdate({ _id: id, deletedAt: { $exists: false } }, { $set: { deletedAt: new Date() } })
             .exec();
 
         if (!updated) throw new NotFoundException('Student not found or already deleted');
         return;
+    }
+
+    /**
+     * Soft-delete all students by setting `deletedAt`
+     */
+    async removeAll(): Promise<void> {
+        await this.applicationModel.updateMany({}, { $set: { deletedAt: new Date() } }).exec();
+        await this.studentModel.updateMany({}, { $set: { deletedAt: new Date() } }).exec();
     }
 
     /**
@@ -251,5 +293,42 @@ export class StudentService {
 
         // If skipExistingRecords is true, we won't try to insert already existing emails
         return dtos.filter((dto) => !existingEmails.has(dto.email) && !existingStudentNumbers.has(dto.studentNumber));
+    }
+
+    /**
+     * Cron job that runs every day at midnight to permanently delete students that have been soft-deleted for more than 30 days.
+     */
+    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    async handleCron() {
+        this.logger.debug('Début du nettoyage des données orphelines...');
+
+        const dateLimite = new Date();
+        dateLimite.setDate(dateLimite.getDate() - 30);
+
+        const studentsToDelete = await this.studentModel
+            .find({
+                deletedAt: { $lte: dateLimite },
+            })
+            .select('_id');
+
+        const studentIds = studentsToDelete.map((s) => s._id);
+
+        if (studentIds.length === 0) {
+            this.logger.debug("Rien à nettoyer aujourd'hui.");
+            return;
+        }
+
+        this.logger.log(`Found ${studentIds.length} students to purge.`);
+
+        const deletedApps = await this.applicationModel.deleteMany({
+            student: { $in: studentIds },
+        });
+        this.logger.log(`- ${deletedApps.deletedCount} candidatures supprimées.`);
+
+        const deletedStudents = await this.studentModel.deleteMany({
+            _id: { $in: studentIds },
+        });
+
+        this.logger.log(`Nettoyage terminé : ${deletedStudents.deletedCount} étudiants supprimés définitivement.`);
     }
 }

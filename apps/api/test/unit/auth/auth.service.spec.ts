@@ -276,7 +276,7 @@ describe('AuthService', () => {
             const tokenId = new Types.ObjectId();
             const validToken = createMockRefreshToken(userId);
             refreshTokenModel.findById.mockResolvedValue(validToken);
-            mockUserModel.findById.mockResolvedValue(null);
+            mockUserModel.findOne.mockResolvedValue(null);
 
             await expect((service as any).generateAccessToken(userId, 'email@test.com', tokenId)).rejects.toThrow(
                 InvalidCredentialsException,

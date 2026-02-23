@@ -47,6 +47,7 @@ import { userStore } from './stores/userStore';
 import { EditStudentProfile } from './pages/student/EditStudentProfile';
 import { PublicStudentProfile } from './pages/student/PublicStudentProfile';
 import { StudentProfile } from './pages/student/StudentProfile';
+import { NotFound } from './pages/common/status/NotFound';
 
 const VITE_API = import.meta.env.VITE_APIURL;
 
@@ -89,7 +90,7 @@ function App() {
                             handle: { title: 'Mot de passe oublié' },
                         },
                         {
-                            path: '/signup',
+                            path: '/company/signup',
                             element: <CompanySignup />,
                             handle: { title: 'Inscription entreprise' },
                         },
@@ -267,6 +268,10 @@ function App() {
                             ],
                         },
                     ],
+                },
+                {
+                    path: '*',
+                    element: <NotFound />,
                 },
             ],
         },
