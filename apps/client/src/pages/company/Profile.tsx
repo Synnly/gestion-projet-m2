@@ -42,7 +42,7 @@ export function CompanyProfile() {
 
     const handleSuccessModalConfirm = () => {
         setShowSuccessModal(false);
-        navigate('/account-restore');
+        navigate('/logout');
     };
 
     return (

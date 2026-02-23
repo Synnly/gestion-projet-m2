@@ -8,10 +8,8 @@ import { InvalidCredentialsException } from '../common/exceptions/invalidCredent
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InvalidConfigurationException } from '../common/exceptions/invalidConfiguration.exception';
-import { CompanyUserDocument, User, UserDocument } from '../user/user.schema';
+import { User, UserDocument } from '../user/user.schema';
 import { MailerService } from 'src/mailer/mailer.service';
-import { Company } from 'src/company/company.schema';
-
 /**
  * Service handling authentication logic
  * Responsible for login, token generation, refresh, and logout.
