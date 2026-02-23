@@ -25,7 +25,7 @@ export function AccountRestorePage() {
         if (!user || !user.deletedAt) {
             navigate('/signin', { replace: true });
         }
-    }, []);
+    }, [user, navigate]);
 
     useEffect(() => {
         if (!user || !user.deletedAt) return;
