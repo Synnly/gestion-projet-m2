@@ -18,6 +18,7 @@ describe('StudentController', () => {
         remove: jest.fn(),
         createMany: jest.fn(),
         parseFileContent: jest.fn(),
+        getStats: jest.fn(),
     } as any;
 
     const TEST_MAX_ROWS = 1000;
@@ -52,20 +53,42 @@ describe('StudentController', () => {
     });
 
     it('findAll returns mapped DTOs', async () => {
-        mockService.findAll.mockResolvedValue([{ email: 'a@b.c' }]);
-        const res = await controller.findAll();
-        expect(res).toHaveLength(1);
-        expect(res[0]).toHaveProperty('email', 'a@b.c');
+        const paginatedResult = {
+            data: [{ email: 'a@b.c' }],
+            total: 1,
+            page: 1,
+            limit: 10,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
+        };
+        mockService.findAll.mockResolvedValue(paginatedResult);
+        const query = { page: 1, limit: 10 } as any;
+        const res = await controller.findAll(query);
+        expect(res.data).toHaveLength(1);
+        expect(res.data[0]).toHaveProperty('email', 'a@b.c');
+        expect(res.total).toBe(1);
     });
 
     it('findAllForAdmin returns all students including soft-deleted ones', async () => {
-        mockService.findAllForAdmin.mockResolvedValue([
-            { email: 'a@b.c', deletedAt: null },
-            { email: 'd@e.f', deletedAt: new Date() },
-        ]);
-        const res = await controller.findAllForAdmin();
-        expect(res).toHaveLength(2);
-        expect(mockService.findAllForAdmin).toHaveBeenCalled();
+        const paginatedResult = {
+            data: [
+                { email: 'a@b.c', deletedAt: null },
+                { email: 'd@e.f', deletedAt: new Date() },
+            ],
+            total: 2,
+            page: 1,
+            limit: 10,
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
+        };
+        mockService.findAllForAdmin.mockResolvedValue(paginatedResult);
+        const query = { page: 1, limit: 10 } as any;
+        const res = await controller.findAllForAdmin(query);
+        expect(res.data).toHaveLength(2);
+        expect(res.total).toBe(2);
+        expect(mockService.findAllForAdmin).toHaveBeenCalledWith(query);
     });
 
     it('findOne throws NotFoundException when no student', async () => {

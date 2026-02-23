@@ -10,6 +10,7 @@ import { StudentService } from '../../../src/student/student.service';
 import { PaginationService } from '../../../src/common/pagination/pagination.service';
 import { S3Service } from '../../../src/s3/s3.service';
 import { NotificationService } from '../../../src/notification/notification.service';
+import { MailerService } from '../../../src/mailer/mailer.service';
 
 describe('ApplicationService', () => {
     let service: ApplicationService;
@@ -18,6 +19,7 @@ describe('ApplicationService', () => {
     mockApplicationModel.find = jest.fn();
     mockApplicationModel.findOne = jest.fn();
     mockApplicationModel.aggregate = jest.fn();
+    mockApplicationModel.findOneAndUpdate = jest.fn();
 
     const mockStudentService = {
         findOne: jest.fn(),
@@ -43,6 +45,16 @@ describe('ApplicationService', () => {
         markAllAsRead: jest.fn(),
         delete: jest.fn(),
         deleteAllUserNotifications: jest.fn(),
+    };
+
+    const mockMailerService = {
+        sendApplicationAcceptedEmail: jest.fn(),
+        sendApplicationRejectedEmail: jest.fn(),
+        sendVerificationEmail: jest.fn(),
+        sendPasswordResetEmail: jest.fn(),
+        sendInfoEmail: jest.fn(),
+        sendAccountCreationEmail: jest.fn(),
+        sendAccountBanEmail: jest.fn(),
     };
 
     const studentId = new Types.ObjectId('507f1f77bcf86cd799439011');
@@ -75,6 +87,10 @@ describe('ApplicationService', () => {
                 {
                     provide: NotificationService,
                     useValue: mockNotificationService,
+                },
+                {
+                    provide: MailerService,
+                    useValue: mockMailerService,
                 },
             ],
         }).compile();
@@ -311,14 +327,15 @@ describe('ApplicationService', () => {
         it('should update the application status when a valid id is provided', async () => {
             const application = {
                 _id: postId,
-                post: { _id: postId, title: 'Test Post' } as any,
-                student: { _id: studentId } as any,
+                post: { _id: postId, title: 'Test Post', company: { name: 'Test Company' } } as any,
+                student: { _id: studentId, firstName: 'John', lastName: 'Doe', email: 'john@example.com' } as any,
                 status: ApplicationStatus.Pending,
                 save: jest.fn().mockResolvedValue(true),
             };
             const exec = jest.fn().mockResolvedValue(application);
             const populate = jest.fn().mockReturnValue({ exec });
             mockApplicationModel.findOne.mockReturnValue({ populate });
+            mockMailerService.sendApplicationAcceptedEmail.mockResolvedValue(true);
 
             await service.updateStatus(postId, ApplicationStatus.Accepted);
 
@@ -327,11 +344,18 @@ describe('ApplicationService', () => {
                 deletedAt: { $exists: false },
             });
             expect(populate).toHaveBeenCalledWith([
-                { path: 'post', select: 'title _id' },
-                { path: 'student', select: '_id' },
+                { path: 'post', select: 'title _id company', populate: { path: 'company', select: 'name' } },
+                { path: 'student', select: '_id firstName lastName email' },
             ]);
             expect(application.status).toBe(ApplicationStatus.Accepted);
             expect(application.save).toHaveBeenCalledTimes(1);
+            expect(mockMailerService.sendApplicationAcceptedEmail).toHaveBeenCalledWith(
+                'john@example.com',
+                'John',
+                'Doe',
+                'Test Post',
+                'Test Company',
+            );
         });
 
         it('should throw NotFoundException when the application does not exist', async () => {
@@ -343,11 +367,57 @@ describe('ApplicationService', () => {
             expect(exec).toHaveBeenCalledTimes(1);
         });
 
+        it('should send rejection email when status is Rejected', async () => {
+            const application = {
+                _id: postId,
+                post: { _id: postId, title: 'Backend Developer', company: { name: 'Tech Startup' } } as any,
+                student: { _id: studentId, firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com' } as any,
+                status: ApplicationStatus.Pending,
+                save: jest.fn().mockResolvedValue(true),
+            };
+            const exec = jest.fn().mockResolvedValue(application);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+            mockMailerService.sendApplicationRejectedEmail.mockResolvedValue(true);
+
+            await service.updateStatus(postId, ApplicationStatus.Rejected);
+
+            expect(application.status).toBe(ApplicationStatus.Rejected);
+            expect(application.save).toHaveBeenCalledTimes(1);
+            expect(mockMailerService.sendApplicationRejectedEmail).toHaveBeenCalledWith(
+                'jane@example.com',
+                'Jane',
+                'Smith',
+                'Backend Developer',
+                'Tech Startup',
+            );
+        });
+
+        it('should not send email when status is Read or Pending', async () => {
+            const application = {
+                _id: postId,
+                post: { _id: postId, title: 'Test Post', company: { name: 'Company' } } as any,
+                student: { _id: studentId, firstName: 'Bob', lastName: 'Johnson', email: 'bob@example.com' } as any,
+                status: ApplicationStatus.Pending,
+                save: jest.fn().mockResolvedValue(true),
+            };
+            const exec = jest.fn().mockResolvedValue(application);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+
+            await service.updateStatus(postId, ApplicationStatus.Read);
+
+            expect(application.status).toBe(ApplicationStatus.Read);
+            expect(application.save).toHaveBeenCalledTimes(1);
+            expect(mockMailerService.sendApplicationAcceptedEmail).not.toHaveBeenCalled();
+            expect(mockMailerService.sendApplicationRejectedEmail).not.toHaveBeenCalled();
+        });
+
         it('should log error and continue when notification fails', async () => {
             const application = {
                 _id: postId,
-                post: { _id: postId, title: 'Test Post' } as any,
-                student: { _id: studentId } as any,
+                post: { _id: postId, title: 'Test Post', company: { name: 'Company' } } as any,
+                student: { _id: studentId, firstName: 'Alice', lastName: 'Wilson', email: 'alice@example.com' } as any,
                 status: ApplicationStatus.Pending,
                 save: jest.fn().mockResolvedValue(true),
             };
@@ -355,6 +425,7 @@ describe('ApplicationService', () => {
             const populate = jest.fn().mockReturnValue({ exec });
             mockApplicationModel.findOne.mockReturnValue({ populate });
             mockNotificationService.create.mockRejectedValue(new Error('Notification service error'));
+            mockMailerService.sendApplicationAcceptedEmail.mockResolvedValue(true);
 
             const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
@@ -368,6 +439,57 @@ describe('ApplicationService', () => {
             );
 
             consoleErrorSpy.mockRestore();
+        });
+
+        it('should log error and continue when email sending fails', async () => {
+            const application = {
+                _id: postId,
+                post: { _id: postId, title: 'Test Post', company: { name: 'Company' } } as any,
+                student: { _id: studentId, firstName: 'Charlie', lastName: 'Brown', email: 'charlie@example.com' } as any,
+                status: ApplicationStatus.Pending,
+                save: jest.fn().mockResolvedValue(true),
+            };
+            const exec = jest.fn().mockResolvedValue(application);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+            mockMailerService.sendApplicationAcceptedEmail.mockRejectedValue(new Error('Email service error'));
+
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            await service.updateStatus(postId, ApplicationStatus.Accepted);
+
+            expect(application.status).toBe(ApplicationStatus.Accepted);
+            expect(application.save).toHaveBeenCalledTimes(1);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Failed to send email for application status update:',
+                expect.any(Error),
+            );
+
+            consoleErrorSpy.mockRestore();
+        });
+
+        it('should use default company name when company is not populated', async () => {
+            const application = {
+                _id: postId,
+                post: { _id: postId, title: 'Test Post', company: null } as any,
+                student: { _id: studentId, firstName: 'David', lastName: 'Lee', email: 'david@example.com' } as any,
+                status: ApplicationStatus.Pending,
+                save: jest.fn().mockResolvedValue(true),
+            };
+            const exec = jest.fn().mockResolvedValue(application);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+            mockMailerService.sendApplicationAcceptedEmail.mockResolvedValue(true);
+
+            await service.updateStatus(postId, ApplicationStatus.Accepted);
+
+            expect(mockMailerService.sendApplicationAcceptedEmail).toHaveBeenCalledWith(
+                'david@example.com',
+                'David',
+                'Lee',
+                'Test Post',
+                "l'entreprise",
+            );
         });
     });
     describe('findByPostPaginated', () => {
@@ -673,6 +795,68 @@ describe('ApplicationService', () => {
             const result = await service.getPostIdsByStudent(studentId.toString());
 
             expect(result).toEqual(duplicatePostIds);
+        });
+    });
+
+    describe('deleteAndSendNotification', () => {
+        const appIdStr = '507f1f77bcf86cd799439099';
+        const mockApp = {
+            _id: new Types.ObjectId(appIdStr),
+            post: { title: 'Titre Poste', _id: new Types.ObjectId() },
+            student: { _id: new Types.ObjectId() },
+        };
+
+        it('should soft delete and notify student with default message', async () => {
+            const exec = jest.fn().mockResolvedValue(mockApp);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+            mockApplicationModel.findOneAndUpdate.mockResolvedValue({});
+            mockNotificationService.create.mockResolvedValue({});
+
+            await service.deleteAndSendNotification(appIdStr);
+
+            expect(mockApplicationModel.findOne).toHaveBeenCalledWith({
+                _id: new Types.ObjectId(appIdStr),
+                deletedAt: { $exists: false },
+            });
+            expect(mockApplicationModel.findOneAndUpdate).toHaveBeenCalledWith(
+                { _id: new Types.ObjectId(appIdStr), deletedAt: { $exists: false } },
+                { $set: { deletedAt: expect.any(Date) } },
+            );
+            expect(mockNotificationService.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: mockApp.student._id,
+                    message: `Votre candidature pour le poste : ${mockApp.post.title} a été supprimée.`,
+                }),
+            );
+        });
+
+        it('should use custom message if provided', async () => {
+            const exec = jest.fn().mockResolvedValue(mockApp);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+            mockApplicationModel.findOneAndUpdate.mockResolvedValue({});
+            mockNotificationService.create.mockResolvedValue({});
+
+            const customMsg = 'Custom Message';
+            await service.deleteAndSendNotification(appIdStr, customMsg);
+
+            expect(mockNotificationService.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: mockApp.student._id,
+                    message: customMsg,
+                }),
+            );
+        });
+
+        it('should throw NotFoundException if application not found', async () => {
+            const exec = jest.fn().mockResolvedValue(null);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+
+            await expect(service.deleteAndSendNotification(appIdStr)).rejects.toThrow(NotFoundException);
+            expect(mockApplicationModel.findOneAndUpdate).not.toHaveBeenCalled();
+            expect(mockNotificationService.create).not.toHaveBeenCalled();
         });
     });
 });

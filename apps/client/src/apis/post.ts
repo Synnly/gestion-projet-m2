@@ -38,3 +38,15 @@ export async function createPost({ companyId, data }: CreatePostPayload) {
 
     return await response.json();
 }
+
+export async function deletePost(companyId: string, id: string) {
+    const authFetch = UseAuthFetch();
+    const response = await authFetch(`${API_URL}/api/company/${companyId}/posts/${id}`, {
+        method: 'DELETE',
+    });
+    if (!response.ok) {
+        const message =
+            (await response.json().catch(() => null))?.message || "Erreur lors de la suppression de l'annonce";
+        throw new Error(message);
+    }
+}

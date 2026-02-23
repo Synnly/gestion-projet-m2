@@ -47,6 +47,7 @@ import { userStore } from './stores/userStore';
 import { EditStudentProfile } from './pages/student/EditStudentProfile';
 import { PublicStudentProfile } from './pages/student/PublicStudentProfile';
 import { StudentProfile } from './pages/student/StudentProfile';
+import { NotFound } from './pages/common/status/NotFound';
 
 const VITE_API = import.meta.env.VITE_APIURL;
 
@@ -266,6 +267,10 @@ function App() {
                             ],
                         },
                     ],
+                },
+                {
+                    path: '*',
+                    element: <NotFound />,
                 },
             ],
         },
