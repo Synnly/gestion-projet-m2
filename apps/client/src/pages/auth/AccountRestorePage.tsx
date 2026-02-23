@@ -5,9 +5,12 @@ import { userStore } from '../../stores/userStore';
 import { UseAuthFetch } from '../../hooks/useAuthFetch';
 import { restoreCompanyAccount } from '../../apis/company';
 
+const VITE_API = import.meta.env.VITE_APIURL;
+
 export function AccountRestorePage() {
     const access = userStore((state) => state.access);
     const getUserInfo = userStore((state) => state.get);
+    const setAccess = userStore((state) => state.set);
     const logout = userStore((state) => state.logout);
     const navigate = useNavigate();
     const authFetch = UseAuthFetch();
@@ -51,7 +54,19 @@ export function AccountRestorePage() {
 
         try {
             await restoreCompanyAccount(authFetch, user.id);
-                        navigate('/home');
+
+            // Refresh the access token so the new token no longer contains deletedAt
+            const refreshRes = await fetch(`${VITE_API}/api/auth/refresh`, {
+                method: 'POST',
+                credentials: 'include',
+            });
+
+            if (refreshRes.ok) {
+                const newAccessToken = await refreshRes.text();
+                setAccess(newAccessToken);
+            }
+
+            navigate('/home', { replace: true });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Une erreur est survenue');
         } finally {
@@ -115,8 +130,8 @@ export function AccountRestorePage() {
                                     <div>
                                         <p className="font-semibold">Restauration possible</p>
                                         <p className="text-sm text-base-600">
-                                            Vous pouvez annuler la suppression et récupérer l'accès complet à votre compte 
-                                            en cliquant sur le bouton "Restaurer mon compte".
+                                            Vous pouvez annuler la suppression et récupérer l'accès à votre compte 
+                                            en cliquant sur le bouton "Restaurer mon compte". Seul votre compte sera restauré, les offres de stage et candidatures, forum ne seront pas récupérables.
                                         </p>
                                     </div>
                                 </div>
