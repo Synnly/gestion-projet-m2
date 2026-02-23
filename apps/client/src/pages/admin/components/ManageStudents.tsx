@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 import { toast } from 'react-toastify';
 import { Trash2, UserX, UserCheck } from 'lucide-react';
-import DeleteStudentModal from './modals/DeleteStudentModal.tsx';
+import DeleteStudentModal from './modals/manageStudents/DeleteStudentModal.tsx';
 import type { studentProfile } from '../../../types/student.types.ts';
 import { deleteAllStudents, deleteStudent, fetchStudents } from '../../../apis/student.ts';
 import Pagination from '../../common/ui/pagination/Pagination.tsx';
-import { DeleteAllStudentsModal } from './modals/DeleteAllStudentsModal.tsx';
-import { DeleteMultipleStudentsModal } from './modals/DeleteMultipleStudentsModal.tsx';
+import { DeleteAllStudentsModal } from './modals/manageStudents/DeleteAllStudentsModal.tsx';
+import { DeleteMultipleStudentsModal } from './modals/manageStudents/DeleteMultipleStudentsModal.tsx';
 
 export default function ManageStudents() {
     const [students, setStudents] = useState<studentProfile[]>([]);
@@ -157,7 +157,8 @@ export default function ManageStudents() {
                             <thead>
                                 <tr>
                                     <th className="w-0" />
-                                    <th>Nom</th>
+                                    <th className="w-0">Nom</th>
+                                    <th className="w-0">Prénom</th>
                                     <th>Email</th>
                                     <th>Numéro Étudiant</th>
                                     <th className="text-center">Statut</th>
@@ -167,7 +168,7 @@ export default function ManageStudents() {
                             <tbody>
                                 {students.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="text-center ">
+                                        <td colSpan={6} className="text-center ">
                                             Aucun étudiant trouvé
                                         </td>
                                     </tr>
@@ -190,9 +191,8 @@ export default function ManageStudents() {
                                                         />
                                                     )}
                                                 </td>
-                                                <td className="font-semibold">
-                                                    {student.firstName} {student.lastName}
-                                                </td>
+                                                <td className="font-semibold">{student.firstName}</td>
+                                                <td>{student.lastName}</td>
                                                 <td>{student.email}</td>
                                                 <td>{student.studentNumber}</td>
                                                 <td
@@ -212,7 +212,7 @@ export default function ManageStudents() {
                                                     )}
                                                 </td>
                                                 {!isScheduledForDeletion && (
-                                                    <td className="w-0">
+                                                    <td className="w-0 py-0">
                                                         <button
                                                             className="btn btn-sm btn-ghost text-error hover:bg-error/10"
                                                             onClick={() => setStudentToDelete(student)}

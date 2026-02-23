@@ -63,7 +63,6 @@ export class CompanyService {
         const { page, limit, sort, ...filters } = query;
         const qb = new QueryBuilder<Company>({ ...filters, showHidden: true } as any, this.geoService);
         const filter = await qb.build();
-        filter.deletedAt = { $exists: false };
         const sortQuery = qb.buildSort(sort);
 
         return this.paginationService.paginate(
