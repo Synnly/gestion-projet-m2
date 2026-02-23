@@ -9,7 +9,6 @@ import { ConfigService } from '@nestjs/config';
 import { Role } from '../../../src/common/roles/roles.enum';
 import * as bcrypt from 'bcrypt';
 import { InvalidCredentialsException } from '../../../src/common/exceptions/invalidCredentials.exception';
-import { AccountPendingDeletionException } from '../../../src/common/exceptions/accountPendingDeletion.exception';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { User } from '../../../src/user/user.schema';
 import { MailerService } from '../../../src/mailer/mailer.service';
