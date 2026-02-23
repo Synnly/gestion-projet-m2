@@ -4,13 +4,9 @@ import ImportStudent from './components/importStudent';
 import ManageStudents from './components/ManageStudents';
 import { StatsPage } from './components/stats/Stats';
 import ValidateCompanies from './components/ValidateCompanies';
-<<<<<<< reports
 import ReportsList from './components/reportsList';
-
-=======
 import ExportDatabase from './components/ExportDatabase';
 import { CompanyList } from './components/CompanyList.tsx';
->>>>>>> dev
 
 export function AdminDashboard() {
     const tabs = [
@@ -35,12 +31,11 @@ export function AdminDashboard() {
             content: <StatsPage />,
         },
         {
-<<<<<<< reports
             id: 'moderation',
             label: 'Modération',
             content: <ReportsList />,
-        }
-=======
+        },
+        {
             id: 'manage-students',
             label: 'Gérer les Étudiants',
             content: <ManageStudents />,
@@ -50,7 +45,6 @@ export function AdminDashboard() {
             label: 'Gérer les Entreprises',
             content: <CompanyList />,
         },
->>>>>>> dev
     ];
 
     return (
