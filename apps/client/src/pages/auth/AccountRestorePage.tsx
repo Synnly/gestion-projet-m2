@@ -44,7 +44,7 @@ export function AccountRestorePage() {
             logout();
             navigate('/signin', { replace: true });
         }
-    }, [user?.deletedAt]);
+    }, [user?.deletedAt, logout, navigate]);
 
     const handleRestore = async () => {
         if (!user) return;
