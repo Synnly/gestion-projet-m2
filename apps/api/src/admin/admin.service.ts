@@ -26,14 +26,11 @@ type JobModel = Model<DatabaseExportDocument> | Model<DatabaseImportDocument>;
 export class AdminService {
     constructor(
         @InjectModel(Admin.name) private readonly adminModel: Model<AdminUserDocument>,
-<<<<<<< reports
-=======
         @InjectModel(DatabaseExport.name) private readonly exportModel: Model<DatabaseExportDocument>,
         @InjectModel(DatabaseImport.name) private readonly importModel: Model<DatabaseImportDocument>,
         @InjectConnection() private readonly connection: Connection,
         private readonly mailerService: MailerService,
         private readonly configService: ConfigService,
->>>>>>> dev
     ) {}
 
     /**
@@ -70,9 +67,6 @@ export class AdminService {
         const createdAdmin = new this.adminModel({ role: Role.ADMIN, ...dto, isValid: true, isVerified: true });
         await createdAdmin.save();
     }
-<<<<<<< reports
-}
-=======
 
     /**
      * Initiate a full database export.
@@ -118,7 +112,8 @@ export class AdminService {
             await this.markJobInProgress(exportJob);
 
             // Export all collections with streaming
-            const { filename, fileSize, totalDocuments, collectionsCount } = await this.exportAllCollectionsStreaming(exportId);
+            const { filename, fileSize, totalDocuments, collectionsCount } =
+                await this.exportAllCollectionsStreaming(exportId);
 
             // Mark export as completed
             await this.markExportCompleted(exportJob, filename, fileSize, collectionsCount, totalDocuments);
@@ -632,10 +627,6 @@ export class AdminService {
         }
     }
 
-
-
-
-
     /**
      * Import all database collections using streaming to avoid memory issues
      * @param importId ID of the import job (for cancellation checks)
@@ -703,7 +694,9 @@ export class AdminService {
                     totalDocuments += batch.length;
 
                     // Check for cancellation between batches
-                    if (await this.checkCancellationDuringOperation(importId, this.importModel, ImportStatus.CANCELLED)) {
+                    if (
+                        await this.checkCancellationDuringOperation(importId, this.importModel, ImportStatus.CANCELLED)
+                    ) {
                         throw new HttpException('Import cancelled by user', HttpStatus.CONFLICT);
                     }
                 }
@@ -731,8 +724,6 @@ export class AdminService {
         const decompressed = await gunzip(compressed);
         return decompressed.toString('utf-8');
     }
-
-
 
     /**
      * Convert a MongoDB document to Extended JSON format
@@ -829,31 +820,31 @@ export class AdminService {
         try {
             // Cancel all pending or in-progress exports
             await this.exportModel.updateMany(
-                { 
-                    status: { 
-                        $in: [ExportStatus.PENDING, ExportStatus.IN_PROGRESS] 
-                    } 
+                {
+                    status: {
+                        $in: [ExportStatus.PENDING, ExportStatus.IN_PROGRESS],
+                    },
                 },
-                { 
-                    $set: { 
+                {
+                    $set: {
                         status: ExportStatus.CANCELLED,
-                        completedAt: new Date()
-                    } 
-                }
+                        completedAt: new Date(),
+                    },
+                },
             );
 
             await this.importModel.updateMany(
-                { 
-                    status: { 
-                        $in: [ImportStatus.PENDING, ImportStatus.IN_PROGRESS] 
-                    } 
+                {
+                    status: {
+                        $in: [ImportStatus.PENDING, ImportStatus.IN_PROGRESS],
+                    },
                 },
-                { 
-                    $set: { 
+                {
+                    $set: {
                         status: ImportStatus.CANCELLED,
-                        completedAt: new Date()
-                    } 
-                }
+                        completedAt: new Date(),
+                    },
+                },
             );
         } catch (error) {
             // Log error but don't fail the import
@@ -882,8 +873,6 @@ export class AdminService {
             return;
         }
     }
-
-
 
     /**
      * Send email notification when import is completed
@@ -972,4 +961,3 @@ export class AdminService {
         );
     }
 }
->>>>>>> dev
