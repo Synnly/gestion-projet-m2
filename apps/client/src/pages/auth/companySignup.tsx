@@ -12,13 +12,13 @@ export const CompanySignup = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: 50, opacity: 0 }}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
-                className="flex flex-col w-full min-h-screen flex-grow items-center justify-center bg-(--color-base-200)"
+                className="flex flex-col w-full min-h-screen grow items-center justify-center bg-(--color-base-200)"
             >
                 <div className="p-2">
                     <Logo className="text-primary" />
                 </div>
                 <SignupForm />
-                <NavLink to="/signin" className="mt-4 text-sm text-center text-gray-500 underline">
+                <NavLink to="/signin" className="btn btn-primary">
                     Déjà un compte entreprise ? Connectez-vous
                 </NavLink>
             </motion.div>

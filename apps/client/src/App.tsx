@@ -89,7 +89,7 @@ function App() {
                             handle: { title: 'Mot de passe oublié' },
                         },
                         {
-                            path: '/company/signup',
+                            path: '/signup',
                             element: <CompanySignup />,
                             handle: { title: 'Inscription entreprise' },
                         },

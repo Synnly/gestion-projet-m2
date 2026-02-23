@@ -18,6 +18,10 @@ export const Login = () => {
                     <Logo className="text-primary" />
                 </div>
                 <LoginForm />
+
+                <NavLink to="/signup" className="btn btn-primary">
+                    Créer un compte entreprise
+                </NavLink>
                 <NavLink to="/forgot-password" className="mt-4 text-sm text-center text-gray-500 underline">
                     Mot de passe oublié ?
                 </NavLink>

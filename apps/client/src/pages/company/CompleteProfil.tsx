@@ -11,7 +11,7 @@ import {
 } from '../../types/CompleteProfil.types';
 import { useMutation } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
-import { useNavigate, useOutletContext } from 'react-router';
+import { NavLink, useNavigate, useOutletContext } from 'react-router';
 import { UseAuthFetch } from '../../hooks/useAuthFetch';
 import { useBlob } from '../../hooks/useBlob';
 import { useFile } from '../../hooks/useFile';
@@ -159,7 +159,7 @@ export const CompleteProfil = () => {
         }
     };
     return (
-        <div className="flex flex-col w-full min-h-screen flex-grow items-start bg-(--color-base-200)">
+        <div className="flex flex-col w-full min-h-screen grow items-start bg-(--color-base-200)">
             <div className="w-full max-w-7xl mx-auto flex flex-col px-4 py-8 items-center">
                 <p className="text-3xl font-bold mt-10 ml-15"> Compléter le profil de votre entreprise</p>
                 <p className="text-sm mt-4 ml-15 italic">
@@ -334,14 +334,19 @@ export const CompleteProfil = () => {
                             error={errors.country}
                         />
                     </FormSection>
-                    <FormSubmit
-                        className="btn-primary w-min self-end font-bold"
-                        title="Compléter le profile"
-                        pendingTitle="Complétion..."
-                        error={error}
-                        isError={isError}
-                        isPending={isPending}
-                    />
+                    <div className="flex flex-row items-center justify-between gap-4 w-full">
+                        <FormSubmit
+                            className="btn-primary w-min self-end font-bold"
+                            title="Compléter le profile"
+                            pendingTitle="Complétion..."
+                            error={error}
+                            isError={isError}
+                            isPending={isPending}
+                        />
+                        <NavLink to="/logout" className="btn btn-primary font-bold">
+                            Se déconnecter
+                        </NavLink>
+                    </div>
                 </form>
             </div>
         </div>

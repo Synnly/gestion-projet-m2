@@ -77,7 +77,7 @@ export const SignupForm = () => {
     };
 
     return (
-        <div className="rounded-(--radius-box) flex-col flex items-center just py-10 px-5 my-5 max-w-[700px]">
+        <div className="rounded-(--radius-box) flex-col flex items-center px-5 my-5 max-w-[700px]">
             <CustomForm
                 label="Accès à des milliers de talents. Inscrivez votre entreprise dès aujourd'hui."
                 role="form"

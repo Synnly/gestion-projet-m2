@@ -31,14 +31,18 @@ import { PostDocument } from '../post/post.schema';
 import { Company } from './company.schema';
 import { PaginationDto } from '../common/pagination/dto/pagination.dto';
 import { PaginationResult } from '../common/pagination/dto/paginationResult';
-
+import { ForumService } from 'src/forum/forum.service';
+import { Types } from 'mongoose';
 /**
  * Controller handling company-related HTTP requests
  * Provides CRUD operations for company entities
  */
 @Controller('/api/companies')
 export class CompanyController {
-    constructor(private readonly companyService: CompanyService) {}
+    constructor(
+        private readonly companyService: CompanyService,
+        private readonly forumService: ForumService,
+    ) {}
 
     /**
      * Retrieves all companies
@@ -105,6 +109,8 @@ export class CompanyController {
             isValid: true,
             rejected: { isRejected: false, rejectionReason: undefined, rejectedAt: undefined, modifiedAt: undefined },
         });
+        const companyObjectId = new Types.ObjectId(companyId);
+        await this.forumService.create(companyObjectId);
     }
 
     /**

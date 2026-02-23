@@ -128,7 +128,6 @@ export class CompanyService {
      */
     async create(dto: CreateCompanyDto): Promise<void> {
         const company = await this.companyModel.create({ ...dto });
-        await this.forumService.create(company._id);
         return;
     }
 
