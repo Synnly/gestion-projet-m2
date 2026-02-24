@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import InternshipCard from './InternshipCard';
 
 import InternshipPagination from './InternshipPagination';
 import { useFetchInternships } from '../../../hooks/useFetchInternships';
 import { useInternshipStore } from '../../../stores/useInternshipStore';
 import ListContainer from '../../common/ui/list/ListContainer';
+import { userStore } from '../../../stores/userStore';
+import { useApplicationCounts } from '../../../hooks/useFetchApplications';
 
 const InternshipList: React.FC = () => {
     const { isLoading, isError, error } = useFetchInternships();
@@ -14,6 +16,20 @@ const InternshipList: React.FC = () => {
     useEffect(() => {
         resetFilters();
     }, [resetFilters]);
+
+    const access = userStore((s) => s.access);
+    const getUser = userStore((s) => s.get);
+    const user = getUser(access);
+    const isCompany = user?.role === 'COMPANY';
+    const companyId = isCompany ? user?.id : undefined;
+
+    const { data: countsData } = useApplicationCounts(companyId);
+
+    const countsMap = useMemo(() => {
+        if (!countsData) return new Map();
+        return new Map(countsData.map((c) => [c.postId, c]));
+    }, [countsData]);
+
     // État de chargement
     if (isLoading) {
         return (
@@ -61,6 +77,7 @@ const InternshipList: React.FC = () => {
                             key={internship._id}
                             internship={internship}
                             isSelected={internship._id === selectedInternshipId}
+                            counts={isCompany ? countsMap.get(internship._id) : undefined}
                         />
                     ))}
                 </div>

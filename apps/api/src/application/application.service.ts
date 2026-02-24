@@ -382,4 +382,50 @@ export class ApplicationService {
             console.error('Failed to send notification for application deletion:', error);
         }
     }
+
+    /**
+     * Returns total and unread application counts for every post for an company.
+     * @param companyId The company ObjectId
+     * @returns An array of { postId, total, unread } objects
+     */
+    async getApplicationCountsByCompany(
+        companyId: Types.ObjectId,
+    ): Promise<{ postId: string; total: number; unread: number }[]> {
+        return this.applicationModel.aggregate([
+            {
+                $lookup: {
+                    from: 'posts',
+                    localField: 'post',
+                    foreignField: '_id',
+                    as: 'postData',
+                },
+            },
+            { $unwind: '$postData' },
+            {
+                $match: {
+                    'postData.company': companyId,
+                    deletedAt: { $exists: false },
+                },
+            },
+            {
+                $group: {
+                    _id: '$post',
+                    total: { $sum: 1 },
+                    unread: {
+                        $sum: {
+                            $cond: [{ $eq: ['$status', ApplicationStatus.Pending] }, 1, 0],
+                        },
+                    },
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    postId: { $toString: '$_id' },
+                    total: 1,
+                    unread: 1,
+                },
+            },
+        ]);
+    }
 }
