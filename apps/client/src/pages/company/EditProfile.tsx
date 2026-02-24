@@ -81,6 +81,10 @@ export function EditCompanyProfile() {
                 country: profile.country ?? '',
                 city: profile.city ?? '',
                 streetName: profile.streetName ?? '',
+                description: profile.description ?? '',
+                telephone: profile.telephone ?? '',
+                website: profile.website ?? '',
+                emailContact: profile.emailContact ?? '',
                 logo: logoFile ?? undefined,
             });
         }
@@ -112,6 +116,10 @@ export function EditCompanyProfile() {
                 postalCode: variables.postalCode ?? undefined,
                 city: variables.city ?? undefined,
                 country: variables.country ?? undefined,
+                description: variables.description ?? undefined,
+                telephone: variables.telephone ?? undefined,
+                website: variables.website ?? undefined,
+                emailContact: variables.emailContact ?? undefined,
             };
             updateProfileStore(payload);
             navigate('/company/profile');
@@ -303,6 +311,60 @@ export function EditCompanyProfile() {
                                     error={errors.country}
                                     className="input input-primary"
                                 />
+                            </div>
+                        </FormSection>
+
+                        <FormSection title="Profil public visible par les étudiants" className="mb-8 space-y-4">
+                            <div className="flex gap-4">
+                                <FormInputEdit<editProfilFormType>
+                                    label="Téléphone"
+                                    type="text"
+                                    placeholder="+33 1 23 45 67 89"
+                                    register={register('telephone', {
+                                        onChange: () => clearErrors('telephone'),
+                                    })}
+                                    error={errors.telephone}
+                                    className="input input-primary"
+                                />
+                                <FormInputEdit<editProfilFormType>
+                                    label="Site web"
+                                    type="text"
+                                    placeholder="https://www.entreprise.fr"
+                                    register={register('website', {
+                                        onChange: () => clearErrors('website'),
+                                    })}
+                                    error={errors.website}
+                                    className="input input-primary"
+                                />
+                            </div>
+                            <div className="flex gap-4">
+                                <FormInputEdit<editProfilFormType>
+                                    label="Email de contact"
+                                    type="email"
+                                    placeholder="contact@entreprise.fr"
+                                    register={register('emailContact', {
+                                        onChange: () => clearErrors('emailContact'),
+                                    })}
+                                    error={errors.emailContact}
+                                    className="input input-primary"
+                                />
+                            </div>
+                            <div className="flex flex-col w-full">
+                                <label className="font-bold text-sm pb-2" htmlFor="description">
+                                    Description
+                                </label>
+                                <textarea
+                                    id="description"
+                                    rows={4}
+                                    placeholder="Présentez votre entreprise, vos valeurs et vos activités..."
+                                    {...register('description', {
+                                        onChange: () => clearErrors('description'),
+                                    })}
+                                    className="textarea textarea-primary w-full"
+                                />
+                                {errors.description && (
+                                    <span className="text-red-500 mt-1 text-sm italic">{errors.description.message}</span>
+                                )}
                             </div>
                         </FormSection>
 

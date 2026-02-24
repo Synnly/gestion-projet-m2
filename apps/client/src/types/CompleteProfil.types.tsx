@@ -936,6 +936,28 @@ export const editProfilForm = z.object({
         (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
         z.string().max(100, { message: 'Le nom du pays est trop long' }).nullable(),
     ),
+    description: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.string().max(1000, { message: 'La description est trop longue (1000 caractères max)' }).nullable(),
+    ),
+    telephone: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z
+            .string()
+            .max(30, { message: 'Le numéro de téléphone est trop long' })
+            .regex(/^[+]?[-()\d\s.]{6,30}$/, {
+                message: 'Numéro de téléphone invalide',
+            })
+            .nullable(),
+    ),
+    website: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.string().url({ message: "L'URL du site web est invalide" }).nullable(),
+    ),
+    emailContact: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.string().email({ message: "L'email de contact est invalide" }).nullable(),
+    ),
     logo: z
         .custom<File | null | undefined>()
         .refine(

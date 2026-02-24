@@ -112,6 +112,22 @@ export class Company {
     @Prop({ required: false, trim: true })
     logo?: string;
 
+    /** Public description of the company visible to students */
+    @Prop({ required: false, trim: true })
+    description?: string;
+
+    /** Public contact phone number visible to students */
+    @Prop({ required: false, trim: true })
+    telephone?: string;
+
+    /** Public website URL visible to students */
+    @Prop({ required: false, trim: true })
+    website?: string;
+
+    /** Public contact email visible to students */
+    @Prop({ required: false, trim: true, lowercase: true })
+    emailContact?: string;
+
     /** Whether the company account has been validated by an administrator */
     @Prop({ default: false })
     isValid?: boolean;

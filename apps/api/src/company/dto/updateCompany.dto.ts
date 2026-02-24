@@ -1,4 +1,14 @@
-import { IsOptional, IsString, IsEnum, IsBoolean, IsStrongPassword, IsMongoId, ValidateNested } from 'class-validator';
+import {
+    IsOptional,
+    IsString,
+    IsEnum,
+    IsBoolean,
+    IsStrongPassword,
+    IsMongoId,
+    ValidateNested,
+    IsEmail,
+    IsUrl,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { StructureType, LegalStatus, type RejectionStatus } from '../company.schema';
 import { NafCode } from '../nafCodes.enum';
@@ -134,6 +144,18 @@ export class UpdateCompanyDto {
     @IsOptional()
     @IsString()
     description?: string;
+
+    @IsOptional()
+    @IsString()
+    telephone?: string;
+
+    @IsOptional()
+    @IsUrl()
+    website?: string;
+
+    @IsOptional()
+    @IsEmail()
+    emailContact?: string;
 
     /**
      * Rejection status object containing whether the company is rejected

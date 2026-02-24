@@ -126,6 +126,40 @@ export function CompanyProfile() {
                                     </div>
                                 </div>
                             )}
+
+                            {(profile.description || profile.telephone || profile.website || profile.emailContact) && (
+                                <div className="bg-base-200 rounded-lg shadow p-6">
+                                    <h3 className="text-lg font-semibold text-base-900 mb-4">Profil public</h3>
+                                    <div className="space-y-2 text-base-700">
+                                        {profile.description && <p>{profile.description}</p>}
+                                        {profile.telephone && (
+                                            <p>
+                                                <span className="text-base-500 text-sm">Téléphone: </span>
+                                                {profile.telephone}
+                                            </p>
+                                        )}
+                                        {profile.website && (
+                                            <p>
+                                                <span className="text-base-500 text-sm">Site web: </span>
+                                                <a
+                                                    href={profile.website}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="link link-primary"
+                                                >
+                                                    {profile.website}
+                                                </a>
+                                            </p>
+                                        )}
+                                        {profile.emailContact && (
+                                            <p>
+                                                <span className="text-base-500 text-sm">Email de contact: </span>
+                                                {profile.emailContact}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

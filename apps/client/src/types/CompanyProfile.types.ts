@@ -44,6 +44,18 @@ export type companyProfile = {
     /** Logo URL or path for the company */
     logo?: string;
 
+    /** Public company description */
+    description?: string;
+
+    /** Public contact phone number */
+    telephone?: string;
+
+    /** Public company website */
+    website?: string;
+
+    /** Public contact email for students */
+    emailContact?: string;
+
     /** Rejection status of the company account */
     rejected?: {
         isRejected: boolean;

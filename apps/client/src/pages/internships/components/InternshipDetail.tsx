@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import MDEditor from '@uiw/react-md-editor';
-import { Pen, Eye, Trash } from 'lucide-react';
+import { Pen, Eye, Trash, SquareArrowOutUpRight } from 'lucide-react';
 import { useRef, useEffect, useState } from 'react';
 import { NavLink } from 'react-router';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
@@ -113,26 +113,40 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                     <div className="card-body p-6">
                         <div className="flex items-start justify-between">
                             <div className="flex items-start gap-4">
-                                <div className="avatar flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-neutral-300">
-                                    {internship.company.logoUrl ? (
-                                        <img
-                                            alt={`${internship.company.name} logo`}
-                                            className="rounded"
-                                            src={internship.company.logoUrl}
-                                        />
-                                    ) : (
-                                        <div className="flex h-full w-full items-center justify-center text-lg font-bold text-base-content">
-                                            {internship.company.name.charAt(0).toUpperCase()}
-                                        </div>
-                                    )}
-                                </div>
+                                <a
+                                    href={`/company/public/${internship.company._id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <div className="avatar flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-neutral-300">
+                                        {internship.company.logoUrl ? (
+                                            <img
+                                                alt={`${internship.company.name} logo`}
+                                                className="rounded"
+                                                src={internship.company.logoUrl}
+                                            />
+                                        ) : (
+                                            <div className="flex h-full w-full items-center justify-center text-lg font-bold text-base-content">
+                                                {internship.company.name.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                    </div>
+                                </a>
 
                                 <div>
                                     <NavLink to={`/internship/detail/${internship._id}`}>
                                         <h3 className="text-xl font-bold text-base-content">{internship.title}</h3>
                                     </NavLink>
                                     <p className="mt-1 text-base-content">
-                                        {internship.company.name} • {internship.adress}
+                                        <a
+                                            href={`/company/public/${internship.company._id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="link link-hover"
+                                        >
+                                            {internship.company.name}
+                                        </a>{' '}
+                                        • {internship.adress}
                                     </p>
                                     <div className="mt-3 flex flex-wrap items-center gap-2">
                                         <span className="badge badge-primary text-content-primary">

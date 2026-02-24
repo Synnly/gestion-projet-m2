@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsNotEmpty, Matches, Length } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsNotEmpty, Matches, Length, IsEmail, IsUrl } from 'class-validator';
 import { StructureType, LegalStatus } from '../company.schema';
 import { NafCode } from '../nafCodes.enum';
 import { CreateUserDto } from '../../user/dto/createUser.dto';
@@ -64,6 +64,22 @@ export class CreateCompanyDto extends CreateUserDto {
     @IsOptional()
     @IsString()
     logo?: string;
+
+    @IsOptional()
+    @IsString()
+    description?: string;
+
+    @IsOptional()
+    @IsString()
+    telephone?: string;
+
+    @IsOptional()
+    @IsUrl()
+    website?: string;
+
+    @IsOptional()
+    @IsEmail()
+    emailContact?: string;
 
     /** Internships posts associated with the company, needed only for update of company */
     @IsOptional()
