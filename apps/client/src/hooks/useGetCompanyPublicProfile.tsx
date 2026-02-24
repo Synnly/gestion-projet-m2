@@ -27,16 +27,7 @@ export const useGetCompanyPublicProfile = (companyId?: string) => {
         queryFn: async (): Promise<PublicCompanyProfile> => {
             const response = await authFetch(`${API_URL}/api/companies/${companyId}/public-profile`, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${access}`,
-                },
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch public company profile');
-            }
-
             return response.json();
         },
         enabled: !!companyId && !!access,
