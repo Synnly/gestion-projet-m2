@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import MDEditor from '@uiw/react-md-editor';
-import { Pen, Eye, Trash, SquareArrowOutUpRight } from 'lucide-react';
+import { Pen, Eye, Trash } from 'lucide-react';
 import { useRef, useEffect, useState } from 'react';
 import { NavLink } from 'react-router';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
