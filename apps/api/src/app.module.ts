@@ -25,6 +25,7 @@ import { UsersModule } from './user/user.module';
         ConfigModule.forRoot({
             isGlobal: true,
         }),
+        ScheduleModule.forRoot(),
         MailerModule.register(MailerProviderType.gmail),
         MongooseModule.forRootAsync({
             imports: [ConfigModule],

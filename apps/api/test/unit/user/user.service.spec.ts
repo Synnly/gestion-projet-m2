@@ -3,6 +3,8 @@ import { UserService } from '../../../src/user/user.service';
 import { getModelToken } from '@nestjs/mongoose';
 import { User } from '../../../src/user/user.schema';
 import { RefreshToken } from '../../../src/auth/refreshToken.schema';
+import { Message } from '../../../src/forum/message/message.schema';
+import { Report } from '../../../src/forum/report/report.schema';
 import { MailerService } from '../../../src/mailer/mailer.service';
 import { NotFoundException } from '@nestjs/common';
 import { Model } from 'mongoose';
@@ -11,6 +13,8 @@ describe('UserService', () => {
     let service: UserService;
     let userModel: Model<User>;
     let refreshTokenModel: Model<RefreshToken>;
+    let messageModel: Model<Message>;
+    let reportModel: Model<Report>;
     let mailerService: MailerService;
 
     const mockUserModel = {
@@ -21,6 +25,20 @@ describe('UserService', () => {
     const mockRefreshTokenModel = {
         deleteMany: jest.fn(),
     };
+
+  const mockMessageModel = {
+    find: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue([]),
+      }),
+    }),
+  };
+
+  const mockReportModel = {
+    updateMany: jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue({ modifiedCount: 0 }),
+    }),
+  };
 
     const mockMailerService = {
         sendAccountBanEmail: jest.fn(),
@@ -46,6 +64,14 @@ describe('UserService', () => {
                     useValue: mockRefreshTokenModel,
                 },
                 {
+                  provide: getModelToken(Message.name),
+                  useValue: mockMessageModel,
+                },
+                {
+                  provide: getModelToken(Report.name),
+                  useValue: mockReportModel,
+                },
+                {
                     provide: MailerService,
                     useValue: mockMailerService,
                 },
@@ -55,6 +81,8 @@ describe('UserService', () => {
         service = module.get<UserService>(UserService);
         userModel = module.get<Model<User>>(getModelToken(User.name));
         refreshTokenModel = module.get<Model<RefreshToken>>(getModelToken(RefreshToken.name));
+        messageModel = module.get<Model<Message>>(getModelToken(Message.name));
+        reportModel = module.get<Model<Report>>(getModelToken(Report.name));
         mailerService = module.get<MailerService>(MailerService);
 
         jest.clearAllMocks();
@@ -135,6 +163,38 @@ describe('UserService', () => {
 
             expect(refreshTokenModel.deleteMany).toHaveBeenCalledWith({ userId: 'user123' });
             expect(mailerService.sendAccountBanEmail).toHaveBeenCalled();
+        });
+
+        it('should update reports to resolved when banning a user with messages', async () => {
+            const mockMessages = [
+                { _id: 'message1' },
+                { _id: 'message2' },
+            ];
+
+            mockUserModel.findOneAndUpdate.mockReturnValue({
+                exec: jest.fn().mockResolvedValue(mockUser),
+            });
+            mockRefreshTokenModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+            mockMessageModel.find.mockReturnValue({
+                select: jest.fn().mockReturnValue({
+                    exec: jest.fn().mockResolvedValue(mockMessages),
+                }),
+            });
+            mockReportModel.updateMany.mockReturnValue({
+                exec: jest.fn().mockResolvedValue({ modifiedCount: 3 }),
+            });
+            mockMailerService.sendAccountBanEmail.mockResolvedValue(null);
+
+            await service.ban('user123', 'Spam');
+
+            expect(messageModel.find).toHaveBeenCalledWith({ authorId: 'user123' });
+            expect(reportModel.updateMany).toHaveBeenCalledWith(
+                {
+                    messageId: { $in: ['message1', 'message2'] },
+                    status: { $ne: 'resolved' }
+                },
+                { $set: { status: 'resolved' } }
+            );
         });
     });
 });
