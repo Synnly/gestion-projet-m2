@@ -384,7 +384,7 @@ export class ApplicationService {
     }
 
     /**
-     * Returns total and unread application counts for every post for an company.
+     * Returns total and unread application counts for every post for a company.
      * @param companyId The company ObjectId
      * @returns An array of { postId, total, unread } objects
      */
