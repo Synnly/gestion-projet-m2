@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import MDEditor from '@uiw/react-md-editor';
-import { Pen, Eye, Trash, SquareArrowOutUpRight } from 'lucide-react';
+import { Pen, Eye, Trash } from 'lucide-react';
 import { useRef, useEffect, useState } from 'react';
-import { NavLink } from 'react-router';
+import { NavLink, Link } from 'react-router';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 import { useInternshipStore } from '../../../stores/useInternshipStore';
 import { userStore } from '../../../stores/userStore';
@@ -113,8 +113,8 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                     <div className="card-body p-6">
                         <div className="flex items-start justify-between">
                             <div className="flex items-start gap-4">
-                                <a
-                                    href={`/company/public/${internship.company._id}`}
+                                <Link
+                                    to={`/company/public/${internship.company._id}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
@@ -131,21 +131,21 @@ const InternshipDetail: React.FC<{ internship: Internship; applyable?: boolean }
                                             </div>
                                         )}
                                     </div>
-                                </a>
+                                </Link>
 
                                 <div>
                                     <NavLink to={`/internship/detail/${internship._id}`}>
                                         <h3 className="text-xl font-bold text-base-content">{internship.title}</h3>
                                     </NavLink>
                                     <p className="mt-1 text-base-content">
-                                        <a
-                                            href={`/company/public/${internship.company._id}`}
+                                        <Link
+                                            to={`/company/public/${internship.company._id}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="link link-hover"
                                         >
                                             {internship.company.name}
-                                        </a>{' '}
+                                        </Link>{' '}
                                         • {internship.adress}
                                     </p>
                                     <div className="mt-3 flex flex-wrap items-center gap-2">
