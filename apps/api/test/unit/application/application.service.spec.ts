@@ -859,4 +859,98 @@ describe('ApplicationService', () => {
             expect(mockNotificationService.create).not.toHaveBeenCalled();
         });
     });
+
+    describe('getApplicationCountsByCompany', () => {
+        const companyId = new Types.ObjectId();
+
+        it('should return counts for each post belonging to the company', async () => {
+            const expectedCounts = [
+                { postId: new Types.ObjectId().toString(), total: 3, unread: 2 },
+                { postId: new Types.ObjectId().toString(), total: 5, unread: 0 },
+            ];
+            mockApplicationModel.aggregate.mockResolvedValue(expectedCounts);
+
+            const result = await service.getApplicationCountsByCompany(companyId);
+
+            expect(result).toEqual(expectedCounts);
+            expect(mockApplicationModel.aggregate).toHaveBeenCalledTimes(1);
+        });
+
+        it('should return an empty array when the company has no applications', async () => {
+            mockApplicationModel.aggregate.mockResolvedValue([]);
+
+            const result = await service.getApplicationCountsByCompany(companyId);
+
+            expect(result).toEqual([]);
+        });
+
+        it('should include a $match stage that filters by companyId and excludes deleted applications', async () => {
+            mockApplicationModel.aggregate.mockResolvedValue([]);
+
+            await service.getApplicationCountsByCompany(companyId);
+
+            const pipeline = mockApplicationModel.aggregate.mock.calls[0][0] as any[];
+            const matchStage = pipeline.find((s) => s.$match);
+            expect(matchStage).toBeDefined();
+            expect(matchStage.$match['postData.company']).toEqual(companyId);
+            expect(matchStage.$match.deletedAt).toEqual({ $exists: false });
+        });
+
+        it('should include a $group stage that counts only Pending status as unread', async () => {
+            mockApplicationModel.aggregate.mockResolvedValue([]);
+
+            await service.getApplicationCountsByCompany(companyId);
+
+            const pipeline = mockApplicationModel.aggregate.mock.calls[0][0] as any[];
+            const groupStage = pipeline.find((s) => s.$group);
+            expect(groupStage).toBeDefined();
+            expect(groupStage.$group.total).toEqual({ $sum: 1 });
+            expect(groupStage.$group.unread).toEqual({
+                $sum: { $cond: [{ $eq: ['$status', ApplicationStatus.Pending] }, 1, 0] },
+            });
+        });
+
+        it('should include a $lookup stage joining on the posts collection', async () => {
+            mockApplicationModel.aggregate.mockResolvedValue([]);
+
+            await service.getApplicationCountsByCompany(companyId);
+
+            const pipeline = mockApplicationModel.aggregate.mock.calls[0][0] as any[];
+            const lookupStage = pipeline.find((s) => s.$lookup);
+            expect(lookupStage).toBeDefined();
+            expect(lookupStage.$lookup.from).toBe('posts');
+            expect(lookupStage.$lookup.localField).toBe('post');
+            expect(lookupStage.$lookup.foreignField).toBe('_id');
+        });
+
+        it('should include a $project stage that converts _id to string postId', async () => {
+            mockApplicationModel.aggregate.mockResolvedValue([]);
+
+            await service.getApplicationCountsByCompany(companyId);
+
+            const pipeline = mockApplicationModel.aggregate.mock.calls[0][0] as any[];
+            const projectStage = pipeline.find((s) => s.$project);
+            expect(projectStage).toBeDefined();
+            expect(projectStage.$project.postId).toEqual({ $toString: '$_id' });
+            expect(projectStage.$project._id).toBe(0);
+        });
+
+        it('should return a single entry per post even when multiple applications exist for it', async () => {
+            const postId = new Types.ObjectId().toString();
+            mockApplicationModel.aggregate.mockResolvedValue([{ postId, total: 10, unread: 4 }]);
+
+            const result = await service.getApplicationCountsByCompany(companyId);
+
+            expect(result).toHaveLength(1);
+            expect(result[0].postId).toBe(postId);
+            expect(result[0].total).toBe(10);
+            expect(result[0].unread).toBe(4);
+        });
+
+        it('should propagate errors thrown by the aggregation', async () => {
+            mockApplicationModel.aggregate.mockRejectedValue(new Error('DB error'));
+
+            await expect(service.getApplicationCountsByCompany(companyId)).rejects.toThrow('DB error');
+        });
+    });
 });

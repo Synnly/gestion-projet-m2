@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PostController } from '../../../src/post/post.controller';
 import { PostService } from '../../../src/post/post.service';
+import { ApplicationService } from '../../../src/application/application.service';
 import { NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { CreatePostDto } from '../../../src/post/dto/createPost.dto';
@@ -11,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 describe('PostController', () => {
     let controller: PostController;
     let service: PostService;
+    let applicationService: ApplicationService;
 
     const mockPostService = {
         findAll: jest.fn(),
@@ -19,6 +21,10 @@ describe('PostController', () => {
         update: jest.fn(),
         findAllByStudent: jest.fn(),
         delete: jest.fn(),
+    };
+
+    const mockApplicationService = {
+        getApplicationCountsByCompany: jest.fn(),
     };
 
     const mockJwtService = {
@@ -54,6 +60,10 @@ describe('PostController', () => {
                     useValue: mockPostService,
                 },
                 {
+                    provide: ApplicationService,
+                    useValue: mockApplicationService,
+                },
+                {
                     provide: JwtService,
                     useValue: mockJwtService,
                 },
@@ -66,6 +76,7 @@ describe('PostController', () => {
 
         controller = module.get<PostController>(PostController);
         service = module.get<PostService>(PostService);
+        applicationService = module.get<ApplicationService>(ApplicationService);
 
         jest.clearAllMocks();
     });
@@ -542,6 +553,59 @@ describe('PostController', () => {
             expect(result.totalPages).toBe(3);
             expect(result.hasNext).toBe(true);
             expect(result.hasPrev).toBe(true);
+        });
+    });
+
+    describe('getApplicationCounts', () => {
+        const companyId = new Types.ObjectId();
+
+        it('should return counts from applicationService.getApplicationCountsByCompany', async () => {
+            const expectedCounts = [
+                { postId: new Types.ObjectId().toString(), total: 4, unread: 2 },
+                { postId: new Types.ObjectId().toString(), total: 1, unread: 0 },
+            ];
+            mockApplicationService.getApplicationCountsByCompany.mockResolvedValue(expectedCounts);
+
+            const result = await controller.getApplicationCounts(companyId);
+
+            expect(result).toEqual(expectedCounts);
+        });
+
+        it('should call applicationService.getApplicationCountsByCompany with the provided companyId', async () => {
+            mockApplicationService.getApplicationCountsByCompany.mockResolvedValue([]);
+
+            await controller.getApplicationCounts(companyId);
+
+            expect(mockApplicationService.getApplicationCountsByCompany).toHaveBeenCalledWith(companyId);
+            expect(mockApplicationService.getApplicationCountsByCompany).toHaveBeenCalledTimes(1);
+        });
+
+        it('should return an empty array when the service returns no counts', async () => {
+            mockApplicationService.getApplicationCountsByCompany.mockResolvedValue([]);
+
+            const result = await controller.getApplicationCounts(companyId);
+
+            expect(result).toEqual([]);
+        });
+
+        it('should return objects with the expected shape { postId, total, unread }', async () => {
+            const postId = new Types.ObjectId().toString();
+            mockApplicationService.getApplicationCountsByCompany.mockResolvedValue([
+                { postId, total: 7, unread: 3 },
+            ]);
+
+            const result = await controller.getApplicationCounts(companyId);
+
+            expect(result).toHaveLength(1);
+            expect(result[0]).toHaveProperty('postId', postId);
+            expect(result[0]).toHaveProperty('total', 7);
+            expect(result[0]).toHaveProperty('unread', 3);
+        });
+
+        it('should propagate errors thrown by the service', async () => {
+            mockApplicationService.getApplicationCountsByCompany.mockRejectedValue(new Error('Service error'));
+
+            await expect(controller.getApplicationCounts(companyId)).rejects.toThrow('Service error');
         });
     });
 });
