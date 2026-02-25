@@ -99,6 +99,9 @@ export class CompanyDto {
     @Expose()
     role: 'COMPANY';
 
+    @Expose()
+    deletedAt?: Date;
+
     /**
      * Constructs a CompanyDto instance
      * @param company Partial company data to initialize the DTO

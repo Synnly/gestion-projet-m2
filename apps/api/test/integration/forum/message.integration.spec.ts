@@ -79,11 +79,15 @@ describe('Message Integration Tests', () => {
         forumId = new Types.ObjectId();
         userId = new Types.ObjectId();
         objectId = new Types.ObjectId();
-        accessToken = jwtService.sign({
-            sub: userId.toString(),
-            email: 'test@example.com',
-            role: 'Student',
-        });
+        accessToken = require('jsonwebtoken').sign(
+            {
+                sub: userId.toString(),
+                email: 'test@example.com',
+                role: 'Student',
+            },
+            JWT_SECRET,
+            { expiresIn: '1h' },
+        );
     });
 
     afterEach(async () => {

@@ -1,25 +1,26 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 import { toast } from 'react-toastify';
-import { Trash2, Search, UserX, UserCheck } from 'lucide-react';
-import DeleteStudentModal from './DeleteStudentModal';
+import { Trash2, UserX, UserCheck } from 'lucide-react';
 import type { studentProfile } from '../../../types/student.types.ts';
 import { deleteAllStudents, deleteStudent, fetchStudents } from '../../../apis/student.ts';
 import Pagination from '../../common/ui/pagination/Pagination.tsx';
-import { DeleteAllStudentsModal } from './DeleteAllStudentsModal.tsx';
+import { DeleteAllStudentsModal } from './modals/manageStudents/DeleteAllStudentsModal.tsx';
+import { DeleteMultipleStudentsModal } from './modals/manageStudents/DeleteMultipleStudentsModal.tsx';
 
 export default function ManageStudents() {
     const [students, setStudents] = useState<studentProfile[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
     const [studentToDelete, setStudentToDelete] = useState<studentProfile | null>(null);
-    const [isDeleteLoading, setIsDeleteLoading] = useState(false);
     const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
+    const [isDeleteMultipleModalOpen, setIsDeleteMultipleModalOpen] = useState(false);
+    const [studentsToDelete, setStudentsToDelete] = useState<studentProfile[]>([]);
 
     const itemsPerPage = 100;
     const authFetch = UseAuthFetch();
+    const checkboxRefs = useRef<Map<string, HTMLInputElement>>(new Map());
 
     const loadStudents = useCallback(
         async (page: number = 1) => {
@@ -48,28 +49,49 @@ export default function ManageStudents() {
         }
     };
 
-    const handleDeleteConfirm = async () => {
-        if (!studentToDelete) return;
+    const handleDeleteMultipleConfirm = async () => {
+        let tempStudentsToDelete;
+        if (studentToDelete) {
+            tempStudentsToDelete = [studentToDelete];
+        } else if (studentsToDelete.length > 0) {
+            tempStudentsToDelete = studentsToDelete;
+        } else return;
 
-        setIsDeleteLoading(true);
-        try {
-            await deleteStudent(authFetch, studentToDelete._id);
-            const updatedStudents: studentProfile[] = students.map((student) =>
-                student._id === studentToDelete._id ? { ...student, deletedAt: new Date().toISOString() } : student,
-            );
-            setStudents(updatedStudents);
-            toast.success(`Compte de ${studentToDelete.firstName} désactivé. Suppression dans 30 jours.`);
-        } catch (error) {
-            console.error(error);
-            toast.error('Erreur technique');
-        } finally {
-            setStudentToDelete(null);
-            setIsDeleteLoading(false);
+        let nbErrors = 0;
+        let studentsDeleted: studentProfile[] = [];
+        for (const student of tempStudentsToDelete) {
+            try {
+                await deleteStudent(authFetch, student._id);
+                studentsDeleted.push(student);
+            } catch (error) {
+                console.error(error);
+                nbErrors++;
+            }
         }
+        if (studentToDelete) setStudentToDelete(null);
+
+        const updatedStudents: studentProfile[] = students.map((student) =>
+            studentsDeleted.some((s) => s._id === student._id)
+                ? { ...student, deletedAt: new Date().toISOString() }
+                : student,
+        );
+        const updatedStudentsToDelete = studentsToDelete.filter(
+            (s) => !studentsDeleted.some((deleted) => deleted._id === s._id),
+        );
+        setStudents(updatedStudents);
+        setStudentsToDelete(updatedStudentsToDelete);
+
+        if (nbErrors === 0) {
+            toast.success(`Tous les comptes sélectionnés désactivés. Suppression dans 30 jours.`);
+        } else {
+            toast.warning(
+                `${tempStudentsToDelete.length - nbErrors} compte(s) désactivé(s) avec succès, mais ${nbErrors} compte(s) n'ont pas pu être supprimé(s). Veuillez réessayer pour les comptes restants.`,
+            );
+        }
+        setIsDeleteMultipleModalOpen(false);
     };
 
     const handleDeleteAllConfirm = async () => {
-        setIsDeleteLoading(true);
         try {
             await deleteAllStudents(authFetch);
             const updatedStudents: studentProfile[] = students.map((student) => ({
@@ -82,35 +104,29 @@ export default function ManageStudents() {
         } catch (error) {
             console.error(error);
             toast.error('Erreur technique');
-        } finally {
-            setIsDeleteLoading(false);
+        }
+        clearSelectedStudents();
+    };
+
+    const clearSelectedStudents = () => {
+        setStudentsToDelete([]);
+        checkboxRefs.current.forEach((checkbox) => {
+            checkbox.checked = false;
+        });
+    };
+
+    const handleStudentSelect = (student: studentProfile) => {
+        if (studentsToDelete.some((s) => s._id === student._id)) {
+            setStudentsToDelete(studentsToDelete.filter((s) => s._id !== student._id));
+        } else {
+            setStudentsToDelete([...studentsToDelete, student]);
         }
     };
 
-    const filteredStudents = students.filter(
-        (student) =>
-            (student.lastName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-            (student.firstName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-            (student.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()),
-    );
-
     return (
-        <div className="container mx-auto">
+        <div className="container p-6 mx-auto">
+            <h1 className="text-3xl font-bold mb-6">Gérer les étudiants</h1>
             <div>
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold">Gestion des Étudiants</h2>
-                    <div className="relative">
-                        <input
-                            type="text"
-                            placeholder="Rechercher un étudiant..."
-                            className="input input-bordered w-full max-w-xs pl-10"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                        <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    </div>
-                </div>
-
                 {isLoading ? (
                     <div className="flex justify-center py-10">
                         <span className="loading loading-spinner loading-lg"></span>
@@ -120,49 +136,63 @@ export default function ManageStudents() {
                         <table className="table table-zebra w-full">
                             <thead>
                                 <tr>
-                                    <th>Nom</th>
+                                    <th className="w-0" />
+                                    <th className="w-0">Nom</th>
+                                    <th className="w-0">Prénom</th>
                                     <th>Email</th>
                                     <th>Numéro Étudiant</th>
-                                    <th>Statut</th>
-                                    <th className="text-right">Actions</th>
+                                    <th className="text-center">Statut</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredStudents.length === 0 ? (
+                                {students.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="text-center py-4 text-gray-500">
+                                        <td colSpan={6} className="text-center ">
                                             Aucun étudiant trouvé
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredStudents.map((student: studentProfile) => {
+                                    students.map((student: studentProfile) => {
                                         const isScheduledForDeletion = !!student.deletedAt;
 
                                         return (
-                                            <tr
-                                                key={student._id}
-                                                className={isScheduledForDeletion ? 'bg-base-200 opacity-60' : ''}
-                                            >
-                                                <td className="font-semibold">
-                                                    {student.firstName} {student.lastName}
+                                            <tr key={student._id}>
+                                                <td>
+                                                    {!isScheduledForDeletion && (
+                                                        <input
+                                                            type="checkbox"
+                                                            className="checkbox checkbox-sm"
+                                                            ref={(el) => {
+                                                                if (el) checkboxRefs.current.set(student._id, el);
+                                                                else checkboxRefs.current.delete(student._id);
+                                                            }}
+                                                            onClick={() => handleStudentSelect(student)}
+                                                        />
+                                                    )}
                                                 </td>
+                                                <td className="font-semibold">{student.firstName}</td>
+                                                <td>{student.lastName}</td>
                                                 <td>{student.email}</td>
                                                 <td>{student.studentNumber}</td>
-                                                <td className="w-0">
+                                                <td
+                                                    className="w-0 text-center"
+                                                    colSpan={isScheduledForDeletion ? 2 : 1}
+                                                >
                                                     {isScheduledForDeletion ? (
-                                                        <div className="badge badge-error gap-2 text-xs">
+                                                        <div className="self-center badge badge-error text-xs">
                                                             <UserX className="h-3 w-3" />
-                                                            Suppression J-30
+                                                            Désactivé
                                                         </div>
                                                     ) : (
-                                                        <div className="badge badge-success gap-2 text-xs">
+                                                        <div className="badge badge-success text-xs">
                                                             <UserCheck className="h-3 w-3" />
                                                             Actif
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="text-right w-0">
-                                                    {!isScheduledForDeletion && (
+                                                {!isScheduledForDeletion && (
+                                                    <td className="w-0 py-0">
                                                         <button
                                                             className="btn btn-sm btn-ghost text-error hover:bg-error/10"
                                                             onClick={() => setStudentToDelete(student)}
@@ -170,8 +200,8 @@ export default function ManageStudents() {
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </button>
-                                                    )}
-                                                </td>
+                                                    </td>
+                                                )}
                                             </tr>
                                         );
                                     })
@@ -181,14 +211,6 @@ export default function ManageStudents() {
                     </div>
                 )}
 
-                {studentToDelete && (
-                    <DeleteStudentModal
-                        studentName={`${studentToDelete.firstName} ${studentToDelete.lastName}`}
-                        onConfirm={handleDeleteConfirm}
-                        onCancel={() => setStudentToDelete(null)}
-                        isLoading={isDeleteLoading}
-                    />
-                )}
                 {isDeleteAllModalOpen && (
                     <DeleteAllStudentsModal
                         onConfirm={handleDeleteAllConfirm}
@@ -197,11 +219,31 @@ export default function ManageStudents() {
                         }}
                     />
                 )}
+                {(isDeleteMultipleModalOpen || studentToDelete) && (
+                    <DeleteMultipleStudentsModal
+                        students={studentToDelete ? [studentToDelete] : studentsToDelete}
+                        onConfirm={handleDeleteMultipleConfirm}
+                        onCancel={() => {
+                            setIsDeleteMultipleModalOpen(false);
+                            setStudentToDelete(null);
+                        }}
+                    />
+                )}
             </div>
-            <div className="mt-8">
+            <div className="flex gap-4 mt-8">
                 <button className="btn btn-error" disabled={isLoading} onClick={() => setIsDeleteAllModalOpen(true)}>
                     Supprimer tous les étudiants
                 </button>
+                {studentsToDelete.length > 0 && (
+                    <>
+                        <button className="btn btn-secondary" onClick={clearSelectedStudents}>
+                            Tout désélectionner
+                        </button>
+                        <button className="btn btn-error" onClick={() => setIsDeleteMultipleModalOpen(true)}>
+                            Supprimer {studentsToDelete.length} étudiant{studentsToDelete.length > 1 && 's'}
+                        </button>
+                    </>
+                )}
             </div>
             <Pagination page={currentPage} totalPages={totalPages} onPageChange={(page) => handlePageChange(page)} />
         </div>

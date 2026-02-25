@@ -1,29 +1,10 @@
 import { UseAuthFetch } from '../hooks/useAuthFetch';
+import type { companyProfile } from '../types/CompanyProfile.types.ts';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
-export interface Company {
-    _id: string;
-    name: string;
-    email: string;
-    siretNumber?: string;
-    city?: string;
-    postalCode?: string;
-    structureType?: string;
-    legalStatus?: string;
-    isValid: boolean;
-    createdAt: string;
-    updatedAt?: string;
-    rejected?: {
-        isRejected: boolean;
-        rejectionReason?: string;
-        rejectedAt?: string;
-        modifiedAt?: string;
-    };
-}
-
 export interface PaginatedCompanyResponse {
-    data: Company[];
+    data: companyProfile[];
     total: number;
     page: number;
     totalPages: number;
@@ -114,4 +95,29 @@ export const fetchCompanies = async (
     }
 
     return response.json();
+};
+
+export const deleteCompany = async (authFetch: ReturnType<typeof UseAuthFetch>, companyId: string) => {
+    const API_URL = import.meta.env.VITE_APIURL;
+    const response = await authFetch(`${API_URL}/api/companies/${companyId}`, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to delete company');
+    }
+    return;
+};
+
+export const deleteAllCompanies = async (authFetch: ReturnType<typeof UseAuthFetch>) => {
+    const API_URL = import.meta.env.VITE_APIURL;
+    const response = await authFetch(`${API_URL}/api/companies`, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to delete all companies');
+    }
+
+    return;
 };

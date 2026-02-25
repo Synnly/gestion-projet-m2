@@ -24,25 +24,27 @@ export function AdminTabs({ tabs, defaultTabId }: AdminTabsProps) {
 
     return (
         <div className="w-full">
-            <div role="tablist" className="tabs tabs-lift mb-4">
+            <div className="tabs tabs-lift">
                 {tabs.map((tab) => (
-                    <button
-                        key={tab.id}
-                        role="tab"
-                        className={`tab ${activeTab === tab.id ? 'tab-active' : ''}`}
-                        onClick={() => setActiveTab(tab.id)}
-                    >
-                        {tab.label}
-                    </button>
+                    <>
+                        <label className="tab" key={tab.id}>
+                            <input
+                                type="radio"
+                                name={tab.label}
+                                className={`tab ${activeTab === tab.id ? 'tab-active' : ''}`}
+                                checked={activeTab === tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                            />
+                            {tab.label}
+                        </label>
+                        <div className="tab-content bg-base-100 border-base-300 p-6">{tab.content}</div>
+                    </>
                 ))}
             </div>
-            <div className="bg-base-100 p-6 md:p-10 border border-base-300 rounded-lg">
-                {tabs.map((tab) => (
-                    <div key={tab.id} style={{ display: activeTab === tab.id ? 'block' : 'none' }}>
-                        {tab.content}
-                    </div>
-                ))}
-            </div>
+            {/*<div className="bg-base-100 p-6 md:p-10 rounded-lg">*/}
+            {/*    {tabs.map((tab) => (*/}
+            {/*    ))}*/}
+            {/*</div>*/}
         </div>
     );
 }

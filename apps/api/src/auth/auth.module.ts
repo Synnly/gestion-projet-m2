@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { forwardRef, Global, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RefreshToken, RefreshTokenSchema } from './refreshToken.schema';
 import { AuthController } from './auth.controller';
@@ -21,7 +21,7 @@ import { MailerProviderType } from 'src/mailer/constants';
 @Module({
     imports: [
         ConfigModule,
-        CompanyModule,
+        forwardRef(() => CompanyModule),
         UsersModule,
         MailerModule.register(MailerProviderType.gmail),
         MongooseModule.forFeature([{ name: RefreshToken.name, schema: RefreshTokenSchema }]),
