@@ -131,8 +131,7 @@ export default function ImportStudent() {
 
     return (
         <div className="container mx-auto p-6">
-            <h1 className="text-3xl font-bold mb-6">Import des Étudiants</h1>
-
+            <h1 className="text-2xl font-bold mb-6 text-base-content">Import de comptes étudiants</h1>
             <div className="card bg-base-200 shadow-xl mb-6">
                 <div className="card-body">
                     <h2 className="card-title">Sélectionner un fichier</h2>

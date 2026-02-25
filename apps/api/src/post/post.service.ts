@@ -157,6 +157,7 @@ export class PostService {
     /**
      * Updates an existing post for a given company.
      * Ensures the post belongs to the company before updating.
+     * If the post is being hidden (isVisible set to false), marks all applications as "NoFollowUp".
      *
      * @param dto - Partial post data for update
      * @param companyId - Company id as a string (MongoDB ObjectId)
@@ -164,6 +165,18 @@ export class PostService {
      * @returns The updated post populated with its company
      */
     async update(dto: UpdatePostDto, companyId: string, postId: string): Promise<Post> {
+        // First, retrieve the current post to check its isVisible status
+        const currentPost = await this.postModel.findOne({ _id: postId, company: new Types.ObjectId(companyId) }).exec();
+
+        if (!currentPost) {
+            throw new NotFoundException('Post not found or does not belong to this company');
+        }
+
+        // Check if the post is being hidden (isVisible changing from true to false)
+        const wasVisible = currentPost.isVisible;
+        const willBeHidden = dto.isVisible === false;
+        const isBeingHidden = wasVisible && willBeHidden;
+
         const updated = await this.postModel
             .findOneAndUpdate({ _id: postId, company: new Types.ObjectId(companyId) }, { $set: dto }, { new: true })
             .populate({
@@ -174,6 +187,11 @@ export class PostService {
 
         if (!updated) {
             throw new NotFoundException('Post not found or does not belong to this company');
+        }
+
+        // If the post was hidden, mark all applications as NoFollowUp and notify students
+        if (isBeingHidden) {
+            await this.applicationService.markApplicationsAsNoFollowUp(new Types.ObjectId(postId));
         }
 
         return updated;

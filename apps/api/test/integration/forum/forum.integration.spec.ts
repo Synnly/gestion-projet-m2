@@ -21,6 +21,7 @@ describe('Forum Integration Tests', () => {
     let accessToken: string;
 
     const JWT_SECRET = 'test-secret-key';
+    const jwt = require('jsonwebtoken');
 
     beforeAll(async () => {
         mongod = await MongoMemoryServer.create();
@@ -39,20 +40,24 @@ describe('Forum Integration Tests', () => {
             .useValue({ get: (key: string) => (key === 'JWT_SECRET' ? JWT_SECRET : undefined) })
             .overrideGuard(AuthGuard)
             .useValue({
-                canActivate: (context: any) => {
-                    const req = context.switchToHttp().getRequest();
-                    const auth = req.headers?.authorization;
-                    if (!auth) return false;
-                    const token = auth.replace('Bearer ', '');
-                    try {
-                        const payload = jwtService.verify(token, { secret: JWT_SECRET });
-                        req.user = payload;
-                        return true;
-                    } catch {
-                        return false;
-                    }
-                },
+                canActivate: (() => {
+                    const jwt = require('jsonwebtoken');
+                    return (context: any) => {
+                        const req = context.switchToHttp().getRequest();
+                        const auth = req.headers?.authorization;
+                        if (!auth) return false;
+                        const token = auth.replace('Bearer ', '');
+                        try {
+                            const payload = jwt.verify(token, JWT_SECRET);
+                            req.user = payload;
+                            return true;
+                        } catch {
+                            return false;
+                        }
+                    };
+                })(),
             })
+
             .compile();
 
         app = moduleFixture.createNestApplication({ logger: false });
@@ -63,11 +68,15 @@ describe('Forum Integration Tests', () => {
         forumModel = moduleFixture.get<Model<ForumDocument>>(getModelToken(Forum.name));
 
         companyId = new Types.ObjectId();
-        accessToken = jwtService.sign({
-            sub: new Types.ObjectId().toString(),
-            email: 'test@example.com',
-            role: 'Student',
-        });
+        accessToken = jwt.sign(
+            {
+                sub: new Types.ObjectId().toString(),
+                email: 'test@example.com',
+                role: 'Student',
+            },
+            JWT_SECRET,
+            { expiresIn: '1h' },
+        );
     });
 
     afterEach(async () => {
