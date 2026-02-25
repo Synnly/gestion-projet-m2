@@ -1,4 +1,4 @@
-import { forwardRef, type ReactElement } from 'react';
+import { forwardRef, useEffect, type ReactElement } from 'react';
 import React, { useState } from 'react';
 import type { GenericProps } from '../../../../types/genericAutoCompleteAdressType';
 import { useDebounce } from '../../../../hooks/useDebounce';
@@ -34,6 +34,7 @@ const Inner = <T,>(
             onChange(val);
         }
     };
+
     const handleSelect = (item: T) => {
         if (!getLabel) return;
 
@@ -73,7 +74,7 @@ const Inner = <T,>(
             </div>
 
             {isAutocompleteEnabled && getLabel && isOpen && suggestions && suggestions.length > 0 && (
-                <ul className="menu bg-base-100 absolute z-100 w-full shadow-2xl border border-base-300 mt-1 rounded-box p-2 max-h-60 overflow-y-auto">
+                <ul className="bg-base-100 absolute z-100 w-full shadow-2xl border border-base-300 mt-1 rounded-box p-2 max-h-60 overflow-y-auto">
                     {suggestions.map((item, idx) => (
                         <li key={idx}>
                             <button type="button" onClick={() => handleSelect(item)} className="py-2 hover:bg-base-200">

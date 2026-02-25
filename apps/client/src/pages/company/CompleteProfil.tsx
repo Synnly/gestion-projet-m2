@@ -20,7 +20,7 @@ import {
 } from '../../types/CompleteProfil.types.tsx';
 import { FormSection } from '../common/form/FormSection.tsx';
 import { FormSubmit } from '../common/form/FormSubmit.tsx';
-import { addressFetcher, getAddressLabel, type NominatimAddress } from '../../apis/autoCompleteAddress.tsx';
+import { addressFetcher, getAddressLabel, type GeoapifyFeature } from '../../apis/autoCompleteAddress.tsx';
 import { GenericAutocomplete } from '../common/inputs/textInput/genericAutoComplete.tsx';
 import { CustomSelect } from '../common/inputs/select/select.tsx';
 import { FormInput } from '../common/form/FormInput.tsx';
@@ -222,10 +222,11 @@ export const CompleteProfil = () => {
                                     name="address"
                                     control={control}
                                     render={({ field, fieldState }) => (
-                                        <GenericAutocomplete<NominatimAddress>
+                                        <GenericAutocomplete<GeoapifyFeature>
                                             {...field}
+                                            key={field.value ? 'loaded' : 'loading'}
                                             label="Adresse complète"
-                                            placeholder="Selectionnez l'adresse de votre siège social"
+                                            placeholder="Tapez votre adresse..."
                                             isAutocompleteEnabled={true}
                                             fetcher={addressFetcher}
                                             getLabel={getAddressLabel}

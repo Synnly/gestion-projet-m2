@@ -13,7 +13,7 @@ import { updatePost } from '../../apis/update_post';
 import { createPost, type CreatePostPayload } from '../../apis/post';
 import { toast } from 'react-toastify';
 import { GenericAutocomplete } from '../common/inputs/textInput/genericAutoComplete';
-import { addressFetcher, getAddressLabel, type NominatimAddress } from '../../apis/autoCompleteAddress';
+import { addressFetcher, getAddressLabel, type GeoapifyFeature } from '../../apis/autoCompleteAddress';
 
 type PostFormMode = 'create' | 'edit';
 
@@ -338,7 +338,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                             </div>
                         </div>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <GenericAutocomplete<NominatimAddress>
+                            <GenericAutocomplete<GeoapifyFeature>
                                 onChange={setAdress}
                                 value={adress}
                                 label="Adresse complète"

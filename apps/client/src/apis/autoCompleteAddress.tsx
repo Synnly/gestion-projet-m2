@@ -1,56 +1,71 @@
 import throttle from 'lodash/throttle';
 
-export interface NominatimAddress {
-    place_id: number;
-    display_name: string;
-    address: {
-        house_number?: string;
-        road?: string;
-        city?: string;
-        town?: string;
-        village?: string;
-        postcode?: string;
-        country?: string;
-        country_code?: string;
+interface GeoapifyResponse {
+    type: 'FeatureCollection';
+    features: GeoapifyFeature[];
+    query: {
+        text: string;
+        parsed: {
+            city?: string;
+            street?: string;
+            housenumber?: string;
+            postcode?: string;
+            country?: string;
+        };
     };
-    lat: string;
-    lon: string;
 }
-export const getAddressLabel = (item: NominatimAddress): string => {
-    const a = item.address;
 
-    const street = a.house_number ? `${a.house_number} ${a.road || ''}` : a.road || '';
-
-    const city = a.city || a.town || a.village || '';
-
-    return [street, `${a.postcode || ''} ${city}`.trim(), a.country].filter(Boolean).join(', ');
+export interface GeoapifyFeature {
+    type: 'Feature';
+    properties: {
+        country: string;
+        country_code: string;
+        city: string;
+        postcode: string;
+        district?: string;
+        suburb?: string;
+        street?: string;
+        housenumber?: string;
+        lon: number;
+        lat: number;
+        formatted: string; // L'adresse complète déjà construite
+        address_line1: string; // Rue + numéro
+        address_line2: string; // Code postal + Ville + Pays
+        category: string;
+        result_type: 'amenity' | 'building' | 'street' | 'city' | 'postcode';
+        place_id: string;
+    };
+    geometry: {
+        type: 'Point';
+        coordinates: [number, number]; // [Longitude, Latitude]
+    };
+}
+export const getAddressLabel = (item: GeoapifyFeature): string => {
+    const p = item.properties;
+    return p.formatted || `${p.address_line1}, ${p.address_line2}`.trim() || p.city || p.country;
 };
 const throttledFetch = throttle(
-    async (query: string): Promise<NominatimAddress[]> => {
+    async (query: string): Promise<GeoapifyFeature[]> => {
         if (!query || query.length < 5) return [];
-
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-            query,
-        )}&format=json&addressdetails=1&limit=5`;
-
+        var requestOptions = {
+            method: 'GET',
+        };
+        const apiKey = import.meta.env.VITE_GEOAPIFY_KEY;
+        const url = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&lang=fr&filter=countrycode:fr&apiKey=${apiKey}&limit=10`;
         try {
-            const response = await fetch(url, {
-                headers: {
-                    'User-Agent': 'MonAppReact/1.0 (contact@votre-email.com)',
-                },
-            });
+            const response = await fetch(url);
 
             if (!response.ok) return [];
 
-            const data: NominatimAddress[] = await response.json();
-
-            return data.filter((item) => item.address.road || item.address.city || item.address.town);
+            const data: GeoapifyResponse = await response.json();
+            console.log('data', data);
+            return data.features.filter((item) => item.properties.formatted);
         } catch (error) {
             console.error('Erreur Autocomplete:', error);
             return [];
         }
     },
-    1000, // 1 seconde de throttle
+    3000, // 1 seconde de throttle
     { leading: true, trailing: true },
 );
 

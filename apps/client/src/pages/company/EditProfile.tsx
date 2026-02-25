@@ -24,7 +24,7 @@ import { FormSection } from '../common/form/FormSection';
 import { ProfilePicture } from '../common/profile/profilPicture';
 import { CustomSelect } from '../common/inputs/select/select';
 import { GenericAutocomplete } from '../common/inputs/textInput/genericAutoComplete';
-import type { NominatimAddress } from '../../apis/autoCompleteAddress';
+import type { GeoapifyFeature } from '../../apis/autoCompleteAddress';
 import { FormSubmit } from '../common/form/FormSubmit';
 import { addressFetcher, getAddressLabel } from '../../apis/autoCompleteAddress';
 export function EditCompanyProfile() {
@@ -46,7 +46,7 @@ export function EditCompanyProfile() {
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const upload = useUploadFile();
     const authFetch = UseAuthFetch();
-
+    console.log('profile', profile);
     useEffect(() => {
         if (!logoBlob) {
             setLogoUrl(null);
@@ -247,8 +247,9 @@ export function EditCompanyProfile() {
                                     name="address"
                                     control={control}
                                     render={({ field, fieldState }) => (
-                                        <GenericAutocomplete<NominatimAddress>
+                                        <GenericAutocomplete<GeoapifyFeature>
                                             {...field}
+                                            key={field.value ? 'loaded' : 'loading'}
                                             label="Adresse complète"
                                             placeholder="Tapez votre adresse..."
                                             isAutocompleteEnabled={true}
