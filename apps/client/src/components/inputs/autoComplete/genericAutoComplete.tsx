@@ -1,5 +1,5 @@
 import { forwardRef, type ReactElement } from 'react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useAutocomplete } from '../../../hooks/useAutocomplete';
 import { useDebounce } from '../../../hooks/useDebounce';
 type BaseProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> & {
