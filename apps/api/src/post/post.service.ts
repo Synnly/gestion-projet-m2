@@ -127,6 +127,77 @@ export class PostService {
         );
     }
 
+    async findAllWithUnSeenFirst(query: PaginationDto, userId: string): Promise<PaginationResult<Post>> {
+        const { page, limit, sort, ...filters } = query;
+        // Build dynamic Mongo filters
+        const qb = new QueryBuilder<Post>(filters as any, this.geoService);
+        const filter = await qb.build();
+        const sortQuery = qb.buildSort(sort);
+
+        const companyPopulate = {
+            path: 'company',
+            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+        };
+
+        const results: Post[] = [];
+        const unSeenPost = await this.paginationService.paginate(
+            this.postModel,
+            { ...filter, seenBy: { $ne: new Types.ObjectId(userId) } },
+            page,
+            limit,
+            [companyPopulate], // populate with selected fields
+            sortQuery,
+        );
+        const total = await this.postModel.countDocuments(filter);
+        //case 1: where the number of unseen post is less than the limit, we return all the unseen post with the total and pagination info
+        if (unSeenPost.data.length === limit) {
+            results.push(...unSeenPost.data);
+        } else {
+            //case 2: where the number of unseen post is less than the limit, and we need to fill the remaining slot with seen post,
+            //we return the unseen post with the seen post and the total and pagination info
+            if (unSeenPost.data.length > 0 && unSeenPost.data.length < limit) {
+                const remainingLimit = limit - unSeenPost.data.length;
+                const seenPost = await this.paginationService.paginate(
+                    this.postModel,
+                    { ...filter, seenBy: new Types.ObjectId(userId) },
+                    1,
+                    remainingLimit,
+                    [companyPopulate], // populate with selected fields
+                    sortQuery,
+                );
+
+                results.push(...unSeenPost.data, ...seenPost.data);
+            } else {
+                //case 3: where there is no unseen post, we return the seen post with the total and pagination info,
+                //but we need to calculate the new page number based on the number of unseen post to get the correct seen post for the pagination
+                if (unSeenPost.data.length === 0) {
+                    const skip = (page - 1) * limit;
+                    // We need to skip the number of unseen post to get the correct seen post for the pagination
+                    const newSkip = skip - unSeenPost.total;
+                    // We calculate the new page number based on the new skip and limit
+                    const seenPost = await this.postModel
+                        .find({ ...filter, seenBy: new Types.ObjectId(userId) })
+                        .skip(newSkip)
+                        .limit(limit)
+                        .populate(companyPopulate)
+                        .sort(sortQuery)
+                        .exec();
+                    results.push(...seenPost);
+                }
+            }
+        }
+
+        return {
+            data: results,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            hasNext: page < Math.ceil(total / limit),
+            hasPrev: page > 1,
+        };
+    }
+
     /**
      * Retrieve posts applied to by a specific student using pagination and dynamic filters.
      *
@@ -245,5 +316,18 @@ export class PostService {
                 `L'annonce ${post.title} pour laquelle vous avez postulé a été supprimée.`,
             );
         }
+    }
+
+    /**
+     * mark a post as seen by a student
+     * @param postId - Post id (MongoDB ObjectId as string)
+     * @param studentId - Student id (MongoDB ObjectId as string)
+     */
+    markAsSeen(postId: string, studentId: string): void {
+        this.postModel.findByIdAndUpdate(
+            postId,
+            { $addToSet: { seenBy: new Types.ObjectId(studentId) } },
+            { new: true },
+        );
     }
 }

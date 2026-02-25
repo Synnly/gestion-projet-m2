@@ -60,7 +60,30 @@ export class PostController {
             data: posts.data.map((post) => plainToInstance(PostDto, post)),
         };
     }
-
+    @Get('/unseenFirst')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(AuthGuard)
+    @Roles(Role.STUDENT)
+    async findAllUnseenFirst(
+        @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        query: PaginationDto,
+        @Req() req: any,
+    ): Promise<PaginationResult<PostDto>> {
+        const userId = req?.user?.sub;
+        const posts = await this.postService.findAllWithUnSeenFirst(query, userId);
+        return {
+            ...posts,
+            data: posts.data.map((post) => plainToInstance(PostDto, post)),
+        };
+    }
+    @Get('/saw/:postId')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(AuthGuard)
+    @Roles(Role.STUDENT)
+    showPost(@Param('postId', ParseObjectIdPipe) postId: string, @Req() req: Request) {
+        const userId = req?.user?.sub;
+        this.postService.markAsSeen(postId, userId!);
+    }
     /**
      * Return a paginated list of posts. Query parameters `page` and `limit`
      * are read via `PaginationDto` and validated automatically.

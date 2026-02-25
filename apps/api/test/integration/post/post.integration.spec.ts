@@ -166,10 +166,11 @@ describe('Post Integration Tests', () => {
         if (mongod) await mongod.stop();
     }, 30000);
 
-    const createPost = async (data: any) => {
+    const createPost = async (data: any, seen = false) => {
         return await postModel.create({
             company: companyId,
             ...data,
+            ...(seen && { seenBy: [studentId] }),
         });
     };
 
@@ -687,7 +688,42 @@ describe('Post Integration Tests', () => {
             expect(posts[0].type).toBe(PostType.Hybride);
         });
     });
-
+    describe('GET /api/company/:companyId/unseenFirst - Find All Posts with pagination and unseen first  ', () => {
+        it('should return empty paginated result when no posts exist and findAllUnseenFirst is called', async () => {
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/unseenFirst'))
+                .set('Authorization', `Bearer ${studentAccessToken}`)
+                .expect(200);
+            expect(res.body.data).toEqual([]);
+            expect(res.body.total).toBe(0);
+            expect(res.body.page).toBe(1);
+        });
+        it('should return all posts with unseen first when posts exist and findAllUnseenFirst is called', async () => {
+            const post1 = await createPost({
+                title: 'Post 1',
+                description: 'Description 1',
+                keySkills: ['Skill1'],
+                type: PostType.Hybride,
+            });
+            const post2 = await createPost(
+                {
+                    title: 'Post 2',
+                    description: 'Description 2',
+                    keySkills: ['Skill2'],
+                    type: PostType.Presentiel,
+                },
+                true,
+            ); // Mark as seen by student
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/unseenFirst'))
+                .set('Authorization', `Bearer ${studentAccessToken}`)
+                .expect(200);
+            expect(res.body.data).toHaveLength(2);
+            expect(res.body.total).toBe(2);
+            expect(res.body.data[0].title).toBe('Post 1');
+            expect(res.body.data[1].title).toBe('Post 2');
+        });
+    });
     describe('GET /api/company/:companyId/posts/by-student - Find All Posts With Applications', () => {
         it('should return empty paginated result when student has no applications', async () => {
             await createPost({
@@ -903,7 +939,6 @@ describe('Post Integration Tests', () => {
     });
 
     describe('DELETE /api/company/:companyId/posts/:id - Delete Post', () => {
-        
         it('should return 404 when trying to delete a non-existent post', async () => {
             const nonExistentId = new Types.ObjectId();
             await request(app.getHttpServer())

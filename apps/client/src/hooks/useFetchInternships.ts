@@ -51,7 +51,7 @@ export async function fetchPosts(API_URL: string, params: URLSearchParams, byStu
     const authFetch = UseAuthFetch();
     const url = byStudent
         ? `${API_URL}/api/company/0/posts/by-student?${params}`
-        : `${API_URL}/api/company/0/posts?${params}`;
+        : `${API_URL}/api/company/0/posts/unSeenFirst?${params}`;
 
     const res = await authFetch(url, {
         method: 'GET',

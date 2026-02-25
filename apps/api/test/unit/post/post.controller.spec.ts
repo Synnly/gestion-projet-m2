@@ -14,6 +14,7 @@ describe('PostController', () => {
 
     const mockPostService = {
         findAll: jest.fn(),
+        findAllWithUnSeenFirst: jest.fn(),
         findOne: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
@@ -29,7 +30,7 @@ describe('PostController', () => {
     const mockConfigService = {
         get: jest.fn(),
     };
-
+    const userId = new Types.ObjectId('507f1f77bcf86cd799439099');
     const mockPost = {
         _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
         title: 'Développeur Full Stack',
@@ -44,7 +45,21 @@ describe('PostController', () => {
         type: PostType.Hybride,
         isVisible: true,
     };
-
+    const mockSeenPost = {
+        _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
+        title: 'Développeur Full Stack',
+        description: 'Nous recherchons un développeur full stack expérimenté',
+        duration: '6 mois',
+        startDate: '2025-01-15',
+        minSalary: 2000,
+        maxSalary: 3000,
+        sector: 'IT',
+        keySkills: ['JavaScript', 'TypeScript', 'React', 'Node.js'],
+        adress: 'Paris, France',
+        type: PostType.Hybride,
+        isVisible: true,
+        seenBy: [userId],
+    };
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             controllers: [PostController],
@@ -231,7 +246,71 @@ describe('PostController', () => {
             );
         });
     });
+    describe('findAllUnseenFirst', () => {
+        const mockRequest = {
+            user: {
+                sub: 'someStudentId',
+            },
+        };
+        it('should return a paginated result of posts with unseen first only when there is enough to fill page when findAllUnseenFirst is called', async () => {
+            const paginationResult = {
+                data: [mockSeenPost],
+                total: 2,
+                page: 1,
+                limit: 1,
+                totalPages: 2,
+                hasNext: true,
+                hasPrev: false,
+            };
+            mockPostService.findAllWithUnSeenFirst.mockResolvedValue(paginationResult);
+            const result = await controller.findAllUnseenFirst({ page: 1, limit: 1 } as any, mockRequest as any);
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0].title).toBe('Développeur Full Stack');
+            expect(result.total).toBe(2);
+            expect(service.findAllWithUnSeenFirst).toHaveBeenCalledTimes(1);
+        });
+        it('should return a paginated result of posts with unseen first followed by seen when there are more unseen than page limit when findAllUnseenFirst is called', async () => {
+            const mockUnseenPost = {
+                ...mockPost,
+                _id: new Types.ObjectId('507f1f77bcf86cd799439012'),
+                title: 'Développeur Backend',
+            };
+            const paginationResult = {
+                data: [mockUnseenPost, mockSeenPost],
+                total: 2,
+                page: 1,
+                limit: 1,
+                totalPages: 2,
+                hasNext: true,
+                hasPrev: false,
+            };
+            mockPostService.findAllWithUnSeenFirst.mockResolvedValue(paginationResult);
+            const result = await controller.findAllUnseenFirst({ page: 1, limit: 1 } as any, mockRequest as any);
+            expect(result.data).toHaveLength(2);
+            expect(result.data[0].title).toBe('Développeur Backend');
+            expect(result.data[1].title).toBe('Développeur Full Stack');
+            expect(result.total).toBe(2);
+            expect(service.findAllWithUnSeenFirst).toHaveBeenCalledTimes(1);
+        });
+        it('should return a paginated result of posts with seen first when there are no unseen posts when findAllUnseenFirst is called', async () => {
+            const paginationResult = {
+                data: [mockSeenPost],
+                total: 1,
 
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPostService.findAllWithUnSeenFirst.mockResolvedValue(paginationResult);
+            const result = await controller.findAllUnseenFirst({ page: 1, limit: 10 } as any, mockRequest as any);
+            expect(result.data).toHaveLength(1);
+            expect(result.data[0].title).toBe('Développeur Full Stack');
+            expect(result.total).toBe(1);
+            expect(service.findAllWithUnSeenFirst).toHaveBeenCalledTimes(1);
+        });
+    });
     describe('findOne', () => {
         const validObjectId = '507f1f77bcf86cd799439011';
 

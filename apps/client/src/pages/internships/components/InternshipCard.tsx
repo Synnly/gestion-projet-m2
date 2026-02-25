@@ -2,24 +2,41 @@ import React from 'react';
 import { useInternshipStore } from '../../../stores/useInternshipStore';
 import type { Internship } from '../../../types/internship.types';
 import Card from '../../common/ui/card/Card';
+import { useMutation } from '@tanstack/react-query';
 
 const InternshipCard: React.FC<{ internship: Internship; isSelected: boolean }> = ({ internship, isSelected }) => {
     const { setSelectedInternshipId } = useInternshipStore();
 
-    const companyName = internship.company?.name || "Entreprise inconnue";
-
+    const companyName = internship.company?.name || 'Entreprise inconnue';
+    const API_URL = import.meta.env.VITE_API_URL;
+    const mutation = useMutation({
+        mutationFn: async (id: string) => {
+            await fetch(`${API_URL}/api/posts/saw/${id}`, {
+                method: 'GET',
+                credentials: 'include',
+            });
+        },
+        onError: (error) => {
+            console.error('Error marking internship as seen:', error);
+        },
+        onSuccess: () => {
+            console.log('Internship marked as seen successfully');
+        },
+    });
     const companyLogo = internship.company?.logoUrl;
-
+    const handleClick = (id: string) => {
+        setSelectedInternshipId(id);
+        mutation.mutate(id);
+    };
     return (
         <Card
             id={internship._id}
             title={internship.title}
-            // Utilisation de l'opérateur ?. (optional chaining) pour éviter le crash
             subtitle={`${companyName}${internship.adress ? ` • ${internship.adress}` : ''}`}
             meta={internship.duration}
             imageSrc={companyLogo}
             isSelected={isSelected}
-            onClick={(id) => id && setSelectedInternshipId(id)}
+            onClick={(id) => id && handleClick(id)}
             className={`bg-base-100! border-base-300! cursor-pointer`}
             isVisible={internship.isVisible}
         />

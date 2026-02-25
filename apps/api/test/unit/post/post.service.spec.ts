@@ -49,6 +49,7 @@ describe('PostService', () => {
         findById: jest.fn(),
         findOneAndUpdate: jest.fn(),
         constructor: jest.fn(),
+        countDocuments: jest.fn(),
     };
 
     const mockPaginationService = {
@@ -361,7 +362,7 @@ describe('PostService', () => {
     describe('update', () => {
         const companyId = '507f1f77bcf86cd799439099';
         const postId = '507f1f77bcf86cd799439011';
-
+        const otherId = '507f1f77bcf86cd799439033';
         it('should update and return the post when it belongs to the company', async () => {
             const execMock = jest.fn().mockResolvedValue(createMockPost({ title: 'Updated Title' }));
             const populateMock = jest.fn().mockReturnValue({ exec: execMock });
@@ -563,6 +564,275 @@ describe('PostService', () => {
                     },
                 ],
                 expect.anything(),
+            );
+        });
+    });
+
+    describe('findAllWithUnSeenFirst', () => {
+        const limit = 3;
+        const page = 1;
+        const samplePost = (id, seenBy: Types.ObjectId[] = []) => ({ ...createMockPost({ _id: id }), seenBy });
+        const genArr = (n, fn) => Array.from({ length: n }, (_, i) => fn(i));
+
+        it('returns only unseen posts if enough exist to fill the page (Case 1)', async () => {
+            const userId = new Types.ObjectId('507f1f77bcf86cd799439022');
+            const unseenPosts = genArr(limit, (i) => samplePost(new Types.ObjectId(), []));
+            mockPaginationService.paginate.mockResolvedValueOnce({
+                data: unseenPosts,
+                total: 5,
+                page,
+                limit,
+                totalPages: 2,
+                hasNext: true,
+                hasPrev: false,
+            });
+            mockPostModel.countDocuments.mockResolvedValue(5);
+
+            const result = await service.findAllWithUnSeenFirst({ page, limit } as any, userId.toString());
+            expect(result.data).toHaveLength(limit);
+            expect(result.data.every((post) => !(post.seenBy || []).includes(userId))).toBe(true);
+            expect(result.total).toBe(5);
+            expect(result.page).toBe(page);
+            expect(result.limit).toBe(limit);
+            expect(result.hasNext).toBe(true);
+            expect(result.hasPrev).toBe(false);
+        });
+
+        it('returns unseen posts followed by seen posts if not enough unseen (Case 2)', async () => {
+            const userId = new Types.ObjectId('507f1f77bcf86cd799439022');
+            const unseenPosts = genArr(2, (i) => samplePost(new Types.ObjectId(), []));
+            const seenPosts = [samplePost(new Types.ObjectId(), [userId])];
+            mockPaginationService.paginate
+                .mockResolvedValueOnce({
+                    data: unseenPosts,
+                    total: 2,
+                    page,
+                    limit,
+                    totalPages: 1,
+                    hasNext: false,
+                    hasPrev: false,
+                })
+                .mockResolvedValueOnce({
+                    data: seenPosts,
+                    total: 1,
+                    page: 1,
+                    limit: 1,
+                    totalPages: 1,
+                    hasNext: false,
+                    hasPrev: false,
+                });
+            mockPostModel.countDocuments.mockResolvedValue(3);
+
+            const result = await service.findAllWithUnSeenFirst({ page, limit } as any, userId.toString());
+            expect(result.data.length).toBe(3);
+            expect(result.data.slice(0, 2).every((post) => !(post.seenBy || []).includes(userId))).toBe(true);
+            expect(result.data[2].seenBy).toContainEqual(userId);
+            expect(result.total).toBe(3);
+        });
+
+        it('returns only seen posts when all are seen (Case 3)', async () => {
+            const userId = new Types.ObjectId('507f1f77bcf86cd799439022');
+            mockPaginationService.paginate.mockResolvedValueOnce({
+                data: [],
+                total: 0,
+                page,
+                limit,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            });
+            mockPostModel.countDocuments.mockResolvedValue(2); // total
+            // Mock find for seen posts
+            const seenDocs = genArr(limit, (i) => samplePost(new Types.ObjectId(), [userId]));
+            mockPostModel.find.mockReturnValue({
+                skip: () => ({ limit: () => ({ populate: () => ({ sort: () => ({ exec: async () => seenDocs }) }) }) }),
+            });
+
+            const result = await service.findAllWithUnSeenFirst({ page, limit } as any, userId.toString());
+            expect(result.data).toHaveLength(limit);
+            expect(result.data.every((post) => (post.seenBy || []).includes(userId))).toBe(true);
+            expect(result.total).toBe(2);
+        });
+
+        it('returns empty when no posts in DB (Case 4)', async () => {
+            const userId = new Types.ObjectId('507f1f77bcf86cd799439022');
+            mockPaginationService.paginate.mockResolvedValueOnce({
+                data: [],
+                total: 0,
+                page,
+                limit,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            });
+            mockPostModel.countDocuments.mockResolvedValue(0);
+            // For case of unSeenPost.data.length === 0
+            mockPostModel.find.mockReturnValue({
+                skip: () => ({ limit: () => ({ populate: () => ({ sort: () => ({ exec: async () => [] }) }) }) }),
+            });
+
+            const result = await service.findAllWithUnSeenFirst({ page, limit } as any, userId.toString());
+            expect(result.data).toHaveLength(0);
+            expect(result.total).toBe(0);
+            expect(result.totalPages).toBe(0);
+            expect(result.hasNext).toBe(false);
+        });
+
+        it('returns empty if filters exclude all posts (Case 5)', async () => {
+            const userId = new Types.ObjectId('507f1f77bcf86cd799439022');
+            mockPaginationService.paginate.mockResolvedValueOnce({
+                data: [],
+                total: 0,
+                page,
+                limit,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            });
+            mockPostModel.countDocuments.mockResolvedValue(0);
+            mockPostModel.find.mockReturnValue({
+                skip: () => ({ limit: () => ({ populate: () => ({ sort: () => ({ exec: async () => [] }) }) }) }),
+            });
+
+            const result = await service.findAllWithUnSeenFirst(
+                { page, limit, sector: 'noexist' } as any,
+                userId.toString(),
+            );
+            expect(result.data).toHaveLength(0);
+        });
+
+        it('returns empty when requesting out-of-range page (Case 6)', async () => {
+            const userId = new Types.ObjectId('507f1f77bcf86cd799439022');
+            mockPaginationService.paginate.mockResolvedValueOnce({
+                data: [],
+                total: 3,
+                page: 5,
+                limit,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: true,
+            });
+            mockPostModel.countDocuments.mockResolvedValue(3);
+            mockPostModel.find.mockReturnValue({
+                skip: () => ({ limit: () => ({ populate: () => ({ sort: () => ({ exec: async () => [] }) }) }) }),
+            });
+
+            const result = await service.findAllWithUnSeenFirst({ page: 5, limit } as any, userId.toString());
+            expect(result.data).toHaveLength(0);
+            expect(result.page).toBe(5);
+            expect(result.hasNext).toBe(false);
+            expect(result.hasPrev).toBe(true);
+        });
+
+        it('returns empty array for limit = 0 or negative (Case 7)', async () => {
+            const userId = new Types.ObjectId('507f1f77bcf86cd799439022');
+            mockPaginationService.paginate.mockResolvedValueOnce({
+                data: [],
+                total: 0,
+                page,
+                limit: 0,
+                totalPages: 0,
+                hasNext: false,
+                hasPrev: false,
+            });
+            mockPostModel.countDocuments.mockResolvedValue(0);
+            mockPostModel.find.mockReturnValue({
+                skip: () => ({ limit: () => ({ populate: () => ({ sort: () => ({ exec: async () => [] }) }) }) }),
+            });
+
+            let result = await service.findAllWithUnSeenFirst({ page, limit: 0 } as any, userId.toString());
+            expect(result.data).toHaveLength(0);
+            result = await service.findAllWithUnSeenFirst({ page, limit: -5 } as any, userId.toString());
+            expect(result.data).toHaveLength(0);
+        });
+
+        it('returns all available posts when limit > total posts (Case 8)', async () => {
+            const userId = new Types.ObjectId('507f1f77bcf86cd799439022');
+            const postNum = 5;
+            const bigLimit = 50;
+            const unseenPosts = genArr(postNum, (i) => samplePost(new Types.ObjectId(), []));
+            mockPaginationService.paginate
+                .mockResolvedValueOnce({
+                    data: unseenPosts,
+                    total: postNum,
+                    page,
+                    limit: bigLimit,
+                    totalPages: 1,
+                    hasNext: false,
+                    hasPrev: false,
+                })
+                .mockResolvedValueOnce({
+                    data: [],
+                    total: 0,
+                    page: 1,
+                    limit: bigLimit - postNum,
+                    totalPages: 0,
+                    hasNext: false,
+                    hasPrev: false,
+                });
+            mockPostModel.countDocuments.mockResolvedValue(postNum);
+            const result = await service.findAllWithUnSeenFirst({ page, limit: bigLimit } as any, userId.toString());
+            expect(unseenPosts.length).toBe(postNum);
+            expect(result.data.length).toBe(postNum);
+        });
+
+        it('treats all posts as unseen if userId not present (Case 9)', async () => {
+            const userId = new Types.ObjectId('507f1f77bcf86cd799439022');
+            const anotherUserId = new Types.ObjectId('507f1f77bcf86cd799439033');
+            const otherId = new Types.ObjectId('507f1f77bcf86cd799439044');
+            const allUnseen = genArr(3, () => samplePost(new Types.ObjectId(), [anotherUserId]));
+            mockPaginationService.paginate.mockResolvedValueOnce({
+                data: allUnseen,
+                total: 3,
+                page,
+                limit,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            });
+            mockPostModel.countDocuments.mockResolvedValue(3);
+            const result = await service.findAllWithUnSeenFirst({ page, limit } as any, otherId.toString());
+            expect(result.data.every((post) => !(post.seenBy || []).includes(otherId))).toBe(true);
+        });
+
+        it('applies sorting and filters (Case 10)', async () => {
+            const userId = new Types.ObjectId('507f1f77bcf86cd799439022');
+            const sortedPosts = [samplePost(new Types.ObjectId(), []), samplePost(new Types.ObjectId(), [])];
+            mockPaginationService.paginate
+                .mockResolvedValueOnce({
+                    data: sortedPosts,
+                    total: 2,
+                    page,
+                    limit,
+                    totalPages: 1,
+                    hasNext: false,
+                    hasPrev: false,
+                })
+                .mockResolvedValueOnce({
+                    data: [],
+                    total: 0,
+                    page: 1,
+                    limit,
+                    totalPages: 0,
+                    hasNext: false,
+                    hasPrev: false,
+                });
+            mockPostModel.countDocuments.mockResolvedValue(2);
+            const result = await service.findAllWithUnSeenFirst(
+                { page, limit, sort: '-startDate', sector: 'IT' } as any,
+                userId.toString(),
+            );
+            expect(result.data.length).toBe(2);
+        });
+
+        it('throws or returns error if paginate throws (Case 13)', async () => {
+            const userId = new Types.ObjectId('507f1f77bcf86cd799439022');
+            mockPaginationService.paginate.mockImplementationOnce(() => {
+                throw new Error('DB Down');
+            });
+            mockPostModel.countDocuments.mockResolvedValue(1);
+            await expect(service.findAllWithUnSeenFirst({ page, limit } as any, userId.toString())).rejects.toThrow(
+                /DB Down/,
             );
         });
     });

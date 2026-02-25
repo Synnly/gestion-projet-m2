@@ -99,6 +99,9 @@ export class Post {
 
     @Prop({ default: [] })
     applications: Types.ObjectId[];
+
+    @Prop({ default: [], type: [Types.ObjectId], ref: 'User' })
+    seenBy: Types.ObjectId[];
 }
 
 export type PostDocument = Post & Document;
