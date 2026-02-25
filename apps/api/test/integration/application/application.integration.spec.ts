@@ -30,6 +30,9 @@ import { PaginationService } from 'src/common/pagination/pagination.service';
 import { ForumModule } from '../../../src/forum/forum.module';
 import { Forum, ForumDocument } from '../../../src/forum/forum.schema';
 import { NotificationService } from '../../../src/notification/notification.service';
+import { MailerService } from '../../../src/mailer/mailer.service';
+import { MailerModule } from '../../../src/mailer/mailer.module';
+import { MailerProviderType } from '../../../src/mailer/constants';
 
 describe('Application Integration Tests', () => {
     let app: INestApplication;
@@ -65,6 +68,16 @@ describe('Application Integration Tests', () => {
         markAllAsRead: jest.fn(),
         delete: jest.fn(),
         deleteAllUserNotifications: jest.fn(),
+    };
+
+    const mockMailerService: Partial<MailerService> = {
+        sendApplicationAcceptedEmail: jest.fn().mockResolvedValue(true),
+        sendApplicationRejectedEmail: jest.fn().mockResolvedValue(true),
+        sendVerificationEmail: jest.fn().mockResolvedValue(true),
+        sendPasswordResetEmail: jest.fn().mockResolvedValue(true),
+        sendInfoEmail: jest.fn().mockResolvedValue(true),
+        sendAccountCreationEmail: jest.fn().mockResolvedValue(true),
+        sendAccountBanEmail: jest.fn().mockResolvedValue(true),
     };
 
     const tokenFor = (role: Role, id: Types.ObjectId | string = new Types.ObjectId()) =>
@@ -148,6 +161,7 @@ describe('Application Integration Tests', () => {
                 PostModule,
                 StudentModule,
                 ForumModule,
+                MailerModule.register(MailerProviderType.gmail),
             ],
             controllers: [ApplicationController],
             providers: [
@@ -169,6 +183,8 @@ describe('Application Integration Tests', () => {
                     return true;
                 },
             })
+            .overrideProvider(MailerService)
+            .useValue(mockMailerService)
             .compile();
 
         jwtService = moduleRef.get(JwtService);

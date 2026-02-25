@@ -612,6 +612,132 @@ describe('MailerService', () => {
         });
     });
 
+    describe('sendApplicationAcceptedEmail', () => {
+        it('should send application accepted email with all required context and return true', async () => {
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+
+            const result = await service.sendApplicationAcceptedEmail(
+                'student@example.com',
+                'John',
+                'Doe',
+                'Software Developer Intern',
+                'Tech Corp',
+            );
+
+            expect(result).toBe(true);
+            expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: 'student@example.com',
+                    subject: 'Candidature acceptée - Software Developer Intern',
+                    template: 'applicationAccepted',
+                    from: '"Test App" <noreply@example.com>',
+                    context: expect.objectContaining({
+                        firstName: 'John',
+                        lastName: 'Doe',
+                        postTitle: 'Software Developer Intern',
+                        companyName: 'Tech Corp',
+                        fromName: 'Test App',
+                    }),
+                }),
+            );
+        });
+
+        it('should normalize email to lowercase when sending accepted email', async () => {
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+
+            await service.sendApplicationAcceptedEmail(
+                'STUDENT@EXAMPLE.COM',
+                'Jane',
+                'Smith',
+                'Marketing Intern',
+                'Marketing Co',
+            );
+
+            expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: 'student@example.com',
+                }),
+            );
+        });
+
+        it('should throw error when mailer provider fails for accepted email', async () => {
+            mockNestMailerService.sendMail.mockRejectedValue(new Error('SMTP connection failed'));
+
+            await expect(
+                service.sendApplicationAcceptedEmail(
+                    'student@example.com',
+                    'John',
+                    'Doe',
+                    'Developer',
+                    'Company',
+                ),
+            ).rejects.toThrow('SMTP connection failed');
+        });
+    });
+
+    describe('sendApplicationRejectedEmail', () => {
+        it('should send application rejected email with all required context and return true', async () => {
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+
+            const result = await service.sendApplicationRejectedEmail(
+                'student@example.com',
+                'Alice',
+                'Johnson',
+                'Data Analyst Intern',
+                'Data Solutions Inc',
+            );
+
+            expect(result).toBe(true);
+            expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: 'student@example.com',
+                    subject: 'Mise à jour de votre candidature - Data Analyst Intern',
+                    template: 'applicationRejected',
+                    from: '"Test App" <noreply@example.com>',
+                    context: expect.objectContaining({
+                        firstName: 'Alice',
+                        lastName: 'Johnson',
+                        postTitle: 'Data Analyst Intern',
+                        companyName: 'Data Solutions Inc',
+                        fromName: 'Test App',
+                    }),
+                }),
+            );
+        });
+
+        it('should normalize email to lowercase when sending rejected email', async () => {
+            mockNestMailerService.sendMail.mockResolvedValue(true);
+
+            await service.sendApplicationRejectedEmail(
+                'STUDENT@EXAMPLE.COM',
+                'Bob',
+                'Williams',
+                'Design Intern',
+                'Creative Agency',
+            );
+
+            expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    to: 'student@example.com',
+                }),
+            );
+        });
+
+        it('should throw error when mailer provider fails for rejected email', async () => {
+            mockNestMailerService.sendMail.mockRejectedValue(new Error('Email service unavailable'));
+
+            await expect(
+                service.sendApplicationRejectedEmail(
+                    'student@example.com',
+                    'Charlie',
+                    'Brown',
+                    'Finance Intern',
+                    'Finance Corp',
+                ),
+            ).rejects.toThrow('Email service unavailable');
+        });
+    });
+
     describe('verifyPasswordResetOtp - additional branches', () => {
         it('should increment password reset attempts on invalid OTP', async () => {
             const mockUser = {

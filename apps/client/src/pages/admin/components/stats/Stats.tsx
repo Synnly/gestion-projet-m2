@@ -74,8 +74,8 @@ export function StatsPage() {
 
     return (
         <div className="min-h-screen bg-base-100">
-            <div className="max-w-7xl mx-auto">
-                <h2 className="text-2xl font-bold mb-6 text-base-content">Statistiques du système</h2>
+            <div className="container p-6 mx-auto">
+                <h1 className="text-3xl font-bold mb-6">Statistiques du système</h1>
 
                 <div className="stats stats-vertical lg:stats-horizontal shadow shadow-base-300 w-full bg-base-100">
                     <div className="stats stats-vertical lg:stats-horizontal shadow shadow-base-300 w-full bg-base-100">

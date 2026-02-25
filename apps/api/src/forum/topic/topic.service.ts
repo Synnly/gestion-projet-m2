@@ -22,7 +22,7 @@ export class TopicService {
 
     private readonly populate = [
         { path: 'messages', select: this.populateField },
-        { path: 'author', select: '_id firstName lastName name email logo' },
+        { path: 'author', select: '_id firstName lastName name email logo ban' },
     ];
 
     /**

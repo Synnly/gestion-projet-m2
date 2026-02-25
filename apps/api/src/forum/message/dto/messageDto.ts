@@ -47,4 +47,12 @@ export class MessageDto {
     @Expose()
     @Transform(({ obj }: { obj: Message }) => obj.createdAt)
     createdAt: Date;
+
+    /**
+     * Date when the message was soft-deleted (null if not deleted)
+     */
+    @Expose()
+    @IsOptional()
+    @Transform(({ obj }: { obj: Message }) => obj.deletedAt)
+    deletedAt?: Date | null;
 }
