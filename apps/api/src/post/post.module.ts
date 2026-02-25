@@ -8,10 +8,13 @@ import { GeoService } from 'src/common/geography/geo.service';
 import { CompanyModule } from 'src/company/company.module';
 import { PostOwnerGuard } from './guard/IsPostOwnerGuard';
 import { ApplicationModule } from '../application/application.module';
+import { PendingSeen, PendingSeenSchema } from './pendingSeen.schema';
 
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Post.name, schema: PostSchema }]),
+
+        MongooseModule.forFeature([{ name: PendingSeen.name, schema: PendingSeenSchema }]),
         forwardRef(() => CompanyModule),
         forwardRef(() => ApplicationModule),
     ],

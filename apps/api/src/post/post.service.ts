@@ -12,11 +12,13 @@ import { CreationFailedError } from '../errors/creationFailedError';
 import { CompanyService } from 'src/company/company.service';
 import { GeoService } from 'src/common/geography/geo.service';
 import { ApplicationService } from '../application/application.service';
+import { PendingSeen } from './pendingSeen.schema';
 
 @Injectable()
 export class PostService {
     constructor(
         @InjectModel(Post.name) private readonly postModel: Model<Post>,
+        @InjectModel(PendingSeen.name) private readonly pendingSeenModel: Model<PendingSeen>,
         private readonly paginationService: PaginationService,
 
         private readonly geoService: GeoService,
@@ -125,6 +127,24 @@ export class PostService {
             [companyPopulate], // populate with selected fields
             sortQuery,
         );
+    }
+
+    /** Synchronize "seen" status for posts based on pending entries.
+     * This method processes all pending "seen" entries for a given user, updates the corresponding posts to mark them as seen by the user, and then removes the processed pending entries.
+     * @param userId - The ID of the user for whom to synchronize seen posts (as a string, MongoDB ObjectId).
+     */
+    async syncSeenPosts(userId: string) {
+        const pendings = await this.pendingSeenModel.find({ userId }).lean();
+        if (pendings.length === 0) return;
+
+        const postIds = pendings.map((p) => p.postId);
+
+        await this.postModel.updateMany(
+            { _id: { $in: postIds } },
+            { $addToSet: { seenBy: new Types.ObjectId(userId) } },
+        );
+
+        await this.pendingSeenModel.deleteMany({ userId });
     }
 
     async findAllWithUnSeenFirst(query: PaginationDto, userId: string): Promise<PaginationResult<Post>> {
@@ -319,15 +339,15 @@ export class PostService {
     }
 
     /**
-     * mark a post as seen by a student
+     * Mark a post as seen by a student. This creates a "pending seen" entry that will be processed later to update the post's seenBy list.
      * @param postId - Post id (MongoDB ObjectId as string)
      * @param studentId - Student id (MongoDB ObjectId as string)
      */
-    markAsSeen(postId: string, studentId: string): void {
-        this.postModel.findByIdAndUpdate(
-            postId,
-            { $addToSet: { seenBy: new Types.ObjectId(studentId) } },
-            { new: true },
-        );
+    async markAsSeen(postId: string, studentId: string): Promise<void> {
+        const pendingSeen = new this.pendingSeenModel({
+            userId: new Types.ObjectId(studentId),
+            postId: new Types.ObjectId(postId),
+        });
+        await pendingSeen.save();
     }
 }
