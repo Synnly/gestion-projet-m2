@@ -440,65 +440,69 @@ export class CompanyService {
             );
         }
 
-        const session = await this.companyModel.db.startSession();
-        try {
-            await session.withTransaction(async () => {
-                if (postIds.length > 0) {
-                    const deletedPosts = await this.postModel
-                        .deleteMany({
-                            _id: { $in: postIds },
-                        })
-                        .session(session);
-                    this.logger.log(`${deletedPosts.deletedCount} deleted posts`);
-                }
+        if (postIds.length > 0) {
+            const deletedPosts = await this.postModel.deleteMany({ _id: { $in: postIds } });
+            this.logger.log(`${deletedPosts.deletedCount} deleted posts`);
+        }
 
-                const forumsToDelete = await this.forumModel
-                    .find({ company: { $in: companyIds } })
-                    .select('_id')
-                    .session(session);
-                const forumIds = forumsToDelete.map((f) => f._id);
+        const forumsToDelete = await this.forumModel.find({ company: { $in: companyIds } }).select('_id');
+        const forumIds = forumsToDelete.map((f) => f._id);
 
-                if (forumIds.length > 0) {
-                    const topicsToDelete = await this.topicModel
-                        .find({ forumId: { $in: forumIds } })
-                        .select('_id')
-                        .session(session);
-                    const topicIds = topicsToDelete.map((t) => t._id);
+        if (forumIds.length > 0) {
+            const topicsToDelete = await this.topicModel.find({ forumId: { $in: forumIds } }).select('_id');
+            const topicIds = topicsToDelete.map((t) => t._id);
 
-                    if (topicIds.length > 0) {
-                        const deletedMessages = await this.messageModel
-                            .deleteMany({
-                                topicId: { $in: topicIds },
-                            })
-                            .session(session);
-                        this.logger.log(`${deletedMessages.deletedCount} deleted messages`);
+            if (topicIds.length > 0) {
+                const deletedMessages = await this.messageModel.deleteMany({ topicId: { $in: topicIds } });
+                this.logger.log(`${deletedMessages.deletedCount} deleted messages`);
 
-                        const deletedTopics = await this.topicModel
-                            .deleteMany({
-                                _id: { $in: topicIds },
-                            })
-                            .session(session);
-                        this.logger.log(`${deletedTopics.deletedCount} deleted topics`);
+                const deletedTopics = await this.topicModel.deleteMany({ _id: { $in: topicIds } });
+                this.logger.log(`${deletedTopics.deletedCount} deleted topics`);
+            }
+
+            const deletedForums = await this.forumModel.deleteMany({ _id: { $in: forumIds } });
+            this.logger.log(`${deletedForums.deletedCount} deleted forums`);
+        }
+
+        const generalForum = await this.forumModel.findOne({ company: { $exists: false } }).select('_id');
+        if (generalForum) {
+            const generalTopics = await this.topicModel.find({ forumId: generalForum._id }).select('_id messages');
+            const generalTopicIds = generalTopics.map((t) => t._id);
+
+            if (generalTopicIds.length > 0) {
+                const companyMessagesInGeneral = await this.messageModel
+                    .find({ topicId: { $in: generalTopicIds }, authorId: { $in: companyIds } })
+                    .select('_id topicId');
+
+                if (companyMessagesInGeneral.length > 0) {
+                    const companyMessageIds = companyMessagesInGeneral.map((m) => m._id);
+
+                    const deletedGeneralMessages = await this.messageModel.deleteMany({
+                        _id: { $in: companyMessageIds },
+                    });
+                    this.logger.log(
+                        `${deletedGeneralMessages.deletedCount} company messages deleted from general forum`,
+                    );
+
+                    await this.topicModel.updateMany(
+                        { _id: { $in: generalTopicIds } },
+                        { $pull: { messages: { $in: companyMessageIds } } },
+                    );
+
+                    for (const topic of generalTopics) {
+                        const remaining = await this.messageModel.countDocuments({ topicId: topic._id });
+                        await this.topicModel.updateOne({ _id: topic._id }, { nbMessages: remaining });
                     }
 
-                    const deletedForums = await this.forumModel
-                        .deleteMany({
-                            _id: { $in: forumIds },
-                        })
-                        .session(session);
-                    this.logger.log(`${deletedForums.deletedCount} deleted forums`);
+                    const totalMessages = await this.messageModel.countDocuments({
+                        topicId: { $in: generalTopicIds },
+                    });
+                    await this.forumModel.updateOne({ _id: generalForum._id }, { nbMessages: totalMessages });
                 }
-
-                const deletedCompanies = await this.companyModel
-                    .deleteMany({
-                        _id: { $in: companyIds },
-                    })
-                    .session(session);
-
-                this.logger.log(`Company cleanup completed: ${deletedCompanies.deletedCount} companies deleted`);
-            });
-        } finally {
-            await session.endSession();
+            }
         }
+
+        const deletedCompanies = await this.companyModel.deleteMany({ _id: { $in: companyIds } });
+        this.logger.log(`Company cleanup completed: ${deletedCompanies.deletedCount} companies deleted`);
     }
 }
