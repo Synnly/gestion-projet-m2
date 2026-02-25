@@ -131,13 +131,7 @@ export function useFetchInternships() {
             const validPosts = paginationResult.data.filter((p: any) => p.company && typeof p.company === 'object');
             const removedCount = originalLength - validPosts.length;
             if (removedCount > 0) {
-                try {
-                    toast.error(`Impossible d'afficher ${removedCount} stage(s)`, {
-                        toastId: 'fetch-company-internships',
-                    });
-                } catch (e) {
-                    // ignore if toast not available
-                }
+                
                 paginationResult.data = validPosts;
             }
 

@@ -113,6 +113,7 @@ export class PostService {
         const companyPopulate = {
             path: 'company',
             select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+            match: { deletedAt: { $exists: false } },
         };
 
         // Ensure sensible defaults if the DTO omitted values
@@ -150,6 +151,7 @@ export class PostService {
         const companyPopulate = {
             path: 'company',
             select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+            match: { deletedAt: { $exists: false } },
         };
 
         return this.paginationService.paginate(
