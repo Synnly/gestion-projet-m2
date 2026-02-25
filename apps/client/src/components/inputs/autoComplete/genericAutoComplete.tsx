@@ -29,9 +29,6 @@ const Inner = <T,>(
     const [searchTerm, setSearchTerm] = useState(value || '');
     const [isOpen, setIsOpen] = useState(false);
     const debouncedSearch = useDebounce(searchTerm, 400);
-    useEffect(() => {
-        setSearchTerm(value || '');
-    }, [value]);
 
     const canRunAutocomplete = isAutocompleteEnabled && fetcher && getLabel;
 
