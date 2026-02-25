@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 import { toast } from 'react-toastify';
 import { CheckCircle2, Eye, Loader2, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import RejectCompanyModal from './RejectCompanyModal';
-import ValidateCompanyModal from './ValidateCompanyModal';
+import RejectCompanyModal from './modals/RejectCompanyModal.tsx';
+import ValidateCompanyModal from './modals/ValidateCompanyModal.tsx';
 import { fetchPendingCompanies, rejectCompany, validateCompany, type Company } from '../../../apis/company';
 
 export default function ValidateCompanies() {

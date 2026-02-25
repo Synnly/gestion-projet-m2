@@ -54,4 +54,7 @@ export type companyProfile = {
 
     /** Date when the profile was last updated */
     updatedAt?: string;
+
+    /** Date when the profile was deleted */
+    deletedAt?: string;
 };

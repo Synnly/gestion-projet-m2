@@ -25,7 +25,7 @@ export class UserController {
     @Roles(Role.ADMIN)
     @HttpCode(HttpStatus.NO_CONTENT)
     async ban(@Param('userId', ParseObjectIdPipe) userId: string, @Query('reason') reason?: string) {
-        const banReason = reason?.trim() || 'No reason provided';
+        const banReason = reason?.trim() || "Non-respect des conditions d'utilisation";
         await this.userService.ban(userId, banReason);
     }
 }

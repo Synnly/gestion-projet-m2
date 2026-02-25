@@ -26,6 +26,7 @@ describe('CompanyController', () => {
         create: jest.fn(),
         update: jest.fn(),
         remove: jest.fn(),
+        removeAll: jest.fn(),
         updatePublicProfile: jest.fn(),
         findPendingValidation: jest.fn(),
         isValid: jest.fn(),
@@ -782,6 +783,53 @@ describe('CompanyController', () => {
             await controller.remove('507f1f77bcf86cd799439999');
 
             expect(service.remove).toHaveBeenCalledWith('507f1f77bcf86cd799439999');
+        });
+
+        it('should return undefined after successful deletion (NO_CONTENT)', async () => {
+            mockCompanyService.remove.mockResolvedValue(undefined);
+
+            const result = await controller.remove('507f1f77bcf86cd799439011');
+
+            expect(result).toBeUndefined();
+        });
+
+        it('should propagate NotFoundException thrown by the service', async () => {
+            mockCompanyService.remove.mockRejectedValue(new NotFoundException('Company not found or already deleted'));
+
+            await expect(controller.remove('507f1f77bcf86cd799439999')).rejects.toThrow(NotFoundException);
+            await expect(controller.remove('507f1f77bcf86cd799439999')).rejects.toThrow(
+                'Company not found or already deleted',
+            );
+        });
+
+        it('should propagate unexpected errors thrown by the service', async () => {
+            mockCompanyService.remove.mockRejectedValue(new Error('Database error'));
+
+            await expect(controller.remove('507f1f77bcf86cd799439011')).rejects.toThrow('Database error');
+        });
+    });
+
+    describe('removeAll', () => {
+        it('should call service.removeAll once', async () => {
+            mockCompanyService.removeAll.mockResolvedValue(undefined);
+
+            await controller.removeAll();
+
+            expect(service.removeAll).toHaveBeenCalledTimes(1);
+        });
+
+        it('should return undefined after successful removeAll (NO_CONTENT)', async () => {
+            mockCompanyService.removeAll.mockResolvedValue(undefined);
+
+            const result = await controller.removeAll();
+
+            expect(result).toBeUndefined();
+        });
+
+        it('should propagate errors thrown by service.removeAll', async () => {
+            mockCompanyService.removeAll.mockRejectedValue(new Error('Database error'));
+
+            await expect(controller.removeAll()).rejects.toThrow('Database error');
         });
     });
 

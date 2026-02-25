@@ -241,6 +241,16 @@ export class CompanyController {
     async getDeletionStatus(@Param('companyId', ParseObjectIdPipe) companyId: string) {
         return this.companyService.checkDeletionStatus(companyId);
     }
+    /**
+     * Soft deletes all companies.
+     */
+    @Delete('')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async removeAll() {
+        await this.companyService.removeAll();
+    }
 
     /**
      * Maps a Company entity to a CompanyDto with nested PostDtos

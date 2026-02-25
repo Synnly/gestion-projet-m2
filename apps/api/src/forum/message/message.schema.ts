@@ -26,6 +26,12 @@ export class Message {
     @Prop({ type: Types.ObjectId, ref: 'Message' })
     parentMessageId: Types.ObjectId;
 
+    /**
+     * Date when the message was soft-deleted (null if not deleted)
+     */
+    @Prop({ type: Date, default: null })
+    deletedAt: Date | null;
+
     createdAt: Date;
 }
 

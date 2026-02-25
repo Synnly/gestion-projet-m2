@@ -12,6 +12,7 @@ import {
     ValidationPipe,
     Put,
     Req,
+    Delete,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import type { Request } from 'express';
@@ -112,6 +113,21 @@ export class ForumController {
             data: messages.data.map((message) => plainToInstance(MessageDto, message)),
         };
     }
+
+    /**
+     * Soft delete a message (Admin only).
+     * @param messageId - The message id to delete
+     * @returns The deleted message
+     */
+    @Delete('message/:messageId')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async deleteMessage(@Param('messageId', ParseObjectIdPipe) messageId: string): Promise<MessageDto> {
+        const message = await this.messageService.deleteMessage(messageId);
+        return plainToInstance(MessageDto, message);
+    }
+
     /**
      * Find all topics in a forum with pagination.
      * @param forumId - The forum id

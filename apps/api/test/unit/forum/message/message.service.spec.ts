@@ -58,6 +58,8 @@ describe('MessageService', () => {
         create: jest.fn(),
         find: jest.fn(),
         findById: jest.fn(),
+        findByIdAndUpdate: jest.fn(),
+        deleteMany: jest.fn(),
     };
 
     const mockPaginationService = {
@@ -124,12 +126,12 @@ describe('MessageService', () => {
 
             expect(result).toEqual(expectedResult);
             expect(paginationService.paginate).toHaveBeenCalledWith(messageModel, { topicId: mockTopic._id }, 1, 10, [
-                { path: 'authorId', select: 'firstName lastName name logo role ' },
+                { path: 'authorId', select: 'firstName lastName name logo role ban' },
                 {
                     path: 'parentMessageId',
                     populate: {
                         path: 'authorId',
-                        select: 'firstName lastName name',
+                        select: 'firstName lastName name ban',
                     },
                 },
             ]);
@@ -340,6 +342,138 @@ describe('MessageService', () => {
                     returnLink: expect.stringContaining('/forums/general/'),
                 }),
             );
+        });
+    });
+
+    describe('deleteMessage', () => {
+        it('should soft delete a message by setting deletedAt', async () => {
+            const messageId = new Types.ObjectId().toString();
+            const deletedMessage = {
+                ...mockMessage,
+                _id: messageId,
+                deletedAt: new Date(),
+            };
+
+            messageModel.findByIdAndUpdate.mockResolvedValue(deletedMessage);
+
+            const result = await service.deleteMessage(messageId);
+
+            expect(messageModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                messageId,
+                { deletedAt: expect.any(Date) },
+                { new: true }
+            );
+            expect(result).toEqual(deletedMessage);
+        });
+
+        it('should throw NotFoundException when message is not found', async () => {
+            const messageId = new Types.ObjectId().toString();
+
+            messageModel.findByIdAndUpdate.mockResolvedValue(null);
+
+            await expect(service.deleteMessage(messageId)).rejects.toThrow(NotFoundException);
+            expect(messageModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                messageId,
+                { deletedAt: expect.any(Date) },
+                { new: true }
+            );
+        });
+
+        it('should set deletedAt to current date and time', async () => {
+            const messageId = new Types.ObjectId().toString();
+            const mockDate = new Date('2026-02-10T10:00:00Z');
+            jest.spyOn(global, 'Date').mockImplementation(() => mockDate as any);
+
+            const deletedMessage = {
+                ...mockMessage,
+                _id: messageId,
+                deletedAt: mockDate,
+            };
+
+            messageModel.findByIdAndUpdate.mockResolvedValue(deletedMessage);
+
+            const result = await service.deleteMessage(messageId);
+
+            expect(messageModel.findByIdAndUpdate).toHaveBeenCalledWith(
+                messageId,
+                { deletedAt: mockDate },
+                { new: true }
+            );
+            expect(result.deletedAt).toEqual(mockDate);
+
+            jest.restoreAllMocks();
+        });
+    });
+
+    describe('cleanupOldDeletedMessages', () => {
+        it('should delete messages older than 30 days', async () => {
+            const deletedCount = 5;
+            messageModel.deleteMany.mockResolvedValue({ deletedCount });
+
+            await service.cleanupOldDeletedMessages();
+
+            expect(messageModel.deleteMany).toHaveBeenCalledWith({
+                deletedAt: { $ne: null, $lte: expect.any(Date) }
+            });
+        });
+
+        it('should calculate 30 days ago correctly', async () => {
+            const mockNow = new Date('2026-02-10T10:00:00Z');
+            jest.useFakeTimers();
+            jest.setSystemTime(mockNow);
+
+            messageModel.deleteMany.mockResolvedValue({ deletedCount: 0 });
+
+            await service.cleanupOldDeletedMessages();
+
+            const expectedDate = new Date('2026-01-11T10:00:00Z'); // 30 days before
+            expect(messageModel.deleteMany).toHaveBeenCalledWith({
+                deletedAt: { $ne: null, $lte: expectedDate }
+            });
+
+            jest.useRealTimers();
+        });
+
+        it('should log success when messages are deleted', async () => {
+            const deletedCount = 3;
+            messageModel.deleteMany.mockResolvedValue({ deletedCount });
+            const loggerSpy = jest.spyOn(service['logger'], 'log');
+
+            await service.cleanupOldDeletedMessages();
+
+            expect(loggerSpy).toHaveBeenCalledWith(
+                'Cleanup completed: 3 messages permanently deleted'
+            );
+        });
+
+        it('should log when no messages are deleted', async () => {
+            messageModel.deleteMany.mockResolvedValue({ deletedCount: 0 });
+            const loggerSpy = jest.spyOn(service['logger'], 'log');
+
+            await service.cleanupOldDeletedMessages();
+
+            expect(loggerSpy).toHaveBeenCalledWith(
+                'Cleanup completed: 0 messages permanently deleted'
+            );
+        });
+
+        it('should handle errors gracefully', async () => {
+            const error = new Error('Database error');
+            messageModel.deleteMany.mockRejectedValue(error);
+            const loggerSpy = jest.spyOn(service['logger'], 'error');
+
+            await service.cleanupOldDeletedMessages();
+
+            expect(loggerSpy).toHaveBeenCalledWith(
+                'Error during message cleanup',
+                error
+            );
+        });
+
+        it('should not throw error on database failure', async () => {
+            messageModel.deleteMany.mockRejectedValue(new Error('DB connection lost'));
+
+            await expect(service.cleanupOldDeletedMessages()).resolves.not.toThrow();
         });
     });
 });
