@@ -156,7 +156,7 @@ export class PostController {
      * @param dto The post data for update
      */
     @Put('/:id')
-    @UseGuards(RolesGuard, CompanyOwnerGuard)
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.OK)
     async update(
