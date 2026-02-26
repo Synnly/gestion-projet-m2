@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Logger } from '@nestjs/common';
 import { SeedService } from '../../../src/seed/seed.service';
 import { AdminService } from '../../../src/admin/admin.service';
 import { ForumService } from '../../../src/forum/forum.service';
@@ -110,18 +111,18 @@ describe('SeedService', () => {
                 throw new Error('Permission denied');
             });
 
-            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+            const loggerErrorSpy = jest.spyOn(Logger, 'error').mockImplementation();
 
             await service.run();
 
-            expect(consoleErrorSpy).toHaveBeenCalledWith(
+            expect(loggerErrorSpy).toHaveBeenCalledWith(
                 'Failed to write ADMIN-CREDENTIALS.txt file during seeding:',
                 expect.any(Error),
                 '. Default admin not created.',
             );
             expect(adminService.create).not.toHaveBeenCalled();
 
-            consoleErrorSpy.mockRestore();
+            loggerErrorSpy.mockRestore();
         });
     });
 });

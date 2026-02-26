@@ -44,16 +44,8 @@ export class PostService {
         let location: { type: 'Point'; coordinates: [number, number] } | null = null;
         const company = await this.companyService.findOne(companyId);
         if (!dto.adress) {
-            const addressParts = [
-                company?.streetNumber,
-                company?.streetName,
-                company?.postalCode,
-                company?.city,
-                company?.country,
-            ].filter(Boolean);
-            dto.adress = addressParts.join(' ');
+            dto.adress = company?.address ?? '';
         }
-
         const coordinates = await this.geoService.geocodeAddress(dto.adress);
 
         if (coordinates) {
@@ -76,7 +68,7 @@ export class PostService {
             .findById(saved._id)
             .populate({
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus address logo',
             })
             .exec();
 
@@ -112,7 +104,7 @@ export class PostService {
 
         const companyPopulate = {
             path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+            select: '_id name siretNumber nafCode structureType legalStatus address logo location',
             match: { deletedAt: { $exists: false } },
         };
 
@@ -150,7 +142,7 @@ export class PostService {
 
         const companyPopulate = {
             path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+            select: '_id name siretNumber nafCode structureType legalStatus address logo location',
             match: { deletedAt: { $exists: false } },
         };
 
@@ -176,7 +168,9 @@ export class PostService {
      */
     async update(dto: UpdatePostDto, companyId: string, postId: string): Promise<Post> {
         // First, retrieve the current post to check its isVisible status
-        const currentPost = await this.postModel.findOne({ _id: postId, company: new Types.ObjectId(companyId) }).exec();
+        const currentPost = await this.postModel
+            .findOne({ _id: postId, company: new Types.ObjectId(companyId) })
+            .exec();
 
         if (!currentPost) {
             throw new NotFoundException('Post not found or does not belong to this company');
@@ -191,7 +185,7 @@ export class PostService {
             .findOneAndUpdate({ _id: postId, company: new Types.ObjectId(companyId) }, { $set: dto }, { new: true })
             .populate({
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus address logo',
             })
             .exec();
 
@@ -221,7 +215,7 @@ export class PostService {
             .findById(id)
             .populate({
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus address logo',
             })
             .exec();
     }

@@ -186,23 +186,22 @@ describe('CompanyController', () => {
         });
 
         it('should return company with all optional fields when findAll is called with company containing all optional fields in database', async () => {
+            const companies = [
+                {
+                    _id: '507f1f77bcf86cd799439011',
+                    email: 'test@example.com',
+                    name: 'Test Company',
+                    siretNumber: '12345678901234',
+                    nafCode: '6202A',
+                    structureType: StructureType.PrivateCompany,
+                    legalStatus: LegalStatus.SARL,
+                    address: '10 Rue de Test, 75001 Paris, France',
+                    isValid: true,
+                },
+            ];
+
             const paginationResult = {
-                data: [
-                    {
-                        _id: '507f1f77bcf86cd799439011',
-                        email: 'test@example.com',
-                        name: 'Test Company',
-                        siretNumber: '12345678901234',
-                        nafCode: '6202A',
-                        structureType: StructureType.PrivateCompany,
-                        legalStatus: LegalStatus.SARL,
-                        streetNumber: '10',
-                        streetName: 'Rue de Test',
-                        postalCode: '75001',
-                        city: 'Paris',
-                        country: 'France',
-                    },
-                ],
+                data: companies,
                 total: 1,
                 page: 1,
                 limit: 10,
@@ -221,11 +220,7 @@ describe('CompanyController', () => {
             expect(result.data[0].nafCode).toBe('6202A');
             expect(result.data[0].structureType).toBe(StructureType.PrivateCompany);
             expect(result.data[0].legalStatus).toBe(LegalStatus.SARL);
-            expect(result.data[0].streetNumber).toBe('10');
-            expect(result.data[0].streetName).toBe('Rue de Test');
-            expect(result.data[0].postalCode).toBe('75001');
-            expect(result.data[0].city).toBe('Paris');
-            expect(result.data[0].country).toBe('France');
+            expect(result.data[0].address).toBe('10 Rue de Test, 75001 Paris, France');
         });
 
         it('should return all companies when findAll is called with existing companies', async () => {
@@ -331,11 +326,7 @@ describe('CompanyController', () => {
                 nafCode: '6202A',
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '10 Rue de Test, 75001 Paris, France',
             };
 
             mockCompanyService.findOne.mockResolvedValue(company);
@@ -397,11 +388,7 @@ describe('CompanyController', () => {
                 nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -592,30 +579,12 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-        it('should create company successfully when create is called with isValid set to true', async () => {
-            const createDto = new CreateCompanyDto({
-                email: 'valid@example.com',
-                password: 'Password123!',
-                name: 'Valid Company',
-            });
-
-            mockCompanyService.create.mockResolvedValue(undefined);
-
-            await controller.create(createDto);
-
-            expect(service.create).toHaveBeenCalledWith(createDto);
-        });
-
         it('should create company successfully when create is called with optional address fields', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'address@example.com',
                 password: 'Password123!',
                 name: 'Address Company',
-                streetNumber: '123',
-                streetName: 'Main Street',
-                postalCode: '12345',
-                city: 'Test City',
-                country: 'Test Country',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -630,7 +599,7 @@ describe('CompanyController', () => {
                 email: 'partial@example.com',
                 password: 'Password123!',
                 name: 'Partial Address Company',
-                city: 'Test City',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -658,8 +627,7 @@ describe('CompanyController', () => {
         it('should update company successfully when update is called with multiple fields', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
-                email: 'updated@example.com',
-                siretNumber: '98765432109876',
+                isValid: true,
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -717,11 +685,7 @@ describe('CompanyController', () => {
 
         it('should update company address fields successfully when update is called with new address fields', async () => {
             const updateDto = new UpdateCompanyDto({
-                streetNumber: '456',
-                streetName: 'New Street',
-                postalCode: '54321',
-                city: 'New City',
-                country: 'New Country',
+                address: '20 Avenue de Test, 75002 Paris, France',
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -733,7 +697,7 @@ describe('CompanyController', () => {
 
         it('should update company nafCode successfully when update is called with new nafCode', async () => {
             const updateDto = new UpdateCompanyDto({
-                nafCode: '1234Z',
+                nafCode: NafCode.NAF_70_22Z,
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -745,18 +709,12 @@ describe('CompanyController', () => {
 
         it('should update all company fields successfully when update is called with complete update data', async () => {
             const updateDto = new UpdateCompanyDto({
-                email: 'fullupdate@example.com',
                 password: 'NewPassword123!',
                 name: 'Fully Updated Company',
-                siretNumber: '11111111111111',
-                nafCode: '9999Z',
+                nafCode: NafCode.NAF_62_01Z,
                 structureType: StructureType.NGO,
                 legalStatus: LegalStatus.OTHER,
-                streetNumber: '999',
-                streetName: 'Complete Street',
-                postalCode: '99999',
-                city: 'Complete City',
-                country: 'Complete Country',
+                address: '20 Avenue de Test, 75002 Paris, France',
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -1034,11 +992,7 @@ describe('CompanyController', () => {
                     name: 'Empty Fields Company',
                     siretNumber: '',
                     nafCode: '',
-                    streetNumber: '',
-                    streetName: '',
-                    postalCode: '',
-                    city: '',
-                    country: '',
+                    address: '',
                 });
 
                 mockCompanyService.create.mockResolvedValue(undefined);
@@ -1108,11 +1062,7 @@ describe('CompanyController', () => {
                             nafCode: undefined,
                             structureType: undefined,
                             legalStatus: undefined,
-                            streetNumber: undefined,
-                            streetName: undefined,
-                            postalCode: undefined,
-                            city: undefined,
-                            country: undefined,
+                            address: undefined,
                             isValid: undefined,
                         },
                     ],

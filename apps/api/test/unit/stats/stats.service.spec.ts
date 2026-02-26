@@ -538,8 +538,7 @@ describe('StatsService (Integration)', () => {
                 password: 'pwd',
                 name: 'Latest Corp',
                 isValid: true,
-                city: 'Paris',
-                country: 'France',
+                address: '123 Main St',
             });
 
             await postModel.create({

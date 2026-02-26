@@ -1,31 +1,26 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-
+import { useCreatePostStore } from '../../stores/CreatePostStore';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
-
-import { createPost, type CreatePostPayload } from '../../apis/post';
-import { updatePost } from '../../apis/update_post';
-
-import { toast } from 'react-toastify';
 import type { PostType } from '../../types/internship.types';
-import { companyInternshipStore } from '../../stores/companyInternshipStore';
-import { useCreatePostStore } from '../../stores/CreatePostStore';
 import { profileStore } from '../../stores/profileStore';
 import { useInternshipStore } from '../../stores/useInternshipStore';
+import { companyInternshipStore } from '../../stores/companyInternshipStore';
+import { updatePost } from '../../apis/update_post';
+import { createPost, type CreatePostPayload } from '../../apis/post';
+import { toast } from 'react-toastify';
+import { GenericAutocomplete } from '../common/inputs/textInput/genericAutoComplete';
+import { addressFetcher, getAddressLabel, type GeoapifyFeature } from '../../apis/autoCompleteAddress';
 
 type PostFormMode = 'create' | 'edit';
 
 type InitialPostData = Partial<{
     title: string;
     description: string;
-    location: string;
     adress: string;
-    addressLine: string;
-    city: string;
-    postalCode: string;
     duration: string;
     sector: string;
     startDate: string;
@@ -47,10 +42,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
     const {
         title,
         description,
-        location,
-        addressLine,
-        city,
-        postalCode,
+        adress,
         duration,
         sector,
         startDate,
@@ -61,11 +53,8 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         skills,
         type,
         setTitle,
+        setAdress,
         setDescription,
-        setLocation,
-        setAddressLine,
-        setCity,
-        setPostalCode,
         setDuration,
         setSector,
         setStartDate,
@@ -93,11 +82,8 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         if (!initialData) return;
         setTitle(initialData.title ?? '');
         setDescription(initialData.description ?? '');
-        const initialAddress = initialData.addressLine ?? initialData.location ?? initialData.adress ?? '';
-        setAddressLine(initialAddress);
-        setCity(initialData.city ?? '');
-        setPostalCode(initialData.postalCode ?? '');
-        setLocation(initialAddress);
+        const initialAddress = initialData.adress ?? '';
+        setAdress(initialAddress);
         setDuration(initialData.duration ?? '');
         setSector(initialData.sector ?? '');
         setStartDate(initialData.startDate ?? '');
@@ -109,15 +95,12 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         setIsCoverLetterRequired(initialData.isCoverLetterRequired ?? false);
     }, [
         initialData,
-        setAddressLine,
-        setCity,
+        setAdress,
         setDescription,
         setDuration,
         setIsVisibleToStudents,
-        setLocation,
         setMaxSalary,
         setMinSalary,
-        setPostalCode,
         setSector,
         setSkills,
         setStartDate,
@@ -125,12 +108,6 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
         setPostType,
         setIsCoverLetterRequired,
     ]);
-
-    // Concatène adresse/CP/ville vers location
-    useEffect(() => {
-        const parts = [addressLine, postalCode, city].filter((p) => p && p.trim());
-        setLocation(parts.join(', '));
-    }, [addressLine, postalCode, city, setLocation]);
 
     const sectorOptions = [
         'Technologie',
@@ -174,7 +151,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                     : "L'offre de stage a été créée avec succès.";
 
             toast.success(successText, { toastId: 'post-success' });
-            navigate('/home');
+            navigate('/');
         },
         onError: (error) => {
             console.error(error);
@@ -215,7 +192,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
             minSalary: Number.isFinite(minSalaryNumber) ? minSalaryNumber : undefined,
             maxSalary: Number.isFinite(maxSalaryNumber) ? maxSalaryNumber : undefined,
             keySkills: skills,
-            adress: location || undefined,
+            adress: adress || undefined,
             type: type,
             isVisible: isVisibleToStudents,
             isCoverLetterRequired: isCoverLetterRequired,
@@ -349,18 +326,7 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                         <h2 className="text-xs font-semibold uppercase tracking-wide text-base-500">
                             Logistique & rémunération
                         </h2>
-
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium text-base-700">Adresse (ligne)</label>
-                                <input
-                                    className="input input-sm w-full border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                    placeholder="Ex : 10 rue de Rivoli"
-                                    value={addressLine}
-                                    onChange={(e) => setAddressLine(e.target.value)}
-                                />
-                            </div>
-
                             <div className="space-y-1">
                                 <label className="text-xs font-medium text-base-700">Date de début souhaitée</label>
                                 <input
@@ -371,28 +337,17 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                 />
                             </div>
                         </div>
-
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium text-base-700">Code postal</label>
-                                <input
-                                    className="input input-sm w-full border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                    placeholder="Ex : 75001"
-                                    value={postalCode}
-                                    onChange={(e) => setPostalCode(e.target.value)}
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium text-base-700">Ville</label>
-                                <input
-                                    className="input input-sm w-full border-base-300 bg-base-100 text-sm text-base-content placeholder:text-base-content-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                                    placeholder="Ex : Paris"
-                                    value={city}
-                                    onChange={(e) => setCity(e.target.value)}
-                                />
-                            </div>
+                            <GenericAutocomplete<GeoapifyFeature>
+                                onChange={setAdress}
+                                value={adress}
+                                label="Adresse complète"
+                                placeholder="Tapez votre adresse..."
+                                isAutocompleteEnabled={true}
+                                fetcher={addressFetcher}
+                                getLabel={getAddressLabel}
+                            />
                         </div>
-
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <div className="space-y-1">
                                 <label className="text-xs font-medium text-base-700">
@@ -425,7 +380,6 @@ export function CreatePostForm({ mode = 'create', initialData, postId }: PostFor
                                 />
                             </div>
                         </div>
-
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-base-700">Organisation du travail</label>
                             <div className="join w-full bg-base-200 p-0.5">
