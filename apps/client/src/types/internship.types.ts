@@ -15,8 +15,7 @@ export interface CompanyInInternship {
     name: string;
     email: string;
     logo?: string;
-    city?: string;
-    country?: string;
+    address?: string;
     logoUrl?: string;
 }
 
@@ -36,7 +35,7 @@ export interface Internship {
     company: CompanyInInternship;
     createdAt: string;
     isCoverLetterRequired: boolean;
-    applications: String[];
+    applications: string[];
 }
 
 export interface PaginationResult<T> {

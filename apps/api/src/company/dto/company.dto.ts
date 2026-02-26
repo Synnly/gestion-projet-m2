@@ -40,25 +40,9 @@ export class CompanyDto {
     @Expose()
     legalStatus?: LegalStatus;
 
-    /** Street number of the company address */
+    /** address of the company */
     @Expose()
-    streetNumber?: string;
-
-    /** Street name of the company address */
-    @Expose()
-    streetName?: string;
-
-    /** Postal code of the company address */
-    @Expose()
-    postalCode?: string;
-
-    /** City of the company address */
-    @Expose()
-    city?: string;
-
-    /** Country of the company address */
-    @Expose()
-    country?: string;
+    address?: string;
 
     /** Whether the company account is validated */
     @Expose()
@@ -98,6 +82,9 @@ export class CompanyDto {
 
     @Expose()
     role: 'COMPANY';
+
+    @Expose()
+    deletedAt?: Date;
 
     /**
      * Constructs a CompanyDto instance

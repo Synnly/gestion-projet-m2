@@ -193,7 +193,7 @@ describe('ForumService', () => {
         const expectedPopulate = [
             {
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus address logo',
             },
             {
                 path: 'topics',

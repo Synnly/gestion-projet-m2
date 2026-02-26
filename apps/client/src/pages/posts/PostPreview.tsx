@@ -1,9 +1,9 @@
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-markdown-preview/markdown.css';
-import type { CompanyInInternship } from '../../types/internship.types';
-import { fetchPublicSignedUrl } from '../../hooks/useBlob';
+import type { CompanyInInternship } from '../../types/internship.types.ts';
+import { fetchPublicSignedUrl } from '../../hooks/useBlob.tsx';
 import { useEffect, useState } from 'react';
-import { useCreatePostStore } from '../../stores/CreatePostStore';
+import { useCreatePostStore } from '../../stores/CreatePostStore.ts';
 
 type PostPreviewProps = {
     company: CompanyInInternship;
@@ -14,7 +14,7 @@ export function PostPreview({ company }: PostPreviewProps) {
     const {
         title,
         description,
-        location: adress,
+        adress,
         duration,
         sector,
         startDate,
@@ -109,10 +109,8 @@ export function PostPreview({ company }: PostPreviewProps) {
                                 {company.email && (
                                     <p className="mt-1 text-sm text-base-content/70">Contact: {company.email}</p>
                                 )}
-                                {company.city && company.country && (
-                                    <p className="mt-1 text-sm text-base-content/70">
-                                        {company.city}, {company.country}
-                                    </p>
+                                {company.address && (
+                                    <p className="mt-1 text-sm text-base-content/70">{company.address}</p>
                                 )}
                             </div>
                         </div>

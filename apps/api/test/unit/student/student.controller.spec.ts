@@ -132,10 +132,31 @@ describe('StudentController', () => {
         expect(mockService.update).toHaveBeenCalledWith('1', dto);
     });
 
-    it('remove calls studentService.remove', async () => {
-        mockService.remove.mockResolvedValue(undefined);
-        await controller.remove('1');
-        expect(mockService.remove).toHaveBeenCalledWith('1');
+    describe('remove', () => {
+        it('calls studentService.remove with the correct id', async () => {
+            mockService.remove.mockResolvedValue(undefined);
+            await controller.remove('1');
+            expect(mockService.remove).toHaveBeenCalledWith('1');
+        });
+
+        it('returns undefined on successful deletion (NO_CONTENT)', async () => {
+            mockService.remove.mockResolvedValue(undefined);
+            const result = await controller.remove('507f1f77bcf86cd799439011');
+            expect(result).toBeUndefined();
+        });
+
+        it('propagates NotFoundException thrown by the service', async () => {
+            mockService.remove.mockRejectedValue(new NotFoundException('Student not found or already deleted'));
+            await expect(controller.remove('507f1f77bcf86cd799439999')).rejects.toThrow(NotFoundException);
+            await expect(controller.remove('507f1f77bcf86cd799439999')).rejects.toThrow(
+                'Student not found or already deleted',
+            );
+        });
+
+        it('propagates unexpected errors thrown by the service', async () => {
+            mockService.remove.mockRejectedValue(new Error('Database error'));
+            await expect(controller.remove('507f1f77bcf86cd799439011')).rejects.toThrow('Database error');
+        });
     });
 
     describe('import', () => {
