@@ -26,9 +26,12 @@ describe('CompanyController', () => {
         create: jest.fn(),
         update: jest.fn(),
         remove: jest.fn(),
+        removeAll: jest.fn(),
         updatePublicProfile: jest.fn(),
         findPendingValidation: jest.fn(),
         isValid: jest.fn(),
+        restore: jest.fn(),
+        checkDeletionStatus: jest.fn(),
     };
 
     const mockReflector = {
@@ -183,23 +186,22 @@ describe('CompanyController', () => {
         });
 
         it('should return company with all optional fields when findAll is called with company containing all optional fields in database', async () => {
+            const companies = [
+                {
+                    _id: '507f1f77bcf86cd799439011',
+                    email: 'test@example.com',
+                    name: 'Test Company',
+                    siretNumber: '12345678901234',
+                    nafCode: '6202A',
+                    structureType: StructureType.PrivateCompany,
+                    legalStatus: LegalStatus.SARL,
+                    address: '10 Rue de Test, 75001 Paris, France',
+                    isValid: true,
+                },
+            ];
+
             const paginationResult = {
-                data: [
-                    {
-                        _id: '507f1f77bcf86cd799439011',
-                        email: 'test@example.com',
-                        name: 'Test Company',
-                        siretNumber: '12345678901234',
-                        nafCode: '6202A',
-                        structureType: StructureType.PrivateCompany,
-                        legalStatus: LegalStatus.SARL,
-                        streetNumber: '10',
-                        streetName: 'Rue de Test',
-                        postalCode: '75001',
-                        city: 'Paris',
-                        country: 'France',
-                    },
-                ],
+                data: companies,
                 total: 1,
                 page: 1,
                 limit: 10,
@@ -218,11 +220,7 @@ describe('CompanyController', () => {
             expect(result.data[0].nafCode).toBe('6202A');
             expect(result.data[0].structureType).toBe(StructureType.PrivateCompany);
             expect(result.data[0].legalStatus).toBe(LegalStatus.SARL);
-            expect(result.data[0].streetNumber).toBe('10');
-            expect(result.data[0].streetName).toBe('Rue de Test');
-            expect(result.data[0].postalCode).toBe('75001');
-            expect(result.data[0].city).toBe('Paris');
-            expect(result.data[0].country).toBe('France');
+            expect(result.data[0].address).toBe('10 Rue de Test, 75001 Paris, France');
         });
 
         it('should return all companies when findAll is called with existing companies', async () => {
@@ -328,11 +326,7 @@ describe('CompanyController', () => {
                 nafCode: '6202A',
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '10 Rue de Test, 75001 Paris, France',
             };
 
             mockCompanyService.findOne.mockResolvedValue(company);
@@ -394,11 +388,7 @@ describe('CompanyController', () => {
                 nafCode: NafCode.NAF_62_02A,
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -589,30 +579,12 @@ describe('CompanyController', () => {
             expect(service.create).toHaveBeenCalledWith(createDto);
         });
 
-        it('should create company successfully when create is called with isValid set to true', async () => {
-            const createDto = new CreateCompanyDto({
-                email: 'valid@example.com',
-                password: 'Password123!',
-                name: 'Valid Company',
-            });
-
-            mockCompanyService.create.mockResolvedValue(undefined);
-
-            await controller.create(createDto);
-
-            expect(service.create).toHaveBeenCalledWith(createDto);
-        });
-
         it('should create company successfully when create is called with optional address fields', async () => {
             const createDto = new CreateCompanyDto({
                 email: 'address@example.com',
                 password: 'Password123!',
                 name: 'Address Company',
-                streetNumber: '123',
-                streetName: 'Main Street',
-                postalCode: '12345',
-                city: 'Test City',
-                country: 'Test Country',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -627,7 +599,7 @@ describe('CompanyController', () => {
                 email: 'partial@example.com',
                 password: 'Password123!',
                 name: 'Partial Address Company',
-                city: 'Test City',
+                address: '10 Rue de Test, 75001 Paris, France',
             });
 
             mockCompanyService.create.mockResolvedValue(undefined);
@@ -655,8 +627,7 @@ describe('CompanyController', () => {
         it('should update company successfully when update is called with multiple fields', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
-                email: 'updated@example.com',
-                siretNumber: '98765432109876',
+                isValid: true,
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -714,11 +685,7 @@ describe('CompanyController', () => {
 
         it('should update company address fields successfully when update is called with new address fields', async () => {
             const updateDto = new UpdateCompanyDto({
-                streetNumber: '456',
-                streetName: 'New Street',
-                postalCode: '54321',
-                city: 'New City',
-                country: 'New Country',
+                address: '20 Avenue de Test, 75002 Paris, France',
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -730,7 +697,7 @@ describe('CompanyController', () => {
 
         it('should update company nafCode successfully when update is called with new nafCode', async () => {
             const updateDto = new UpdateCompanyDto({
-                nafCode: '1234Z',
+                nafCode: NafCode.NAF_70_22Z,
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -742,18 +709,12 @@ describe('CompanyController', () => {
 
         it('should update all company fields successfully when update is called with complete update data', async () => {
             const updateDto = new UpdateCompanyDto({
-                email: 'fullupdate@example.com',
                 password: 'NewPassword123!',
                 name: 'Fully Updated Company',
-                siretNumber: '11111111111111',
-                nafCode: '9999Z',
+                nafCode: NafCode.NAF_62_01Z,
                 structureType: StructureType.NGO,
                 legalStatus: LegalStatus.OTHER,
-                streetNumber: '999',
-                streetName: 'Complete Street',
-                postalCode: '99999',
-                city: 'Complete City',
-                country: 'Complete Country',
+                address: '20 Avenue de Test, 75002 Paris, France',
             });
 
             mockCompanyService.update.mockResolvedValue(undefined);
@@ -780,6 +741,53 @@ describe('CompanyController', () => {
             await controller.remove('507f1f77bcf86cd799439999');
 
             expect(service.remove).toHaveBeenCalledWith('507f1f77bcf86cd799439999');
+        });
+
+        it('should return undefined after successful deletion (NO_CONTENT)', async () => {
+            mockCompanyService.remove.mockResolvedValue(undefined);
+
+            const result = await controller.remove('507f1f77bcf86cd799439011');
+
+            expect(result).toBeUndefined();
+        });
+
+        it('should propagate NotFoundException thrown by the service', async () => {
+            mockCompanyService.remove.mockRejectedValue(new NotFoundException('Company not found or already deleted'));
+
+            await expect(controller.remove('507f1f77bcf86cd799439999')).rejects.toThrow(NotFoundException);
+            await expect(controller.remove('507f1f77bcf86cd799439999')).rejects.toThrow(
+                'Company not found or already deleted',
+            );
+        });
+
+        it('should propagate unexpected errors thrown by the service', async () => {
+            mockCompanyService.remove.mockRejectedValue(new Error('Database error'));
+
+            await expect(controller.remove('507f1f77bcf86cd799439011')).rejects.toThrow('Database error');
+        });
+    });
+
+    describe('removeAll', () => {
+        it('should call service.removeAll once', async () => {
+            mockCompanyService.removeAll.mockResolvedValue(undefined);
+
+            await controller.removeAll();
+
+            expect(service.removeAll).toHaveBeenCalledTimes(1);
+        });
+
+        it('should return undefined after successful removeAll (NO_CONTENT)', async () => {
+            mockCompanyService.removeAll.mockResolvedValue(undefined);
+
+            const result = await controller.removeAll();
+
+            expect(result).toBeUndefined();
+        });
+
+        it('should propagate errors thrown by service.removeAll', async () => {
+            mockCompanyService.removeAll.mockRejectedValue(new Error('Database error'));
+
+            await expect(controller.removeAll()).rejects.toThrow('Database error');
         });
     });
 
@@ -984,11 +992,7 @@ describe('CompanyController', () => {
                     name: 'Empty Fields Company',
                     siretNumber: '',
                     nafCode: '',
-                    streetNumber: '',
-                    streetName: '',
-                    postalCode: '',
-                    city: '',
-                    country: '',
+                    address: '',
                 });
 
                 mockCompanyService.create.mockResolvedValue(undefined);
@@ -1058,11 +1062,7 @@ describe('CompanyController', () => {
                             nafCode: undefined,
                             structureType: undefined,
                             legalStatus: undefined,
-                            streetNumber: undefined,
-                            streetName: undefined,
-                            postalCode: undefined,
-                            city: undefined,
-                            country: undefined,
+                            address: undefined,
                             isValid: undefined,
                         },
                     ],
@@ -1661,6 +1661,174 @@ describe('CompanyController', () => {
 
             expect(service.isValid).toHaveBeenCalledTimes(1);
             expect(service.isValid).toHaveBeenCalledWith(companyId);
+        });
+    });
+
+    describe('restore', () => {
+        it('should restore company successfully when restore is called with valid company id', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.restore.mockResolvedValue(undefined);
+
+            await controller.restore(companyId);
+
+            expect(service.restore).toHaveBeenCalledWith(companyId);
+            expect(service.restore).toHaveBeenCalledTimes(1);
+        });
+
+        it('should restore soft-deleted company when restore is called within 30 days', async () => {
+            const companyId = '507f1f77bcf86cd799439012';
+            mockCompanyService.restore.mockResolvedValue(undefined);
+
+            await controller.restore(companyId);
+
+            expect(service.restore).toHaveBeenCalledWith(companyId);
+        });
+
+        it('should throw error when restore is called with non-existent company id', async () => {
+            const companyId = '507f1f77bcf86cd799439999';
+            mockCompanyService.restore.mockRejectedValue(new NotFoundException('Company not found'));
+
+            await expect(controller.restore(companyId)).rejects.toThrow(NotFoundException);
+            expect(service.restore).toHaveBeenCalledWith(companyId);
+        });
+
+        it('should throw error when restore is called after 30 days deletion period', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.restore.mockRejectedValue(new Error('Cannot restore company after 30 days'));
+
+            await expect(controller.restore(companyId)).rejects.toThrow('Cannot restore company after 30 days');
+        });
+
+        it('should throw error when restore is called for company not marked for deletion', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.restore.mockRejectedValue(new Error('Company is not marked for deletion'));
+
+            await expect(controller.restore(companyId)).rejects.toThrow('Company is not marked for deletion');
+        });
+
+        it('should call service with correct companyId when restore is invoked', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.restore.mockResolvedValue(undefined);
+
+            await controller.restore(companyId);
+
+            expect(service.restore).toHaveBeenCalledTimes(1);
+            expect(service.restore).toHaveBeenCalledWith(companyId);
+        });
+
+        it('should propagate service errors when restore encounters database error', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.restore.mockRejectedValue(new Error('Database error'));
+
+            await expect(controller.restore(companyId)).rejects.toThrow('Database error');
+        });
+    });
+
+    describe('getDeletionStatus', () => {
+        it('should return deletion status when getDeletionStatus is called with valid company id', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockStatus = {
+                isMarkedForDeletion: true,
+                daysRemaining: 25,
+                scheduledDeletionDate: new Date('2026-03-15'),
+            };
+            mockCompanyService.checkDeletionStatus.mockResolvedValue(mockStatus);
+
+            const result = await controller.getDeletionStatus(companyId);
+
+            expect(result).toEqual(mockStatus);
+            expect(service.checkDeletionStatus).toHaveBeenCalledWith(companyId);
+            expect(service.checkDeletionStatus).toHaveBeenCalledTimes(1);
+        });
+
+        it('should return status with isMarkedForDeletion false when company is not marked for deletion', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockStatus = {
+                isMarkedForDeletion: false,
+                daysRemaining: null,
+                scheduledDeletionDate: null,
+            };
+            mockCompanyService.checkDeletionStatus.mockResolvedValue(mockStatus);
+
+            const result = await controller.getDeletionStatus(companyId);
+
+            expect(result.isMarkedForDeletion).toBe(false);
+            expect(result.daysRemaining).toBeNull();
+        });
+
+        it('should return correct days remaining when company is marked for deletion', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockStatus = {
+                isMarkedForDeletion: true,
+                daysRemaining: 15,
+                scheduledDeletionDate: new Date('2026-03-03'),
+            };
+            mockCompanyService.checkDeletionStatus.mockResolvedValue(mockStatus);
+
+            const result = await controller.getDeletionStatus(companyId);
+
+            expect(result.daysRemaining).toBe(15);
+            expect(result.isMarkedForDeletion).toBe(true);
+        });
+
+        it('should return status with 0 days remaining when deletion is imminent', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockStatus = {
+                isMarkedForDeletion: true,
+                daysRemaining: 0,
+                scheduledDeletionDate: new Date('2026-02-16'),
+            };
+            mockCompanyService.checkDeletionStatus.mockResolvedValue(mockStatus);
+
+            const result = await controller.getDeletionStatus(companyId);
+
+            expect(result.daysRemaining).toBe(0);
+            expect(result.isMarkedForDeletion).toBe(true);
+        });
+
+        it('should throw NotFoundException when getDeletionStatus is called with non-existent company id', async () => {
+            const companyId = '507f1f77bcf86cd799439999';
+            mockCompanyService.checkDeletionStatus.mockRejectedValue(new NotFoundException('Company not found'));
+
+            await expect(controller.getDeletionStatus(companyId)).rejects.toThrow(NotFoundException);
+            expect(service.checkDeletionStatus).toHaveBeenCalledWith(companyId);
+        });
+
+        it('should include scheduled deletion date when company is marked for deletion', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const deletionDate = new Date('2026-03-18');
+            const mockStatus = {
+                isMarkedForDeletion: true,
+                daysRemaining: 30,
+                scheduledDeletionDate: deletionDate,
+            };
+            mockCompanyService.checkDeletionStatus.mockResolvedValue(mockStatus);
+
+            const result = await controller.getDeletionStatus(companyId);
+
+            expect(result.scheduledDeletionDate).toEqual(deletionDate);
+        });
+
+        it('should propagate service errors when getDeletionStatus encounters database error', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            mockCompanyService.checkDeletionStatus.mockRejectedValue(new Error('Database error'));
+
+            await expect(controller.getDeletionStatus(companyId)).rejects.toThrow('Database error');
+        });
+
+        it('should call service with correct companyId when getDeletionStatus is invoked', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const mockStatus = {
+                isMarkedForDeletion: false,
+                daysRemaining: null,
+                scheduledDeletionDate: null,
+            };
+            mockCompanyService.checkDeletionStatus.mockResolvedValue(mockStatus);
+
+            await controller.getDeletionStatus(companyId);
+
+            expect(service.checkDeletionStatus).toHaveBeenCalledTimes(1);
+            expect(service.checkDeletionStatus).toHaveBeenCalledWith(companyId);
         });
     });
 });

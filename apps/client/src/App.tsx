@@ -47,6 +47,7 @@ import { userStore } from './stores/userStore';
 import { EditStudentProfile } from './pages/student/EditStudentProfile';
 import { PublicStudentProfile } from './pages/student/PublicStudentProfile';
 import { StudentProfile } from './pages/student/StudentProfile';
+import { AccountRestorePage } from './pages/auth/AccountRestorePage';
 import { NotFound } from './pages/common/status/NotFound';
 import { PublicCompanyProfile } from './pages/company/PublicCompanyProfile';
 
@@ -101,6 +102,11 @@ function App() {
                     loader: protectedMiddleware,
                     element: <AuthRoutes />,
                     children: [
+                        { 
+                            path: 'account-restore', 
+                            element: <AccountRestorePage />, 
+                            handle: { title: 'Restaurer votre compte' } 
+                        },
                         { path: 'verify', element: <VerifyEmail />, handle: { title: 'Vérifier votre mail' } },
                         { path: 'home', element: <InternshipPage />, handle: { title: 'Accueil' } },
 
@@ -230,7 +236,6 @@ function App() {
                                     path: 'dashboard',
                                     element: <AdminDashboard />,
                                     handle: { title: 'Tableau de bord admin' },
-                                    children: [{ index: true, element: <ImportStudent /> }],
                                 },
                             ],
                         },

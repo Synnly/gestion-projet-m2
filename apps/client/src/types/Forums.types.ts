@@ -43,6 +43,10 @@ export type Topic = {
         lastName?: string;
         email?: string;
         logo?: string;
+        ban?: {
+            date: string;
+            reason: string;
+        };
     };
     forumId: string;
     createdAt?: string;

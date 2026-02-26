@@ -1,15 +1,18 @@
-import { NavLink } from 'react-router';
+import { NavLink, useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { useBlob } from '../../hooks/useBlob';
 import { useGetCompanyProfile } from '../../hooks/useGetCompanyProfile';
 import { userStore } from '../../stores/userStore';
 import { Navbar } from '../common/navbar/Navbar';
+import { DeleteAccountModal } from './components/DeleteAccountModal';
+import { DeleteAccountSuccessModal } from './components/DeleteAccountSuccessModal';
 
 export function CompanyProfile() {
     // Récupérer l'ID de l'utilisateur connecté depuis le token
     const access = userStore((state) => state.access);
     const getUserInfo = userStore((state) => state.get);
     const userInfo = access ? getUserInfo(access) : null;
+    const navigate = useNavigate();
 
     // Récupérer le profil complet depuis l'API
     const { data: profile, isError, isLoading, error } = useGetCompanyProfile(userInfo?.id || '');
@@ -17,6 +20,8 @@ export function CompanyProfile() {
     // Récupérer le logo depuis MinIO
     const logoBlob = useBlob(profile?.logo ?? '');
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     useEffect(() => {
         if (!logoBlob) {
@@ -29,6 +34,16 @@ export function CompanyProfile() {
             URL.revokeObjectURL(objectUrl);
         };
     }, [logoBlob]);
+
+    const handleDeleteSuccess = () => {
+        setShowDeleteModal(false);
+        setShowSuccessModal(true);
+    };
+
+    const handleSuccessModalConfirm = () => {
+        setShowSuccessModal(false);
+        navigate('/logout');
+    };
 
     return (
         <div className="min-h-screen bg-base-100">
@@ -61,18 +76,34 @@ export function CompanyProfile() {
 
                     {profile && (
                         <div className="space-y-6">
-                            {/* Informations principales */}
                             <div className="bg-base-200 rounded-lg shadow p-6">
                                 <div className="flex items-start gap-6">
                                     {logoUrl && <img src={logoUrl} alt="Logo" className="w-24 h-24 object-contain" />}
                                     <div className="flex flex-col flex-1 justify-center">
                                         <h2 className="text-2xl font-semibold text-base-900 mb-2">{profile.name}</h2>
                                         <p className="text-base-600">{profile.email}</p>
+                                        <div className="flex gap-4 mt-3">
+                                            <span
+                                                className={`px-3 py-1 rounded-full text-sm ${profile.isVerified
+                                                        ? 'bg-success text-success-content'
+                                                        : 'bg-warning text-warning-content'
+                                                    }`}
+                                            >
+                                                {profile.isVerified ? '✓ Email vérifié' : 'Email non vérifié'}
+                                            </span>
+                                            <span
+                                                className={`px-3 py-1 rounded-full text-sm ${profile.isValid
+                                                        ? 'bg-success text-success-content'
+                                                        : 'bg-error text-error-content'
+                                                    }`}
+                                            >
+                                                {profile.isValid ? '✓ Compte validé' : 'Compte en attente'}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Informations légales */}
                             <div className="bg-base-200 rounded-lg shadow p-6">
                                 <h3 className="text-lg font-semibold text-base-900 mb-4">Informations légales</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -104,26 +135,10 @@ export function CompanyProfile() {
                             </div>
 
                             {/* Adresse */}
-                            {(profile.streetNumber ||
-                                profile.streetName ||
-                                profile.postalCode ||
-                                profile.city ||
-                                profile.country) && (
+                            {profile.address && (
                                 <div className="bg-base-200 rounded-lg shadow p-6">
                                     <h3 className="text-lg font-semibold text-base-900 mb-4">Adresse</h3>
-                                    <div className="text-base-700 space-y-1">
-                                        {profile.streetNumber || profile.streetName ? (
-                                            <p>
-                                                {profile.streetNumber} {profile.streetName}
-                                            </p>
-                                        ) : null}
-                                        {profile.postalCode || profile.city ? (
-                                            <p>
-                                                {profile.postalCode} {profile.city}
-                                            </p>
-                                        ) : null}
-                                        {profile.country && <p>{profile.country}</p>}
-                                    </div>
+                                    <div className="text-base-700 space-y-1">{<p>{profile.address}</p>}</div>
                                 </div>
                             )}
 
@@ -164,6 +179,19 @@ export function CompanyProfile() {
                     )}
                 </div>
             </div>
+
+            {showDeleteModal && profile && (
+                <DeleteAccountModal
+                    companyId={profile._id}
+                    companyName={profile.name}
+                    onClose={() => setShowDeleteModal(false)}
+                    onSuccess={handleDeleteSuccess}
+                />
+            )}
+
+            {showSuccessModal && (
+                <DeleteAccountSuccessModal onConfirm={handleSuccessModalConfirm} />
+            )}
         </div>
     );
 }

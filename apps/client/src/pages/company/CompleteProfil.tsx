@@ -1,30 +1,30 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, type Resolver } from 'react-hook-form';
-import { XCircle } from 'lucide-react';
+import { Controller, useForm, type Resolver } from 'react-hook-form';
+import { useMutation } from '@tanstack/react-query';
+import { useNavigate, useOutletContext } from 'react-router';
+import { useFile } from '../../hooks/useFile';
+import { useBlob } from '../../hooks/useBlob';
+import { useUploadFile } from '../../hooks/useUploadFile';
+import { useEffect, useState } from 'react';
+import { UseAuthFetch } from '../../hooks/useAuthFetch';
+import type { companyProfile } from '../../types/CompanyProfile.types.ts';
+import { profileStore } from '../../stores/profileStore.ts';
+import type { userContext } from '../../types/VerifiedRoute.types.tsx';
 import {
-    type completeProfilFormType,
+    completeProfilForm,
+    LegalStatus,
     nafCode,
     StructureType,
-    LegalStatus,
-    completeProfilForm,
+    type completeProfilFormType,
     type SignedUrlResponse,
-} from '../../types/CompleteProfil.types';
-import { useMutation } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
-import { useNavigate, useOutletContext } from 'react-router';
-import { UseAuthFetch } from '../../hooks/useAuthFetch';
-import { useBlob } from '../../hooks/useBlob';
-import { useFile } from '../../hooks/useFile';
-import { useUploadFile } from '../../hooks/useUploadFile';
-import type { userContext } from '../../types/VerifiedRoute.types';
-import { profileStore } from '../../stores/profileStore';
-import type { companyProfile } from '../../types/CompanyProfile.types';
-import { FormSection } from '../common/form/FormSection';
-import { FormSubmit } from '../common/form/FormSubmit';
-import { FormInput } from '../common/form/FormInput';
-import { CustomSelect } from '../common/inputs/select/select';
-import { ProfilePicture } from '../common/profile/profilPicture';
-
+} from '../../types/CompleteProfil.types.tsx';
+import { FormSection } from '../common/form/FormSection.tsx';
+import { FormSubmit } from '../common/form/FormSubmit.tsx';
+import { addressFetcher, getAddressLabel, type GeoapifyFeature } from '../../apis/autoCompleteAddress.tsx';
+import { GenericAutocomplete } from '../common/inputs/textInput/genericAutoComplete.tsx';
+import { CustomSelect } from '../common/inputs/select/select.tsx';
+import { FormInput } from '../common/form/FormInput.tsx';
+import { ProfilePicture } from '../common/profile/profilPicture.tsx';
 export const CompleteProfil = () => {
     const formInputStyle = 'p-3';
     const navigate = useNavigate();
@@ -53,6 +53,7 @@ export const CompleteProfil = () => {
     const upload = useUploadFile();
     const {
         register,
+        control,
         handleSubmit,
         formState: { errors },
         clearErrors,
@@ -61,14 +62,10 @@ export const CompleteProfil = () => {
         resolver: zodResolver(completeProfilForm) as Resolver<completeProfilFormType>,
         defaultValues: {
             siretNumber: profil?.siretNumber ?? '',
-            streetNumber: profil?.streetNumber ?? '',
             nafCode: profil?.nafCode,
             structureType: profil?.structureType,
             legalStatus: profil?.legalStatus,
-            postalCode: profil?.postalCode ?? '',
-            country: profil?.country ?? '',
-            city: profil?.city ?? '',
-            streetName: profil?.streetName ?? '',
+            address: profil?.address ?? '',
             logo: logoFile,
         },
     });
@@ -99,11 +96,7 @@ export const CompleteProfil = () => {
                 nafCode: variables.nafCode ?? undefined,
                 structureType: variables.structureType ?? undefined,
                 legalStatus: variables.legalStatus ?? undefined,
-                streetNumber: variables.streetNumber ?? undefined,
-                streetName: variables.streetName ?? undefined,
-                postalCode: variables.postalCode ?? undefined,
-                city: variables.city ?? undefined,
-                country: variables.country ?? undefined,
+                address: variables.address ?? undefined,
             };
             updateProfil(payload);
         },
@@ -112,10 +105,7 @@ export const CompleteProfil = () => {
         const { logo: fileLogo, ...rest } = data;
 
         const base: Omit<completeProfilFormType, 'logo'> = rest;
-        const dataToSend: Omit<completeProfilFormType, 'logo'> & {
-            logo?: string;
-            rejected?: { isRejected: boolean; rejectionReason?: string; rejectedAt?: Date; modifiedAt?: Date };
-        } = { ...base };
+        const dataToSend: Omit<completeProfilFormType, 'logo'> & { logo?: string } = { ...base };
 
         if (fileLogo instanceof FileList && fileLogo.length > 0) {
             const file = fileLogo[0];
@@ -138,25 +128,8 @@ export const CompleteProfil = () => {
         } else if (typeof fileLogo === 'string' && fileLogo) {
             dataToSend.logo = fileLogo;
         }
-
-        // Si le compte était rejeté, définir modifiedAt pour signaler une modification
-        if (profil?.rejected?.isRejected) {
-            dataToSend.rejected = {
-                isRejected: true,
-                rejectionReason: profil.rejected.rejectionReason,
-                rejectedAt: profil.rejected.rejectedAt ? new Date(profil.rejected.rejectedAt) : undefined,
-                modifiedAt: new Date(),
-            };
-        }
-
         await mutateAsync(dataToSend);
-
-        // Si le compte était rejeté, rediriger vers pending-validation au lieu du dashboard
-        if (profil?.rejected?.isRejected) {
-            navigate('/pending-validation');
-        } else {
-            navigate(`/home`);
-        }
+        navigate(`/`);
     };
     return (
         <div className="flex flex-col w-full min-h-screen flex-grow items-start bg-(--color-base-200)">
@@ -166,38 +139,6 @@ export const CompleteProfil = () => {
                     Ces informations nous aiderons à valider votre entreprise. elles ne seront pas toutes affichées
                     publiquement.
                 </p>
-
-                {profil?.rejected?.isRejected && profil?.rejected?.rejectionReason && (
-                    <div className="alert alert-error shadow-lg mt-6 w-full max-w-3xl">
-                        <div className="flex flex-col gap-2 w-full">
-                            <div className="flex items-center gap-2">
-                                <XCircle className="shrink-0 h-6 w-6" />
-                                <span className="font-bold">Votre compte a été rejeté</span>
-                            </div>
-                            {profil.rejected.rejectedAt && (
-                                <div className="pl-8 text-sm text-error-content">
-                                    <span className="italic">
-                                        Date de refus :{' '}
-                                        {new Date(profil.rejected.rejectedAt).toLocaleDateString('fr-FR', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        })}
-                                    </span>
-                                </div>
-                            )}
-                            <div className="pl-8">
-                                <p className="text-sm whitespace-pre-line">{profil.rejected.rejectionReason}</p>
-                            </div>
-                            <p className="text-sm pl-8 mt-2 italic">
-                                Veuillez corriger les informations signalées et soumettre à nouveau votre profil.
-                            </p>
-                        </div>
-                    </div>
-                )}
-
                 <form
                     className="mt-8 w-full max-w-3xl flex flex-col flex-1 "
                     onSubmit={handleSubmit(onSubmit)}
@@ -276,63 +217,25 @@ export const CompleteProfil = () => {
                         className=" bg-base-100 p-6 shadow-md mb-6 flex flex-col gap-4"
                     >
                         <div className="flex w-full flex-row gap-6">
-                            <div className="w-1/2">
-                                <FormInput<completeProfilFormType>
-                                    type="text"
-                                    label="Numéro de rue"
-                                    placeholder="ex: 12B"
-                                    className={`${formInputStyle}`}
-                                    register={register('streetNumber')}
-                                    onChange={() => clearErrors('streetNumber')}
-                                    error={errors.streetNumber}
-                                />
-                            </div>
-                            <div className="w-1/2">
-                                <FormInput<completeProfilFormType>
-                                    type="text"
-                                    label="Nom de rue"
-                                    placeholder="ex: Avenue des champs-élysées"
-                                    className={`${formInputStyle}`}
-                                    register={register('streetName')}
-                                    onChange={() => clearErrors('streetName')}
-                                    error={errors.streetName}
+                            <div className="flex-1">
+                                <Controller
+                                    name="address"
+                                    control={control}
+                                    render={({ field, fieldState }) => (
+                                        <GenericAutocomplete<GeoapifyFeature>
+                                            {...field}
+                                            key={field.value ? 'loaded' : 'loading'}
+                                            label="Adresse complète"
+                                            placeholder="Tapez votre adresse..."
+                                            isAutocompleteEnabled={true}
+                                            fetcher={addressFetcher}
+                                            getLabel={getAddressLabel}
+                                            error={fieldState.error?.message}
+                                        />
+                                    )}
                                 />
                             </div>
                         </div>
-                        <div className="w-full flex flex-row gap-6">
-                            <div className="w-1/2">
-                                <FormInput<completeProfilFormType>
-                                    type="text"
-                                    label="Code postal"
-                                    placeholder="ex: 75008"
-                                    className={`${formInputStyle}`}
-                                    register={register('postalCode')}
-                                    onChange={() => clearErrors('postalCode')}
-                                    error={errors.postalCode}
-                                />
-                            </div>
-                            <div className="w-1/2">
-                                <FormInput<completeProfilFormType>
-                                    type="text"
-                                    label="Ville"
-                                    placeholder="ex: Paris"
-                                    className={`${formInputStyle}`}
-                                    register={register('city')}
-                                    onChange={() => clearErrors('city')}
-                                    error={errors.city}
-                                />
-                            </div>
-                        </div>
-
-                        <FormInput<completeProfilFormType>
-                            type="text"
-                            label="Pays"
-                            placeholder="ex: France"
-                            className={`${formInputStyle}`}
-                            register={register('country')}
-                            onChange={() => clearErrors('country')}
-                            error={errors.country}
-                        />
                     </FormSection>
                     <FormSubmit
                         className="btn-primary w-min self-end font-bold"

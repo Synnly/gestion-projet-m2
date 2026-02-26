@@ -24,11 +24,7 @@ export const ForumHeader = ({ forum, onCreateTopic }: Props) => {
 
                         <div className="flex flex-col">
                             <div className="text-4xl font-bold">{forum.company?.name ?? 'Forum général'}</div>
-                            {forum.company && (
-                                <div className="flex items-center">
-                                    {forum.company?.city}, {forum.company?.country}
-                                </div>
-                            )}
+                            {forum.company && <div className="flex items-center">{forum.company?.address}</div>}
                         </div>
                     </div>
 

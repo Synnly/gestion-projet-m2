@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 import { toast } from 'react-toastify';
 import { CheckCircle2, Eye, Loader2, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import RejectCompanyModal from './RejectCompanyModal';
-import ValidateCompanyModal from './ValidateCompanyModal';
+import RejectCompanyModal from './modals/RejectCompanyModal.tsx';
+import ValidateCompanyModal from './modals/ValidateCompanyModal.tsx';
 import { fetchPendingCompanies, rejectCompany, validateCompany, type Company } from '../../../apis/company';
 
 export default function ValidateCompanies() {
@@ -119,7 +119,7 @@ export default function ValidateCompanies() {
                                     <th>Nom</th>
                                     <th>Email</th>
                                     <th>SIRET</th>
-                                    <th>Ville</th>
+                                    <th>Adresse</th>
                                     <th>Type</th>
                                     <th>Date d'inscription</th>
                                     <th>Actions</th>
@@ -131,11 +131,7 @@ export default function ValidateCompanies() {
                                         <td className="font-semibold">{company.name}</td>
                                         <td>{company.email}</td>
                                         <td>{company.siretNumber || '-'}</td>
-                                        <td>
-                                            {company.city && company.postalCode
-                                                ? `${company.city} (${company.postalCode})`
-                                                : company.city || '-'}
-                                        </td>
+                                        <td>{company.address ? `${company.address}` : '-'}</td>
                                         <td>
                                             <span className="badge badge-outline">{company.structureType || '-'}</span>
                                         </td>
@@ -236,12 +232,8 @@ export default function ValidateCompanies() {
                                 <p className="font-semibold">{selectedCompany.legalStatus || 'Non renseigné'}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-500">Ville</p>
-                                <p className="font-semibold">{selectedCompany.city || 'Non renseigné'}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-500">Code postal</p>
-                                <p className="font-semibold">{selectedCompany.postalCode || 'Non renseigné'}</p>
+                                <p className="text-sm text-gray-500">Adresse</p>
+                                <p className="font-semibold">{selectedCompany.address || 'Non renseigné'}</p>
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500">Date d'inscription</p>

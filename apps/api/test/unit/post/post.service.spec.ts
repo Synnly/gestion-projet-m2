@@ -47,6 +47,7 @@ describe('PostService', () => {
         create: jest.fn(),
         find: jest.fn(),
         findById: jest.fn(),
+        findOne: jest.fn(),
         findOneAndUpdate: jest.fn(),
         constructor: jest.fn(),
     };
@@ -61,16 +62,13 @@ describe('PostService', () => {
 
     const mockCompanyService = {
         findOne: jest.fn().mockResolvedValue({
-            streetNumber: '10',
-            streetName: 'Rue de Test',
-            postalCode: '75001',
-            city: 'Paris',
-            country: 'France',
+            address: '123 Rue de Paris, 75000 Paris, France',
         }),
     };
 
     const mockApplicationService = {
         getPostIdsByStudent: jest.fn(),
+        markApplicationsAsNoFollowUp: jest.fn(),
         deleteAndSendNotification: jest.fn(),
     };
 
@@ -325,7 +323,7 @@ describe('PostService', () => {
             expect(mockPostModel.findById).toHaveBeenCalledWith(validObjectId);
             expect(populateMock).toHaveBeenCalledWith({
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus address logo',
             });
             expect(execMock).toHaveBeenCalledTimes(1);
         });
@@ -363,6 +361,10 @@ describe('PostService', () => {
         const postId = '507f1f77bcf86cd799439011';
 
         it('should update and return the post when it belongs to the company', async () => {
+            const currentPost = createMockPost({ isVisible: true });
+            const findOneExecMock = jest.fn().mockResolvedValue(currentPost);
+            mockPostModel.findOne.mockReturnValue({ exec: findOneExecMock });
+
             const execMock = jest.fn().mockResolvedValue(createMockPost({ title: 'Updated Title' }));
             const populateMock = jest.fn().mockReturnValue({ exec: execMock });
             mockPostModel.findOneAndUpdate.mockReturnValue({ populate: populateMock });
@@ -372,6 +374,7 @@ describe('PostService', () => {
             const result = await service.update(dto, companyId, postId);
 
             expect(result.title).toBe('Updated Title');
+            expect(mockPostModel.findOne).toHaveBeenCalledTimes(1);
             expect(mockPostModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
 
             const calledFilter = mockPostModel.findOneAndUpdate.mock.calls[0][0];
@@ -380,13 +383,98 @@ describe('PostService', () => {
         });
 
         it('should throw NotFoundException when update returns null', async () => {
-            const execMock = jest.fn().mockResolvedValue(null);
-            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
-            mockPostModel.findOneAndUpdate.mockReturnValue({ populate: populateMock });
+            const findOneExecMock = jest.fn().mockResolvedValue(null);
+            mockPostModel.findOne.mockReturnValue({ exec: findOneExecMock });
 
             const dto = { title: 'No Update' } as any;
 
             await expect(service.update(dto, companyId, postId)).rejects.toThrow();
+        });
+
+        it('should mark applications as NoFollowUp when post is hidden', async () => {
+            const currentPost = createMockPost({ isVisible: true });
+            const findOneExecMock = jest.fn().mockResolvedValue(currentPost);
+            mockPostModel.findOne.mockReturnValue({ exec: findOneExecMock });
+
+            const execMock = jest.fn().mockResolvedValue(createMockPost({ title: 'Updated Title', isVisible: false }));
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.findOneAndUpdate.mockReturnValue({ populate: populateMock });
+
+            const dto = { title: 'Updated Title', isVisible: false } as any;
+
+            await service.update(dto, companyId, postId);
+
+            expect(mockApplicationService.markApplicationsAsNoFollowUp).toHaveBeenCalledTimes(1);
+            expect(mockApplicationService.markApplicationsAsNoFollowUp).toHaveBeenCalledWith(
+                expect.any(Types.ObjectId),
+            );
+        });
+
+        it('should not mark applications as NoFollowUp when post remains visible', async () => {
+            const currentPost = createMockPost({ isVisible: true });
+            const findOneExecMock = jest.fn().mockResolvedValue(currentPost);
+            mockPostModel.findOne.mockReturnValue({ exec: findOneExecMock });
+
+            const execMock = jest.fn().mockResolvedValue(createMockPost({ title: 'Updated Title', isVisible: true }));
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.findOneAndUpdate.mockReturnValue({ populate: populateMock });
+
+            const dto = { title: 'Updated Title', isVisible: true } as any;
+
+            await service.update(dto, companyId, postId);
+
+            expect(mockApplicationService.markApplicationsAsNoFollowUp).not.toHaveBeenCalled();
+        });
+
+        it('should not mark applications as NoFollowUp when post was already hidden', async () => {
+            const currentPost = createMockPost({ isVisible: false });
+            const findOneExecMock = jest.fn().mockResolvedValue(currentPost);
+            mockPostModel.findOne.mockReturnValue({ exec: findOneExecMock });
+
+            const execMock = jest.fn().mockResolvedValue(createMockPost({ title: 'Still Hidden', isVisible: false }));
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.findOneAndUpdate.mockReturnValue({ populate: populateMock });
+
+            const dto = { title: 'Still Hidden', isVisible: false } as any;
+
+            await service.update(dto, companyId, postId);
+
+            expect(mockApplicationService.markApplicationsAsNoFollowUp).not.toHaveBeenCalled();
+        });
+
+        it('should throw error when markApplicationsAsNoFollowUp fails', async () => {
+            const currentPost = createMockPost({ isVisible: true });
+            const findOneExecMock = jest.fn().mockResolvedValue(currentPost);
+            mockPostModel.findOne.mockReturnValue({ exec: findOneExecMock });
+
+            const execMock = jest.fn().mockResolvedValue(createMockPost({ title: 'Hidden Post', isVisible: false }));
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.findOneAndUpdate.mockReturnValue({ populate: populateMock });
+
+            mockApplicationService.markApplicationsAsNoFollowUp.mockRejectedValue(
+                new Error('Failed to update applications'),
+            );
+
+            const dto = { title: 'Hidden Post', isVisible: false } as any;
+
+            await expect(service.update(dto, companyId, postId)).rejects.toThrow('Failed to update applications');
+        });
+
+        it('should update post successfully even when no isVisible change is specified', async () => {
+            const currentPost = createMockPost({ isVisible: true });
+            const findOneExecMock = jest.fn().mockResolvedValue(currentPost);
+            mockPostModel.findOne.mockReturnValue({ exec: findOneExecMock });
+
+            const execMock = jest.fn().mockResolvedValue(createMockPost({ title: 'Just Title Update' }));
+            const populateMock = jest.fn().mockReturnValue({ exec: execMock });
+            mockPostModel.findOneAndUpdate.mockReturnValue({ populate: populateMock });
+
+            const dto = { title: 'Just Title Update' } as any;
+
+            const result = await service.update(dto, companyId, postId);
+
+            expect(result.title).toBe('Just Title Update');
+            expect(mockApplicationService.markApplicationsAsNoFollowUp).not.toHaveBeenCalled();
         });
     });
 
@@ -559,7 +647,8 @@ describe('PostService', () => {
                 [
                     {
                         path: 'company',
-                        select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+                        select: '_id name siretNumber nafCode structureType legalStatus address logo location',
+                        match: { deletedAt: { $exists: false } },
                     },
                 ],
                 expect.anything(),

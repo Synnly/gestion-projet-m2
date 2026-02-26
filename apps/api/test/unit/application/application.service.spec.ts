@@ -798,6 +798,143 @@ describe('ApplicationService', () => {
         });
     });
 
+    describe('markApplicationsAsNoFollowUp', () => {
+        const postId = new Types.ObjectId('507f1f77bcf86cd799439013');
+
+        it('should mark all applications as NoFollowUp and send notifications when applications exist', async () => {
+            const mockApplications = [
+                {
+                    _id: new Types.ObjectId('507f1f77bcf86cd799439014'),
+                    post: { _id: postId, title: 'Développeur Backend' },
+                    student: { _id: new Types.ObjectId('507f1f77bcf86cd799439015') },
+                    status: ApplicationStatus.Pending,
+                    cv: 'cv.pdf',
+                },
+                {
+                    _id: new Types.ObjectId('507f1f77bcf86cd799439016'),
+                    post: { _id: postId, title: 'Développeur Backend' },
+                    student: { _id: new Types.ObjectId('507f1f77bcf86cd799439017') },
+                    status: ApplicationStatus.Read,
+                    cv: 'cv2.pdf',
+                },
+            ];
+
+            const findExec = jest.fn().mockResolvedValue(mockApplications);
+            const populate = jest.fn().mockReturnValue({ exec: findExec });
+            mockApplicationModel.find.mockReturnValue({ populate });
+
+            mockApplicationModel.updateMany = jest.fn().mockResolvedValue({ modifiedCount: 2 });
+            mockNotificationService.create.mockResolvedValue({ _id: 'notif123' });
+
+            await service.markApplicationsAsNoFollowUp(postId);
+
+            expect(mockApplicationModel.find).toHaveBeenCalledWith({
+                post: postId,
+                deletedAt: { $exists: false },
+                status: { $ne: ApplicationStatus.NoFollowUp },
+            });
+
+            expect(mockApplicationModel.updateMany).toHaveBeenCalledWith(
+                {
+                    post: postId,
+                    deletedAt: { $exists: false },
+                    status: { $ne: ApplicationStatus.NoFollowUp },
+                },
+                { $set: { status: ApplicationStatus.NoFollowUp } },
+            );
+
+            expect(mockNotificationService.create).toHaveBeenCalledTimes(2);
+            expect(mockNotificationService.create).toHaveBeenCalledWith({
+                userId: mockApplications[0].student._id,
+                message: `L'annonce "Développeur Backend" pour laquelle vous avez candidaté a été masquée. Votre candidature est marquée "Sans suite".`,
+            });
+            expect(mockNotificationService.create).toHaveBeenCalledWith({
+                userId: mockApplications[1].student._id,
+                message: `L'annonce "Développeur Backend" pour laquelle vous avez candidaté a été masquée. Votre candidature est marquée "Sans suite".`,
+            });
+        });
+
+        it('should do nothing when no applications exist for the post', async () => {
+            const findExec = jest.fn().mockResolvedValue([]);
+            const populate = jest.fn().mockReturnValue({ exec: findExec });
+            mockApplicationModel.find.mockReturnValue({ populate });
+
+            mockApplicationModel.updateMany = jest.fn();
+
+            await service.markApplicationsAsNoFollowUp(postId);
+
+            expect(mockApplicationModel.find).toHaveBeenCalledTimes(1);
+            expect(mockApplicationModel.updateMany).not.toHaveBeenCalled();
+            expect(mockNotificationService.create).not.toHaveBeenCalled();
+        });
+
+        it('should continue updating applications even when notification fails', async () => {
+            const mockApplications = [
+                {
+                    _id: new Types.ObjectId('507f1f77bcf86cd799439018'),
+                    post: { _id: postId, title: 'Stage Frontend' },
+                    student: { _id: new Types.ObjectId('507f1f77bcf86cd799439019') },
+                    status: ApplicationStatus.Pending,
+                    cv: 'cv.pdf',
+                },
+            ];
+
+            const findExec = jest.fn().mockResolvedValue(mockApplications);
+            const populate = jest.fn().mockReturnValue({ exec: findExec });
+            mockApplicationModel.find.mockReturnValue({ populate });
+
+            mockApplicationModel.updateMany = jest.fn().mockResolvedValue({ modifiedCount: 1 });
+            mockNotificationService.create.mockRejectedValue(new Error('Notification service unavailable'));
+
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            await service.markApplicationsAsNoFollowUp(postId);
+
+            expect(mockApplicationModel.updateMany).toHaveBeenCalledTimes(1);
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                expect.stringContaining('Failed to send notification to student'),
+                expect.any(Error),
+            );
+
+            consoleErrorSpy.mockRestore();
+        });
+
+        it('should only update applications that are not already marked as NoFollowUp', async () => {
+            const mockApplications = [
+                {
+                    _id: new Types.ObjectId('507f1f77bcf86cd799439020'),
+                    post: { _id: postId, title: 'Stage Data' },
+                    student: { _id: new Types.ObjectId('507f1f77bcf86cd799439021') },
+                    status: ApplicationStatus.Accepted,
+                    cv: 'cv.pdf',
+                },
+            ];
+
+            const findExec = jest.fn().mockResolvedValue(mockApplications);
+            const populate = jest.fn().mockReturnValue({ exec: findExec });
+            mockApplicationModel.find.mockReturnValue({ populate });
+
+            mockApplicationModel.updateMany = jest.fn().mockResolvedValue({ modifiedCount: 1 });
+            mockNotificationService.create.mockResolvedValue({ _id: 'notif456' });
+
+            await service.markApplicationsAsNoFollowUp(postId);
+
+            expect(mockApplicationModel.find).toHaveBeenCalledWith({
+                post: postId,
+                deletedAt: { $exists: false },
+                status: { $ne: ApplicationStatus.NoFollowUp },
+            });
+
+            expect(mockApplicationModel.updateMany).toHaveBeenCalledWith(
+                {
+                    post: postId,
+                    deletedAt: { $exists: false },
+                    status: { $ne: ApplicationStatus.NoFollowUp },
+                },
+                { $set: { status: ApplicationStatus.NoFollowUp } },
+            );
+        });
+    });
     describe('deleteAndSendNotification', () => {
         const appIdStr = '507f1f77bcf86cd799439099';
         const mockApp = {
@@ -857,6 +994,100 @@ describe('ApplicationService', () => {
             await expect(service.deleteAndSendNotification(appIdStr)).rejects.toThrow(NotFoundException);
             expect(mockApplicationModel.findOneAndUpdate).not.toHaveBeenCalled();
             expect(mockNotificationService.create).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('getApplicationCountsByCompany', () => {
+        const companyId = new Types.ObjectId();
+
+        it('should return counts for each post belonging to the company', async () => {
+            const expectedCounts = [
+                { postId: new Types.ObjectId().toString(), total: 3, unread: 2 },
+                { postId: new Types.ObjectId().toString(), total: 5, unread: 0 },
+            ];
+            mockApplicationModel.aggregate.mockResolvedValue(expectedCounts);
+
+            const result = await service.getApplicationCountsByCompany(companyId);
+
+            expect(result).toEqual(expectedCounts);
+            expect(mockApplicationModel.aggregate).toHaveBeenCalledTimes(1);
+        });
+
+        it('should return an empty array when the company has no applications', async () => {
+            mockApplicationModel.aggregate.mockResolvedValue([]);
+
+            const result = await service.getApplicationCountsByCompany(companyId);
+
+            expect(result).toEqual([]);
+        });
+
+        it('should include a $match stage that filters by companyId and excludes deleted applications', async () => {
+            mockApplicationModel.aggregate.mockResolvedValue([]);
+
+            await service.getApplicationCountsByCompany(companyId);
+
+            const pipeline = mockApplicationModel.aggregate.mock.calls[0][0] as any[];
+            const matchStage = pipeline.find((s) => s.$match);
+            expect(matchStage).toBeDefined();
+            expect(matchStage.$match['postData.company']).toEqual(companyId);
+            expect(matchStage.$match.deletedAt).toEqual({ $exists: false });
+        });
+
+        it('should include a $group stage that counts only Pending status as unread', async () => {
+            mockApplicationModel.aggregate.mockResolvedValue([]);
+
+            await service.getApplicationCountsByCompany(companyId);
+
+            const pipeline = mockApplicationModel.aggregate.mock.calls[0][0] as any[];
+            const groupStage = pipeline.find((s) => s.$group);
+            expect(groupStage).toBeDefined();
+            expect(groupStage.$group.total).toEqual({ $sum: 1 });
+            expect(groupStage.$group.unread).toEqual({
+                $sum: { $cond: [{ $eq: ['$status', ApplicationStatus.Pending] }, 1, 0] },
+            });
+        });
+
+        it('should include a $lookup stage joining on the posts collection', async () => {
+            mockApplicationModel.aggregate.mockResolvedValue([]);
+
+            await service.getApplicationCountsByCompany(companyId);
+
+            const pipeline = mockApplicationModel.aggregate.mock.calls[0][0] as any[];
+            const lookupStage = pipeline.find((s) => s.$lookup);
+            expect(lookupStage).toBeDefined();
+            expect(lookupStage.$lookup.from).toBe('posts');
+            expect(lookupStage.$lookup.localField).toBe('post');
+            expect(lookupStage.$lookup.foreignField).toBe('_id');
+        });
+
+        it('should include a $project stage that converts _id to string postId', async () => {
+            mockApplicationModel.aggregate.mockResolvedValue([]);
+
+            await service.getApplicationCountsByCompany(companyId);
+
+            const pipeline = mockApplicationModel.aggregate.mock.calls[0][0] as any[];
+            const projectStage = pipeline.find((s) => s.$project);
+            expect(projectStage).toBeDefined();
+            expect(projectStage.$project.postId).toEqual({ $toString: '$_id' });
+            expect(projectStage.$project._id).toBe(0);
+        });
+
+        it('should return a single entry per post even when multiple applications exist for it', async () => {
+            const postId = new Types.ObjectId().toString();
+            mockApplicationModel.aggregate.mockResolvedValue([{ postId, total: 10, unread: 4 }]);
+
+            const result = await service.getApplicationCountsByCompany(companyId);
+
+            expect(result).toHaveLength(1);
+            expect(result[0].postId).toBe(postId);
+            expect(result[0].total).toBe(10);
+            expect(result[0].unread).toBe(4);
+        });
+
+        it('should propagate errors thrown by the aggregation', async () => {
+            mockApplicationModel.aggregate.mockRejectedValue(new Error('DB error'));
+
+            await expect(service.getApplicationCountsByCompany(companyId)).rejects.toThrow('DB error');
         });
     });
 });

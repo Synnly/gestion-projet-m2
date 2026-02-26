@@ -14,6 +14,7 @@ import { ForumAccessGuard } from '../../../src/forum/guards/forum-access.guard';
 import { Topic, TopicDocument } from '../../../src/forum/topic/topic.schema';
 import { Forum, ForumDocument } from '../../../src/forum/forum.schema';
 import { CompanyModule } from '../../../src/company/company.module';
+import jwt from 'jsonwebtoken';
 
 describe('Topic Integration Tests', () => {
     let app: INestApplication;
@@ -44,19 +45,22 @@ describe('Topic Integration Tests', () => {
             .useValue({ get: (key: string) => (key === 'JWT_SECRET' ? JWT_SECRET : undefined) })
             .overrideGuard(AuthGuard)
             .useValue({
-                canActivate: (context: any) => {
-                    const req = context.switchToHttp().getRequest();
-                    const auth = req.headers?.authorization;
-                    if (!auth) return false;
-                    const token = auth.replace('Bearer ', '');
-                    try {
-                        const payload = jwtService.verify(token, { secret: JWT_SECRET });
-                        req.user = payload;
-                        return true;
-                    } catch {
-                        return false;
-                    }
-                },
+                canActivate: (() => {
+                    const jwt = require('jsonwebtoken');
+                    return (context: any) => {
+                        const req = context.switchToHttp().getRequest();
+                        const auth = req.headers?.authorization;
+                        if (!auth) return false;
+                        const token = auth.replace('Bearer ', '');
+                        try {
+                            const payload = jwt.verify(token, JWT_SECRET);
+                            req.user = payload;
+                            return true;
+                        } catch {
+                            return false;
+                        }
+                    };
+                })(),
             })
             .overrideGuard(RolesGuard)
             .useValue({ canActivate: () => true })
@@ -73,11 +77,15 @@ describe('Topic Integration Tests', () => {
         forumModel = moduleFixture.get<Model<ForumDocument>>(getModelToken(Forum.name));
 
         userId = new Types.ObjectId();
-        accessToken = jwtService.sign({
-            sub: userId.toString(),
-            email: 'test@example.com',
-            role: 'Student',
-        });
+        accessToken = require('jsonwebtoken').sign(
+            {
+                sub: new Types.ObjectId().toString(),
+                email: 'test@example.com',
+                role: 'Student',
+            },
+            JWT_SECRET,
+            { expiresIn: '1h' },
+        );
     });
 
     beforeEach(async () => {

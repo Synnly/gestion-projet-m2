@@ -21,6 +21,8 @@ import { PaginationService } from '../common/pagination/pagination.service';
 import { GeoService } from '../common/geography/geo.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Application } from 'src/application/application.schema';
+import { Notification } from '../notification/notification.schema';
+import { RefreshToken } from '../auth/refreshToken.schema';
 
 @Injectable()
 /**
@@ -35,6 +37,8 @@ export class StudentService {
         @InjectModel(Student.name) private readonly studentModel: Model<StudentUserDocument>,
         @InjectModel(Student.name) private readonly model: Model<Student>,
         @InjectModel(Application.name) private readonly applicationModel: Model<Application>,
+        @InjectModel(Notification.name) private readonly notificationModel: Model<Notification>,
+        @InjectModel(RefreshToken.name) private readonly refreshTokenModel: Model<RefreshToken>,
         private readonly mailerService: MailerService,
         private readonly configService: ConfigService,
         private readonly geoService: GeoService,
@@ -195,26 +199,46 @@ export class StudentService {
     }
 
     /**
-     * Soft-delete a student by setting `deletedAt`.
+     * Soft-delete a student by setting `deletedAt`. Soft-deletes all applications, notifications and refresh token
+     * related to the student.
      * @param id The student's id.
      * @throws NotFoundException if the student does not exist or is already deleted.
      */
     async remove(id: string): Promise<void> {
-        await this.applicationModel.updateMany({ student: id }, { $set: { deletedAt: new Date() } }).exec();
-
         const updated = await this.studentModel
             .findOneAndUpdate({ _id: id, deletedAt: { $exists: false } }, { $set: { deletedAt: new Date() } })
             .exec();
 
         if (!updated) throw new NotFoundException('Student not found or already deleted');
+
+        await this.applicationModel.updateMany({ student: id }, { $set: { deletedAt: new Date() } }).exec();
+        await this.notificationModel.updateMany({ userId: id }, { $set: { deletedAt: new Date() } }).exec();
+        await this.refreshTokenModel.updateOne({ userId: id }, { $set: { expiresAt: new Date() } }).exec();
+
         return;
     }
 
     /**
-     * Soft-delete all students by setting `deletedAt`
+     * Soft-delete all students by setting `deletedAt`. Soft-deletes all applications and notifications related to students.
      */
     async removeAll(): Promise<void> {
         await this.applicationModel.updateMany({}, { $set: { deletedAt: new Date() } }).exec();
+
+        // Removal of notifications and refresh tokens of all students
+        const students = await this.studentModel
+            .find({ deletedAt: { $exists: false } })
+            .select('_id')
+            .exec();
+        const studentIds = students.map((s) => s._id);
+        if (studentIds.length > 0) {
+            await this.notificationModel
+                .updateMany({ userId: { $in: studentIds } }, { $set: { deletedAt: new Date() } })
+                .exec();
+            await this.refreshTokenModel
+                .updateMany({ userId: { $in: studentIds } }, { $set: { expiresAt: new Date() } })
+                .exec();
+        }
+
         await this.studentModel.updateMany({}, { $set: { deletedAt: new Date() } }).exec();
     }
 

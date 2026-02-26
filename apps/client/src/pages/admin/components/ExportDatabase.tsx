@@ -5,7 +5,7 @@ import { useExportManagement } from '../../../hooks/useExportManagement';
 import { useImportManagement } from '../../../hooks/useImportManagement';
 import ExportTab from './ExportTab';
 import ImportTab from './ImportTab';
-import WarningModal from './WarningModal';
+import WarningModal from './modals/WarningModal.tsx';
 
 export default function ExportDatabase() {
     const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');

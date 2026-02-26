@@ -348,6 +348,54 @@ export class ApplicationService {
     }
 
     /**
+     * Mark all applications for a specific post as "NoFollowUp" and send notifications to affected students.
+     * This method is called when a post is hidden (isVisible set to false).
+     * @param postId The id of the post whose applications should be marked as NoFollowUp
+     * @returns A promise that resolves when all updates and notifications are complete
+     */
+    async markApplicationsAsNoFollowUp(postId: Types.ObjectId): Promise<void> {
+        // Find all applications for this post that are not already marked as NoFollowUp
+        const applications = await this.applicationModel
+            .find({
+                post: postId,
+                deletedAt: { $exists: false },
+                status: { $ne: ApplicationStatus.NoFollowUp },
+            })
+            .populate([
+                { path: 'post', select: 'title _id' },
+                { path: 'student', select: '_id' },
+            ])
+            .exec();
+
+        // Update all applications to NoFollowUp status
+        if (applications.length > 0) {
+            await this.applicationModel.updateMany(
+                {
+                    post: postId,
+                    deletedAt: { $exists: false },
+                    status: { $ne: ApplicationStatus.NoFollowUp },
+                },
+                { $set: { status: ApplicationStatus.NoFollowUp } },
+            );
+
+            // Send notifications to affected students
+            for (const application of applications) {
+                try {
+                    await this.notificationService.create({
+                        userId: application.student._id,
+                        message: `L'annonce "${application.post.title}" pour laquelle vous avez candidaté a été masquée. Votre candidature est marquée "Sans suite".`,
+                    });
+                } catch (error) {
+                    console.error(
+                        `Failed to send notification to student ${application.student._id} for post ${postId}:`,
+                        error,
+                    );
+                }
+            }
+        }
+    }
+
+    /**
      * Soft delete an application by its ID and send a notification to the student.
      * @param id The unique identifier of the application
      * @param message Optional custom message for the notification
@@ -381,5 +429,51 @@ export class ApplicationService {
         } catch (error) {
             console.error('Failed to send notification for application deletion:', error);
         }
+    }
+
+    /**
+     * Returns total and unread application counts for every post for a company.
+     * @param companyId The company ObjectId
+     * @returns An array of { postId, total, unread } objects
+     */
+    async getApplicationCountsByCompany(
+        companyId: Types.ObjectId,
+    ): Promise<{ postId: string; total: number; unread: number }[]> {
+        return this.applicationModel.aggregate([
+            {
+                $lookup: {
+                    from: 'posts',
+                    localField: 'post',
+                    foreignField: '_id',
+                    as: 'postData',
+                },
+            },
+            { $unwind: '$postData' },
+            {
+                $match: {
+                    'postData.company': companyId,
+                    deletedAt: { $exists: false },
+                },
+            },
+            {
+                $group: {
+                    _id: '$post',
+                    total: { $sum: 1 },
+                    unread: {
+                        $sum: {
+                            $cond: [{ $eq: ['$status', ApplicationStatus.Pending] }, 1, 0],
+                        },
+                    },
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    postId: { $toString: '$_id' },
+                    total: 1,
+                    unread: 1,
+                },
+            },
+        ]);
     }
 }

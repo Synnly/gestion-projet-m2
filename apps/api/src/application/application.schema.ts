@@ -20,6 +20,9 @@ export enum ApplicationStatus {
 
     /** Application has been rejected */
     Rejected = 'Rejected',
+
+    /** Application marked as no follow-up because the post was hidden */
+    NoFollowUp = 'NoFollowUp',
 }
 
 @Schema({ timestamps: true })

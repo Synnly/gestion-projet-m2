@@ -22,20 +22,8 @@ export type companyProfile = {
     /** Legal status of the company */
     legalStatus?: string;
 
-    /** Street number of the company address */
-    streetNumber?: string;
-
-    /** Street name of the company address */
-    streetName?: string;
-
-    /** Postal code of the company address */
-    postalCode?: string;
-
-    /** City of the company address */
-    city?: string;
-
-    /** Country of the company address */
-    country?: string;
+    /** adress of the company */
+    address: string;
 
     /** Whether the company account is validated */
     isValid: boolean;
@@ -66,4 +54,7 @@ export type companyProfile = {
 
     /** Date when the profile was last updated */
     updatedAt?: string;
+
+    /** Date when the profile was deleted */
+    deletedAt?: string;
 };

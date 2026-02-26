@@ -29,6 +29,8 @@ export type AccessTokenPayload = {
     isValid: boolean;
     /** Whether the user's account is valid */
     isVerified: boolean;
+    /** Date when the account was marked for deletion (soft-delete) */
+    deletedAt?: Date;
     /** Expiration time as a Unix timestamp (in milliseconds) */
     expiresAt?: number;
 };

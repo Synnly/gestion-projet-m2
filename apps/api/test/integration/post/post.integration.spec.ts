@@ -601,6 +601,7 @@ describe('Post Integration Tests', () => {
                 title: 'Poste Présentiel',
                 description: 'Description',
                 keySkills: ['Skill1'],
+                adress: 'toto',
                 type: PostType.Presentiel,
                 isCoverLetterRequired: false,
             };
@@ -899,6 +900,112 @@ describe('Post Integration Tests', () => {
 
             expect(res.body.data).toHaveLength(1);
             expect(res.body.total).toBe(1);
+        });
+    });
+
+    describe('GET /api/company/:companyId/posts/application-counts - Application Counts', () => {
+        it('should return an empty array when the company has no applications', async () => {
+            await createPost({ title: 'Post', description: 'Desc', keySkills: ['Skill'] });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts'))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(200);
+
+            expect(res.body).toEqual([]);
+        });
+
+        it('should return correct total and unread counts per post', async () => {
+            const post = await createPost({ title: 'Post', description: 'Desc', keySkills: ['Skill'] });
+
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Pending, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Pending, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Read, cv: 'http://cv.pdf' });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts'))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(200);
+
+            expect(res.body).toHaveLength(1);
+            expect(res.body[0].postId).toBe(post._id.toString());
+            expect(res.body[0].total).toBe(3);
+            expect(res.body[0].unread).toBe(2);
+        });
+
+        it('should count only Pending status as unread', async () => {
+            const post = await createPost({ title: 'Post', description: 'Desc', keySkills: ['Skill'] });
+
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Accepted, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Rejected, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Read, cv: 'http://cv.pdf' });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts'))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(200);
+
+            expect(res.body).toHaveLength(1);
+            expect(res.body[0].total).toBe(3);
+            expect(res.body[0].unread).toBe(0);
+        });
+
+        it('should exclude soft-deleted applications from the counts', async () => {
+            const post = await createPost({ title: 'Post', description: 'Desc', keySkills: ['Skill'] });
+
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Pending, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Pending, cv: 'http://cv.pdf', deletedAt: new Date() });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts'))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(200);
+
+            expect(res.body).toHaveLength(1);
+            expect(res.body[0].total).toBe(1);
+            expect(res.body[0].unread).toBe(1);
+        });
+
+        it('should return separate entries per post', async () => {
+            const post1 = await createPost({ title: 'Post 1', description: 'Desc', keySkills: ['Skill'] });
+            const post2 = await createPost({ title: 'Post 2', description: 'Desc', keySkills: ['Skill'] });
+
+            await applicationModel.create({ student: studentId, post: post1._id, company: companyId, status: ApplicationStatus.Pending, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post2._id, company: companyId, status: ApplicationStatus.Read, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post2._id, company: companyId, status: ApplicationStatus.Pending, cv: 'http://cv.pdf' });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts'))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(200);
+
+            expect(res.body).toHaveLength(2);
+
+            const counts1 = res.body.find((c: any) => c.postId === post1._id.toString());
+            const counts2 = res.body.find((c: any) => c.postId === post2._id.toString());
+
+            expect(counts1).toBeDefined();
+            expect(counts1.total).toBe(1);
+            expect(counts1.unread).toBe(1);
+
+            expect(counts2).toBeDefined();
+            expect(counts2.total).toBe(2);
+            expect(counts2.unread).toBe(1);
+        });
+
+        it('should return 401 when no authorization is provided', async () => {
+            await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts'))
+                .expect(401);
+        });
+
+        it('should return 403 when the token belongs to a different company', async () => {
+            const otherCompanyId = new Types.ObjectId();
+
+            await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts', otherCompanyId))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(403);
         });
     });
 

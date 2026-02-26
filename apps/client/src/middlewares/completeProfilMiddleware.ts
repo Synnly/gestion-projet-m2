@@ -29,6 +29,14 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
     if (pathname === '/logout') {
         return;
     }
+
+    // If the account is pending deletion (soft-deleted), only allow /account-restore
+    if (payload.deletedAt) {
+        if (pathname !== '/account-restore') {
+            throw redirect('/account-restore');
+        }
+        return;
+    }
     if (!payload.isVerified && pathname === '/verify') {
         return;
     }
