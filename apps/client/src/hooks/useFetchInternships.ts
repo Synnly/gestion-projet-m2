@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useInternshipStore } from '../stores/useInternshipStore';
 import type { PaginationResult, Internship } from '../types/internship.types';
 import { fetchPublicSignedUrl } from './useBlob';
@@ -112,6 +112,8 @@ export function useFetchInternships() {
     const filters = useInternshipStore((state) => state.filters);
     const setInternships = useInternshipStore((state) => state.setInternships);
     const showMyApplicationsOnly = useInternshipStore((state) => state.showMyApplicationsOnly);
+    const hasSynced: React.Ref<Boolean> = useRef<boolean>(false);
+    const authFetch = UseAuthFetch();
     const query = useQuery<PaginationResult<Internship>, Error>({
         queryKey: ['internships', filters],
 
@@ -122,7 +124,10 @@ export function useFetchInternships() {
                 filters.company = userStore.getState().get(accessToken)?.id;
             }
             const params = buildQueryParams(filters);
-
+            if (!hasSynced.current) {
+                await authFetch(`${API_URL}/api/company/0/posts/unSeenSynchronize`);
+                hasSynced.current = true;
+            }
             /** 2) Fetch base posts */
             const paginationResult = await fetchPosts(API_URL, params, showMyApplicationsOnly);
 

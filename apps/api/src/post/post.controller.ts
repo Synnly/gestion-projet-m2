@@ -112,7 +112,14 @@ export class PostController {
             data: posts.data.map((post) => plainToInstance(PostDto, post)),
         };
     }
-
+    @Get('/unSeenSynchronize')
+    @UseGuards(AuthGuard)
+    @Roles(Role.STUDENT, Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.OK)
+    async unSeenSychronize(@Req() req: Request) {
+        const userId = req?.user?.sub;
+        await this.postService.syncSeenPosts(userId!);
+    }
     /**
      *
      * Retrieve a single post by its identifier. If the post does not exist

@@ -15,7 +15,6 @@ export class PendingSeen extends Document {
     @Prop({
         type: Date,
         default: Date.now,
-        index: { expires: '48h' }, // Supprime automatiquement l'entrée après 48h
     })
     createdAt: Date;
 }

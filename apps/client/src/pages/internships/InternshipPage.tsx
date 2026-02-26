@@ -26,7 +26,7 @@ export function InternshipPage() {
 
     const access = userStore((s) => s.access);
 
-     // Vérifier si un message d'import réussi existe dans le localStorage
+    // Vérifier si un message d'import réussi existe dans le localStorage
     useEffect(() => {
         const importMessage = localStorage.getItem('import_success_message');
         if (importMessage) {
@@ -34,7 +34,7 @@ export function InternshipPage() {
             localStorage.removeItem('import_success_message');
         }
     }, []);
-
+    useEffect(() => {});
     return (
         <div className="flex flex-col h-screen">
             <Navbar minimal={!access} />

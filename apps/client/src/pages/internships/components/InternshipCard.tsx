@@ -3,17 +3,18 @@ import { useInternshipStore } from '../../../stores/useInternshipStore';
 import type { Internship } from '../../../types/internship.types';
 import Card from '../../common/ui/card/Card';
 import { useMutation } from '@tanstack/react-query';
+import { UseAuthFetch } from '../../../hooks/useAuthFetch';
 
 const InternshipCard: React.FC<{ internship: Internship; isSelected: boolean }> = ({ internship, isSelected }) => {
     const { setSelectedInternshipId } = useInternshipStore();
 
     const companyName = internship.company?.name || 'Entreprise inconnue';
     const API_URL = import.meta.env.VITE_API_URL;
+    const authFetch = UseAuthFetch();
     const mutation = useMutation({
         mutationFn: async (id: string) => {
-            await fetch(`${API_URL}/api/posts/saw/${id}`, {
+            await authFetch(`${API_URL}/api/posts/saw/${id}`, {
                 method: 'GET',
-                credentials: 'include',
             });
         },
         onError: (error) => {
@@ -24,9 +25,9 @@ const InternshipCard: React.FC<{ internship: Internship; isSelected: boolean }> 
         },
     });
     const companyLogo = internship.company?.logoUrl;
-    const handleClick = (id: string) => {
+    const handleClick = async (id: string) => {
         setSelectedInternshipId(id);
-        mutation.mutate(id);
+        await mutation.mutateAsync(id);
     };
     return (
         <Card
