@@ -124,7 +124,7 @@ export class CompanyService {
     }
 
     /**
-     * Creates a new company in the database with it's associated forum.
+     * Creates a new company in the database.
      *
      * The password provided in the DTO will be automatically hashed by the User schema
      * pre-save hook before storage. Email and SIRET number are set during creation
@@ -147,8 +147,7 @@ export class CompanyService {
      * ```
      */
     async create(dto: CreateCompanyDto): Promise<void> {
-        const company = await this.companyModel.create({ ...dto });
-        await this.forumService.create(company._id);
+        await this.companyModel.create({ ...dto });
         return;
     }
 
@@ -184,6 +183,8 @@ export class CompanyService {
         const company = await this.companyModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
 
         if (company) {
+            const wasValid = company.isValid ?? false;
+
             // Validate that all provided post IDs exist
             for (const postId of dto.posts ?? []) {
                 let post: Post | null | undefined = undefined;
@@ -199,6 +200,14 @@ export class CompanyService {
             Object.assign(company, dto);
             // keep previous behavior: trigger pre-save hooks, but skip full validation to avoid discriminator issues
             await company.save({ validateBeforeSave: false });
+
+            if (!wasValid && company.isValid === true) {
+                const existingForum = await this.forumService.findOneByCompanyId(company._id.toString());
+                if (!existingForum) {
+                    await this.forumService.create(company._id);
+                }
+            }
+
             return;
         }
 
