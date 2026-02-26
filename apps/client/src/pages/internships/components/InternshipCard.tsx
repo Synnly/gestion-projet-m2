@@ -3,7 +3,7 @@ import { useInternshipStore } from '../../../stores/useInternshipStore';
 import type { Internship } from '../../../types/internship.types';
 import Card from '../../common/ui/card/Card';
 import type { ApplicationCount } from '../../../types/application.types';
-import { Users } from 'lucide-react';
+import { Check, Users } from 'lucide-react';
 
 const ApplicationCountBadge: React.FC<{ counts: ApplicationCount }> = ({ counts }) => {
     const allRead = counts.unread === 0;
@@ -16,7 +16,7 @@ const ApplicationCountBadge: React.FC<{ counts: ApplicationCount }> = ({ counts 
             </span>
 
             {allRead ? (
-                <span className="text-success/80 font-medium">✓</span>
+                <Check size={11} />
             ) : (
                 <>
                     <span className="text-base-content/30">·</span>
