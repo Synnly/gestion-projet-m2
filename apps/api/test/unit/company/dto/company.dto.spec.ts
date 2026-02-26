@@ -13,11 +13,7 @@ describe('CompanyDto', () => {
                 nafCode: '6202A',
                 structureType: StructureType.PrivateCompany,
                 legalStatus: LegalStatus.SARL,
-                streetNumber: '10',
-                streetName: 'Rue de Test',
-                postalCode: '75001',
-                city: 'Paris',
-                country: 'France',
+                address: '10 Rue de Test, 75001 Paris, France',
                 isValid: true,
             };
 
@@ -30,11 +26,7 @@ describe('CompanyDto', () => {
             expect(dto.nafCode).toBe('6202A');
             expect(dto.structureType).toBe(StructureType.PrivateCompany);
             expect(dto.legalStatus).toBe(LegalStatus.SARL);
-            expect(dto.streetNumber).toBe('10');
-            expect(dto.streetName).toBe('Rue de Test');
-            expect(dto.postalCode).toBe('75001');
-            expect(dto.city).toBe('Paris');
-            expect(dto.country).toBe('France');
+            expect(dto.address).toBe('10 Rue de Test, 75001 Paris, France');
             expect(dto.isValid).toBe(true);
         });
 
@@ -54,11 +46,7 @@ describe('CompanyDto', () => {
             expect(dto.nafCode).toBeUndefined();
             expect(dto.structureType).toBeUndefined();
             expect(dto.legalStatus).toBeUndefined();
-            expect(dto.streetNumber).toBeUndefined();
-            expect(dto.streetName).toBeUndefined();
-            expect(dto.postalCode).toBeUndefined();
-            expect(dto.city).toBeUndefined();
-            expect(dto.country).toBeUndefined();
+            expect(dto.address).toBeUndefined();
             expect(dto.isValid).toBeUndefined();
         });
 
@@ -89,11 +77,7 @@ describe('CompanyDto', () => {
                 nafCode: null as any,
                 structureType: null as any,
                 legalStatus: null as any,
-                streetNumber: null as any,
-                streetName: null as any,
-                postalCode: null as any,
-                city: null as any,
-                country: null as any,
+                address: null as any,
                 isValid: null as any,
             };
 
@@ -106,11 +90,7 @@ describe('CompanyDto', () => {
             expect(dto.nafCode).toBeNull();
             expect(dto.structureType).toBeNull();
             expect(dto.legalStatus).toBeNull();
-            expect(dto.streetNumber).toBeNull();
-            expect(dto.streetName).toBeNull();
-            expect(dto.postalCode).toBeNull();
-            expect(dto.city).toBeNull();
-            expect(dto.country).toBeNull();
+            expect(dto.address).toBeNull();
             expect(dto.isValid).toBeNull();
         });
 
@@ -121,11 +101,7 @@ describe('CompanyDto', () => {
                 name: '',
                 siretNumber: '',
                 nafCode: '',
-                streetNumber: '',
-                streetName: '',
-                postalCode: '',
-                city: '',
-                country: '',
+                address: '',
             };
 
             const dto = new CompanyDto(data);
@@ -135,11 +111,7 @@ describe('CompanyDto', () => {
             expect(dto.name).toBe('');
             expect(dto.siretNumber).toBe('');
             expect(dto.nafCode).toBe('');
-            expect(dto.streetNumber).toBe('');
-            expect(dto.streetName).toBe('');
-            expect(dto.postalCode).toBe('');
-            expect(dto.city).toBe('');
-            expect(dto.country).toBe('');
+            expect(dto.address).toBe('');
         });
 
         it('should create instance successfully when constructor is called with each StructureType value', () => {
@@ -196,24 +168,6 @@ describe('CompanyDto', () => {
             const dto = new CompanyDto(data);
 
             expect(dto.isValid).toBe(true);
-        });
-
-        it('should create instance successfully when constructor is called with partial address data', () => {
-            const data: any = {
-                _id: new Types.ObjectId('507f1f77bcf86cd799439011'),
-                email: 'test@example.com',
-                name: 'Test Company',
-                city: 'Paris',
-                country: 'France',
-            };
-
-            const dto = new CompanyDto(data);
-
-            expect(dto.city).toBe('Paris');
-            expect(dto.country).toBe('France');
-            expect(dto.streetNumber).toBeUndefined();
-            expect(dto.streetName).toBeUndefined();
-            expect(dto.postalCode).toBeUndefined();
         });
 
         it('should create instance successfully when constructor is called with extra properties', () => {

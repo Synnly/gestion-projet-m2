@@ -7,6 +7,7 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     const seedService = app.get(SeedService);
     try {
+        console.log('Running database seeding...');
         await seedService.run();
     } catch (error) {
         console.error('Seeding failed during bootstrap:', error);

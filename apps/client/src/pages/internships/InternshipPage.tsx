@@ -70,7 +70,7 @@ export function InternshipPage() {
                                 <InternshipList />
                             </ToastProvider>
                         </div>
-
+                    
                         {selectedInternship ? (
                             <div className="flex flex-1 h-full overflow-y-auto">
                                 <InternshipDetail internship={selectedInternship} />

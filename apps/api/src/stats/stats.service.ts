@@ -215,7 +215,7 @@ export class StatsService {
             .find({ isVisible: true })
             .sort({ createdAt: -1 })
             .limit(limit)
-            .populate('company', 'name email logo city country')
+            .populate('company', 'name email logo address')
             .exec();
     }
 }

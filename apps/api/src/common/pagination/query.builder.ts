@@ -27,7 +27,7 @@ export class QueryBuilder<T> {
     constructor(
         private readonly params: Partial<Record<keyof T | string, any>>,
         private readonly geoService?: GeoService,
-    ) {}
+    ) { }
 
     /**
      * Build a Mongoose filter object based on the provided params.
