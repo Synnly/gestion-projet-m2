@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import InternshipCard from './InternshipCard';
 
 import InternshipPagination from './InternshipPagination';
