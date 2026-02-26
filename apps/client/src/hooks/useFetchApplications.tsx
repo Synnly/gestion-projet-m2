@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useApplicationStore, type ApplicationResponse } from '../stores/useApplicationStore';
 import { userStore } from '../stores/userStore';
 import { UseAuthFetch } from './useAuthFetch';
+import type { ApplicationCount } from '../types/application.types';
 
 const API_URL = import.meta.env.VITE_APIURL;
 
@@ -135,3 +136,34 @@ export const useFetchFileSignedUrl = (applicationId: string | undefined, type: '
         gcTime: 1000 * 60 * 60, // Keep in cache for 1h
     });
 };
+
+
+/**
+ * Fetch application counts (total + unread) for all posts of a company.
+ * @param companyId The company ID
+ */
+export async function fetchApplicationCounts(companyId: string): Promise<ApplicationCount[]> {
+    const authFetch = UseAuthFetch();
+    const res = await authFetch(`${API_URL}/api/company/${companyId}/posts/application-counts`, {
+        method: 'GET',
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Impossible de récupérer les comptages de candidatures');
+    }
+    return res.json();
+}
+
+/**
+ * React Query hook that returns application counts (total + unread) for all
+ * posts of the currently authenticated company.
+ */
+export function useApplicationCounts(companyId: string | undefined) {
+    return useQuery<ApplicationCount[], Error>({
+        queryKey: ['applicationCounts', companyId],
+        queryFn: () => fetchApplicationCounts(companyId as string),
+        enabled: !!companyId,
+        staleTime: 2 * 60 * 1000,
+        refetchOnWindowFocus: true,
+    });
+}

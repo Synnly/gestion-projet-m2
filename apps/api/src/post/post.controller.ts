@@ -15,6 +15,7 @@ import {
     Delete,
 } from '@nestjs/common';
 import { PostService } from './post.service';
+import { ApplicationService } from '../application/application.service';
 import { PostDto } from './dto/post.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { AuthGuard } from '../auth/auth.guard';
@@ -28,13 +29,17 @@ import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
 import { plainToInstance } from 'class-transformer';
 import { UpdatePostDto } from './dto/updatePost';
 import type { Request } from 'express';
+import { Types } from 'mongoose';
 
 /**
  * Controller responsible for handling post-related endpoints.
  */
 @Controller('/api/company/:companyId/posts')
 export class PostController {
-    constructor(private readonly postService: PostService) {}
+    constructor(
+        private readonly postService: PostService,
+        private readonly applicationService: ApplicationService,
+    ) {}
 
     /**
      * Returns a paginated list of posts the student applied to.
@@ -88,6 +93,23 @@ export class PostController {
             ...posts,
             data: posts.data.map((post) => plainToInstance(PostDto, post)),
         };
+    }
+
+    /**
+     * Returns the total and unread (Pending) application counts for each post of a company.
+     * This is a single aggregation query for efficiency.
+     *
+     * @param companyId - Company id (MongoDB ObjectId)
+     * @returns An array of { postId, total, unread } objects
+     */
+    @Get('/application-counts')
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.OK)
+    async getApplicationCounts(
+        @Param('companyId', ParseObjectIdPipe) companyId: Types.ObjectId,
+    ): Promise<{ postId: string; total: number; unread: number }[]> {
+        return this.applicationService.getApplicationCountsByCompany(companyId);
     }
 
     /**
