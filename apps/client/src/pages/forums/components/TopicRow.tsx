@@ -10,6 +10,10 @@ type Props = {
 
 export const TopicRow = ({ topic, companyId, forumId }: Props) => {
     const nav = useNavigate();
+    const authorLabel = topic.author?.firstName && topic.author?.lastName
+        ? `${topic.author.firstName} ${topic.author.lastName}`
+        : topic.author?.name || 'Personne inconnue';
+
     const navigateToTopic = () => {
         const link = `/forums/${companyId || 'general'}/topics/${forumId}/${topic._id}`;
         nav(link);
@@ -22,11 +26,7 @@ export const TopicRow = ({ topic, companyId, forumId }: Props) => {
             >
                 <td className="w-px whitespace-nowrap font-medium">{topic.title}</td>
                 <td className="truncate max-w-100">{topic.description}</td>
-                <td className="w-px whitespace-nowrap">
-                    {topic.author.firstName && topic.author.lastName
-                        ? topic.author.firstName + ' ' + topic.author.lastName
-                        : topic.author.name}
-                </td>
+                <td className="w-px whitespace-nowrap">{authorLabel}</td>
 
                 <td className="w-px whitespace-nowrap text-right">
                     {formatNumber(topic.messages.length) === 'undefined' ? 0 : formatNumber(topic.messages.length)}{' '}

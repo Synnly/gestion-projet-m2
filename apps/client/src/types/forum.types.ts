@@ -29,7 +29,7 @@ export interface Topic {
     _id: string;
     title: string;
     description: string;
-    author: UserForum;
+    author?: UserForum | null;
     messages: string[];
 }
 

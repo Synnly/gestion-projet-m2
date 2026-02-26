@@ -8,12 +8,14 @@ type replyMessageProps = {
 };
 export const ReplyMessage = ({ replyMessage }: replyMessageProps) => {
     // Vérifier si l'auteur du message cité est banni
-    const isAuthorBanned = !!replyMessage.authorId.ban;
+    const isAuthorBanned = !!replyMessage.authorId?.ban;
     
     // Vérifier si le message cité est supprimé
     const isMessageDeleted = !!replyMessage.deletedAt;
     
-    const authorName = isAuthorBanned
+        const authorName = !replyMessage.authorId
+                ? 'Personne inconnue'
+                : isAuthorBanned
         ? '[utilisateur supprimé]'
         : 'name' in replyMessage.authorId && replyMessage.authorId.name
           ? replyMessage.authorId.name

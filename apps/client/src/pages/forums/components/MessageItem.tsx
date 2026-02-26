@@ -25,15 +25,16 @@ export const MessageItem = ({
 }) => {
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const { authorId } = message;
+    const authorRole: Role = authorId?.role ?? 'STUDENT';
 
     // Check if the author is banned
-    const isAuthorBanned = !!authorId.ban;
+    const isAuthorBanned = !!authorId?.ban;
     
     // Check if the message is deleted
     const isMessageDeleted = !!message.deletedAt;
     
     // Check if it's the user's own message
-    const isOwnMessage = currentUserId && authorId._id === currentUserId;
+    const isOwnMessage = !!currentUserId && !!authorId?._id && authorId?._id === currentUserId;
     
     // Check if the message has already been reported by the user
     const isAlreadyReported = reportedMessageIds?.has(message._id);
@@ -45,9 +46,11 @@ export const MessageItem = ({
     // - The message has not already been reported by the user
     const showReportButton = !isMessageDeleted && !isAuthorBanned && !isOwnMessage && !isAlreadyReported;
     
-    const displayName = isAuthorBanned
-        ? { name: '[utilisateur supprimé]' }
-        : authorId.role === 'ADMIN'
+        const displayName = !authorId
+                ? { name: 'Personne inconnue' }
+                : isAuthorBanned
+                    ? { name: '[utilisateur supprimé]' }
+                    : authorRole === 'ADMIN'
           ? { name: 'Administrateur' }
           : 'firstName' in authorId
             ? { firstName: authorId.firstName, lastName: authorId.lastName }
@@ -67,10 +70,10 @@ export const MessageItem = ({
         >
             <div className="flex items-start gap-3 h-full">
                 <div className="h-10 w-10 rounded-full shrink-0 overflow-hidden">
-                    {message.authorId.logo ? (
+                    {authorId?.logo ? (
                         <div className="h-full w-full flex items-center justify-center  font-bold text-primary-content ">
                             <img
-                                src={message.authorId.logo}
+                                src={authorId.logo}
                                 alt={displayName.name || `${displayName.firstName} ${displayName.lastName}`}
                             />
                         </div>
@@ -124,7 +127,7 @@ export const MessageItem = ({
                         style={{ fontFamily: 'inherit' }}
                     />
                     <div className="flex flex-row gap-2 p-2 justify-between items-center">
-                        {!isAuthorBanned && !isMessageDeleted && (
+                        {!isAuthorBanned && !isMessageDeleted && !!authorId && (
                             <button
                                 className="btn btn-soft btn-sm"
                                 onClick={() =>
@@ -139,8 +142,8 @@ export const MessageItem = ({
                                 <span className="text-lg leading-none mt-1">"</span> Citer
                             </button>
                         )}
-                        <span className={cn('badge ml-auto', variant[`${message.authorId.role}`].style)}>
-                            {variant[`${message.authorId.role}`].tag}
+                        <span className={cn('badge ml-auto', variant[authorRole].style)}>
+                            {variant[authorRole].tag}
                         </span>
                     </div>
                 </div>
