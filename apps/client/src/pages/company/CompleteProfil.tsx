@@ -237,14 +237,19 @@ export const CompleteProfil = () => {
                             </div>
                         </div>
                     </FormSection>
-                    <FormSubmit
-                        className="btn-primary w-min self-end font-bold"
-                        title="Compléter le profile"
-                        pendingTitle="Complétion..."
-                        error={error}
-                        isError={isError}
-                        isPending={isPending}
-                    />
+                    <div className="w-full flex items-center justify-between">
+                        <button type="button" className="btn btn-outline btn-error" onClick={() => navigate('/logout')}>
+                            Se déconnecter
+                        </button>
+                        <FormSubmit
+                            className="btn-primary w-min font-bold"
+                            title="Compléter le profile"
+                            pendingTitle="Complétion..."
+                            error={error}
+                            isError={isError}
+                            isPending={isPending}
+                        />
+                    </div>
                 </form>
             </div>
         </div>
