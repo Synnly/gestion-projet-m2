@@ -31,6 +31,7 @@ describe('CompanyService', () => {
         create: jest.fn(),
         findOneAndUpdate: jest.fn(),
         updateOne: jest.fn(),
+        updateMany: jest.fn(),
         deleteMany: jest.fn(),
         db: {
             startSession: jest.fn(),

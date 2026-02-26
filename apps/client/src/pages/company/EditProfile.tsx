@@ -26,6 +26,7 @@ import { CustomSelect } from '../common/inputs/select/select';
 import { GenericAutocomplete } from '../common/inputs/textInput/genericAutoComplete';
 import type { GeoapifyFeature } from '../../apis/autoCompleteAddress';
 import { FormSubmit } from '../common/form/FormSubmit';
+import { FormInputEdit } from '../common/form/FormInputEdit';
 import { addressFetcher, getAddressLabel } from '../../apis/autoCompleteAddress';
 export function EditCompanyProfile() {
     const navigate = useNavigate();
@@ -63,6 +64,7 @@ export function EditCompanyProfile() {
         register,
         control,
         handleSubmit,
+        clearErrors,
         formState: { errors },
         reset,
     } = useForm<editProfilFormType>({
