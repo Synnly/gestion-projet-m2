@@ -66,6 +66,15 @@ export class CompanyDto {
     description?: string;
 
     @Expose()
+    telephone?: string;
+
+    @Expose()
+    website?: string;
+
+    @Expose()
+    emailContact?: string;
+
+    @Expose()
     createdAt: Date;
 
     @Expose()

@@ -868,7 +868,65 @@ export const editProfilForm = z.object({
         (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
         z.enum(Object.values(LegalStatus), { message: 'Statut légal invalide' }).nullable(),
     ),
-
+    streetNumber: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z
+            .string()
+            .min(1, { message: 'Le numéro de rue est requis' })
+            .regex(/^\d+[A-Za-z]?(?:[-/]\d+[A-Za-z]?)?$/, {
+                message: 'Numéro de rue invalide (ex: 12, 12B, 12-14)',
+            })
+            .nullable(),
+    ),
+    streetName: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z
+            .string()
+            .min(1, { message: 'Le nom de rue est requis' })
+            .max(100, { message: 'Le nom de rue est trop long' })
+            .regex(/^[a-zA-ZÀ-ÖØ-öø-ÿ0-9' \-]+$/, {
+                message:
+                    'Le nom de rue contient des caractères invalides (lettres, chiffres, espaces, tirets et apostrophes autorisés)',
+            })
+            .nullable(),
+    ),
+    postalCode: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z
+            .string()
+            .regex(/^[0-9]{5}$/, { message: 'Le code postal doit contenir 5 chiffres' })
+            .nullable(),
+    ),
+    city: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.string().nullable(),
+    ),
+    country: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.string().max(100, { message: 'Le nom du pays est trop long' }).nullable(),
+    ),
+    description: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.string().max(1000, { message: 'La description est trop longue (1000 caractères max)' }).nullable(),
+    ),
+    telephone: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z
+            .string()
+            .max(30, { message: 'Le numéro de téléphone est trop long' })
+            .regex(/^[+]?[-()\d\s.]{6,30}$/, {
+                message: 'Numéro de téléphone invalide',
+            })
+            .nullable(),
+    ),
+    website: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.string().url({ message: "L'URL du site web est invalide" }).nullable(),
+    ),
+    emailContact: z.preprocess(
+        (val) => (typeof val === 'string' ? (val.trim() === '' ? null : val.trim()) : null),
+        z.string().email({ message: "L'email de contact est invalide" }).nullable(),
+    ),
     logo: z
         .custom<File | null | undefined>()
         .refine(

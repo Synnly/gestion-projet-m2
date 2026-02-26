@@ -83,7 +83,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
         setUpdatingStatus(applicationId);
 
         try {
-            const res = await authFetch(`${API_URL}/api/application/${applicationId}`, {
+            await authFetch(`${API_URL}/api/application/${applicationId}`, {
                 method: 'PUT',
                 data: JSON.stringify({ status: newStatus }),
             });
