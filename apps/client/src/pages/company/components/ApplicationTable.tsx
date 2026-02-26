@@ -43,6 +43,12 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
         applicationId: string;
         newStatus: ApplicationStatus;
         studentName: string;
+        studentEmail: string;
+    } | null>(null);
+    const [contactReminderModal, setContactReminderModal] = useState<{
+        open: boolean;
+        studentName: string;
+        studentEmail: string;
     } | null>(null);
 
     const postId = useParams().id as string;
@@ -70,8 +76,13 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
         setActiveTab(activeTab === status ? null : status);
     }
 
-    function openConfirmModal(applicationId: string, newStatus: ApplicationStatus, studentName: string) {
-        setConfirmModal({ open: true, applicationId, newStatus, studentName });
+    function openConfirmModal(
+        applicationId: string,
+        newStatus: ApplicationStatus,
+        studentName: string,
+        studentEmail: string,
+    ) {
+        setConfirmModal({ open: true, applicationId, newStatus, studentName, studentEmail });
     }
 
     function closeConfirmModal() {
@@ -90,6 +101,13 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
 
             // Invalidate all application queries for this post to refresh all tabs
             await queryClient.invalidateQueries({ queryKey: ['applications', postId] });
+            if (newStatus === ApplicationStatusEnum.ACCEPTED && confirmModal) {
+                setContactReminderModal({
+                    open: true,
+                    studentName: confirmModal.studentName,
+                    studentEmail: confirmModal.studentEmail,
+                });
+            }
             closeConfirmModal();
         } catch (err) {
             console.error('Erreur lors de la mise à jour du statut:', err);
@@ -243,6 +261,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                                                                 app._id,
                                                                                 ApplicationStatusEnum.ACCEPTED,
                                                                                 `${app.student.firstName} ${app.student.lastName}`,
+                                                                                app.student.email,
                                                                             )
                                                                         }
                                                                         disabled={updatingStatus === app._id}
@@ -258,6 +277,7 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                                                                 app._id,
                                                                                 ApplicationStatusEnum.REJECTED,
                                                                                 `${app.student.firstName} ${app.student.lastName}`,
+                                                                                app.student.email,
                                                                             )
                                                                         }
                                                                         disabled={updatingStatus === app._id}
@@ -345,6 +365,26 @@ export const ApplicationTable = ({ status, title, activeTab, setActiveTab }: Pro
                                     ) : (
                                         'Confirmer'
                                     )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {contactReminderModal && (
+                    <div className="modal modal-open">
+                        <div className="modal-box" role="dialog" aria-modal="true" aria-labelledby="contact-modal-title">
+                            <h3 id="contact-modal-title" className="font-bold text-lg mb-4">
+                                Candidature confirmée
+                            </h3>
+                            <p className="py-2">
+                                N'oubliez pas de prendre contact avec{' '}
+                                <span className="font-semibold">{contactReminderModal.studentName}</span> par email.
+                            </p>
+                            <p className="text-sm text-base-content/80 break-all">{contactReminderModal.studentEmail}</p>
+                            <div className="modal-action">
+                                <button className="btn btn-primary" onClick={() => setContactReminderModal(null)}>
+                                    Fermer
                                 </button>
                             </div>
                         </div>
