@@ -383,11 +383,11 @@ export class CompanyService {
      * ```
      */
     async updatePublicProfile(companyId: string, dto: UpdateCompanyDto): Promise<void> {
-        const result = await this.companyModel.findOne({ _id: companyId });
+        const result = await this.companyModel.findOne({ _id: companyId, deletedAt: { $exists: false } });
         if (!result) {
             throw new NotFoundException('Company not found');
         }
-        await this.companyModel.updateOne({ _id: companyId }, { $set: dto }).exec();
+        await this.companyModel.updateOne({ _id: companyId, deletedAt: { $exists: false } }, { $set: dto }).exec();
     }
 
     /**

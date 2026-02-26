@@ -49,6 +49,7 @@ import { PublicStudentProfile } from './pages/student/PublicStudentProfile';
 import { StudentProfile } from './pages/student/StudentProfile';
 import { AccountRestorePage } from './pages/auth/AccountRestorePage';
 import { NotFound } from './pages/common/status/NotFound';
+import { PublicCompanyProfile } from './pages/company/PublicCompanyProfile';
 
 const VITE_API = import.meta.env.VITE_APIURL;
 
@@ -180,6 +181,11 @@ function App() {
                             path: 'student/public/:studentId',
                             element: <PublicStudentProfile />,
                             handle: { title: 'Profil étudiant' },
+                        },
+                        {
+                            path: 'company/public/:companyId',
+                            element: <PublicCompanyProfile />,
+                            handle: { title: 'Profil entreprise' },
                         },
                         {
                             path: 'internship',

@@ -277,11 +277,13 @@ export class CompanyController {
      * @returns The public profile data of the company
      * @throws {NotFoundException} if no company exists with the given ID
      */
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.STUDENT, Role.COMPANY, Role.ADMIN)
     @Get('/:companyId/public-profile')
     @HttpCode(HttpStatus.OK)
     async getPublicProfile(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyDto> {
         const company = await this.companyService.findOne(companyId);
+        if (!company) throw new NotFoundException(`Company with id ${companyId} not found`);
         return plainToInstance(CompanyDto, company, {
             excludeExtraneousValues: true,
         });

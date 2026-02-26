@@ -76,7 +76,15 @@ export default function InternshipDetailPage() {
                                 <div className="card bg-base-100 rounded-xl p-6">
                                     <h1 className="text-3xl font-extrabold mb-4">{internship.title}</h1>
                                     <p className="text-sm text-base-content/70 mb-6">
-                                        {internship.company.name} • {internship.adress}
+                                        <Link
+                                            to={`/company/public/${internship.company._id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="link link-hover"
+                                        >
+                                            {internship.company.name}
+                                        </Link>{' '}
+                                        • {internship.adress}
                                     </p>
                                     <InternshipDetail internship={internship} />
                                 </div>

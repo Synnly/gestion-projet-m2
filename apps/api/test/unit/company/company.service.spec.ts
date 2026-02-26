@@ -31,6 +31,7 @@ describe('CompanyService', () => {
         create: jest.fn(),
         findOneAndUpdate: jest.fn(),
         updateOne: jest.fn(),
+        updateMany: jest.fn(),
         deleteMany: jest.fn(),
         db: {
             startSession: jest.fn(),
@@ -1217,7 +1218,7 @@ describe('CompanyService', () => {
             await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
 
             expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011' },
+                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
                 { $set: updateDto },
             );
         });
@@ -1248,7 +1249,7 @@ describe('CompanyService', () => {
             await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
 
             expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011' },
+                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
                 { $set: updateDto },
             );
         });
@@ -1269,7 +1270,7 @@ describe('CompanyService', () => {
             await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
 
             expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011' },
+                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
                 { $set: updateDto },
             );
         });
@@ -1312,7 +1313,7 @@ describe('CompanyService', () => {
             await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
 
             expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011' },
+                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
                 { $set: updateDto },
             );
         });
