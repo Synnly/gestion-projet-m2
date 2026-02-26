@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useInternshipStore } from '../stores/useInternshipStore';
 import type { PaginationResult, Internship } from '../types/internship.types';
 import { fetchPublicSignedUrl } from './useBlob';
@@ -112,6 +112,7 @@ export function useFetchInternships() {
     const filters = useInternshipStore((state) => state.filters);
     const setInternships = useInternshipStore((state) => state.setInternships);
     const showMyApplicationsOnly = useInternshipStore((state) => state.showMyApplicationsOnly);
+    const sync_last_post = useRef(false);
     const query = useQuery<PaginationResult<Internship>, Error>({
         queryKey: ['internships', filters],
 
@@ -131,7 +132,6 @@ export function useFetchInternships() {
             const validPosts = paginationResult.data.filter((p: any) => p.company && typeof p.company === 'object');
             const removedCount = originalLength - validPosts.length;
             if (removedCount > 0) {
-                
                 paginationResult.data = validPosts;
             }
 
@@ -154,7 +154,13 @@ export function useFetchInternships() {
                 /** 6) Apply logos to posts */
                 applyLogosToPosts(paginationResult.data, profiles, signedMap);
             }
-
+            if (!sync_last_post.current) {
+                localStorage.setItem(
+                    'last_post_sync',
+                    paginationResult.data.length > 0 ? paginationResult.data[0].createdAt : null,
+                );
+                sync_last_post.current = true;
+            }
             return paginationResult;
         },
 
