@@ -215,6 +215,33 @@ export class CompanyController {
     }
 
     /**
+     * Restores a soft-deleted company account
+     * Requires authentication and COMPANY or ADMIN role
+     * Can only restore within 30 days of deletion
+     * @param companyId The company identifier to restore
+     */
+    @Post('/:companyId/restore')
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async restore(@Param('companyId', ParseObjectIdPipe) companyId: string) {
+        await this.companyService.restore(companyId);
+    }
+
+    /**
+     * Checks the deletion status of a company account
+     * Returns information about pending deletion and days remaining
+     * Requires authentication and COMPANY or ADMIN role
+     * @param companyId The company identifier to check
+     */
+    @Get('/:companyId/deletion-status')
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.OK)
+    async getDeletionStatus(@Param('companyId', ParseObjectIdPipe) companyId: string) {
+        return this.companyService.checkDeletionStatus(companyId);
+    }
+    /**
      * Soft deletes all companies.
      */
     @Delete('')

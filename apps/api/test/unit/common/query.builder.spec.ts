@@ -14,12 +14,18 @@ describe('QueryBuilder', () => {
             const qb = new QueryBuilder(params as any, mockGeoService as any);
             const filter = await qb.build();
 
-            expect(filter).toEqual({ isVisible: true });
+            expect(filter).toEqual({
+                isVisible: true,
+                deletedAt: { $exists: false },
+            });
         });
 
         it('returns filter with isVisible true when called with empty params', async () => {
             const qb = new QueryBuilder({} as any, mockGeoService as any);
-            expect(await qb.build()).toEqual({ isVisible: true });
+            expect(await qb.build()).toEqual({
+                isVisible: true,
+                deletedAt: { $exists: false },
+            });
         });
 
         it('builds search filter (text preferred, regex fallback) and sets isVisible', async () => {

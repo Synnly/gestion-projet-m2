@@ -105,6 +105,7 @@ export class PostService {
         const companyPopulate = {
             path: 'company',
             select: '_id name siretNumber nafCode structureType legalStatus address logo location',
+            match: { deletedAt: { $exists: false } },
         };
 
         // Ensure sensible defaults if the DTO omitted values
@@ -142,6 +143,7 @@ export class PostService {
         const companyPopulate = {
             path: 'company',
             select: '_id name siretNumber nafCode structureType legalStatus address logo location',
+            match: { deletedAt: { $exists: false } },
         };
 
         return this.paginationService.paginate(
@@ -166,7 +168,9 @@ export class PostService {
      */
     async update(dto: UpdatePostDto, companyId: string, postId: string): Promise<Post> {
         // First, retrieve the current post to check its isVisible status
-        const currentPost = await this.postModel.findOne({ _id: postId, company: new Types.ObjectId(companyId) }).exec();
+        const currentPost = await this.postModel
+            .findOne({ _id: postId, company: new Types.ObjectId(companyId) })
+            .exec();
 
         if (!currentPost) {
             throw new NotFoundException('Post not found or does not belong to this company');

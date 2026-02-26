@@ -95,6 +95,39 @@ export const rejectCompany = async (
     }
 };
 
+export const deleteCompanyAccount = async (
+    authFetch: ReturnType<typeof UseAuthFetch>,
+    companyId: string,
+): Promise<void> => {
+    const response = await authFetch(`${API_URL}/api/companies/${companyId}`, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        throw new Error('Erreur lors de la suppression du compte');
+    }
+};
+
+export const restoreCompanyAccount = async (
+    authFetch: ReturnType<typeof UseAuthFetch>,
+    companyId: string,
+): Promise<void> => {
+    const response = await authFetch(`${API_URL}/api/companies/${companyId}/restore`, {
+        method: 'POST',
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la restauration du compte');
+    }
+};
+
+export interface DeletionStatus {
+    isDeleted: boolean;
+    daysRemaining?: number;
+    deletedAt?: string;
+}
+
 export const fetchCompanies = async (
     authFetch: ReturnType<typeof UseAuthFetch>,
     page: number = 1,
@@ -111,6 +144,21 @@ export const fetchCompanies = async (
 
     if (!response.ok) {
         throw new Error('Erreur lors du chargement des entreprises');
+    }
+
+    return response.json();
+};
+
+export const checkDeletionStatus = async (
+    authFetch: ReturnType<typeof UseAuthFetch>,
+    companyId: string,
+): Promise<DeletionStatus> => {
+    const response = await authFetch(`${API_URL}/api/companies/${companyId}/deletion-status`, {
+        method: 'GET',
+    });
+
+    if (!response.ok) {
+        throw new Error('Erreur lors de la vérification du statut de suppression');
     }
 
     return response.json();

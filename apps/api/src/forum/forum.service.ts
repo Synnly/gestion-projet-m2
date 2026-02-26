@@ -96,7 +96,7 @@ export class ForumService {
 
         const companyPopulate = {
             path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus address  logo',
+            select: '_id name siretNumber nafCode structureType legalStatus address logo',
         };
 
         const topicsPopulate = {

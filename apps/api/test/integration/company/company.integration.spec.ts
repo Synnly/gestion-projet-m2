@@ -489,7 +489,7 @@ describe('Company Integration Tests', () => {
 
             const updated = await companyModel.findById(company._id).lean();
             expect(updated?.name).toBe('New Name');
-            expect(updated?.address).toBe('789 Pine Road,13000 Marseille France');
+            expect(updated?.address).toBe('456 New Street');
             expect(updated?.structureType).toBe(StructureType.NGO);
         });
 

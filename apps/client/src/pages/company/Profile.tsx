@@ -1,15 +1,18 @@
-import { NavLink } from 'react-router';
+import { NavLink, useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { useBlob } from '../../hooks/useBlob';
 import { useGetCompanyProfile } from '../../hooks/useGetCompanyProfile';
 import { userStore } from '../../stores/userStore';
 import { Navbar } from '../common/navbar/Navbar';
+import { DeleteAccountModal } from './components/DeleteAccountModal';
+import { DeleteAccountSuccessModal } from './components/DeleteAccountSuccessModal';
 
 export function CompanyProfile() {
     // Récupérer l'ID de l'utilisateur connecté depuis le token
     const access = userStore((state) => state.access);
     const getUserInfo = userStore((state) => state.get);
     const userInfo = access ? getUserInfo(access) : null;
+    const navigate = useNavigate();
 
     // Récupérer le profil complet depuis l'API
     const { data: profile, isError, isLoading, error } = useGetCompanyProfile(userInfo?.id || '');
@@ -17,6 +20,8 @@ export function CompanyProfile() {
     // Récupérer le logo depuis MinIO
     const logoBlob = useBlob(profile?.logo ?? '');
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     useEffect(() => {
         if (!logoBlob) {
@@ -29,6 +34,16 @@ export function CompanyProfile() {
             URL.revokeObjectURL(objectUrl);
         };
     }, [logoBlob]);
+
+    const handleDeleteSuccess = () => {
+        setShowDeleteModal(false);
+        setShowSuccessModal(true);
+    };
+
+    const handleSuccessModalConfirm = () => {
+        setShowSuccessModal(false);
+        navigate('/logout');
+    };
 
     return (
         <div className="min-h-screen bg-base-100">
@@ -61,7 +76,6 @@ export function CompanyProfile() {
 
                     {profile && (
                         <div className="space-y-6">
-                            {/* Informations principales */}
                             <div className="bg-base-200 rounded-lg shadow p-6">
                                 <div className="flex items-start gap-6">
                                     {logoUrl && <img src={logoUrl} alt="Logo" className="w-24 h-24 object-contain" />}
@@ -90,7 +104,6 @@ export function CompanyProfile() {
                                 </div>
                             </div>
 
-                            {/* Informations légales */}
                             <div className="bg-base-200 rounded-lg shadow p-6">
                                 <h3 className="text-lg font-semibold text-base-900 mb-4">Informations légales</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -128,10 +141,38 @@ export function CompanyProfile() {
                                     <div className="text-base-700 space-y-1">{<p>{profile.address}</p>}</div>
                                 </div>
                             )}
+
+                            <div className="bg-opacity-10 border-2 border-error rounded-lg shadow p-6">
+                                <h3 className="text-lg font-semibold text-base-900 mb-4">Zone de danger</h3>
+                                <p className="text-base-900 mb-4">
+                                    La suppression de votre compte entraînera la suppression de toutes vos données dans
+                                    un délai de 30 jours. Vous pouvez restaurer votre compte en vous reconnectant avant
+                                    cette échéance.
+                                </p>
+                                <button
+                                    className="btn text-base-900"
+                                    onClick={() => setShowDeleteModal(true)}
+                                >
+                                    Supprimer mon compte
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
             </div>
+
+            {showDeleteModal && profile && (
+                <DeleteAccountModal
+                    companyId={profile._id}
+                    companyName={profile.name}
+                    onClose={() => setShowDeleteModal(false)}
+                    onSuccess={handleDeleteSuccess}
+                />
+            )}
+
+            {showSuccessModal && (
+                <DeleteAccountSuccessModal onConfirm={handleSuccessModalConfirm} />
+            )}
         </div>
     );
 }

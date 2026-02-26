@@ -249,11 +249,11 @@ describe('Message Integration Tests', () => {
             const message = await createMessage({ topicId: topic._id, deletedAt: null });
 
             // Create admin token
-            const adminToken = jwtService.sign({
-                sub: userId.toString(),
-                email: 'admin@example.com',
-                role: 'ADMIN',
-            });
+            const adminToken = require('jsonwebtoken').sign(
+                { sub: userId.toString(), email: 'admin@example.com', role: 'ADMIN' },
+                JWT_SECRET,
+                { expiresIn: '1h' },
+            );
 
             const res = await request(app.getHttpServer())
                 .delete(`/api/forum/message/${message._id.toString()}`)
@@ -273,11 +273,11 @@ describe('Message Integration Tests', () => {
         it('should return 404 when trying to delete non-existent message', async () => {
             const fakeMessageId = new Types.ObjectId();
 
-            const adminToken = jwtService.sign({
-                sub: userId.toString(),
-                email: 'admin@example.com',
-                role: 'ADMIN',
-            });
+            const adminToken = require('jsonwebtoken').sign(
+                { sub: userId.toString(), email: 'admin@example.com', role: 'ADMIN' },
+                JWT_SECRET,
+                { expiresIn: '1h' },
+            );
 
             await request(app.getHttpServer())
                 .delete(`/api/forum/message/${fakeMessageId.toString()}`)
@@ -286,11 +286,11 @@ describe('Message Integration Tests', () => {
         });
 
         it('should return 400 when messageId is invalid', async () => {
-            const adminToken = jwtService.sign({
-                sub: userId.toString(),
-                email: 'admin@example.com',
-                role: 'ADMIN',
-            });
+            const adminToken = require('jsonwebtoken').sign(
+                { sub: userId.toString(), email: 'admin@example.com', role: 'ADMIN' },
+                JWT_SECRET,
+                { expiresIn: '1h' },
+            );
 
             await request(app.getHttpServer())
                 .delete(`/api/forum/message/invalid-id`)

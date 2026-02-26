@@ -8,6 +8,7 @@ export type userPayload = {
     isVerified: boolean;
     isValid: boolean;
     isFirstTime?: boolean;
+    deletedAt?: string;
 };
 
 type authStore = {
@@ -29,6 +30,7 @@ type accessPayload = {
     isVerified: boolean;
     isValid: boolean;
     isFirstTime?: boolean;
+    deletedAt?: string;
 };
 
 export const userStore = create<authStore>()(
@@ -48,6 +50,7 @@ export const userStore = create<authStore>()(
                         isVerified: accessPayload.isVerified,
                         isValid: accessPayload.isValid,
                         isFirstTime: accessPayload.isFirstTime,
+                        deletedAt: accessPayload.deletedAt,
                     };
                 } catch (e) {
                     // Invalid token format or JSON parse error

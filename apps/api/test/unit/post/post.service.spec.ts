@@ -648,6 +648,7 @@ describe('PostService', () => {
                     {
                         path: 'company',
                         select: '_id name siretNumber nafCode structureType legalStatus address logo location',
+                        match: { deletedAt: { $exists: false } },
                     },
                 ],
                 expect.anything(),
