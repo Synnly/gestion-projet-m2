@@ -9,12 +9,12 @@ import { userStore } from '../../../stores/userStore';
 import { useApplicationCounts } from '../../../hooks/useFetchApplications';
 
 const InternshipList: React.FC = () => {
-    const [date, setDate] = useState(localStorage.getItem('last_post_sync'));
+    const date = useRef<string>(localStorage.getItem('last_post_sync'));
     const [sessionLocked, setSessionLocker] = useState(false);
     const hasShownSeparatorRef = useRef(false);
     hasShownSeparatorRef.current = false;
     const listRef = useRef<HTMLDivElement>(null);
-    const thresholdTime = date ? new Date(date).getTime() : null;
+    const thresholdTime = date.current ? new Date(date.current).getTime() : null;
     const { isLoading, isError, error } = useFetchInternships();
     const internships = useInternshipStore((state) => state.internships);
     const selectedInternshipId = useInternshipStore((state) => state.selectedInternshipId);
