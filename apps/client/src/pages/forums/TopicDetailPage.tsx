@@ -143,8 +143,8 @@ export default function TopicDetailPage() {
     const topicAuthorName = isTopicAuthorBanned
         ? '[utilisateur supprimé]'
         : topicAuthor?.firstName && topicAuthor?.lastName
-          ? `${topicAuthor.firstName} ${topicAuthor.lastName}`
-          : topicAuthor?.name || 'Personne inconnue';
+            ? `${topicAuthor.firstName} ${topicAuthor.lastName}`
+            : topicAuthor?.name || 'Personne inconnue';
     const topicAuthorInitial = isTopicAuthorBanned
         ? 'U'
         : topicAuthorName.charAt(0).toUpperCase();
