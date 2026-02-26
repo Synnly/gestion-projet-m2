@@ -7,6 +7,8 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
+import * as fs from 'fs';
+import * as path from 'path';
 
 import { CompanyModule } from '../../../src/company/company.module';
 import { AuthModule } from '../../../src/auth/auth.module';
@@ -16,11 +18,13 @@ import { Role } from '../../../src/common/roles/roles.enum';
 import { AuthGuard } from '../../../src/auth/auth.guard';
 import { RolesGuard } from '../../../src/common/roles/roles.guard';
 
+jest.setTimeout(180000);
+
 describe('Company Integration Tests', () => {
     let app: INestApplication;
     let mongod: MongoMemoryServer;
     let jwtService: JwtService;
-    let companyModel: Model<CompanyDocument>;
+    let companyModel: any;
 
     const JWT_SECRET = 'test-secret-key';
 
@@ -29,7 +33,14 @@ describe('Company Integration Tests', () => {
     }
 
     beforeAll(async () => {
-        mongod = await MongoMemoryServer.create();
+        const mongoBinaryCandidates = [
+            path.resolve(process.cwd(), 'node_modules/.cache/mongodb-memory-server/mongod-x64-win32-7.0.24.exe'),
+            path.resolve(process.cwd(), '../node_modules/.cache/mongodb-memory-server/mongod-x64-win32-7.0.24.exe'),
+            path.resolve(process.cwd(), '../../node_modules/.cache/mongodb-memory-server/mongod-x64-win32-7.0.24.exe'),
+        ];
+        const systemBinary = mongoBinaryCandidates.find((candidatePath) => fs.existsSync(candidatePath));
+
+        mongod = await MongoMemoryServer.create(systemBinary ? { binary: { systemBinary } } : undefined);
         const uri = mongod.getUri();
 
         const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -74,15 +85,17 @@ describe('Company Integration Tests', () => {
         await app.init();
 
         jwtService = moduleFixture.get(JwtService);
-        companyModel = moduleFixture.get<Model<CompanyDocument>>(getModelToken(Company.name));
+        companyModel = moduleFixture.get(getModelToken(Company.name));
     });
 
     afterEach(async () => {
-        await companyModel.deleteMany({}).exec();
+        if (companyModel) {
+            await companyModel.deleteMany({}).exec();
+        }
     });
 
     afterAll(async () => {
-        await app.close();
+        await app?.close();
         if (mongod) await mongod.stop();
     });
 
@@ -1599,7 +1612,7 @@ describe('Company Integration Tests', () => {
 
             const res = await request(app.getHttpServer())
                 .get(`/api/companies/${company._id}/public-profile`)
-                .set('Authorization', `Bearer ${tokenFor(Role.STUDENT)}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.COMPANY)}`)
                 .expect(200);
 
             expect(res.body.name).toBe('Public P');

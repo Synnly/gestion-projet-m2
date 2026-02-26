@@ -1020,7 +1020,7 @@ describe('CompanyService', () => {
             await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
 
             expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011' },
+                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
                 { $set: updateDto },
             );
         });
@@ -1051,7 +1051,7 @@ describe('CompanyService', () => {
             await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
 
             expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011' },
+                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
                 { $set: updateDto },
             );
         });
@@ -1073,7 +1073,7 @@ describe('CompanyService', () => {
             await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
 
             expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011' },
+                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
                 { $set: updateDto },
             );
         });
@@ -1116,7 +1116,7 @@ describe('CompanyService', () => {
             await service.updatePublicProfile('507f1f77bcf86cd799439011', updateDto);
 
             expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
-                { _id: '507f1f77bcf86cd799439011' },
+                { _id: '507f1f77bcf86cd799439011', deletedAt: { $exists: false } },
                 { $set: updateDto },
             );
         });
