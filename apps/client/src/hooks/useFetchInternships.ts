@@ -155,10 +155,11 @@ export function useFetchInternships() {
                 applyLogosToPosts(paginationResult.data, profiles, signedMap);
             }
             if (!sync_last_post.current) {
-                localStorage.setItem(
-                    'last_post_sync',
-                    paginationResult.data.length > 0 ? paginationResult.data[0].createdAt : null,
-                );
+                if (paginationResult.data.length > 0 && paginationResult.data[0]?.createdAt) {
+                    localStorage.setItem('last_post_sync', paginationResult.data[0].createdAt);
+                } else {
+                    localStorage.removeItem('last_post_sync');
+                }
                 sync_last_post.current = true;
             }
             return paginationResult;

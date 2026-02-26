@@ -106,7 +106,7 @@ const InternshipList: React.FC = () => {
                                     <div className="py-6 flex items-center">
                                         <div className="grow border-t border-gray-300"></div>
                                         <span className="mx-4 text-gray-400 text-[10px] font-bold uppercase tracking-widest">
-                                            Anciennes annonces vus
+                                            Anciennes annonces vues
                                         </span>
                                         <div className="grow border-t border-gray-300"></div>
                                     </div>
