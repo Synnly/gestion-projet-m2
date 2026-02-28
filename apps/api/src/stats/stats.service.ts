@@ -218,4 +218,120 @@ export class StatsService {
             .populate('company', 'name email logo address')
             .exec();
     }
+
+    /**
+     * Calculates application acceptance statistics by company
+     * @returns A mapping of company ID to accepted application count and acceptance rate
+     */
+    async getApplicationAcceptanceStatsByCompany(): Promise<Record<string, { count: number; rate: number }>> {
+        const accepted = await this.applicationModel.aggregate([
+            { $match: { status: 'Accepted' } },
+            {
+                $lookup: {
+                    from: 'posts',
+                    localField: 'post',
+                    foreignField: '_id',
+                    as: 'postInfo',
+                },
+            },
+            { $unwind: '$postInfo' },
+            {
+                $group: {
+                    _id: '$postInfo.company',
+                    acceptedCount: { $sum: 1 },
+                },
+            },
+            {
+                $project: {
+                    companyId: { $toString: '$_id' },
+                    acceptedCount: 1,
+                },
+            },
+        ]);
+
+        const total = await this.applicationModel.aggregate([
+            {
+                $lookup: {
+                    from: 'posts',
+                    localField: 'post',
+                    foreignField: '_id',
+                    as: 'postInfo',
+                },
+            },
+            { $unwind: '$postInfo' },
+            {
+                $group: {
+                    _id: '$postInfo.company',
+                    totalCount: { $sum: 1 },
+                },
+            },
+            {
+                $project: {
+                    companyId: { $toString: '$_id' },
+                    totalCount: 1,
+                },
+            },
+        ]);
+
+        const totalMap = new Map(total.map((item) => [item._id, item.totalCount]));
+
+        return Object.fromEntries(
+            accepted.map((item) => [
+                item.studentId,
+                {
+                    count: item.acceptedCount,
+                    rate: item.acceptedCount / (totalMap.get(item.companyId) ?? 1),
+                },
+            ]),
+        );
+    }
+
+    /**
+     * Calculates application acceptance statistics by student
+     * @returns A mapping of student ID to accepted application count and acceptance rate
+     */
+    async getApplicationAcceptanceStatsByStudent(): Promise<Record<string, { count: number; rate: number }>> {
+        const accepted = await this.applicationModel.aggregate([
+            { $match: { status: 'Accepted' } },
+            {
+                $group: {
+                    _id: '$student',
+                    acceptedCount: { $sum: 1 },
+                },
+            },
+            {
+                $project: {
+                    studentId: { $toString: '$_id' },
+                    acceptedCount: 1,
+                },
+            },
+        ]);
+
+        const total = await this.applicationModel.aggregate([
+            {
+                $group: {
+                    _id: '$student',
+                    totalCount: { $sum: 1 },
+                },
+            },
+            {
+                $project: {
+                    studentId: { $toString: '$_id' },
+                    totalCount: 1,
+                },
+            },
+        ]);
+
+        const totalMap = new Map(total.map((item) => [item.studentId, item.totalCount]));
+
+        return Object.fromEntries(
+            accepted.map((item) => [
+                item.studentId,
+                {
+                    count: item.acceptedCount,
+                    rate: item.acceptedCount / (totalMap.get(item.studentId) ?? 1),
+                },
+            ]),
+        );
+    }
 }
