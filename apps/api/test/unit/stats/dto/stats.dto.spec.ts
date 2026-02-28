@@ -18,6 +18,12 @@ describe('StatsDto', () => {
             ],
             applicationsOverTime: [],
             topCompanies: [{ name: 'TechCorp', offersCount: 5, responseRate: 80 }],
+            applicationAcceptanceByCompany: {
+                'company123': { count: 2, rate: 50 }
+            },
+            applicationAcceptanceByStudent: {
+                'student456': { count: 1, rate: 100 }
+            }
         };
 
         const dto = plainToInstance(StatsDto, plainJson);
@@ -30,5 +36,8 @@ describe('StatsDto', () => {
 
         expect(dto.topCompanies[0]).toBeInstanceOf(TopCompanyDto);
         expect(dto.topCompanies[0].responseRate).toBe(80);
+
+        expect(dto.applicationAcceptanceByCompany['company123']).toEqual({ count: 2, rate: 50 });
+        expect(dto.applicationAcceptanceByStudent['student456']).toEqual({ count: 1, rate: 100 });
     });
 });

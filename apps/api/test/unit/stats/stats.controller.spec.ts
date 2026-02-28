@@ -18,6 +18,8 @@ describe('StatsController', () => {
         applicationsByStatus: [],
         applicationsOverTime: [],
         topCompanies: [],
+        applicationAcceptanceByCompany: {},
+        applicationAcceptanceByStudent: {},
     };
 
     const mockStatsService = {
