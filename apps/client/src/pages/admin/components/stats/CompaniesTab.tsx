@@ -13,7 +13,7 @@ export function CompaniesTab({ stats }: CompaniesTabProps) {
                             <th>#</th>
                             <th>Entreprise</th>
                             <th>Offres postées</th>
-                            <th>Candidatures acceptés</th>
+                            <th>Candidatures acceptées</th>
                             <th>Taux de réponse</th>
                         </tr>
                     </thead>
