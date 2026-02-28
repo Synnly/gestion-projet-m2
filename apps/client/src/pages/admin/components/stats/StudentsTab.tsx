@@ -55,7 +55,7 @@ export function StudentsTab({ stats }: StudentsTabProps) {
 
     return (
         <div className="space-y-6">
-            <h3 className="text-xl font-bold text-base-content">Top Recruteurs</h3>
+            <h3 className="text-xl font-bold text-base-content">Stats étudiants</h3>
             <div className="overflow-x-auto">
                 <table className="table table-zebra w-full">
                     <thead>
@@ -73,7 +73,7 @@ export function StudentsTab({ stats }: StudentsTabProps) {
                                 <td>{student.studentNumber}</td>
                                 <td>{student.lastName}</td>
                                 <td>{student.firstName}</td>
-                                <td>{stats.applicationAcceptanceByStudent[student._id]?.count ?? 0}</td>
+                                <td>{stats.applicationAcceptanceByStudent[student._id]?.total ?? 0}</td>
                                 <td>
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs">

@@ -33,24 +33,24 @@ export class StatsService {
             topCompaniesRaw,
             orphanOffersRaw,
         ] = await Promise.all([
-            this.userModel.countDocuments(),
-            this.companyModel.countDocuments(),
-            this.studentModel.countDocuments(),
-            this.applicationModel.countDocuments(),
-            this.postModel.countDocuments(),
+            this.userModel.countDocuments({ deletedAt: { $exists: false } }),
+            this.companyModel.countDocuments({ deletedAt: { $exists: false } }),
+            this.studentModel.countDocuments({ deletedAt: { $exists: false } }),
+            this.applicationModel.countDocuments({ deletedAt: { $exists: false } }),
+            this.postModel.countDocuments({ deletedAt: { $exists: false } }),
 
             // --- Aggregation 1: Applications by Status (Pie Chart) ---
             this.applicationModel.aggregate([
+                { $match: { deletedAt: { $exists: false } } },
                 { $group: { _id: '$status', value: { $sum: 1 } } },
                 { $project: { name: '$_id', value: 1, _id: 0 } },
             ]),
 
             // --- Aggregation 2: Applications per Month (Bar Chart) ---
-            // Groups applications by creation month (YYYY-MM), sorts by date, and limits to the last 6 months
-
             this.applicationModel.aggregate([
                 {
                     $match: {
+                        deletedAt: { $exists: false },
                         createdAt: { $gte: sixMonthsAgo },
                     },
                 },
@@ -66,6 +66,7 @@ export class StatsService {
 
             // --- Aggregation 3: Top Companies & Response Rate ---
             this.postModel.aggregate([
+                { $match: { deletedAt: { $exists: false } } },
                 {
                     $group: {
                         _id: '$company',
@@ -74,7 +75,7 @@ export class StatsService {
                     },
                 },
                 { $sort: { offersCount: -1 } },
-                { $limit: 5 },
+                { $limit: 30 },
                 {
                     $lookup: {
                         from: 'users',
@@ -133,8 +134,8 @@ export class StatsService {
             ]),
 
             // --- Aggregation 4: Orphan Offers ---
-            // Counts posts that have zero associated applications
             this.postModel.aggregate([
+                { $match: { deletedAt: { $exists: false } } },
                 {
                     $lookup: {
                         from: 'applications',
@@ -170,7 +171,7 @@ export class StatsService {
      */
     async getPublicStats(): Promise<{ totalPosts: string; totalCompanies: string; totalStudents: string }> {
         const [totalPosts, totalCompanies, totalStudents] = await Promise.all([
-            this.postModel.countDocuments({ isVisible: true }),
+            this.postModel.countDocuments({ isVisible: true, deletedAt: { $exists: false } }),
             this.companyModel.countDocuments({ deletedAt: { $exists: false }, isValid: true }),
             this.studentModel.countDocuments({ deletedAt: { $exists: false } }),
         ]);
@@ -215,7 +216,7 @@ export class StatsService {
      */
     async getLatestPublicPosts(limit: number = 6): Promise<Post[]> {
         return this.postModel
-            .find({ isVisible: true })
+            .find({ isVisible: true, deletedAt: { $exists: false } })
             .sort({ createdAt: -1 })
             .limit(limit)
             .populate('company', 'name email logo address')
@@ -228,7 +229,7 @@ export class StatsService {
      */
     async getApplicationAcceptanceStatsByCompany(): Promise<Record<string, { count: number; rate: number }>> {
         const accepted = await this.applicationModel.aggregate([
-            { $match: { status: 'Accepted' } },
+            { $match: { status: 'Accepted', deletedAt: { $exists: false } } },
             {
                 $lookup: {
                     from: 'posts',
@@ -253,6 +254,7 @@ export class StatsService {
         ]);
 
         const total = await this.applicationModel.aggregate([
+            { $match: { deletedAt: { $exists: false } } },
             {
                 $lookup: {
                     from: 'posts',
@@ -293,9 +295,11 @@ export class StatsService {
      * Calculates application acceptance statistics by student
      * @returns A mapping of student ID to accepted application count and acceptance rate
      */
-    async getApplicationAcceptanceStatsByStudent(): Promise<Record<string, { count: number; rate: number }>> {
+    async getApplicationAcceptanceStatsByStudent(): Promise<
+        Record<string, { total: number; count: number; rate: number }>
+    > {
         const accepted = await this.applicationModel.aggregate([
-            { $match: { status: 'Accepted' } },
+            { $match: { status: 'Accepted', deletedAt: { $exists: false } } },
             {
                 $group: {
                     _id: '$student',
@@ -311,6 +315,7 @@ export class StatsService {
         ]);
 
         const total = await this.applicationModel.aggregate([
+            { $match: { deletedAt: { $exists: false } } },
             {
                 $group: {
                     _id: '$student',
@@ -326,13 +331,18 @@ export class StatsService {
         ]);
 
         const totalMap = new Map(total.map((item) => [item.studentId, item.totalCount]));
+        const acceptedMap = new Map(accepted.map((item) => [item.studentId, item.acceptedCount]));
 
         return Object.fromEntries(
-            accepted.map((item) => [
+            total.map((item) => [
                 item.studentId,
                 {
-                    count: item.acceptedCount,
-                    rate: Math.round((item.acceptedCount / (totalMap.get(item.studentId) ?? 1)) * 10000) / 100,
+                    total: totalMap.get(item.studentId) ?? 0,
+                    count: acceptedMap.get(item.studentId) ?? 0,
+                    rate:
+                        Math.round(
+                            ((acceptedMap.get(item.studentId) ?? 0) / (totalMap.get(item.studentId) ?? 1)) * 10000,
+                        ) / 100,
                 },
             ]),
         );

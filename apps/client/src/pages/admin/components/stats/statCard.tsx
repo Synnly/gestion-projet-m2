@@ -1,8 +1,10 @@
+import type { JSX } from 'react';
+
 interface StatCardProps {
     title: string;
     value: number | undefined;
     description: string;
-    iconClass: any;
+    iconClass: JSX.Element;
     colorClass: string;
 }
 

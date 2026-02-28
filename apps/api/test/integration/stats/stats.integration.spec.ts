@@ -28,7 +28,7 @@ import { MailerService } from '../../../src/mailer/mailer.service';
 describe('Stats Integration Tests', () => {
     let app: INestApplication;
     let mongod: MongoMemoryServer;
-    
+
     let userModel: Model<UserDocument>;
     let companyModel: Model<CompanyDocument>;
     let studentModel: Model<StudentDocument>;
@@ -131,7 +131,7 @@ describe('Stats Integration Tests', () => {
         const res = await request(app.getHttpServer())
             .post('/api/auth/login')
             .send({ email: 'admin@test.com', password });
-        
+
         return res.text; // Access token
     };
 
@@ -156,13 +156,10 @@ describe('Stats Integration Tests', () => {
             const loginRes = await request(app.getHttpServer())
                 .post('/api/auth/login')
                 .send({ email: 'student@test.com', password });
-            
+
             const token = loginRes.text;
 
-            await request(app.getHttpServer())
-                .get('/api/stats')
-                .set('Authorization', `Bearer ${token}`)
-                .expect(403);
+            await request(app.getHttpServer()).get('/api/stats').set('Authorization', `Bearer ${token}`).expect(403);
         });
 
         it('should return stats for admin', async () => {
@@ -216,7 +213,11 @@ describe('Stats Integration Tests', () => {
             expect(res.body).toHaveProperty('applicationAcceptanceByCompany');
             expect(res.body).toHaveProperty('applicationAcceptanceByStudent');
             expect(res.body.applicationAcceptanceByCompany[company._id.toString()]).toEqual({ count: 1, rate: 100 });
-            expect(res.body.applicationAcceptanceByStudent[student._id.toString()]).toEqual({ count: 1, rate: 100 });
+            expect(res.body.applicationAcceptanceByStudent[student._id.toString()]).toEqual({
+                count: 1,
+                rate: 100,
+                total: 1,
+            });
         });
     });
 
@@ -239,9 +240,7 @@ describe('Stats Integration Tests', () => {
                 isVisible: true,
             });
 
-            const res = await request(app.getHttpServer())
-                .get('/api/stats/public')
-                .expect(200);
+            const res = await request(app.getHttpServer()).get('/api/stats/public').expect(200);
 
             expect(res.body).toHaveProperty('totalPosts');
             expect(res.body).toHaveProperty('totalCompanies');
@@ -269,9 +268,7 @@ describe('Stats Integration Tests', () => {
                 isVisible: true,
             });
 
-            const res = await request(app.getHttpServer())
-                .get('/api/stats/public/posts')
-                .expect(200);
+            const res = await request(app.getHttpServer()).get('/api/stats/public/posts').expect(200);
 
             expect(Array.isArray(res.body)).toBe(true);
             expect(res.body.length).toBe(1);
@@ -299,9 +296,7 @@ describe('Stats Integration Tests', () => {
                 });
             }
 
-            const res = await request(app.getHttpServer())
-                .get('/api/stats/public/posts?limit=2')
-                .expect(200);
+            const res = await request(app.getHttpServer()).get('/api/stats/public/posts?limit=2').expect(200);
 
             expect(res.body.length).toBe(2);
         });

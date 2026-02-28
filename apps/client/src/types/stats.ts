@@ -1,4 +1,5 @@
 export interface PublicStats {
+    id: string;
     totalPosts: number;
     totalCompanies: number;
     totalStudents: number;
@@ -27,6 +28,6 @@ export interface Stats {
     applicationsOverTime: ChartData[];
     topCompanies: TopCompany[];
     orphanOffersCount: number;
-    applicationAcceptanceByCompany: Record<string, { count: number; rate: number }>;
+    applicationAcceptanceByCompany: Record<string, { total: number; count: number; rate: number }>;
     applicationAcceptanceByStudent: Record<string, { count: number; rate: number }>;
 }
