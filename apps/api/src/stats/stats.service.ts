@@ -94,6 +94,7 @@ export class StatsService {
                 },
                 {
                     $project: {
+                        id: { $toString: '$_id' },
                         name: '$companyInfo.name',
                         offersCount: 1,
                         responseRate: {
@@ -275,14 +276,14 @@ export class StatsService {
             },
         ]);
 
-        const totalMap = new Map(total.map((item) => [item._id, item.totalCount]));
+        const totalMap = new Map(total.map((item) => [item.companyId, item.totalCount]));
 
         return Object.fromEntries(
             accepted.map((item) => [
-                item.studentId,
+                item.companyId,
                 {
                     count: item.acceptedCount,
-                    rate: item.acceptedCount / (totalMap.get(item.companyId) ?? 1),
+                    rate: Math.round((item.acceptedCount / (totalMap.get(item.companyId) ?? 1)) * 10000) / 100,
                 },
             ]),
         );
@@ -331,7 +332,7 @@ export class StatsService {
                 item.studentId,
                 {
                     count: item.acceptedCount,
-                    rate: item.acceptedCount / (totalMap.get(item.studentId) ?? 1),
+                    rate: Math.round((item.acceptedCount / (totalMap.get(item.studentId) ?? 1)) * 10000) / 100,
                 },
             ]),
         );
