@@ -64,7 +64,7 @@ export function StudentsTab({ stats }: StudentsTabProps) {
                             <th>Nom</th>
                             <th>Prénom</th>
                             <th>Candidatures envoyées</th>
-                            <th>Candidatures acceptés</th>
+                            <th>Candidatures acceptées</th>
                         </tr>
                     </thead>
                     <tbody>
