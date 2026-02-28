@@ -13,6 +13,7 @@ export function CompaniesTab({ stats }: CompaniesTabProps) {
                             <th>#</th>
                             <th>Entreprise</th>
                             <th>Offres postées</th>
+                            <th>Candidatures acceptés</th>
                             <th>Taux de réponse</th>
                         </tr>
                     </thead>
@@ -22,6 +23,22 @@ export function CompaniesTab({ stats }: CompaniesTabProps) {
                                 <td>{index + 1}</td>
                                 <td className="font-bold">{company.name}</td>
                                 <td>{company.offersCount}</td>
+                                <td>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs">
+                                            {stats.applicationAcceptanceByCompany[company.id]?.count ?? 0}
+                                        </span>
+                                        <progress
+                                            className="progress progress-success w-20"
+                                            value={stats.applicationAcceptanceByCompany[company.id]?.rate ?? 0}
+                                            max="100"
+                                        ></progress>
+
+                                        <span className="text-xs">
+                                            {stats.applicationAcceptanceByCompany[company.id]?.rate ?? 0} %
+                                        </span>
+                                    </div>
+                                </td>
                                 <td>
                                     <div className="flex items-center gap-2">
                                         <progress
