@@ -157,6 +157,8 @@ export class StatsService {
             applicationsOverTime: applicationsOverTime || [],
             orphanOffersCount: orphanOffersRaw[0]?.count || 0,
             topCompanies: topCompaniesRaw || [],
+            applicationAcceptanceByCompany: await this.getApplicationAcceptanceStatsByCompany(),
+            applicationAcceptanceByStudent: await this.getApplicationAcceptanceStatsByStudent(),
         };
     }
 
