@@ -239,6 +239,109 @@ describe('StatsService (Integration)', () => {
             const totalInChart = stats.applicationsOverTime.reduce((acc, val) => acc + (val.count || 0), 0);
             expect(totalInChart).toBe(1);
         });
+
+        it('should include acceptance stats by company and student', async () => {
+            const company = await companyModel.create({ email: 'acc@test.com', password: 'p', name: 'Acc Corp' });
+            const student = await studentModel.create({
+                email: 'acc@stud.com',
+                password: 'p',
+                firstName: 'A',
+                lastName: 'B',
+                studentNumber: 'S3',
+            });
+
+            const post = await postModel.create({
+                title: 'Acc Post',
+                description: '...',
+                company: company._id,
+                type: PostType.Presentiel,
+            });
+
+            await applicationModel.create({
+                post: post._id,
+                student: student._id,
+                status: 'Accepted',
+                cv: 'cv.pdf',
+            });
+
+            const stats = await service.getStats();
+
+            expect(stats.applicationAcceptanceByCompany[company._id.toString()]).toEqual({ count: 1, rate: 100 });
+            expect(stats.applicationAcceptanceByStudent[student._id.toString()]).toEqual({
+                count: 1,
+                rate: 100,
+                total: 1,
+            });
+        });
+    });
+
+    describe('getApplicationAcceptanceStatsByCompany', () => {
+        it('should calculate correct acceptance count and rate per company', async () => {
+            const company1 = await companyModel.create({ email: 'c1@t.com', password: 'p', name: 'C1' });
+            const company2 = await companyModel.create({ email: 'c2@t.com', password: 'p', name: 'C2' });
+            const studentId = new Types.ObjectId();
+
+            const post1 = await postModel.create({
+                title: 'P1',
+                description: 'D1',
+                company: company1._id,
+                type: PostType.Presentiel,
+            });
+            const post2 = await postModel.create({
+                title: 'P2',
+                description: 'D2',
+                company: company2._id,
+                type: PostType.Presentiel,
+            });
+
+            // Company 1: 1 accepted / 2 total = 50%
+            await applicationModel.create([
+                { post: post1._id, student: studentId, status: 'Accepted', cv: '1.pdf' },
+                { post: post1._id, student: studentId, status: 'Pending', cv: '2.pdf' },
+            ]);
+
+            // Company 2: 1 accepted / 1 total = 100%
+            await applicationModel.create([{ post: post2._id, student: studentId, status: 'Accepted', cv: '3.pdf' }]);
+
+            const result = await service.getApplicationAcceptanceStatsByCompany();
+
+            expect(result[company1._id.toString()]).toEqual({ count: 1, rate: 50 });
+            expect(result[company2._id.toString()]).toEqual({ count: 1, rate: 100 });
+        });
+    });
+
+    describe('getApplicationAcceptanceStatsByStudent', () => {
+        it('should calculate correct acceptance count and rate per student', async () => {
+            const student1 = await studentModel.create({
+                email: 's1@t.com',
+                password: 'p',
+                firstName: 'S1',
+                lastName: 'U',
+                studentNumber: 'SN1',
+            });
+            const student2 = await studentModel.create({
+                email: 's2@t.com',
+                password: 'p',
+                firstName: 'S2',
+                lastName: 'U',
+                studentNumber: 'SN2',
+            });
+            const postId = new Types.ObjectId();
+
+            // Student 1: 1 accepted / 3 total = 33.33%
+            await applicationModel.create([
+                { post: postId, student: student1._id, status: 'Accepted', cv: '1.pdf' },
+                { post: postId, student: student1._id, status: 'Rejected', cv: '2.pdf' },
+                { post: postId, student: student1._id, status: 'Pending', cv: '3.pdf' },
+            ]);
+
+            // Student 2: 0 accepted / 1 total = 0%
+            await applicationModel.create([{ post: postId, student: student2._id, status: 'Rejected', cv: '4.pdf' }]);
+
+            const result = await service.getApplicationAcceptanceStatsByStudent();
+
+            expect(result[student1._id.toString()]).toEqual({ count: 1, rate: 33.33, total: 3 });
+        });
     });
 
     describe('getPublicStats', () => {

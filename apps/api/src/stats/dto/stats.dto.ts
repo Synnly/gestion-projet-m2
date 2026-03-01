@@ -66,4 +66,10 @@ export class StatsDto {
     // Count of offers with no candidates
     @Expose()
     orphanOffersCount: number;
+
+    @Expose()
+    applicationAcceptanceByCompany: Record<string, { count: number; rate: number }>;
+
+    @Expose()
+    applicationAcceptanceByStudent: Record<string, { count: number; rate: number }>;
 }

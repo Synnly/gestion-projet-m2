@@ -1,12 +1,7 @@
 import type { Internship } from '../types/internship.types';
+import type { PublicStats } from '../types/stats.ts';
 
 const API_URL = import.meta.env.VITE_APIURL;
-
-export interface PublicStats {
-    totalPosts: number;
-    totalCompanies: number;
-    totalStudents: number;
-}
 
 /**
  * Fetches public statistics for the landing page
