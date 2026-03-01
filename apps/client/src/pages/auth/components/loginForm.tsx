@@ -60,7 +60,7 @@ export const LoginForm = () => {
                     />
                 </CustomForm>
                 <div className="flex flex-row justify-center w-full mt-2">
-                    <NavLink to="/signup" className="btn btn-accent mt-4 text-sm text-center text-base-900 underline">
+                    <NavLink to="/signup" className="btn btn-accent mt-4 text-sm text-center text-base-900">
                         Créer un compte entreprise
                     </NavLink>
                 </div>

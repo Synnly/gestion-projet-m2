@@ -18,7 +18,7 @@ export const CompanySignup = () => {
                     <Logo className="text-primary" />
                 </div>
                 <SignupForm />
-                <NavLink to="/signin" className="btn btn-accent text-sm text-center text-base-900 underline">
+                <NavLink to="/signin" className="btn btn-accent text-sm text-center text-base-900">
                     Déjà un compte entreprise ? Connectez-vous
                 </NavLink>
             </motion.div>

@@ -46,11 +46,13 @@ export function PublicCompanyProfile() {
               .map((paragraph) => paragraph.trim())
               .filter(Boolean)
         : [];
-    const companyAddress = [
-        [profile?.streetNumber, profile?.streetName].filter(Boolean).join(' '),
-        [profile?.postalCode, profile?.city].filter(Boolean).join(' '),
-        profile?.country,
-    ].filter(Boolean) as string[];
+    const companyAddress = profile?.address?.trim()
+        ? [profile.address.trim()]
+        : [
+              [profile?.streetNumber, profile?.streetName].filter(Boolean).join(' '),
+              [profile?.postalCode, profile?.city].filter(Boolean).join(' '),
+              profile?.country,
+          ].filter(Boolean);
 
     const websiteHref = profile?.website
         ? profile.website.startsWith('http://') || profile.website.startsWith('https://')
@@ -85,7 +87,7 @@ export function PublicCompanyProfile() {
                                         <img
                                             src={logoUrl}
                                             alt="Logo entreprise"
-                                            className="h-24 w-24 rounded-2xl bg-base-200 object-contain p-2"
+                                            className="h-24 w-24 rounded-2xl object-contain"
                                         />
                                     ) : (
                                         <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-base-200 text-3xl font-bold text-base-700">
@@ -93,12 +95,6 @@ export function PublicCompanyProfile() {
                                         </div>
                                     )}
                                     <h2 className="mt-5 text-4xl font-semibold text-base-content">{profile.name}</h2>
-                                    {aboutParagraphs[0] && (
-                                        <p className="mt-2 max-w-[280px] text-sm text-base-content/70">
-                                            {aboutParagraphs[0].slice(0, 80)}
-                                            {aboutParagraphs[0].length > 80 ? '…' : ''}
-                                        </p>
-                                    )}
                                 </div>
 
                                 <div className="mt-8 border-t border-base-300 pt-6">
