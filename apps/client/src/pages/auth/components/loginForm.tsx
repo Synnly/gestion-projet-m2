@@ -23,7 +23,7 @@ export const LoginForm = () => {
 
     return (
         <>
-            <div className=" rounded-(--radius-box) flex-col flex items-center just py-10 px-5 my-5 max-w-[700px]">
+            <div className=" rounded-(--radius-box) flex-col flex items-center just py-10 px-5 mt-5 max-w-[700px]">
                 <CustomForm
                     label="Accéder à votre compte"
                     role="form"
@@ -59,8 +59,8 @@ export const LoginForm = () => {
                         className="bg-primary rounded-lg cursor-pointer w-full text-black"
                     />
                 </CustomForm>
-                <div className="flex flex-row gap-5 w-full mt-2">
-                    <NavLink to="/company/signup" className="mt-4 text-sm text-center text-gray-500 underline">
+                <div className="flex flex-row justify-center w-full mt-2">
+                    <NavLink to="/signup" className="btn btn-accent mt-4 text-sm text-center text-base-900">
                         Créer un compte entreprise
                     </NavLink>
                 </div>

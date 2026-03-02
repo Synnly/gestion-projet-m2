@@ -4,6 +4,7 @@ import { Navbar } from '../common/navbar/Navbar';
 import { useGetCompanyPublicProfile } from '../../hooks/useGetCompanyPublicProfile';
 import { fetchFileFromSignedUrl, fetchPublicSignedUrl } from '../../hooks/useBlob';
 import { useQuery } from '@tanstack/react-query';
+import { Globe, Mail, MapPin, Phone } from 'lucide-react';
 
 export function PublicCompanyProfile() {
     const params = useParams();
@@ -38,97 +39,124 @@ export function PublicCompanyProfile() {
 
     if (!companyId) return <Navigate to={'/'} />;
 
+    const companyTitle = profile?.name ?? "l'entreprise";
+    const aboutParagraphs = profile?.description
+        ? profile.description
+              .split(/\n{2,}/)
+              .map((paragraph) => paragraph.trim())
+              .filter(Boolean)
+        : [];
+    const companyAddress = profile?.address?.trim()
+        ? [profile.address.trim()]
+        : [
+              [profile?.streetNumber, profile?.streetName].filter(Boolean).join(' '),
+              [profile?.postalCode, profile?.city].filter(Boolean).join(' '),
+              profile?.country,
+          ].filter(Boolean);
+
+    const websiteHref = profile?.website
+        ? profile.website.startsWith('http://') || profile.website.startsWith('https://')
+            ? profile.website
+            : `https://${profile.website}`
+        : null;
+    const websiteLabel = profile?.website?.replace(/^https?:\/\//, '');
+
     return (
-        <div className="min-h-screen bg-base-100">
+        <div className="min-h-screen bg-base-200">
             <Navbar />
-            <div className="p-8">
-                <div className="max-w-4xl mx-auto space-y-6">
-                    <div className="flex justify-between items-center">
-                        <h1 className="text-3xl font-bold text-base-900">Profil de l'entreprise</h1>
-                    </div>
+            <div className="mx-auto w-full max-w-[1400px] px-4 py-8 md:px-8 md:py-10 lg:px-10">
+                <div className="space-y-6">
 
                     {isLoading && (
-                        <div className="bg-base-100 rounded-lg shadow p-6">
+                        <div className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm">
                             <p className="text-base-500">Chargement...</p>
                         </div>
                     )}
 
                     {isError && (
-                        <div className="bg-error-100 border border-error rounded-lg p-6">
+                        <div className="rounded-2xl border border-error bg-error-100 p-6">
                             <p className="text-error">Erreur lors du chargement du profil: {error?.message}</p>
                         </div>
                     )}
 
                     {profile && (
-                        <>
-                            <div className="bg-base-200 rounded-lg shadow p-6">
-                                <div className="flex items-start gap-6">
+                        <div className="grid gap-6 lg:grid-cols-[360px_1fr] xl:grid-cols-[400px_1fr]">
+                            <aside className="rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm md:p-7">
+                                <div className="flex flex-col items-center text-center">
                                     {logoUrl ? (
-                                        <img src={logoUrl} alt="Logo entreprise" className="w-24 h-24 object-contain" />
+                                        <img
+                                            src={logoUrl}
+                                            alt="Logo entreprise"
+                                            className="h-24 w-24 rounded-2xl object-contain"
+                                        />
                                     ) : (
-                                        <div className="w-24 h-24 rounded-lg bg-base-300 flex items-center justify-center text-3xl font-bold">
+                                        <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-base-200 text-3xl font-bold text-base-700">
                                             {profile.name?.charAt(0).toUpperCase()}
                                         </div>
                                     )}
-                                    <div className="flex flex-col flex-1 justify-center">
-                                        <h2 className="text-2xl font-semibold text-base-900 mb-2">{profile.name}</h2>
-                                        {profile.description && <p className="text-base-700">{profile.description}</p>}
-                                    </div>
+                                    <h2 className="mt-5 text-4xl font-semibold text-base-content">{profile.name}</h2>
                                 </div>
-                            </div>
 
-                            {(profile.telephone || profile.emailContact || profile.website) && (
-                                <div className="bg-base-200 rounded-lg shadow p-6">
-                                    <h3 className="text-lg font-semibold text-base-900 mb-4">Contact</h3>
-                                    <div className="space-y-2 text-base-700">
-                                        {profile.telephone && (
-                                            <p>
-                                                <span className="text-base-500 text-sm">Téléphone: </span>
-                                                {profile.telephone}
-                                            </p>
-                                        )}
-                                        {profile.emailContact && (
-                                            <p>
-                                                <span className="text-base-500 text-sm">Email: </span>
-                                                {profile.emailContact}
-                                            </p>
-                                        )}
-                                        {profile.website && (
-                                            <p>
-                                                <span className="text-base-500 text-sm">Site web: </span>
-                                                <a
-                                                    href={profile.website}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="link link-primary"
-                                                >
-                                                    {profile.website}
-                                                </a>
-                                            </p>
-                                        )}
+                                <div className="mt-8 border-t border-base-300 pt-6">
+                                    <div className="flex items-start gap-3">
+                                        <MapPin className="mt-0.5 h-5 w-5 text-base-content/70" />
+                                        <div>
+                                            <p className="text-lg font-semibold text-base-content">Siège Social</p>
+                                            {companyAddress.length > 0 ? (
+                                                companyAddress.map((line) => (
+                                                    <p key={line} className="text-base text-base-content/70">
+                                                        {line}
+                                                    </p>
+                                                ))
+                                            ) : (
+                                                <p className="text-base text-base-content/50">Adresse non renseignée</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            )}
 
-                            {(profile.streetNumber || profile.streetName || profile.postalCode || profile.city || profile.country) && (
-                                <div className="bg-base-200 rounded-lg shadow p-6">
-                                    <h3 className="text-lg font-semibold text-base-900 mb-4">Adresse</h3>
-                                    <div className="text-base-700 space-y-1">
-                                        {(profile.streetNumber || profile.streetName) && (
-                                            <p>
-                                                {profile.streetNumber} {profile.streetName}
-                                            </p>
-                                        )}
-                                        {(profile.postalCode || profile.city) && (
-                                            <p>
-                                                {profile.postalCode} {profile.city}
-                                            </p>
-                                        )}
-                                        {profile.country && <p>{profile.country}</p>}
-                                    </div>
+                                <div className="mt-6 space-y-4 border-t border-base-300 pt-6">
+                                    {websiteHref && websiteLabel && (
+                                        <div className="flex items-center gap-3 text-base">
+                                            <Globe className="h-5 w-5 text-base-content/70" />
+                                            <a
+                                                href={websiteHref}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="font-medium text-primary hover:underline"
+                                            >
+                                                {websiteLabel}
+                                            </a>
+                                        </div>
+                                    )}
+                                    {profile.telephone && (
+                                        <div className="flex items-center gap-3 text-base-content">
+                                            <Phone className="h-5 w-5 text-base-content/70" />
+                                            <p className="text-base font-medium">{profile.telephone}</p>
+                                        </div>
+                                    )}
+                                    {profile.emailContact && (
+                                        <div className="flex items-center gap-3 text-base-content">
+                                            <Mail className="h-5 w-5 text-base-content/70" />
+                                            <p className="break-all text-base font-medium">{profile.emailContact}</p>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </>
+                            </aside>
+
+                            <section className="rounded-2xl border border-base-300 bg-base-100 p-7 shadow-sm md:p-8">
+                                <h3 className="text-4xl font-semibold leading-tight text-base-content">À propos de {companyTitle}</h3>
+                                <div className="mt-6 space-y-5 text-lg leading-relaxed text-base-content/75">
+                                    {aboutParagraphs.length > 0 ? (
+                                        aboutParagraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)
+                                    ) : (
+                                        <p>
+                                            Cette entreprise n&apos;a pas encore renseigné de description publique.
+                                        </p>
+                                    )}
+                                </div>
+                            </section>
+                        </div>
                     )}
                 </div>
             </div>

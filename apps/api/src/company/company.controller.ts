@@ -153,6 +153,7 @@ export class CompanyController {
      * @throws {NotFoundException} if no company exists with the given ID
      */
     @Get('/:companyId')
+    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     async findOne(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyDto> {
         const company = await this.companyService.findOne(companyId);

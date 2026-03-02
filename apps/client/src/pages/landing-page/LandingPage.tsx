@@ -87,7 +87,7 @@ export default function LandingPage() {
                                 <Briefcase className="w-5 h-5" />
                                 Découvrir les offres
                             </Link>
-                            <Link to="/company/signup" className="btn btn-outline btn-lg gap-2">
+                            <Link to="/signup" className="btn btn-outline btn-lg gap-2">
                                 <Building2 className="w-5 h-5" />
                                 Espace entreprise
                             </Link>

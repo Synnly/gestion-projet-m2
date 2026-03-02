@@ -25,7 +25,10 @@ export type Role = 'ADMIN' | 'STUDENT' | 'COMPANY';
 export type MessageType = {
     _id: string;
     topicId: string;
-    authorId: { _id: string; logo: string; role: Role; ban?: { date: string; reason: string } } & ({ firstName: string; lastName: string } | { name: string });
+    authorId:
+        | ({ _id: string; logo?: string; role?: Role; ban?: { date: string; reason: string } } &
+              ({ firstName: string; lastName: string } | { name: string }))
+        | null;
     parentMessageId?: MessageType;
     content: string;
     createdAt: Date;
@@ -90,9 +93,9 @@ export default function TopicDetailPage() {
             const message = await response.json();
             await Promise.all(
                 message.data.map(async (message: MessageType) => {
-                    if (message.authorId.logo) {
+                    if (message.authorId?.logo) {
                         const presignedUrl = await fetchPublicSignedUrl(message.authorId.logo);
-                        if (presignedUrl) message.authorId.logo = presignedUrl;
+                        if (presignedUrl && message.authorId) message.authorId.logo = presignedUrl;
                     }
                 }),
             );
@@ -135,6 +138,16 @@ export default function TopicDetailPage() {
     const [shown, setShown] = useState(false);
 
     const [reply, setReply] = useState<{ id: string; name: string } | null>(null);
+    const topicAuthor = topic?.author;
+    const isTopicAuthorBanned = !!topicAuthor?.ban;
+    const topicAuthorName = isTopicAuthorBanned
+        ? '[utilisateur supprimé]'
+        : topicAuthor?.firstName && topicAuthor?.lastName
+            ? `${topicAuthor.firstName} ${topicAuthor.lastName}`
+            : topicAuthor?.name || 'Personne inconnue';
+    const topicAuthorInitial = isTopicAuthorBanned
+        ? 'U'
+        : topicAuthorName.charAt(0).toUpperCase();
 
     // Handle the hash to highlight and scroll to a specific message
     useEffect(() => {
@@ -312,34 +325,20 @@ export default function TopicDetailPage() {
                                 <div className="flex items-center gap-2">
                                     <div className="avatar placeholder">
                                         <div className="text-neutral-content  flex justify-center items-center rounded-full w-10 h-10">
-                                            {topic.author.logo ? (
+                                            {topicAuthor?.logo ? (
                                                 <img
-                                                    src={topic.author.logo}
-                                                    alt={
-                                                        topic.author.name ||
-                                                        `${topic.author.firstName} ${topic.author.lastName}`
-                                                    }
+                                                    src={topicAuthor.logo}
+                                                    alt={topicAuthorName}
                                                 />
                                             ) : (
                                                 <div className="w-full h-full bg-black flex justify-center items-center">
-                                                    <span className="text-lg font-bold">
-                                                        {topic.author.ban 
-                                                            ? 'U'
-                                                            : (
-                                                                topic.author.name?.charAt(0) ||
-                                                                topic.author.firstName?.charAt(0)
-                                                            )?.toUpperCase()}
-                                                    </span>
+                                                    <span className="text-lg font-bold">{topicAuthorInitial}</span>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                     <span className="font-medium text-base-content">
-                                        {topic.author.ban
-                                            ? '[utilisateur supprimé]'
-                                            : topic.author.firstName && topic.author.lastName
-                                              ? topic.author.firstName + ' ' + topic.author.lastName
-                                              : topic.author.name}{' '}
+                                        {topicAuthorName}{' '}
                                     </span>
                                 </div>
                                 <span>•</span>

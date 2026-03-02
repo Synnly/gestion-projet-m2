@@ -21,12 +21,12 @@ export type CreateTopicPayload = {
 export type Message = {
     _id: string;
     content: string;
-    author: {
+    author?: {
         _id: string;
         name: string;
         email?: string;
         avatar?: string;
-    };
+    } | null;
     createdAt: string;
     updatedAt: string;
 };
@@ -36,7 +36,7 @@ export type Topic = {
     title: string;
     description?: string;
     messages: Message[];
-    author: {
+    author?: {
         _id: string;
         name?: string;
         firstName?: string;
@@ -47,7 +47,7 @@ export type Topic = {
             date: string;
             reason: string;
         };
-    };
+    } | null;
     forumId: string;
     createdAt?: string;
     updatedAt?: string;

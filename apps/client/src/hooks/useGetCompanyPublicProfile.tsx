@@ -6,6 +6,7 @@ export type PublicCompanyProfile = {
     _id: string;
     name: string;
     logo?: string;
+    address?: string;
     description?: string;
     telephone?: string;
     website?: string;

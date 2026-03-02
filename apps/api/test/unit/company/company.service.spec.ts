@@ -76,6 +76,7 @@ describe('CompanyService', () => {
 
     const mockForumService = {
         create: jest.fn(),
+        findOneByCompanyId: jest.fn(),
     };
 
     const mockNotificationService = {
@@ -169,6 +170,7 @@ describe('CompanyService', () => {
         mockRefreshTokenModel.updateOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({ acknowledged: true }) });
         mockRefreshTokenModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({ acknowledged: true }) });
         mockPostService.delete.mockResolvedValue(undefined);
+        mockForumService.findOneByCompanyId.mockResolvedValue(null);
     });
 
     it('should be defined when service is instantiated', () => {
@@ -367,6 +369,7 @@ describe('CompanyService', () => {
                     name: createDto.name,
                 }),
             );
+            expect(mockForumService.create).not.toHaveBeenCalled();
             expect(typeof createdArg.password).toBe('string');
             // Password hashing is handled by User schema pre-save hook, not tested in unit tests with mocks
         });
@@ -521,6 +524,69 @@ describe('CompanyService', () => {
     });
 
     describe('update', () => {
+        it('should create a forum when company is validated for the first time', async () => {
+            const updateDto = new UpdateCompanyDto({
+                isValid: true,
+            });
+
+            const mockCompany = {
+                _id: '507f1f77bcf86cd799439011',
+                isValid: false,
+                save: jest.fn().mockResolvedValue(true),
+            };
+
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+
+            await service.update('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
+            expect(mockForumService.findOneByCompanyId).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+            expect(mockForumService.create).toHaveBeenCalledWith(mockCompany._id);
+        });
+
+        it('should not create a forum when re-validating a company that already has one', async () => {
+            const updateDto = new UpdateCompanyDto({
+                isValid: true,
+            });
+
+            const mockCompany = {
+                _id: '507f1f77bcf86cd799439011',
+                isValid: false,
+                save: jest.fn().mockResolvedValue(true),
+            };
+
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+            mockForumService.findOneByCompanyId.mockResolvedValue({ _id: 'forum-id' });
+
+            await service.update('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
+            expect(mockForumService.findOneByCompanyId).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+            expect(mockForumService.create).not.toHaveBeenCalled();
+        });
+
+        it('should not create a forum when company is already valid', async () => {
+            const updateDto = new UpdateCompanyDto({
+                isValid: true,
+            });
+
+            const mockCompany = {
+                _id: '507f1f77bcf86cd799439011',
+                isValid: true,
+                save: jest.fn().mockResolvedValue(true),
+            };
+
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+
+            await service.update('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
+            expect(mockForumService.create).not.toHaveBeenCalled();
+        });
+
         it('should validate provided post ids and update when posts are valid', async () => {
             const updateDto = new UpdateCompanyDto({
                 name: 'Updated Company',
