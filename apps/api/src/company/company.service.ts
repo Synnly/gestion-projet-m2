@@ -198,9 +198,10 @@ export class CompanyService {
             }
 
             // This company was updated after being rejected
-            const modifiedAfterRejection = !(dto instanceof CreateCompanyDto) && !dto.rejected;
+            const modifiedAfterRejection =
+                !(dto instanceof CreateCompanyDto) && !dto.rejected && company.rejected?.isRejected;
             Object.assign(company, dto);
-            if (modifiedAfterRejection) {
+            if (modifiedAfterRejection && company.rejected) {
                 company.rejected.modifiedAt = dateNow;
                 company.markModified('rejected');
             }

@@ -82,7 +82,7 @@ describe('CompanyService', () => {
     const mockNotificationService = {
         create: jest.fn(),
     };
-    
+
     const mockNotificationModel = {
         updateMany: jest.fn(),
     };
@@ -533,6 +533,7 @@ describe('CompanyService', () => {
                 _id: '507f1f77bcf86cd799439011',
                 isValid: false,
                 save: jest.fn().mockResolvedValue(true),
+                rejected: {},
             };
 
             mockExec.mockResolvedValue(mockCompany);
@@ -558,7 +559,7 @@ describe('CompanyService', () => {
 
             mockExec.mockResolvedValue(mockCompany);
             mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
-            mockForumService.findOneByCompanyId.mockResolvedValue({ _id: 'forum-id' });
+            mockForumService.findOneByCompanyId.mockResolvedValue({ _id: 'forum-id', rejected: {} });
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
@@ -1651,7 +1652,10 @@ describe('CompanyService', () => {
             });
 
             mockPostModel.find.mockReturnValue({
-                select: jest.fn().mockResolvedValue([{ _id: postId1, title: 'Post 1' }, { _id: postId2, title: 'Post 2' }]),
+                select: jest.fn().mockResolvedValue([
+                    { _id: postId1, title: 'Post 1' },
+                    { _id: postId2, title: 'Post 2' },
+                ]),
             });
 
             // Mock des applications avec students et posts
@@ -1670,7 +1674,7 @@ describe('CompanyService', () => {
 
             mockApplicationModel.find.mockReturnValue(mockApplicationQuery);
             mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 5 });
-            
+
             // Mock for deleteMany with session support
             mockPostModel.deleteMany.mockReturnValue({
                 session: jest.fn().mockResolvedValue({ deletedCount: 2 }),
@@ -1816,7 +1820,7 @@ describe('CompanyService', () => {
             mockApplicationModel.find.mockReturnValue(mockApplicationQuery);
             mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 3 });
             mockNotificationService.create.mockResolvedValue(undefined);
-            
+
             mockPostModel.deleteMany.mockReturnValue({
                 session: jest.fn().mockResolvedValue({ deletedCount: 1 }),
             });
@@ -1865,9 +1869,7 @@ describe('CompanyService', () => {
                 populate: jest.fn().mockReturnThis(),
                 select: jest.fn().mockReturnThis(),
                 lean: jest.fn().mockReturnThis(),
-                exec: jest.fn().mockResolvedValue([
-                    { student: { _id: 'student1' }, post: { title: 'Test Post' } },
-                ]),
+                exec: jest.fn().mockResolvedValue([{ student: { _id: 'student1' }, post: { title: 'Test Post' } }]),
             };
 
             mockApplicationModel.find.mockReturnValue(mockApplicationQuery);
@@ -1879,7 +1881,7 @@ describe('CompanyService', () => {
             mockPostModel.deleteMany.mockReturnValue({
                 session: jest.fn().mockResolvedValue({ deletedCount: 1 }),
             });
-            
+
             mockForumModel.find.mockReturnValue({
                 select: jest.fn().mockResolvedValue([]),
             });
@@ -1926,10 +1928,7 @@ describe('CompanyService', () => {
                 _id: companyId,
                 deletedAt: { $exists: true },
             });
-            expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
-                { _id: companyId },
-                { $unset: { deletedAt: 1 } },
-            );
+            expect(mockCompanyModel.updateOne).toHaveBeenCalledWith({ _id: companyId }, { $unset: { deletedAt: 1 } });
         });
 
         it('should throw NotFoundException when company is not found or not deleted', async () => {
