@@ -42,7 +42,7 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
     }
 
     // User is verified, prevent access to /verify
-    if (pathname === '/verify') throw redirect(`/home`);
+    if (payload.isVerified && pathname === '/verify') throw redirect(`/home`);
 
     if (payload.role === 'COMPANY') {
         // Fetch company profile if not already in store
@@ -66,7 +66,7 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
 
         // Company is verified but profile is not complete, only allow access to /complete-profil
         if (!isComplete) {
-            if (pathname !== '/complete-profil') return;
+            if (pathname === '/complete-profil') return;
             throw redirect('/complete-profil');
         }
 
@@ -86,7 +86,7 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
 
         // If profile is complete but not handled by admin yet, redirect to pending validation page
         if (!isValid && !isRejected) {
-            if (pathname !== '/pending-validation') return;
+            if (pathname === '/pending-validation') return;
             throw redirect('/pending-validation');
         }
 
@@ -94,20 +94,22 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
             const rejectedAt = newProfile.profile?.rejected?.rejectedAt;
             const modifiedAt = newProfile.profile?.rejected?.modifiedAt;
 
+            console.log(`Company ${payload.id} is rejected. Rejected at: ${rejectedAt}, Modified at: ${modifiedAt}`);
+
             // If rejected but modified after rejection, consider as pending validation and redirect to pending validation page
             if (rejectedAt && modifiedAt && new Date(modifiedAt) > new Date(rejectedAt)) {
-                if (pathname !== '/pending-validation') return;
+                if (pathname === '/pending-validation') return;
                 throw redirect('/pending-validation');
             }
             // If rejected and not modified after rejection, redirect to complete profile page
             else {
-                if (pathname !== '/complete-profil') return;
+                if (pathname === '/complete-profil') return;
                 throw redirect('/complete-profil');
             }
         }
 
         // If company is valid, prevent access to complete profile and pending validation pages
-        if (isValid && (pathname === '/pending-validation' || '/complete-profil')) throw redirect(`/home`);
+        if (isValid && (pathname === '/pending-validation' || pathname === '/complete-profil')) throw redirect(`/home`);
     }
     if (payload.role === 'STUDENT') {
         // Fetch student profile to check isFirstTime
