@@ -150,6 +150,7 @@ export class ForumController {
      */
     @Get(':forumId/topics/:id')
     async findOne(@Param('forumId') forumId: string, @Param('id') id: string): Promise<Topic | null> {
+        console.log(await this.topicService.findOne(forumId, id));
         return this.topicService.findOne(forumId, id);
     }
 

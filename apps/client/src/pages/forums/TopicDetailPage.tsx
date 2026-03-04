@@ -26,8 +26,10 @@ export type MessageType = {
     _id: string;
     topicId: string;
     authorId:
-        | ({ _id: string; logo?: string; role?: Role; ban?: { date: string; reason: string } } &
-              ({ firstName: string; lastName: string } | { name: string }))
+        | ({ _id: string; logo?: string; role?: Role; ban?: { date: string; reason: string } } & (
+              | { firstName: string; lastName: string }
+              | { name: string }
+          ))
         | null;
     parentMessageId?: MessageType;
     content: string;
@@ -60,9 +62,7 @@ export default function TopicDetailPage() {
         if (!myReports) return new Set<string>();
         const ids = myReports.map((report) => {
             // Handle the case where messageId can be either an object or a string
-            const messageId = typeof report.messageId === 'string' 
-                ? report.messageId 
-                : report.messageId._id;
+            const messageId = typeof report.messageId === 'string' ? report.messageId : report.messageId._id;
             return messageId;
         });
         return new Set(ids);
@@ -140,14 +140,15 @@ export default function TopicDetailPage() {
     const [reply, setReply] = useState<{ id: string; name: string } | null>(null);
     const topicAuthor = topic?.author;
     const isTopicAuthorBanned = !!topicAuthor?.ban;
-    const topicAuthorName = isTopicAuthorBanned
-        ? '[utilisateur supprimé]'
-        : topicAuthor?.firstName && topicAuthor?.lastName
-            ? `${topicAuthor.firstName} ${topicAuthor.lastName}`
-            : topicAuthor?.name || 'Personne inconnue';
-    const topicAuthorInitial = isTopicAuthorBanned
-        ? 'U'
-        : topicAuthorName.charAt(0).toUpperCase();
+    const topicAuthorName =
+        topicAuthor?.role === 'ADMIN'
+            ? 'Administrateur'
+            : isTopicAuthorBanned
+              ? '[utilisateur supprimé]'
+              : topicAuthor?.firstName && topicAuthor?.lastName
+                ? `${topicAuthor.firstName} ${topicAuthor.lastName}`
+                : topicAuthor?.name || 'Personne inconnue';
+    const topicAuthorInitial = isTopicAuthorBanned ? 'U' : topicAuthorName.charAt(0).toUpperCase();
 
     // Handle the hash to highlight and scroll to a specific message
     useEffect(() => {
@@ -326,10 +327,7 @@ export default function TopicDetailPage() {
                                     <div className="avatar placeholder">
                                         <div className="text-neutral-content  flex justify-center items-center rounded-full w-10 h-10">
                                             {topicAuthor?.logo ? (
-                                                <img
-                                                    src={topicAuthor.logo}
-                                                    alt={topicAuthorName}
-                                                />
+                                                <img src={topicAuthor.logo} alt={topicAuthorName} />
                                             ) : (
                                                 <div className="w-full h-full bg-black flex justify-center items-center">
                                                     <span className="text-lg font-bold">{topicAuthorInitial}</span>
@@ -337,9 +335,7 @@ export default function TopicDetailPage() {
                                             )}
                                         </div>
                                     </div>
-                                    <span className="font-medium text-base-content">
-                                        {topicAuthorName}{' '}
-                                    </span>
+                                    <span className="font-medium text-base-content">{topicAuthorName} </span>
                                 </div>
                                 <span>•</span>
                                 <span>
@@ -398,9 +394,9 @@ export default function TopicDetailPage() {
                                 <MessageContainer className="w-full">
                                     {data &&
                                         data.data.map((message: MessageType) => (
-                                            <MessageItem 
-                                                key={message._id} 
-                                                message={message} 
+                                            <MessageItem
+                                                key={message._id}
+                                                message={message}
                                                 onReply={onReply}
                                                 isHighlighted={highlightedMessageId === message._id}
                                                 currentUserId={currentUser?.id}

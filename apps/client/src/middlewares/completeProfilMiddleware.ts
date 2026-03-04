@@ -94,8 +94,6 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
             const rejectedAt = newProfile.profile?.rejected?.rejectedAt;
             const modifiedAt = newProfile.profile?.rejected?.modifiedAt;
 
-            console.log(`Company ${payload.id} is rejected. Rejected at: ${rejectedAt}, Modified at: ${modifiedAt}`);
-
             // If rejected but modified after rejection, consider as pending validation and redirect to pending validation page
             if (rejectedAt && modifiedAt && new Date(modifiedAt) > new Date(rejectedAt)) {
                 if (pathname === '/pending-validation') return;

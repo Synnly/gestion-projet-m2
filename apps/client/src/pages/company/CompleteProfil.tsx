@@ -276,7 +276,7 @@ export const CompleteProfil = () => {
                         </button>
                         <FormSubmit
                             className="btn-primary w-min font-bold"
-                            title="Compléter le profile"
+                            title="Compléter le profil"
                             pendingTitle="Complétion..."
                             error={error}
                             isError={isError}
