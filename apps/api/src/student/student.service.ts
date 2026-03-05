@@ -186,15 +186,33 @@ export class StudentService {
      * @param dto The update payload or create payload.
      */
     async update(id: string, dto: UpdateStudentDto | CreateStudentDto): Promise<void> {
-        const student = await this.studentModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
+        const updatePayload = Object.fromEntries(
+            Object.entries(dto).filter(([, value]) => value !== undefined),
+        ) as Partial<UpdateStudentDto & CreateStudentDto>;
 
-        if (student) {
-            // Partial update: only the provided fields are assigned
-            // Triggers pre-save hooks (hashing), but disables full validation
-            student.set(dto);
+        if (Object.keys(updatePayload).length === 0) {
+            return;
+        }
+
+        // Only use save() when password is explicitly updated to keep hashing pre-save hook.
+        if ('password' in updatePayload) {
+            const student = await this.studentModel
+                .findOne({ _id: id, deletedAt: { $exists: false } })
+                .select('+password')
+                .exec();
+
+            if (!student) {
+                return;
+            }
+
+            student.set(updatePayload);
             await student.save({ validateBeforeSave: false });
             return;
         }
+
+        await this.studentModel
+            .findOneAndUpdate({ _id: id, deletedAt: { $exists: false } }, { $set: updatePayload })
+            .exec();
         return;
     }
 

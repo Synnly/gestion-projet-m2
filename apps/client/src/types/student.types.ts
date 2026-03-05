@@ -52,14 +52,16 @@ export const editProfilForm = z.object({
         .custom<FileList | null | undefined>()
         .refine(
             (file) => {
-                if (!file || !(file[0] instanceof File)) return false;
+                if (!file || !(file instanceof FileList) || file.length === 0) return true;
+                if (!(file[0] instanceof File)) return false;
                 return file[0].size <= IMAGE_SIZE_MAX;
             },
             { message: 'Le fichier doit faire moins de 5MB' },
         )
         .refine(
             (file) => {
-                if (!file || !(file[0] instanceof File)) return false;
+                if (!file || !(file instanceof FileList) || file.length === 0) return true;
+                if (!(file[0] instanceof File)) return false;
                 return ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'].includes(file[0].type);
             },
             { message: 'Format non supporté : PNG, JPG, JPEG uniquement' },
@@ -69,14 +71,16 @@ export const editProfilForm = z.object({
         .custom<FileList | null | undefined>()
         .refine(
             (file) => {
-                if (!file || !(file[0] instanceof File)) return false;
+                if (!file || !(file instanceof FileList) || file.length === 0) return true;
+                if (!(file[0] instanceof File)) return false;
                 return file[0].size <= IMAGE_SIZE_MAX;
             },
             { message: 'Le fichier doit faire moins de 5MB' },
         )
         .refine(
             (file) => {
-                if (!file || !(file[0] instanceof File)) return false;
+                if (!file || !(file instanceof FileList) || file.length === 0) return true;
+                if (!(file[0] instanceof File)) return false;
                 return [
                     'application/pdf',
                     'application/msword',

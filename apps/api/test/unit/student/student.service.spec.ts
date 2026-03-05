@@ -203,22 +203,41 @@ describe('StudentService', () => {
     });
 
     it('update updates existing student when found', async () => {
-        const saveMock = jest.fn().mockResolvedValue(undefined);
-        const studentDoc: any = { save: saveMock, set: jest.fn() };
-        mockModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(studentDoc) });
+        mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: '1' }) });
 
         await service.update('1', { email: 'new@e.mail' } as any);
-        expect(mockModel.findOne).toHaveBeenCalledWith({ _id: '1', deletedAt: { $exists: false } });
-        expect(saveMock).toHaveBeenCalled();
+        expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(
+            { _id: '1', deletedAt: { $exists: false } },
+            { $set: { email: 'new@e.mail' } },
+        );
     });
 
     it('update returns undefined when student not found', async () => {
-        mockModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+        mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
 
         const result = await service.update('1', { email: 'new@e.mail' } as any);
 
         expect(result).toBeUndefined();
+        expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(
+            { _id: '1', deletedAt: { $exists: false } },
+            { $set: { email: 'new@e.mail' } },
+        );
+    });
+
+    it('update uses save path when password is provided', async () => {
+        const saveMock = jest.fn().mockResolvedValue(undefined);
+        const setMock = jest.fn();
+        const studentDoc: any = { save: saveMock, set: setMock };
+        const exec = jest.fn().mockResolvedValue(studentDoc);
+        const select = jest.fn().mockReturnValue({ exec });
+        mockModel.findOne.mockReturnValue({ select });
+
+        await service.update('1', { password: 'StrongP@ss1' } as any);
+
         expect(mockModel.findOne).toHaveBeenCalledWith({ _id: '1', deletedAt: { $exists: false } });
+        expect(select).toHaveBeenCalledWith('+password');
+        expect(setMock).toHaveBeenCalledWith({ password: 'StrongP@ss1' });
+        expect(saveMock).toHaveBeenCalled();
     });
 
     describe('remove', () => {

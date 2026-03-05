@@ -158,7 +158,7 @@ describe('ApplicationController', () => {
     describe('create', () => {
         it('should return upload urls when create is called with valid data', async () => {
             const dto: CreateApplicationDto = { cvExtension: 'pdf', lmExtension: 'docx' };
-            const creationResult = { cvUrl: 'cv-upload-url', lmUrl: 'lm-upload-url' };
+            const creationResult = { cvUrl: 'cv-upload-url', lmUrl: 'lm-upload-url', cvFileName: 'cv-file.pdf' };
             mockApplicationService.create.mockResolvedValue(creationResult);
 
             const result = await controller.create(studentId, postId, dto);

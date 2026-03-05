@@ -267,7 +267,7 @@ describe('ApplicationService', () => {
                 coverLetter: 'lm-file.docx',
             });
             expect(save).toHaveBeenCalledTimes(1);
-            expect(result).toEqual({ cvUrl: 'https://cv-url', lmUrl: 'https://lm-url' });
+            expect(result).toEqual({ cvUrl: 'https://cv-url', lmUrl: 'https://lm-url', cvFileName: 'cv-file.pdf' });
         });
 
         it('should create an application without cover letter when no lmExtension is provided', async () => {
@@ -292,7 +292,37 @@ describe('ApplicationService', () => {
                 coverLetter: undefined,
             });
             expect(save).toHaveBeenCalledTimes(1);
-            expect(result).toEqual({ cvUrl: 'https://cv-only-url', lmUrl: undefined });
+            expect(result).toEqual({ cvUrl: 'https://cv-only-url', lmUrl: undefined, cvFileName: 'cv-only.pdf' });
+        });
+
+        it('should use student default cv when useDefaultCv is true', async () => {
+            mockStudentService.findOne.mockResolvedValue({ ...student, defaultCv: 'student/default-cv.pdf' });
+            mockPostService.findOne.mockResolvedValue(post);
+            const exec = jest.fn().mockResolvedValue(null);
+            mockApplicationModel.findOne.mockReturnValue({ exec });
+            const save = jest.fn().mockResolvedValue(undefined);
+            mockApplicationModel.mockImplementation(() => ({ save }));
+            save.mockReturnValueOnce({ _id: '5457f1f77bcf86cd799439013' });
+
+            const result = await service.create(studentId, postId, { useDefaultCv: true });
+
+            expect(mockS3Service.generatePresignedUploadUrl).not.toHaveBeenCalled();
+            expect(mockApplicationModel).toHaveBeenCalledWith({
+                student: { ...student, defaultCv: 'student/default-cv.pdf' },
+                post,
+                cv: 'student/default-cv.pdf',
+                coverLetter: undefined,
+            });
+            expect(result).toEqual({ cvUrl: undefined, lmUrl: undefined, cvFileName: 'student/default-cv.pdf' });
+        });
+
+        it('should throw ConflictException when useDefaultCv is true but student has no default cv', async () => {
+            mockStudentService.findOne.mockResolvedValue(student);
+            mockPostService.findOne.mockResolvedValue(post);
+            const exec = jest.fn().mockResolvedValue(null);
+            mockApplicationModel.findOne.mockReturnValue({ exec });
+
+            await expect(service.create(studentId, postId, { useDefaultCv: true })).rejects.toThrow(ConflictException);
         });
 
         it('should log error and continue when notification fails during create', async () => {
@@ -313,7 +343,7 @@ describe('ApplicationService', () => {
 
             const result = await service.create(studentId, postId, { cvExtension: 'pdf' });
 
-            expect(result).toEqual({ cvUrl: 'https://cv-url', lmUrl: undefined });
+            expect(result).toEqual({ cvUrl: 'https://cv-url', lmUrl: undefined, cvFileName: 'cv-file.pdf' });
             expect(consoleErrorSpy).toHaveBeenCalledWith(
                 'Failed to send notification for new application:',
                 expect.any(Error),
