@@ -51,14 +51,13 @@ const throttledFetch = throttle(
             method: 'GET',
         };
         const apiKey = import.meta.env.VITE_GEOAPIFY_KEY;
-        const url = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&lang=fr&filter=countrycode:fr&apiKey=${apiKey}&limit=10`;
+        const url = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&lang=fr&apiKey=${apiKey}&limit=10`;
         try {
             const response = await fetch(url);
 
             if (!response.ok) return [];
 
             const data: GeoapifyResponse = await response.json();
-            console.log('data', data);
             return data.features.filter((item) => item.properties.formatted);
         } catch (error) {
             console.error('Erreur Autocomplete:', error);

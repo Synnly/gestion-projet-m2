@@ -84,18 +84,20 @@ export function CompanyProfile() {
                                         <p className="text-base-600">{profile.email}</p>
                                         <div className="flex gap-4 mt-3">
                                             <span
-                                                className={`px-3 py-1 rounded-full text-sm ${profile.isVerified
+                                                className={`px-3 py-1 rounded-full text-sm ${
+                                                    profile.isVerified
                                                         ? 'bg-success text-success-content'
                                                         : 'bg-warning text-warning-content'
-                                                    }`}
+                                                }`}
                                             >
                                                 {profile.isVerified ? '✓ Email vérifié' : 'Email non vérifié'}
                                             </span>
                                             <span
-                                                className={`px-3 py-1 rounded-full text-sm ${profile.isValid
+                                                className={`px-3 py-1 rounded-full text-sm ${
+                                                    profile.isValid
                                                         ? 'bg-success text-success-content'
                                                         : 'bg-error text-error-content'
-                                                    }`}
+                                                }`}
                                             >
                                                 {profile.isValid ? '✓ Compte validé' : 'Compte en attente'}
                                             </span>
@@ -175,6 +177,18 @@ export function CompanyProfile() {
                                     </div>
                                 </div>
                             )}
+
+                            <div className="bg-opacity-10 border-2 border-error rounded-lg shadow p-6">
+                                <h3 className="text-lg font-semibold text-base-900 mb-4">Zone de danger</h3>
+                                <p className="text-base-900 mb-4">
+                                    La suppression de votre compte entraînera la suppression de toutes vos données dans
+                                    un délai de 30 jours. Vous pouvez restaurer votre compte en vous reconnectant avant
+                                    cette échéance.
+                                </p>
+                                <button className="btn text-base-900" onClick={() => setShowDeleteModal(true)}>
+                                    Supprimer mon compte
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
@@ -189,9 +203,7 @@ export function CompanyProfile() {
                 />
             )}
 
-            {showSuccessModal && (
-                <DeleteAccountSuccessModal onConfirm={handleSuccessModalConfirm} />
-            )}
+            {showSuccessModal && <DeleteAccountSuccessModal onConfirm={handleSuccessModalConfirm} />}
         </div>
     );
 }

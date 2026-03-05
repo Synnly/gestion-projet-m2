@@ -183,6 +183,7 @@ export class CompanyService {
         const company = await this.companyModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
 
         if (company) {
+            const dateNow = new Date();
             const wasValid = company.isValid ?? false;
 
             // Validate that all provided post IDs exist
@@ -196,8 +197,16 @@ export class CompanyService {
                 if (post === null) throw new NotFoundException('Post with id ' + postId + ' not found');
             }
 
-            // Update existing active company
+            // This company was updated after being rejected
+            const modifiedAfterRejection =
+                !(dto instanceof CreateCompanyDto) && !dto.rejected && company.rejected?.isRejected;
             Object.assign(company, dto);
+            if (modifiedAfterRejection && company.rejected) {
+                company.rejected.modifiedAt = dateNow;
+                company.markModified('rejected');
+            }
+
+            // Update existing active company
             // keep previous behavior: trigger pre-save hooks, but skip full validation to avoid discriminator issues
             await company.save({ validateBeforeSave: false });
 

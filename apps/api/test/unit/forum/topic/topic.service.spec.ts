@@ -118,7 +118,7 @@ describe('TopicService', () => {
                 10,
                 [
                     { path: 'messages', select: 'content author createdAt updatedAt' },
-                    { path: 'author', select: '_id firstName lastName name email logo ban' },
+                    { path: 'author', select: '_id firstName lastName name email logo ban role' },
                 ],
                 undefined,
             );
@@ -147,7 +147,7 @@ describe('TopicService', () => {
                 10,
                 [
                     { path: 'messages', select: 'content author createdAt updatedAt' },
-                    { path: 'author', select: '_id firstName lastName name email logo ban' },
+                    { path: 'author', select: '_id firstName lastName name email logo ban role' },
                 ],
                 '-createdAt',
             );
@@ -182,7 +182,7 @@ describe('TopicService', () => {
                 10,
                 [
                     { path: 'messages', select: 'content author createdAt updatedAt' },
-                    { path: 'author', select: '_id firstName lastName name email logo ban' },
+                    { path: 'author', select: '_id firstName lastName name email logo ban role' },
                 ],
                 undefined,
             );
@@ -229,7 +229,7 @@ describe('TopicService', () => {
             });
             expect(query.populate).toHaveBeenCalledWith([
                 { path: 'messages', select: 'content author createdAt updatedAt' },
-                { path: 'author', select: '_id firstName lastName name email logo ban' },
+                { path: 'author', select: '_id firstName lastName name email logo ban role' },
             ]);
         });
 

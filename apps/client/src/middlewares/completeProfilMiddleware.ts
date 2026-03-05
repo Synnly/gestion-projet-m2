@@ -26,30 +26,26 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
     const authFetch = UseAuthFetch();
     const pathname = new URL(request.url).pathname;
     const { setProfil, profile } = profileStore.getState();
-    if (pathname === '/logout') {
-        return;
-    }
 
-    // If the account is pending deletion (soft-deleted), only allow /account-restore
+    if (pathname === '/logout') return;
+
+    // User soft-deleted, only allow access to /account-restore
     if (payload.deletedAt) {
-        if (pathname !== '/account-restore') {
-            throw redirect('/account-restore');
-        }
-        return;
-    }
-    if (!payload.isVerified && pathname === '/verify') {
-        return;
-    }
-    //if user try to access verify and already verified redirect to dashboard
-    if (payload.isVerified && pathname === '/verify') {
-        throw redirect(`/home`);
+        if (pathname === '/account-restore') return;
+        throw redirect('/account-restore');
     }
 
-    //if user is not verified and is not already on verify page redirect to verify
-    if (!payload.isVerified && pathname !== '/verify') {
-        throw redirect('/verify');
+    // User not verified, only allow access to /verify
+    if (!payload.isVerified) {
+        if (pathname === '/verify') return;
+        throw redirect(`/verify`);
     }
+
+    // User is verified, prevent access to /verify
+    if (payload.isVerified && pathname === '/verify') throw redirect(`/home`);
+
     if (payload.role === 'COMPANY') {
+        // Fetch company profile if not already in store
         if (!profile) {
             const profileRes = await authFetch(`${API_URL}/api/companies/${payload.id}`, {
                 headers: {
@@ -64,77 +60,54 @@ export const completeProfilMiddleware = async ({ request }: { request: Request }
             const newProfile: companyProfile = await profileRes.json();
             setProfil(newProfile);
         }
+
         const newProfile: companyProfileStoreType = profileStore.getState();
-
         const isComplete = isProfilComplete(newProfile.profile);
+
+        // Company is verified but profile is not complete, only allow access to /complete-profil
+        if (!isComplete) {
+            if (pathname === '/complete-profil') return;
+            throw redirect('/complete-profil');
+        }
+
+        const validationRes = await authFetch(`${API_URL}/api/companies/${payload.id}/is-valid`, {
+            method: 'GET',
+        });
+
+        if (!validationRes.ok) {
+            console.error(
+                `Failed to check company validation status: received HTTP ${validationRes.status} for company ${payload.id}`,
+            );
+            return;
+        }
+
+        const { isValid } = await validationRes.json();
         const isRejected = newProfile.profile?.rejected?.isRejected || false;
-        const rejectedAt = newProfile.profile?.rejected?.rejectedAt;
-        const modifiedAt = newProfile.profile?.rejected?.modifiedAt;
 
-        // Vérifier si l'entreprise a modifié son profil après le rejet
-        const hasModifiedAfterRejection =
-            !isRejected || (rejectedAt && modifiedAt && new Date(modifiedAt) > new Date(rejectedAt));
-
-        // Si rejeté mais modifié après rejet et profil complet, considérer comme en attente de validation
-        // if (hasModifiedAfterRejection && isComplete) {
-        //     if (pathname !== '/pending-validation') {
-        //         throw redirect('/pending-validation');
-        //     }
-        //     return;
-        // }
-
-        // Si rejeté et pas encore modifié, redirect vers complete-profil
-        if (isRejected && !hasModifiedAfterRejection && pathname !== '/complete-profil') {
-            throw redirect('/complete-profil');
+        // If profile is complete but not handled by admin yet, redirect to pending validation page
+        if (!isValid && !isRejected) {
+            if (pathname === '/pending-validation') return;
+            throw redirect('/pending-validation');
         }
 
-        // Si sur complete-profil page et rejeté (sans modification récente), permettre de rester
-        if (isRejected && !hasModifiedAfterRejection && pathname === '/complete-profil') {
-            return;
-        }
+        if (!isValid && isRejected) {
+            const rejectedAt = newProfile.profile?.rejected?.rejectedAt;
+            const modifiedAt = newProfile.profile?.rejected?.modifiedAt;
 
-        if (!isComplete && pathname === '/complete-profil') {
-            return;
-        }
-        if (!isComplete && pathname !== '/complete-profil') {
-            throw redirect('/complete-profil');
-        }
-
-        if (isComplete) {
-            try {
-                const validationRes = await authFetch(`${API_URL}/api/companies/${payload.id}/is-valid`, {
-                    method: 'GET',
-                });
-
-                if (!validationRes.ok) {
-                    console.error(
-                        `Failed to check company validation status: received HTTP ${validationRes.status} for company ${payload.id}`,
-                    );
-                    // Allow navigation to continue to avoid degrading UX on transient failures.
-                    return;
-                }
-
-                const { isValid } = await validationRes.json();
-                if (!isValid && pathname !== '/pending-validation') {
-                    throw redirect('/pending-validation');
-                }
-
-                // If company has become valid while on the pending page, redirect to dashboard.
-                if (isValid && pathname === '/pending-validation') {
-                    throw redirect(`/home`);
-                }
-            } catch (error) {
-                if (error instanceof Error) {
-                    console.error(`Error while checking company validation status for company ${payload.id}:`, error);
-                } else {
-                    throw error;
-                }
+            // If rejected but modified after rejection, consider as pending validation and redirect to pending validation page
+            if (rejectedAt && modifiedAt && new Date(modifiedAt) > new Date(rejectedAt)) {
+                if (pathname === '/pending-validation') return;
+                throw redirect('/pending-validation');
+            }
+            // If rejected and not modified after rejection, redirect to complete profile page
+            else {
+                if (pathname === '/complete-profil') return;
+                throw redirect('/complete-profil');
             }
         }
 
-        if (isComplete && pathname === '/complete-profil' && !isRejected) {
-            throw redirect(`/home`);
-        }
+        // If company is valid, prevent access to complete profile and pending validation pages
+        if (isValid && (pathname === '/pending-validation' || pathname === '/complete-profil')) throw redirect(`/home`);
     }
     if (payload.role === 'STUDENT') {
         // Fetch student profile to check isFirstTime

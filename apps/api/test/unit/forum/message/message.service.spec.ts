@@ -131,7 +131,7 @@ describe('MessageService', () => {
                     path: 'parentMessageId',
                     populate: {
                         path: 'authorId',
-                        select: 'firstName lastName name ban',
+                        select: 'firstName lastName name ban role',
                     },
                 },
             ]);
@@ -361,7 +361,7 @@ describe('MessageService', () => {
             expect(messageModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 messageId,
                 { deletedAt: expect.any(Date) },
-                { new: true }
+                { new: true },
             );
             expect(result).toEqual(deletedMessage);
         });
@@ -375,7 +375,7 @@ describe('MessageService', () => {
             expect(messageModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 messageId,
                 { deletedAt: expect.any(Date) },
-                { new: true }
+                { new: true },
             );
         });
 
@@ -397,7 +397,7 @@ describe('MessageService', () => {
             expect(messageModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 messageId,
                 { deletedAt: mockDate },
-                { new: true }
+                { new: true },
             );
             expect(result.deletedAt).toEqual(mockDate);
 
@@ -413,7 +413,7 @@ describe('MessageService', () => {
             await service.cleanupOldDeletedMessages();
 
             expect(messageModel.deleteMany).toHaveBeenCalledWith({
-                deletedAt: { $ne: null, $lte: expect.any(Date) }
+                deletedAt: { $ne: null, $lte: expect.any(Date) },
             });
         });
 
@@ -428,7 +428,7 @@ describe('MessageService', () => {
 
             const expectedDate = new Date('2026-01-11T10:00:00Z'); // 30 days before
             expect(messageModel.deleteMany).toHaveBeenCalledWith({
-                deletedAt: { $ne: null, $lte: expectedDate }
+                deletedAt: { $ne: null, $lte: expectedDate },
             });
 
             jest.useRealTimers();
@@ -441,9 +441,7 @@ describe('MessageService', () => {
 
             await service.cleanupOldDeletedMessages();
 
-            expect(loggerSpy).toHaveBeenCalledWith(
-                'Cleanup completed: 3 messages permanently deleted'
-            );
+            expect(loggerSpy).toHaveBeenCalledWith('Cleanup completed: 3 messages permanently deleted');
         });
 
         it('should log when no messages are deleted', async () => {
@@ -452,9 +450,7 @@ describe('MessageService', () => {
 
             await service.cleanupOldDeletedMessages();
 
-            expect(loggerSpy).toHaveBeenCalledWith(
-                'Cleanup completed: 0 messages permanently deleted'
-            );
+            expect(loggerSpy).toHaveBeenCalledWith('Cleanup completed: 0 messages permanently deleted');
         });
 
         it('should handle errors gracefully', async () => {
@@ -464,10 +460,7 @@ describe('MessageService', () => {
 
             await service.cleanupOldDeletedMessages();
 
-            expect(loggerSpy).toHaveBeenCalledWith(
-                'Error during message cleanup',
-                error
-            );
+            expect(loggerSpy).toHaveBeenCalledWith('Error during message cleanup', error);
         });
 
         it('should not throw error on database failure', async () => {
