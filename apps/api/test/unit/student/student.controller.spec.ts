@@ -16,6 +16,7 @@ describe('StudentController', () => {
         create: jest.fn(),
         update: jest.fn(),
         remove: jest.fn(),
+        removeAll: jest.fn(),
         createMany: jest.fn(),
         parseFileContent: jest.fn(),
         getStats: jest.fn(),
@@ -157,6 +158,14 @@ describe('StudentController', () => {
             mockService.remove.mockRejectedValue(new Error('Database error'));
             await expect(controller.remove('507f1f77bcf86cd799439011')).rejects.toThrow('Database error');
         });
+    });
+
+    it('removeAll calls studentService.removeAll', async () => {
+        mockService.removeAll.mockResolvedValue(undefined);
+
+        await expect(controller.removeAll()).resolves.toBeUndefined();
+
+        expect(mockService.removeAll).toHaveBeenCalledTimes(1);
     });
 
     describe('import', () => {

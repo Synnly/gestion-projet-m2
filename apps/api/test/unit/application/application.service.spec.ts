@@ -325,6 +325,18 @@ describe('ApplicationService', () => {
             await expect(service.create(studentId, postId, { useDefaultCv: true })).rejects.toThrow(ConflictException);
         });
 
+        it('should throw ConflictException when useDefaultCv is false and cvExtension is missing', async () => {
+            mockStudentService.findOne.mockResolvedValue(student);
+            mockPostService.findOne.mockResolvedValue(post);
+            const exec = jest.fn().mockResolvedValue(null);
+            mockApplicationModel.findOne.mockReturnValue({ exec });
+
+            await expect(service.create(studentId, postId, {} as CreateApplicationDto)).rejects.toThrow(
+                'CV extension is required when not using default CV',
+            );
+            expect(mockS3Service.generatePresignedUploadUrl).not.toHaveBeenCalled();
+        });
+
         it('should log error and continue when notification fails during create', async () => {
             mockStudentService.findOne.mockResolvedValue(student);
             mockPostService.findOne.mockResolvedValue(post);
@@ -1024,6 +1036,25 @@ describe('ApplicationService', () => {
             await expect(service.deleteAndSendNotification(appIdStr)).rejects.toThrow(NotFoundException);
             expect(mockApplicationModel.findOneAndUpdate).not.toHaveBeenCalled();
             expect(mockNotificationService.create).not.toHaveBeenCalled();
+        });
+
+        it('should log error and continue when notification creation fails on delete', async () => {
+            const exec = jest.fn().mockResolvedValue(mockApp);
+            const populate = jest.fn().mockReturnValue({ exec });
+            mockApplicationModel.findOne.mockReturnValue({ populate });
+            mockApplicationModel.findOneAndUpdate.mockResolvedValue({});
+            mockNotificationService.create.mockRejectedValue(new Error('Notification service error'));
+
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+            await expect(service.deleteAndSendNotification(appIdStr)).resolves.toBeUndefined();
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Failed to send notification for application deletion:',
+                expect.any(Error),
+            );
+
+            consoleErrorSpy.mockRestore();
         });
     });
 
