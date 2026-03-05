@@ -131,7 +131,7 @@ export function AccountRestorePage() {
                                         <p className="font-semibold">Restauration possible</p>
                                         <p className="text-sm text-base-600">
                                             Vous pouvez annuler la suppression et récupérer l'accès à votre compte 
-                                            en cliquant sur le bouton "Restaurer mon compte". Seul votre compte sera restauré, les offres de stage et candidatures, forum ne seront pas récupérables.
+                                            en cliquant sur le bouton "Restaurer mon compte". Votre compte, vos offres de stage, et votre forum d'entreprise seront restaurés dans le délai de 30 jours.
                                         </p>
                                     </div>
                                 </div>
