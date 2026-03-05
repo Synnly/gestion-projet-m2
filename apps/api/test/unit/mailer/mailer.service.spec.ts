@@ -94,14 +94,11 @@ describe('MailerService', () => {
             expect(mockUser.emailVerificationAttempts).toBe(0);
             expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    to: 'user@example.com',
-                    subject: 'Confirm your account',
-                    template: 'signupConfirmation',
+                    context: { fromName: 'Test App', otp: expect.any(String) },
                     from: '"Test App" <noreply@example.com>',
-                    context: expect.objectContaining({
-                        otp: expect.any(String),
-                        fromName: 'Test App',
-                    }),
+                    subject: 'Confirmez votre compte',
+                    template: 'signupConfirmation',
+                    to: 'user@example.com',
                 }),
             );
         });
@@ -190,10 +187,11 @@ describe('MailerService', () => {
             expect(mockUser.passwordResetAttempts).toBe(0);
             expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    to: 'user@example.com',
-                    subject: 'Password reset request',
-                    template: 'resetPassword',
+                    context: { fromName: 'Test App', otp: expect.any(String) },
                     from: '"Test App" <noreply@example.com>',
+                    subject: 'Demande de réinitialisation du mot de passe',
+                    template: 'resetPassword',
+                    to: 'user@example.com',
                 }),
             );
         });
@@ -460,13 +458,11 @@ describe('MailerService', () => {
 
             expect(mockNestMailerService.sendMail).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    to: 'user@example.com',
-                    subject: 'Notification from Test App',
-                    template: 'finishVerif',
+                    context: { fromName: 'Test App' },
                     from: '"Test App" <noreply@example.com>',
-                    context: {
-                        fromName: 'Test App',
-                    },
+                    subject: 'Notification de Test App',
+                    template: 'finishVerif',
+                    to: 'user@example.com',
                 }),
             );
         });
@@ -664,13 +660,7 @@ describe('MailerService', () => {
             mockNestMailerService.sendMail.mockRejectedValue(new Error('SMTP connection failed'));
 
             await expect(
-                service.sendApplicationAcceptedEmail(
-                    'student@example.com',
-                    'John',
-                    'Doe',
-                    'Developer',
-                    'Company',
-                ),
+                service.sendApplicationAcceptedEmail('student@example.com', 'John', 'Doe', 'Developer', 'Company'),
             ).rejects.toThrow('SMTP connection failed');
         });
     });

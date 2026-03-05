@@ -47,7 +47,7 @@ export function EditCompanyProfile() {
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const upload = useUploadFile();
     const authFetch = UseAuthFetch();
-    console.log('profile', profile);
+
     useEffect(() => {
         if (!logoBlob) {
             setLogoUrl(null);
@@ -330,7 +330,9 @@ export function EditCompanyProfile() {
                                     className="textarea textarea-primary w-full"
                                 />
                                 {errors.description && (
-                                    <span className="text-red-500 mt-1 text-sm italic">{errors.description.message}</span>
+                                    <span className="text-red-500 mt-1 text-sm italic">
+                                        {errors.description.message}
+                                    </span>
                                 )}
                             </div>
                         </FormSection>

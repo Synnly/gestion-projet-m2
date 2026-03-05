@@ -8,7 +8,7 @@ import { createTopic } from '../../../apis/create_topic';
 import { FormInput } from '../../../pages/common/form/FormInput';
 import { FormSubmit } from '../../../pages/common/form/FormSubmit';
 import { CustomForm } from '../../../pages/common/form/CustomForm';
-import { Cross } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export function CreateTopicModal({ forumId, isOpen, onClose }: CreateTopicModalProps) {
     const queryClient = useQueryClient();
@@ -68,7 +68,7 @@ export function CreateTopicModal({ forumId, isOpen, onClose }: CreateTopicModalP
                         className="btn btn-circle btn-ghost"
                         disabled={isPending}
                     >
-                        <Cross size={16} />
+                        <X size={16} />
                     </button>
                 </div>
 

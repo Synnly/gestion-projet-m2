@@ -59,11 +59,15 @@ describe('CompanyService', () => {
     const mockTopicModel = {
         find: jest.fn(),
         deleteMany: jest.fn(),
+        updateMany: jest.fn(),
+        updateOne: jest.fn(),
     };
 
     const mockMessageModel = {
+        find: jest.fn(),
         deleteMany: jest.fn(),
         updateMany: jest.fn(),
+        countDocuments: jest.fn(),
     };
 
     const mockExec = jest.fn();
@@ -83,7 +87,7 @@ describe('CompanyService', () => {
     const mockNotificationService = {
         create: jest.fn(),
     };
-    
+
     const mockNotificationModel = {
         updateMany: jest.fn(),
     };
@@ -534,6 +538,7 @@ describe('CompanyService', () => {
                 _id: '507f1f77bcf86cd799439011',
                 isValid: false,
                 save: jest.fn().mockResolvedValue(true),
+                rejected: {},
             };
 
             mockExec.mockResolvedValue(mockCompany);
@@ -559,7 +564,7 @@ describe('CompanyService', () => {
 
             mockExec.mockResolvedValue(mockCompany);
             mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
-            mockForumService.findOneByCompanyId.mockResolvedValue({ _id: 'forum-id' });
+            mockForumService.findOneByCompanyId.mockResolvedValue({ _id: 'forum-id', rejected: {} });
 
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
@@ -841,6 +846,32 @@ describe('CompanyService', () => {
             await service.update('507f1f77bcf86cd799439011', updateDto);
 
             expect(mockCompany.save).toHaveBeenCalled();
+        });
+
+        it('should set rejected.modifiedAt and mark rejected as modified when updating a rejected company', async () => {
+            const updateDto = {
+                name: 'Updated after rejection',
+            } as any;
+
+            const markModified = jest.fn();
+            const mockCompany = {
+                _id: '507f1f77bcf86cd799439011',
+                rejected: {
+                    isRejected: true,
+                    modifiedAt: undefined,
+                },
+                save: jest.fn().mockResolvedValue(true),
+                markModified,
+            };
+
+            mockExec.mockResolvedValue(mockCompany);
+            mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
+
+            await service.update('507f1f77bcf86cd799439011', updateDto);
+
+            expect(mockCompany.rejected.modifiedAt).toBeInstanceOf(Date);
+            expect(markModified).toHaveBeenCalledWith('rejected');
+            expect(mockCompany.save).toHaveBeenCalledWith({ validateBeforeSave: false });
         });
     });
 
@@ -1652,7 +1683,10 @@ describe('CompanyService', () => {
             });
 
             mockPostModel.find.mockReturnValue({
-                select: jest.fn().mockResolvedValue([{ _id: postId1, title: 'Post 1' }, { _id: postId2, title: 'Post 2' }]),
+                select: jest.fn().mockResolvedValue([
+                    { _id: postId1, title: 'Post 1' },
+                    { _id: postId2, title: 'Post 2' },
+                ]),
             });
 
             // Mock des applications avec students et posts
@@ -1671,7 +1705,7 @@ describe('CompanyService', () => {
 
             mockApplicationModel.find.mockReturnValue(mockApplicationQuery);
             mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 5 });
-            
+
             // Mock for deleteMany with session support
             mockPostModel.deleteMany.mockReturnValue({
                 session: jest.fn().mockResolvedValue({ deletedCount: 2 }),
@@ -1817,7 +1851,7 @@ describe('CompanyService', () => {
             mockApplicationModel.find.mockReturnValue(mockApplicationQuery);
             mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 3 });
             mockNotificationService.create.mockResolvedValue(undefined);
-            
+
             mockPostModel.deleteMany.mockReturnValue({
                 session: jest.fn().mockResolvedValue({ deletedCount: 1 }),
             });
@@ -1866,9 +1900,7 @@ describe('CompanyService', () => {
                 populate: jest.fn().mockReturnThis(),
                 select: jest.fn().mockReturnThis(),
                 lean: jest.fn().mockReturnThis(),
-                exec: jest.fn().mockResolvedValue([
-                    { student: { _id: 'student1' }, post: { title: 'Test Post' } },
-                ]),
+                exec: jest.fn().mockResolvedValue([{ student: { _id: 'student1' }, post: { title: 'Test Post' } }]),
             };
 
             mockApplicationModel.find.mockReturnValue(mockApplicationQuery);
@@ -1880,7 +1912,7 @@ describe('CompanyService', () => {
             mockPostModel.deleteMany.mockReturnValue({
                 session: jest.fn().mockResolvedValue({ deletedCount: 1 }),
             });
-            
+
             mockForumModel.find.mockReturnValue({
                 select: jest.fn().mockResolvedValue([]),
             });
@@ -1902,6 +1934,126 @@ describe('CompanyService', () => {
             expect(mockCompanyModel.deleteMany).toHaveBeenCalledWith({
                 _id: { $in: [companyId] },
             });
+        });
+
+        it('should cleanup company messages from general forum and recalculate counters', async () => {
+            const companyId = 'company1';
+            const postId = 'post1';
+            const generalForumId = 'general-forum';
+            const topicId1 = 'general-topic-1';
+            const topicId2 = 'general-topic-2';
+            const messageId1 = 'general-message-1';
+            const messageId2 = 'general-message-2';
+
+            mockCompanyModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: companyId, name: 'Company 1' }]),
+            });
+
+            mockPostModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: postId, title: 'Post 1' }]),
+            });
+
+            const mockApplicationQuery = {
+                populate: jest.fn().mockReturnThis(),
+                select: jest.fn().mockReturnThis(),
+                lean: jest.fn().mockReturnThis(),
+                exec: jest.fn().mockResolvedValue([]),
+            };
+            mockApplicationModel.find.mockReturnValue(mockApplicationQuery);
+            mockApplicationModel.deleteMany.mockResolvedValue({ deletedCount: 0 });
+            mockPostModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+
+            mockForumModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([]),
+            });
+
+            mockForumModel.findOne.mockReturnValue({
+                select: jest.fn().mockResolvedValue({ _id: generalForumId }),
+            });
+
+            mockTopicModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([
+                    { _id: topicId1, messages: [messageId1] },
+                    { _id: topicId2, messages: [messageId2] },
+                ]),
+            });
+
+            mockMessageModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([
+                    { _id: messageId1, topicId: topicId1 },
+                    { _id: messageId2, topicId: topicId2 },
+                ]),
+            });
+
+            mockMessageModel.deleteMany
+                .mockResolvedValueOnce({ deletedCount: 2 })
+                .mockResolvedValueOnce({ deletedCount: 2 });
+
+            mockTopicModel.updateMany.mockResolvedValue({ modifiedCount: 2 });
+            mockMessageModel.countDocuments
+                .mockResolvedValueOnce(3)
+                .mockResolvedValueOnce(4)
+                .mockResolvedValueOnce(7);
+            mockTopicModel.updateOne.mockResolvedValue({ modifiedCount: 1 });
+            mockForumModel.updateOne.mockResolvedValue({ modifiedCount: 1 });
+            mockCompanyModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+
+            await service.handleCompanyCleanupCron();
+
+            expect(mockTopicModel.find).toHaveBeenCalledWith({ forumId: generalForumId });
+            expect(mockMessageModel.find).toHaveBeenCalledWith({
+                topicId: { $in: [topicId1, topicId2] },
+                authorId: { $in: [companyId] },
+            });
+            expect(mockTopicModel.updateMany).toHaveBeenCalledWith(
+                { _id: { $in: [topicId1, topicId2] } },
+                { $pull: { messages: { $in: [messageId1, messageId2] } } },
+            );
+            expect(mockTopicModel.updateOne).toHaveBeenCalledWith({ _id: topicId1 }, { nbMessages: 3 });
+            expect(mockTopicModel.updateOne).toHaveBeenCalledWith({ _id: topicId2 }, { nbMessages: 4 });
+            expect(mockForumModel.updateOne).toHaveBeenCalledWith({ _id: generalForumId }, { nbMessages: 7 });
+        });
+
+        it('should inspect general forum topics and skip cleanup when no company messages are found', async () => {
+            const companyId = 'company1';
+            const generalForumId = 'general-forum';
+            const topicId1 = 'general-topic-1';
+
+            mockCompanyModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: companyId, name: 'Company 1' }]),
+            });
+
+            mockPostModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([]),
+            });
+
+            mockForumModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([]),
+            });
+
+            mockForumModel.findOne.mockReturnValue({
+                select: jest.fn().mockResolvedValue({ _id: generalForumId }),
+            });
+
+            mockTopicModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([{ _id: topicId1, messages: [] }]),
+            });
+
+            mockMessageModel.find.mockReturnValue({
+                select: jest.fn().mockResolvedValue([]),
+            });
+
+            mockCompanyModel.deleteMany.mockResolvedValue({ deletedCount: 1 });
+
+            await service.handleCompanyCleanupCron();
+
+            expect(mockTopicModel.find).toHaveBeenCalledWith({ forumId: generalForumId });
+            expect(mockMessageModel.find).toHaveBeenCalledWith({
+                topicId: { $in: [topicId1] },
+                authorId: { $in: [companyId] },
+            });
+            expect(mockTopicModel.updateMany).not.toHaveBeenCalled();
+            expect(mockForumModel.updateOne).not.toHaveBeenCalledWith({ _id: generalForumId }, expect.anything());
         });
     });
 
@@ -1934,6 +2086,8 @@ describe('CompanyService', () => {
                 _id: companyId,
                 deletedAt: { $exists: true },
             });
+                        expect(mockCompanyModel.updateOne).toHaveBeenCalledWith({ _id: companyId }, { $unset: { deletedAt: 1 } });
+
             expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
                 { _id: companyId },
                 { $unset: { deletedAt: 1 } },

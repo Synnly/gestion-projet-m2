@@ -77,7 +77,7 @@ export class MessageService {
                 path: 'parentMessageId',
                 populate: {
                     path: 'authorId',
-                    select: 'firstName lastName name ban',
+                    select: 'firstName lastName name ban role',
                 },
             },
         ];
@@ -91,21 +91,17 @@ export class MessageService {
      * @returns The updated message.
      */
     async deleteMessage(messageId: string): Promise<Message> {
-        const message = await this.messageModel.findByIdAndUpdate(
-            messageId,
-            { deletedAt: new Date() },
-            { new: true }
-        );
-        
+        const message = await this.messageModel.findByIdAndUpdate(messageId, { deletedAt: new Date() }, { new: true });
+
         if (!message) {
             throw new NotFoundException('Message not found');
         }
-        
+
         return message;
     }
 
     /**
-     * CronJob that runs daily at 3:00 AM to permanently delete messages 
+     * CronJob that runs daily at 3:00 AM to permanently delete messages
      * that have been soft-deleted for more than 30 days.
      */
     @Cron(CronExpression.EVERY_DAY_AT_3AM)
@@ -115,7 +111,7 @@ export class MessageService {
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
             const result = await this.messageModel.deleteMany({
-                deletedAt: { $ne: null, $lte: thirtyDaysAgo }
+                deletedAt: { $ne: null, $lte: thirtyDaysAgo },
             });
 
             this.logger.log(`Cleanup completed: ${result.deletedCount} messages permanently deleted`);

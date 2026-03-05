@@ -26,7 +26,7 @@ export function InternshipPage() {
 
     const access = userStore((s) => s.access);
 
-     // Vérifier si un message d'import réussi existe dans le localStorage
+    // Vérifier si un message d'import réussi existe dans le localStorage
     useEffect(() => {
         const importMessage = localStorage.getItem('import_success_message');
         if (importMessage) {
@@ -70,14 +70,14 @@ export function InternshipPage() {
                                 <InternshipList />
                             </ToastProvider>
                         </div>
-                    
+
                         {selectedInternship ? (
                             <div className="flex flex-1 h-full overflow-y-auto">
                                 <InternshipDetail internship={selectedInternship} />
                             </div>
                         ) : (
                             <div className="col-span-12 lg:col-span-7 h-full flex items-center justify-center text-base-content/60">
-                                Select an internship to see details
+                                Sélectionnez une offre pour voir les détails
                             </div>
                         )}
                     </div>

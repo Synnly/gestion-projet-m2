@@ -43,6 +43,7 @@ export type Topic = {
         lastName?: string;
         email?: string;
         logo?: string;
+        role?: 'ADMIN' | 'STUDENT' | 'COMPANY';
         ban?: {
             date: string;
             reason: string;
