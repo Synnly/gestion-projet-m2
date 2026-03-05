@@ -392,18 +392,27 @@ describe('Company Integration Tests', () => {
                 isVerified: true,
             });
 
-            const res = await request(app.getHttpServer()).get(`/api/companies/${company._id}`).expect(200);
+            const res = await request(app.getHttpServer())
+                .get(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .expect(200);
 
             expect(res.body).toBeDefined();
         });
 
         it('should return 404 when company not found', async () => {
             const nonExistentId = new Types.ObjectId();
-            await request(app.getHttpServer()).get(`/api/companies/${nonExistentId}`).expect(404);
+            await request(app.getHttpServer())
+                .get(`/api/companies/${nonExistentId}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .expect(404);
         });
 
         it('should return 400 for invalid ObjectId format', async () => {
-            await request(app.getHttpServer()).get('/api/companies/invalid-id').expect(400);
+            await request(app.getHttpServer())
+                .get('/api/companies/invalid-id')
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .expect(400);
         });
 
         it('should return company with all optional fields', async () => {
@@ -422,7 +431,10 @@ describe('Company Integration Tests', () => {
                 isVerified: true,
             });
 
-            const res = await request(app.getHttpServer()).get(`/api/companies/${company._id}`).expect(200);
+            const res = await request(app.getHttpServer())
+                .get(`/api/companies/${company._id}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .expect(200);
 
             expect(res.body).toBeDefined();
         });
@@ -1223,7 +1235,10 @@ describe('Company Integration Tests', () => {
             expect(company).toBeDefined();
             const companyId = company?._id.toString();
 
-            await request(app.getHttpServer()).get(`/api/companies/${companyId}`).expect(200);
+            await request(app.getHttpServer())
+                .get(`/api/companies/${companyId}`)
+                .set('Authorization', `Bearer ${tokenFor(Role.ADMIN)}`)
+                .expect(200);
 
             await request(app.getHttpServer())
                 .put(`/api/companies/${companyId}`)

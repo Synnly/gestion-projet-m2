@@ -40,6 +40,7 @@ describe('CompanyService', () => {
 
     const mockPostModel = {
         find: jest.fn(),
+        updateMany: jest.fn(),
         deleteMany: jest.fn(),
     };
 
@@ -1919,6 +1920,13 @@ describe('CompanyService', () => {
             const mockExec = jest.fn().mockResolvedValue(mockCompany);
             mockCompanyModel.findOne.mockReturnValue({ exec: mockExec });
             mockCompanyModel.updateOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+            mockPostModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({ modifiedCount: 2 }) });
+            mockForumModel.find.mockReturnValue({
+                select: jest.fn().mockReturnValue({
+                    lean: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue([]) }),
+                }),
+            });
+            mockForumService.create.mockResolvedValue(undefined);
 
             await service.restore(companyId);
 
@@ -1928,6 +1936,38 @@ describe('CompanyService', () => {
             });
             expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
                 { _id: companyId },
+                { $unset: { deletedAt: 1 } },
+            );
+            expect(mockPostModel.updateMany).toHaveBeenCalledWith(
+                { company: companyId, deletedAt: { $exists: true } },
+                { $unset: { deletedAt: 1 } },
+            );
+            expect(mockForumService.create).toHaveBeenCalledWith(companyId);
+        });
+
+        it('should not recreate forum when company forum already exists', async () => {
+            const companyId = '507f1f77bcf86cd799439011';
+            const deletedDate = new Date();
+            deletedDate.setDate(deletedDate.getDate() - 5);
+            const existingForumId = 'forum-id';
+
+            const mockCompany = {
+                _id: companyId,
+                name: 'Test Company',
+                deletedAt: deletedDate,
+            };
+
+            mockCompanyModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(mockCompany) });
+            mockCompanyModel.updateOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+            mockPostModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({ modifiedCount: 1 }) });
+            mockForumService.findOneByCompanyId.mockResolvedValue({ _id: existingForumId, company: companyId } as any);
+            mockForumModel.updateOne.mockReturnValue({ exec: jest.fn().mockResolvedValue({ modifiedCount: 1 }) });
+
+            await service.restore(companyId);
+
+            expect(mockForumService.create).not.toHaveBeenCalled();
+            expect(mockForumModel.updateOne).toHaveBeenCalledWith(
+                { _id: existingForumId },
                 { $unset: { deletedAt: 1 } },
             );
         });
