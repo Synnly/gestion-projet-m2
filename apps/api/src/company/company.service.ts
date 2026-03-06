@@ -349,7 +349,7 @@ export class CompanyService {
         const existingForum = await this.forumService.findOneByCompanyId(id);
         if (!existingForum) {
             await this.forumService.create(company._id);
-        }else {
+        } else {
             await this.forumModel.updateOne({ _id: existingForum._id }, { $unset: { deletedAt: 1 } }).exec();
         }
 
