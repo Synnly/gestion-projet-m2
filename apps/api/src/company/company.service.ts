@@ -304,8 +304,8 @@ export class CompanyService {
     /**
      * Restores a soft-deleted company account
      *
-        * This method removes the deletedAt timestamp, effectively restoring the company account,
-        * restores all the company's soft-deleted posts, and creates a fresh company forum.
+     * This method removes the deletedAt timestamp, effectively restoring the company account,
+     * restores all the company's soft-deleted posts, and creates a fresh company forum.
      * The company can only be restored if it was soft-deleted within the last 30 days.
      *
      * @param id - The MongoDB ObjectId of the company to restore
