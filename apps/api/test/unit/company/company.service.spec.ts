@@ -2049,7 +2049,6 @@ describe('CompanyService', () => {
                 _id: companyId,
                 deletedAt: { $exists: true },
             });
-                        expect(mockCompanyModel.updateOne).toHaveBeenCalledWith({ _id: companyId }, { $unset: { deletedAt: 1 } });
 
             expect(mockCompanyModel.updateOne).toHaveBeenCalledWith(
                 { _id: companyId },
