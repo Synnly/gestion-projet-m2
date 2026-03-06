@@ -75,7 +75,7 @@ export function DeleteAccountModal({ companyId, companyName, onClose, onSuccess 
                         <ul className="list-disc list-inside space-y-1 text-sm">
                             <li>Toutes vos offres de stage (restaurables pendant 30 jours)</li>
                             <li>Toutes les candidatures reçues (non restaurables)</li>
-                            <li>Votre forum d'entreprise (restaurables pendant 30 jours)</li>
+                            <li>Votre forum d'entreprise (restaurable pendant 30 jours)</li>
                             <li>Tous vos messages et topics (non restaurables)</li>
                             <li>Toutes vos données d'entreprise</li>
                         </ul>
