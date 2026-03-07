@@ -142,7 +142,7 @@ export class ForumController {
         const topics = await this.topicService.findAll(forumId, pagination);
         return {
             ...topics,
-            data: topics.data.map((topic) => plainToInstance(TopicDto, topic)),
+            data: topics.data.map((topic) => plainToInstance(TopicDto, topic, { excludeExtraneousValues: true } )),
         };
     }
 
@@ -156,7 +156,7 @@ export class ForumController {
     async findOne(@Param('forumId') forumId: string, @Param('id') id: string): Promise<TopicDto | null> {
         const topic = await this.topicService.findOne(forumId, id);
         if (!topic) return null;
-        return plainToInstance(TopicDto, topic);
+        return plainToInstance(TopicDto, topic, { excludeExtraneousValues: true });
     }
 
     /**
