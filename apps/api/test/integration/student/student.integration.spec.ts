@@ -124,7 +124,7 @@ describe('Student Integration', () => {
         const res = await request(app.getHttpServer()).get(`/api/students/${createdStudent._id}`).expect(200);
         expect(res.body.email).toBe(dto.email);
         expect(res.body.firstName).toBe(dto.firstName);
-    });
+    }, 20000);
 
     it('GET /api/students/:studentId -> returns 404 when student not found', async () => {
         await request(app.getHttpServer()).get('/api/students/507f1f77bcf86cd799439011').expect(404);

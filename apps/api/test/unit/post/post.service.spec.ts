@@ -391,6 +391,21 @@ describe('PostService', () => {
             await expect(service.update(dto, companyId, postId)).rejects.toThrow();
         });
 
+        it('should throw NotFoundException when post exists but update result is null', async () => {
+            const currentPost = createMockPost({ isVisible: true });
+            const findOneExecMock = jest.fn().mockResolvedValue(currentPost);
+            mockPostModel.findOne.mockReturnValue({ exec: findOneExecMock });
+
+            const updateExecMock = jest.fn().mockResolvedValue(null);
+            const populateMock = jest.fn().mockReturnValue({ exec: updateExecMock });
+            mockPostModel.findOneAndUpdate.mockReturnValue({ populate: populateMock });
+
+            const dto = { title: 'Will fail update' } as any;
+
+            await expect(service.update(dto, companyId, postId)).rejects.toThrow(NotFoundException);
+            expect(mockApplicationService.markApplicationsAsNoFollowUp).not.toHaveBeenCalled();
+        });
+
         it('should mark applications as NoFollowUp when post is hidden', async () => {
             const currentPost = createMockPost({ isVisible: true });
             const findOneExecMock = jest.fn().mockResolvedValue(currentPost);

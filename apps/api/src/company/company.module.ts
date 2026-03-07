@@ -12,6 +12,7 @@ import { Application, ApplicationSchema } from '../application/application.schem
 import { Forum, ForumSchema } from '../forum/forum.schema';
 import { Topic, TopicSchema } from '../forum/topic/topic.schema';
 import { Message, MessageSchema } from '../forum/message/message.schema';
+import { Report, ReportSchema } from '../forum/report/report.schema';
 import { GeoService } from '../common/geography/geo.service';
 import { NotificationModule } from '../notification/notification.module';
 import { AuthModule } from '../auth/auth.module';
@@ -29,6 +30,7 @@ import { AuthModule } from '../auth/auth.module';
             { name: Forum.name, schema: ForumSchema },
             { name: Topic.name, schema: TopicSchema },
             { name: Message.name, schema: MessageSchema },
+            { name: Report.name, schema: ReportSchema },
         ]),
         NotificationModule,
         forwardRef(() => AuthModule),

@@ -63,16 +63,20 @@ export function DeleteAccountModal({ companyId, companyName, onClose, onSuccess 
                         <AlertTriangle className="h-6 w-6 shrink-0" />
                         <div>
                             <h3 className="font-bold">Attention !</h3>
-                            <div className="text-sm">Cette action est réversible pendant 30 jours. Mais les données associées à votre compte ne seront pas récupérables.</div>
+                            <div className="text-sm">
+                                Cette action est réversible pendant 30 jours. Si vous restaurez votre compte dans ce délai,
+                                vos offres de stage et votre forum d'entreprise seront aussi restaurés.
+                            </div>
                         </div>
                     </div>
 
                     <div className="bg-base-200 p-4 rounded-lg">
                         <h4 className="font-semibold mb-2">Ce qui va être supprimé :</h4>
                         <ul className="list-disc list-inside space-y-1 text-sm">
-                            <li>Toutes vos offres de stage</li>
-                            <li>Toutes les candidatures reçues</li>
-                            <li>Votre forum et tous les messages associés</li>
+                            <li>Toutes vos offres de stage (restaurables pendant 30 jours)</li>
+                            <li>Toutes les candidatures reçues (non restaurables)</li>
+                            <li>Votre forum d'entreprise (restaurable pendant 30 jours)</li>
+                            <li>Tous vos messages et topics (non restaurables)</li>
                             <li>Toutes vos données d'entreprise</li>
                         </ul>
                     </div>

@@ -88,7 +88,7 @@ export class ApplicationService {
         studentId: Types.ObjectId,
         postId: Types.ObjectId,
         dto: CreateApplicationDto,
-    ): Promise<{ cvUrl: string; lmUrl: string | undefined }> {
+    ): Promise<{ cvUrl?: string; lmUrl?: string; cvFileName: string }> {
         // Validate existence of student
         const student = await this.studentService.findOne(studentId.toString());
         if (!student) throw new NotFoundException(`Student with id ${studentId.toString()} not found`);
@@ -110,14 +110,30 @@ export class ApplicationService {
             throw new ConflictException('Application already exists for this student and post');
         }
 
-        // Generate presigned URLs for CV and cover letter uploads
+        // Generate presigned URLs for CV and cover letter uploads (or reuse default CV)
         const objectname: string = `${studentId.toString()}`;
-        const cv = await this.s3Service.generatePresignedUploadUrl(
-            `${objectname}.${dto.cvExtension}`,
-            'cv',
-            studentId.toString(),
-            postId.toString(),
-        );
+        let cvUploadUrl: string | undefined;
+        let cvFileName: string;
+
+        if (dto.useDefaultCv) {
+            if (!student.defaultCv) {
+                throw new ConflictException('No default CV found on student profile');
+            }
+            cvFileName = student.defaultCv;
+        } else {
+            if (!dto.cvExtension) {
+                throw new ConflictException('CV extension is required when not using default CV');
+            }
+            const cv = await this.s3Service.generatePresignedUploadUrl(
+                `${objectname}.${dto.cvExtension}`,
+                'cv',
+                studentId.toString(),
+                postId.toString(),
+            );
+            cvUploadUrl = cv.uploadUrl;
+            cvFileName = cv.fileName;
+        }
+
         let lm: { fileName: string; uploadUrl?: string } | undefined = undefined;
         if (dto?.lmExtension) {
             lm = await this.s3Service.generatePresignedUploadUrl(
@@ -131,7 +147,7 @@ export class ApplicationService {
         const newApplication = await new this.applicationModel({
             student: student,
             post: post,
-            cv: cv.fileName,
+            cv: cvFileName,
             coverLetter: lm?.fileName,
         }).save();
         await this.postService.addApplication(postId.toString(), newApplication._id.toString());
@@ -146,7 +162,7 @@ export class ApplicationService {
             console.error('Failed to send notification for new application:', error);
         }
 
-        return { cvUrl: cv.uploadUrl, lmUrl: lm?.uploadUrl };
+        return { cvUrl: cvUploadUrl, lmUrl: lm?.uploadUrl, cvFileName };
     }
 
     /**

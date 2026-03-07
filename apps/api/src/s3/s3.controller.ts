@@ -125,14 +125,12 @@ export class S3Controller {
 
     /**
      * Generate a presigned URL for public file download (company logos)
-     * Rate limited but no ownership verification
-     * Requires authentication
+     * Rate limited, no ownership verification and no authentication
      *
      * @param fileName Full path of the file (from route params)
      * @returns Object with downloadUrl
      */
     @Get('signed/public/:fileName')
-    @UseGuards(AuthGuard)
     @Throttle({ default: RATE_LIMIT.DOWNLOAD })
     @HttpCode(HttpStatus.OK)
     async generatePublicDownloadUrl(@Param('fileName') fileName: string): Promise<{ downloadUrl: string }> {

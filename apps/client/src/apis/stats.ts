@@ -1,5 +1,8 @@
 import type { Internship } from '../types/internship.types';
 import type { PublicStats } from '../types/stats.ts';
+import { fetchPublicSignedUrl } from '../hooks/useBlob';
+
+export type { PublicStats };
 
 const API_URL = import.meta.env.VITE_APIURL;
 
@@ -31,5 +34,34 @@ export const fetchLatestPosts = async (limit: number = 6): Promise<Internship[]>
         throw new Error('Erreur lors du chargement des offres');
     }
 
-    return response.json();
+    const posts = (await response.json()) as Internship[];
+
+    const uniqueLogoFiles = Array.from(
+        new Set(posts.map((post) => post.company?.logo).filter((logo): logo is string => Boolean(logo))),
+    );
+
+    const signedResults = await Promise.all(
+        uniqueLogoFiles.map(async (logo) => {
+            const signedUrl = await fetchPublicSignedUrl(logo);
+            return [logo, signedUrl] as const;
+        }),
+    );
+
+    const signedMap = new Map<string, string | null>(signedResults);
+
+    return posts.map((post) => {
+        const logoFile = post.company?.logo;
+        if (!logoFile) return post;
+
+        const signedUrl = signedMap.get(logoFile);
+        if (!signedUrl) return post;
+
+        return {
+            ...post,
+            company: {
+                ...post.company,
+                logoUrl: signedUrl,
+            },
+        };
+    });
 };

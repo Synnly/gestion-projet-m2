@@ -22,6 +22,7 @@ describe('StudentService', () => {
         findOne: jest.fn(),
         create: jest.fn(),
         findOneAndUpdate: jest.fn(),
+        updateMany: jest.fn(),
         insertMany: jest.fn(),
         aggregate: jest.fn(),
         deleteMany: jest.fn(),
@@ -203,22 +204,52 @@ describe('StudentService', () => {
     });
 
     it('update updates existing student when found', async () => {
-        const saveMock = jest.fn().mockResolvedValue(undefined);
-        const studentDoc: any = { save: saveMock, set: jest.fn() };
-        mockModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(studentDoc) });
+        mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue({ _id: '1' }) });
 
         await service.update('1', { email: 'new@e.mail' } as any);
-        expect(mockModel.findOne).toHaveBeenCalledWith({ _id: '1', deletedAt: { $exists: false } });
-        expect(saveMock).toHaveBeenCalled();
+        expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(
+            { _id: '1', deletedAt: { $exists: false } },
+            { $set: { email: 'new@e.mail' } },
+        );
     });
 
     it('update returns undefined when student not found', async () => {
-        mockModel.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+        mockModel.findOneAndUpdate.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
 
         const result = await service.update('1', { email: 'new@e.mail' } as any);
 
         expect(result).toBeUndefined();
+        expect(mockModel.findOneAndUpdate).toHaveBeenCalledWith(
+            { _id: '1', deletedAt: { $exists: false } },
+            { $set: { email: 'new@e.mail' } },
+        );
+    });
+
+    it('update uses save path when password is provided', async () => {
+        const saveMock = jest.fn().mockResolvedValue(undefined);
+        const setMock = jest.fn();
+        const studentDoc: any = { save: saveMock, set: setMock };
+        const exec = jest.fn().mockResolvedValue(studentDoc);
+        const select = jest.fn().mockReturnValue({ exec });
+        mockModel.findOne.mockReturnValue({ select });
+
+        await service.update('1', { password: 'StrongP@ss1' } as any);
+
         expect(mockModel.findOne).toHaveBeenCalledWith({ _id: '1', deletedAt: { $exists: false } });
+        expect(select).toHaveBeenCalledWith('+password');
+        expect(setMock).toHaveBeenCalledWith({ password: 'StrongP@ss1' });
+        expect(saveMock).toHaveBeenCalled();
+    });
+
+    it('update returns undefined when password is provided but student is not found', async () => {
+        const exec = jest.fn().mockResolvedValue(null);
+        const select = jest.fn().mockReturnValue({ exec });
+        mockModel.findOne.mockReturnValue({ select });
+
+        const result = await service.update('missing-id', { password: 'StrongP@ss1' } as any);
+
+        expect(result).toBeUndefined();
+        expect(mockModel.findOne).toHaveBeenCalledWith({ _id: 'missing-id', deletedAt: { $exists: false } });
     });
 
     describe('remove', () => {
@@ -304,6 +335,46 @@ describe('StudentService', () => {
 
             await expect(service.remove(STUDENT_ID)).rejects.toThrow('Database error');
             expect(mockModel.findOneAndUpdate).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('removeAll', () => {
+        it('should soft-delete applications and students without touching notifications/tokens when no active students exist', async () => {
+            mockApplicationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+            mockModel.find.mockReturnValue({
+                select: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue([]) }),
+            });
+            mockModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+
+            await expect(service.removeAll()).resolves.toBeUndefined();
+
+            expect(mockApplicationModel.updateMany).toHaveBeenCalledWith({}, { $set: { deletedAt: expect.any(Date) } });
+            expect(mockNotificationModel.updateMany).not.toHaveBeenCalled();
+            expect(mockRefreshTokenModel.updateMany).not.toHaveBeenCalled();
+            expect(mockModel.updateMany).toHaveBeenCalledWith({}, { $set: { deletedAt: expect.any(Date) } });
+        });
+
+        it('should soft-delete notifications and refresh tokens when active students exist', async () => {
+            const students = [{ _id: 'student-1' }, { _id: 'student-2' }];
+            mockApplicationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+            mockModel.find.mockReturnValue({
+                select: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(students) }),
+            });
+            mockNotificationModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+            mockRefreshTokenModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+            mockModel.updateMany.mockReturnValue({ exec: jest.fn().mockResolvedValue({}) });
+
+            await expect(service.removeAll()).resolves.toBeUndefined();
+
+            expect(mockNotificationModel.updateMany).toHaveBeenCalledWith(
+                { userId: { $in: ['student-1', 'student-2'] } },
+                { $set: { deletedAt: expect.any(Date) } },
+            );
+            expect(mockRefreshTokenModel.updateMany).toHaveBeenCalledWith(
+                { userId: { $in: ['student-1', 'student-2'] } },
+                { $set: { expiresAt: expect.any(Date) } },
+            );
+            expect(mockModel.updateMany).toHaveBeenCalledWith({}, { $set: { deletedAt: expect.any(Date) } });
         });
     });
 

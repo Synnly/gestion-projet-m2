@@ -31,6 +31,15 @@ describe('CreateApplicationDto', () => {
             expect(errors[0].property).toBe('cvExtension');
         });
 
+        it('should validate successfully when useDefaultCv is true and cvExtension is missing', async () => {
+            const dto = new CreateApplicationDto();
+            dto.useDefaultCv = true;
+
+            const errors = await validate(dto);
+
+            expect(errors).toHaveLength(0);
+        });
+
         it('should fail validation when cvExtension is not allowed', async () => {
             const dto = new CreateApplicationDto();
             dto.cvExtension = 'txt' as any;

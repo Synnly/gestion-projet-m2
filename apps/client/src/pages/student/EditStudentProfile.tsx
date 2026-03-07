@@ -248,6 +248,14 @@ export const EditStudentProfile = () => {
                                     error={errors.biography}
                                     className="textarea textarea-primary"
                                 />
+                                {profile?.defaultCv && (
+                                    <div className="alert alert-info">
+                                        <span>
+                                            Un CV par défaut est déjà enregistré. Si vous en importez un nouveau, il
+                                            remplacera l'actuel.
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="flex flex-row gap-4 items-end">
                                     <FormFileInput<editProfilFormType>
                                         label="Cv par défaut (facultatif)"

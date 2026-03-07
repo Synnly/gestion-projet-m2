@@ -8,6 +8,9 @@ describe('UpdateStudentDto', () => {
             dto.firstName = 'Alice';
             dto.lastName = 'Wonder';
             dto.password = 'StrongP@ss1';
+            dto.profilePicture = 'student/pp.png';
+            dto.defaultCv = 'student/cv.pdf';
+            dto.isFirstTime = false;
 
             const errors = await validate(dto);
             expect(errors).toHaveLength(0);
