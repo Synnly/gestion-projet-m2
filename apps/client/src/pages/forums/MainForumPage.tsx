@@ -83,18 +83,18 @@ export function MainForumPage() {
                             placeholder="Rechercher par entreprise ..."
                         />
 
-                        <ul className="w-full space-y-2 flex flex-wrap justify-between">
+                        <div className="w-full gap-4 grid grid-cols-3">
                             {forums.map((f) => (
                                 <ForumCard forum={f} key={f._id} />
                             ))}
-                        </ul>
+                        </div>
                     </div>
                 ) : (
-                    <ul className="w-full space-y-2 flex flex-wrap justify-between">
+                    <div className="w-full space-y-2 flex flex-wrap justify-between">
                         {!companyForum.isLoading && companyForum.data && (
                             <ForumCard forum={companyForum.data} key={companyForum.data._id} />
                         )}
-                    </ul>
+                    </div>
                 )}
             </div>
         </div>

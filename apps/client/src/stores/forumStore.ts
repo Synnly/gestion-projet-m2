@@ -17,7 +17,7 @@ export interface ForumStore {
 
 const DEFAULT_FILTERS: ForumFilters = {
     page: 1,
-    limit: 10,
+    limit: 12,
 };
 
 export const forumStore = create<ForumStore>((set) => ({
