@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, type ReactElement } from 'react';
+import { forwardRef, type ReactElement } from 'react';
 import React, { useState } from 'react';
 import type { GenericProps } from '../../../../types/genericAutoCompleteAdressType';
 import { useDebounce } from '../../../../hooks/useDebounce';

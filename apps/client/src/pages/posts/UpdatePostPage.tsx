@@ -8,20 +8,20 @@ export default function UpdatePostPage() {
     const { post, postId } = useLoaderData() as { post: Internship; companyId: string; postId: string };
 
     // separate address into addressLine, postalCode and city
-    const parseAddress = (adress?: string) => {
-        if (!adress) return { addressLine: '', postalCode: '', city: '' };
-        const parts = adress
-            .split(',')
-            .map((p) => p.trim())
-            .filter(Boolean);
-        return {
-            addressLine: parts[0] ?? '',
-            postalCode: parts[1] ?? '',
-            city: parts[2] ?? '',
-        };
-    };
-
-    const parsedAddress = parseAddress(post.adress);
+    // const parseAddress = (adress?: string) => {
+    //     if (!adress) return { addressLine: '', postalCode: '', city: '' };
+    //     const parts = adress
+    //         .split(',')
+    //         .map((p) => p.trim())
+    //         .filter(Boolean);
+    //     return {
+    //         addressLine: parts[0] ?? '',
+    //         postalCode: parts[1] ?? '',
+    //         city: parts[2] ?? '',
+    //     };
+    // };
+    //
+    // const parsedAddress = parseAddress(post.adress);
 
     const initialData = {
         title: post.title,

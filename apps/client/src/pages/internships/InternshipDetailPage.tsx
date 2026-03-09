@@ -103,9 +103,6 @@ export default function InternshipDetailPage() {
                                         <li>
                                             <strong>Secteur:</strong> {internship.sector ?? 'N/A'}
                                         </li>
-                                        <li>
-                                            <strong>Ville:</strong> {internship.company.city ?? 'N/A'}
-                                        </li>
                                     </ul>
 
                                     <div className="mt-6">

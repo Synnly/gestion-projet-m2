@@ -57,4 +57,6 @@ export type companyProfile = {
 
     /** Date when the profile was deleted */
     deletedAt?: string;
+
+    createdAt: string;
 };

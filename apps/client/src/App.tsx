@@ -33,7 +33,6 @@ import { MainForumPage } from './pages/forums/MainForumPage';
 import { ForumPage } from './pages/forums/ForumPage';
 import LandingPage from './pages/landing-page/LandingPage';
 import { PendingValidation } from './pages/company/PendingValidation';
-import ImportStudent from './pages/admin/components/importStudent';
 import { AdminDashboard } from './pages/admin/dashboard';
 import { DarkModeProvider } from './pages/common/darkMode/DarkModeProvider';
 import { ApplicationList } from './pages/company/ApplicationList';
@@ -102,10 +101,10 @@ function App() {
                     loader: protectedMiddleware,
                     element: <AuthRoutes />,
                     children: [
-                        { 
-                            path: 'account-restore', 
-                            element: <AccountRestorePage />, 
-                            handle: { title: 'Restaurer votre compte' } 
+                        {
+                            path: 'account-restore',
+                            element: <AccountRestorePage />,
+                            handle: { title: 'Restaurer votre compte' },
                         },
                         { path: 'verify', element: <VerifyEmail />, handle: { title: 'Vérifier votre mail' } },
                         { path: 'home', element: <InternshipPage />, handle: { title: 'Accueil' } },
