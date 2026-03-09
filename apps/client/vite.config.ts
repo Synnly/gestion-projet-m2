@@ -14,7 +14,7 @@ export default defineConfig({
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/api-nominatim/, ''),
                 configure: (proxy, _options) => {
-                    proxy.on('proxyReq', (proxyReq, req, _res) => {
+                    proxy.on('proxyReq', (proxyReq, _, _res) => {
                         proxyReq.setHeader('User-Agent', 'MonApplicationTest (contact@votre-email.com)');
                         proxyReq.setHeader('Referer', 'http://localhost:5173');
                     });

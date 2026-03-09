@@ -54,7 +54,7 @@ export const DeleteMultipleCompaniesModal = ({ companies, onConfirm, onCancel, i
                                             <td className="font-semibold">{company.name}</td>
                                             <td>{company.email}</td>
                                             <td>{company.siretNumber || 'N/A'}</td>
-                                            <td>{company.city || 'N/A'}</td>
+                                            <td>{company.address || 'N/A'}</td>
                                         </tr>
                                     );
                                 })}

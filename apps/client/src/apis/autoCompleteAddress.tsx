@@ -47,9 +47,7 @@ export const getAddressLabel = (item: GeoapifyFeature): string => {
 const throttledFetch = throttle(
     async (query: string): Promise<GeoapifyFeature[]> => {
         if (!query || query.length < 5) return [];
-        var requestOptions = {
-            method: 'GET',
-        };
+
         const apiKey = import.meta.env.VITE_GEOAPIFY_KEY;
         const url = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(query)}&lang=fr&apiKey=${apiKey}&limit=10`;
         try {
