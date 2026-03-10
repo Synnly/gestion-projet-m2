@@ -59,6 +59,9 @@ export class StudentDto {
     @Expose()
     defaultCv?: string;
 
+    @Expose()
+    deletedAt?: Date;
+
     /**
      * Create a partial `StudentDto` instance.
      * @param partial Optional partial data to assign to the DTO.

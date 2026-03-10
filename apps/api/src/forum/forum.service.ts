@@ -18,8 +18,7 @@ export class ForumService {
         @Inject(forwardRef(() => CompanyService)) private readonly companyService: CompanyService,
     ) {}
 
-    private readonly companyFields =
-        '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo';
+    private readonly companyFields = '_id name siretNumber nafCode structureType legalStatus address logo';
 
     /**
      * Create a new forum.
@@ -97,7 +96,7 @@ export class ForumService {
 
         const companyPopulate = {
             path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+            select: '_id name siretNumber nafCode structureType legalStatus address logo',
         };
 
         const topicsPopulate = {

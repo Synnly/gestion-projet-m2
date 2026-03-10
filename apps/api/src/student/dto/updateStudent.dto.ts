@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsStrongPassword, Length } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, IsStrongPassword, Length } from 'class-validator';
 
 /**
  * DTO for updating a Student.
@@ -21,5 +21,14 @@ export class UpdateStudentDto {
     password?: string;
 
     @IsOptional()
+    @IsBoolean()
     isFirstTime?: boolean;
+
+    @IsOptional()
+    @IsString()
+    profilePicture?: string;
+
+    @IsOptional()
+    @IsString()
+    defaultCv?: string;
 }

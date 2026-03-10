@@ -5,11 +5,7 @@ export interface CompanyForum {
     nafCode?: string;
     structureType?: string;
     legalStatus?: string;
-    streetNumber?: string;
-    streetName?: string;
-    postalCode?: string;
-    city?: string;
-    country?: string;
+    address?: string;
     logo?: string;
     location?: { lat: number; lng: number } | string;
 }
@@ -33,7 +29,7 @@ export interface Topic {
     _id: string;
     title: string;
     description: string;
-    author: UserForum;
+    author?: UserForum | null;
     messages: string[];
 }
 

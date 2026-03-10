@@ -1,35 +1,32 @@
 import { useLoaderData } from 'react-router';
-import { CreatePostForm } from '../../components/posts/CreatePostForm';
-import { Navbar } from '../../components/navbar/Navbar';
-import type { Internship } from '../../types/internship.types.ts';
-import { PostPreview } from '../../components/posts/PostPreview.tsx';
+import { CreatePostForm } from './CreatePostForm';
+import type { Internship } from '../../types/internship.types';
+import { PostPreview } from './PostPreview';
+import { Navbar } from '../common/navbar/Navbar';
 
 export default function UpdatePostPage() {
     const { post, postId } = useLoaderData() as { post: Internship; companyId: string; postId: string };
 
     // separate address into addressLine, postalCode and city
-    const parseAddress = (adress?: string) => {
-        if (!adress) return { addressLine: '', postalCode: '', city: '' };
-        const parts = adress
-            .split(',')
-            .map((p) => p.trim())
-            .filter(Boolean);
-        return {
-            addressLine: parts[0] ?? '',
-            postalCode: parts[1] ?? '',
-            city: parts[2] ?? '',
-        };
-    };
-
-    const parsedAddress = parseAddress(post.adress);
+    // const parseAddress = (adress?: string) => {
+    //     if (!adress) return { addressLine: '', postalCode: '', city: '' };
+    //     const parts = adress
+    //         .split(',')
+    //         .map((p) => p.trim())
+    //         .filter(Boolean);
+    //     return {
+    //         addressLine: parts[0] ?? '',
+    //         postalCode: parts[1] ?? '',
+    //         city: parts[2] ?? '',
+    //     };
+    // };
+    //
+    // const parsedAddress = parseAddress(post.adress);
 
     const initialData = {
         title: post.title,
         description: post.description,
-        location: post.adress ?? '',
-        addressLine: parsedAddress.addressLine,
-        city: parsedAddress.city,
-        postalCode: parsedAddress.postalCode,
+        adress: post.adress ?? '',
         duration: post.duration ?? '',
         sector: post.sector ?? '',
         startDate: post.startDate ?? '',

@@ -1,0 +1,40 @@
+<html>
+    <head>
+        <meta charset='utf-8' />
+        <meta name='viewport' content='width=device-width,initial-scale=1' />
+    </head>
+    <body style='margin:0;padding:0;background-color:#f3f4f6;font-family:Arial,Helvetica,sans-serif;'>
+        <table role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%'>
+            <tr>
+                <td align='center' style='padding:24px 10px;'>
+                    <table
+                        role='presentation'
+                        border='0'
+                        cellpadding='0'
+                        cellspacing='0'
+                        width='600'
+                        style='max-width:600px;background:#ffffff;border-radius:8px;overflow:hidden;'
+                    >
+                        <tr>
+                            <td style='padding:24px; text-align:left;'>
+                                <h1 style='margin:0 0 8px;font-size:20px;color:#dc2626;'>Échec de l’import de base de données</h1>
+                                <p style='margin:0 0 16px;color:#6b7280;'>Malheureusement, une erreur est survenue lors de l’import de votre base de données et celui-ci n’a pas pu être terminé.</p>
+
+                                <div style='background:#fef2f2;padding:16px;border-radius:6px;margin:16px 0;border-left:4px solid #dc2626;'>
+                                    <p style='margin:0 0 8px;color:#374151;'><strong>ID de l’import :</strong> {{importId}}</p>
+                                    <p style='margin:0 0 8px;color:#374151;'><strong>Nom du fichier :</strong> {{filename}}</p>
+                                    <p style='margin:0 0 0;color:#374151;'><strong>Erreur :</strong> {{errorMessage}}</p>
+                                </div>
+
+                                <p style='color:#6b7280;margin:12px 0 0;font-size:14px;'>Veuillez vérifier votre fichier d’import et réessayer, ou contacter le support si le problème persiste.</p>
+
+                                <hr style='border:none;border-top:1px solid #e5e7eb;margin:16px 0;' />
+                                <p style='color:#9ca3af;font-size:12px;margin:0;'>Ceci est un message automatique de {{fromName}}.</p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>

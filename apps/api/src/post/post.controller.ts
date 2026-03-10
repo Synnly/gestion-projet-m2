@@ -12,8 +12,10 @@ import {
     ValidationPipe,
     Query,
     Req,
+    Delete,
 } from '@nestjs/common';
 import { PostService } from './post.service';
+import { ApplicationService } from '../application/application.service';
 import { PostDto } from './dto/post.dto';
 import { ParseObjectIdPipe } from '../validators/parseObjectId.pipe';
 import { AuthGuard } from '../auth/auth.guard';
@@ -27,13 +29,17 @@ import { PaginationResult } from 'src/common/pagination/dto/paginationResult';
 import { plainToInstance } from 'class-transformer';
 import { UpdatePostDto } from './dto/updatePost';
 import type { Request } from 'express';
+import { Types } from 'mongoose';
 
 /**
  * Controller responsible for handling post-related endpoints.
  */
 @Controller('/api/company/:companyId/posts')
 export class PostController {
-    constructor(private readonly postService: PostService) {}
+    constructor(
+        private readonly postService: PostService,
+        private readonly applicationService: ApplicationService,
+    ) {}
 
     /**
      * Returns a paginated list of posts the student applied to.
@@ -69,6 +75,7 @@ export class PostController {
      * @returns A paginated result containing `PostDto` instances
      */
     @Get()
+    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     async findAll(
         @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
@@ -89,6 +96,23 @@ export class PostController {
     }
 
     /**
+     * Returns the total and unread (Pending) application counts for each post of a company.
+     * This is a single aggregation query for efficiency.
+     *
+     * @param companyId - Company id (MongoDB ObjectId)
+     * @returns An array of { postId, total, unread } objects
+     */
+    @Get('/application-counts')
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.OK)
+    async getApplicationCounts(
+        @Param('companyId', ParseObjectIdPipe) companyId: Types.ObjectId,
+    ): Promise<{ postId: string; total: number; unread: number }[]> {
+        return this.applicationService.getApplicationCountsByCompany(companyId);
+    }
+
+    /**
      *
      * Retrieve a single post by its identifier. If the post does not exist
      * a `NotFoundException` is thrown which maps to a 404 response.
@@ -98,6 +122,7 @@ export class PostController {
      * @returns The found post converted to `PostDto`
      */
     @Get('/:id')
+    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     async findOne(@Param('id', ParseObjectIdPipe) id: string): Promise<PostDto> {
         const post = await this.postService.findOne(id);
@@ -131,7 +156,7 @@ export class PostController {
      * @param dto The post data for update
      */
     @Put('/:id')
-    @UseGuards(RolesGuard, CompanyOwnerGuard)
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
     @Roles(Role.COMPANY, Role.ADMIN)
     @HttpCode(HttpStatus.OK)
     async update(
@@ -141,5 +166,16 @@ export class PostController {
     ) {
         const updated = await this.postService.update(dto, companyId, id);
         return plainToInstance(PostDto, updated);
+    }
+
+    @Delete(':id')
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async delete(
+        @Param('companyId', ParseObjectIdPipe) companyId: string,
+        @Param('id', ParseObjectIdPipe) id: string,
+    ): Promise<void> {
+        await this.postService.delete(id);
     }
 }

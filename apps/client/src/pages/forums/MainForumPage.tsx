@@ -1,14 +1,14 @@
-import { Navbar } from '../../components/navbar/Navbar.tsx';
-import Spinner from '../../components/Spinner/Spinner.tsx';
+import Spinner from '../common/Spinner/Spinner';
 import { useNavigation } from 'react-router-dom';
-import type { Forum } from '../../types/forum.types.ts';
-import { ForumCard } from '../../components/forum/ForumCard.tsx';
-import { TopicRow } from '../../components/forum/TopicRow.tsx';
-import { SearchBar } from '../../components/inputs/searchBar';
-import { formatNumber } from '../../utils/format.ts';
-import { forumStore } from '../../store/forumStore.ts';
-import { useFetchForumByCompanyId, useFetchForums, useFetchGeneralForum } from '../../hooks/useFetchForum.ts';
-import { userStore } from '../../store/userStore.ts';
+import type { Forum } from '../../types/forum.types';
+import { ForumCard } from './components/ForumCard';
+import { TopicRow } from './components/TopicRow';
+import { formatNumber } from '../../utils/format';
+import { useFetchForumByCompanyId, useFetchForums, useFetchGeneralForum } from '../../hooks/useFetchForum';
+import { forumStore } from '../../stores/forumStore';
+import { userStore } from '../../stores/userStore';
+import { SearchBar } from '../../pages/common/inputs/searchBar/SearchBar';
+import { Navbar } from '../common/navbar/Navbar';
 
 export function MainForumPage() {
     const navigation = useNavigation();
@@ -83,18 +83,18 @@ export function MainForumPage() {
                             placeholder="Rechercher par entreprise ..."
                         />
 
-                        <ul className="w-full space-y-2 flex flex-wrap justify-between">
+                        <div className="w-full gap-4 grid grid-cols-3">
                             {forums.map((f) => (
                                 <ForumCard forum={f} key={f._id} />
                             ))}
-                        </ul>
+                        </div>
                     </div>
                 ) : (
-                    <ul className="w-full space-y-2 flex flex-wrap justify-between">
+                    <div className="w-full space-y-2 flex flex-wrap justify-between">
                         {!companyForum.isLoading && companyForum.data && (
                             <ForumCard forum={companyForum.data} key={companyForum.data._id} />
                         )}
-                    </ul>
+                    </div>
                 )}
             </div>
         </div>

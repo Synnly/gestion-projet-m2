@@ -32,3 +32,10 @@ export interface ApplicationFilters {
     limit: number;
     status?: ApplicationStatus;
 }
+
+
+export interface ApplicationCount {
+    postId: string;
+    total: number;
+    unread: number;
+}

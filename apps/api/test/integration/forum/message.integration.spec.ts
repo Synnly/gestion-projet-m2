@@ -79,11 +79,15 @@ describe('Message Integration Tests', () => {
         forumId = new Types.ObjectId();
         userId = new Types.ObjectId();
         objectId = new Types.ObjectId();
-        accessToken = jwtService.sign({
-            sub: userId.toString(),
-            email: 'test@example.com',
-            role: 'Student',
-        });
+        accessToken = require('jsonwebtoken').sign(
+            {
+                sub: userId.toString(),
+                email: 'test@example.com',
+                role: 'Student',
+            },
+            JWT_SECRET,
+            { expiresIn: '1h' },
+        );
     });
 
     afterEach(async () => {
@@ -236,6 +240,71 @@ describe('Message Integration Tests', () => {
                 .send(payload)
                 .set('Authorization', 'Bearer ' + accessToken)
                 .expect(404);
+        });
+    });
+
+    describe('DELETE /api/forum/message/:messageId - Soft delete a message', () => {
+        it('should soft delete a message (Admin only)', async () => {
+            const topic = await createTopic({});
+            const message = await createMessage({ topicId: topic._id, deletedAt: null });
+
+            // Create admin token
+            const adminToken = require('jsonwebtoken').sign(
+                { sub: userId.toString(), email: 'admin@example.com', role: 'ADMIN' },
+                JWT_SECRET,
+                { expiresIn: '1h' },
+            );
+
+            const res = await request(app.getHttpServer())
+                .delete(`/api/forum/message/${message._id.toString()}`)
+                .set('Authorization', 'Bearer ' + adminToken)
+                .expect(200);
+
+            expect(res.body._id).toEqual(message._id.toString());
+            expect(res.body.deletedAt).toBeDefined();
+            expect(res.body.deletedAt).not.toBeNull();
+
+            // Verify in database
+            const deletedMessage = await messageModel.findById(message._id);
+            expect(deletedMessage?.deletedAt).toBeDefined();
+            expect(deletedMessage?.deletedAt).not.toBeNull();
+        });
+
+        it('should return 404 when trying to delete non-existent message', async () => {
+            const fakeMessageId = new Types.ObjectId();
+
+            const adminToken = require('jsonwebtoken').sign(
+                { sub: userId.toString(), email: 'admin@example.com', role: 'ADMIN' },
+                JWT_SECRET,
+                { expiresIn: '1h' },
+            );
+
+            await request(app.getHttpServer())
+                .delete(`/api/forum/message/${fakeMessageId.toString()}`)
+                .set('Authorization', 'Bearer ' + adminToken)
+                .expect(404);
+        });
+
+        it('should return 400 when messageId is invalid', async () => {
+            const adminToken = require('jsonwebtoken').sign(
+                { sub: userId.toString(), email: 'admin@example.com', role: 'ADMIN' },
+                JWT_SECRET,
+                { expiresIn: '1h' },
+            );
+
+            await request(app.getHttpServer())
+                .delete(`/api/forum/message/invalid-id`)
+                .set('Authorization', 'Bearer ' + adminToken)
+                .expect(400);
+        });
+
+        it('should return 403 when no authentication token is provided', async () => {
+            const topic = await createTopic({});
+            const message = await createMessage({ topicId: topic._id });
+
+            await request(app.getHttpServer())
+                .delete(`/api/forum/message/${message._id.toString()}`)
+                .expect(403);
         });
     });
 });

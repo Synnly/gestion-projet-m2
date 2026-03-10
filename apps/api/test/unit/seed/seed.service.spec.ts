@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Logger } from '@nestjs/common';
 import { SeedService } from '../../../src/seed/seed.service';
 import { AdminService } from '../../../src/admin/admin.service';
 import { ForumService } from '../../../src/forum/forum.service';
@@ -101,6 +102,27 @@ describe('SeedService', () => {
 
             expect(forumService.findOneByCompanyId).toHaveBeenCalled();
             expect(forumService.create).not.toHaveBeenCalled();
+        });
+
+        it('should log error and not create admin when writeFileSync fails', async () => {
+            adminService.count.mockResolvedValue(0);
+            forumService.findOneByCompanyId.mockResolvedValue({} as any);
+            (fs.writeFileSync as jest.Mock).mockImplementation(() => {
+                throw new Error('Permission denied');
+            });
+
+            const loggerErrorSpy = jest.spyOn(Logger, 'error').mockImplementation();
+
+            await service.run();
+
+            expect(loggerErrorSpy).toHaveBeenCalledWith(
+                'Failed to write ADMIN-CREDENTIALS.txt file during seeding:',
+                expect.any(Error),
+                '. Default admin not created.',
+            );
+            expect(adminService.create).not.toHaveBeenCalled();
+
+            loggerErrorSpy.mockRestore();
         });
     });
 });

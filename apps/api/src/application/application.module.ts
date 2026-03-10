@@ -9,13 +9,15 @@ import { S3Module } from '../s3/s3.module';
 import { StorageProviderType } from '../s3/s3.constants';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { NotificationModule } from 'src/notification/notification.module';
+import { MailerModule } from '../mailer/mailer.module';
 
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Application.name, schema: ApplicationSchema }]),
         forwardRef(() => PostModule),
-        StudentModule,
+        forwardRef(() => StudentModule),
         NotificationModule,
+        MailerModule.register(),
         S3Module.register({ provider: StorageProviderType.MINIO }),
     ],
     controllers: [ApplicationController],

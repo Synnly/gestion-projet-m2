@@ -145,7 +145,7 @@ export class ApplicationController {
         @Body('studentId', ParseObjectIdPipe) studentId: Types.ObjectId,
         @Body('postId', ParseObjectIdPipe) postId: Types.ObjectId,
         @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) application: CreateApplicationDto,
-    ): Promise<{ cvUrl: string; lmUrl?: string }> {
+    ): Promise<{ cvUrl?: string; lmUrl?: string; cvFileName: string }> {
         return this.applicationService.create(studentId, postId, application);
     }
 

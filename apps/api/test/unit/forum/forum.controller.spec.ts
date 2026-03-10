@@ -10,6 +10,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Forum } from '../../../src/forum/forum.schema';
 import { MessageService } from '../../../src/forum/message/message.service';
 import { MessageDto } from '../../../src/forum/message/dto/messageDto';
+import { TopicDto } from '../../../src/forum/topic/dto/topic.dto';
 
 describe('ForumController', () => {
     let controller: ForumController;
@@ -246,8 +247,10 @@ describe('ForumController', () => {
             const pagination: PaginationDto = { page: 1, limit: 10 };
             const result = await controller.findAll(forumId, pagination);
 
-            expect(result).toEqual(paginationResult);
             expect(result.data).toHaveLength(2);
+            expect(result.data[0]).toBeInstanceOf(TopicDto);
+            expect(result.data[1]).toBeInstanceOf(TopicDto);
+            expect(result.total).toBe(2);
             expect(topicService.findAll).toHaveBeenCalledWith(forumId, pagination);
             expect(topicService.findAll).toHaveBeenCalledTimes(1);
         });
@@ -289,7 +292,9 @@ describe('ForumController', () => {
 
             const result = await controller.findOne(forumId, topicId);
 
-            expect(result).toEqual(mockTopic);
+            expect(result).toBeInstanceOf(TopicDto);
+            expect(result?._id).toEqual(topicId);
+            expect(result?.title).toEqual('Test Topic');
             expect(topicService.findOne).toHaveBeenCalledWith(forumId, topicId);
             expect(topicService.findOne).toHaveBeenCalledTimes(1);
         });

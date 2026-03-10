@@ -239,6 +239,109 @@ describe('StatsService (Integration)', () => {
             const totalInChart = stats.applicationsOverTime.reduce((acc, val) => acc + (val.count || 0), 0);
             expect(totalInChart).toBe(1);
         });
+
+        it('should include acceptance stats by company and student', async () => {
+            const company = await companyModel.create({ email: 'acc@test.com', password: 'p', name: 'Acc Corp' });
+            const student = await studentModel.create({
+                email: 'acc@stud.com',
+                password: 'p',
+                firstName: 'A',
+                lastName: 'B',
+                studentNumber: 'S3',
+            });
+
+            const post = await postModel.create({
+                title: 'Acc Post',
+                description: '...',
+                company: company._id,
+                type: PostType.Presentiel,
+            });
+
+            await applicationModel.create({
+                post: post._id,
+                student: student._id,
+                status: 'Accepted',
+                cv: 'cv.pdf',
+            });
+
+            const stats = await service.getStats();
+
+            expect(stats.applicationAcceptanceByCompany[company._id.toString()]).toEqual({ count: 1, rate: 100 });
+            expect(stats.applicationAcceptanceByStudent[student._id.toString()]).toEqual({
+                count: 1,
+                rate: 100,
+                total: 1,
+            });
+        });
+    });
+
+    describe('getApplicationAcceptanceStatsByCompany', () => {
+        it('should calculate correct acceptance count and rate per company', async () => {
+            const company1 = await companyModel.create({ email: 'c1@t.com', password: 'p', name: 'C1' });
+            const company2 = await companyModel.create({ email: 'c2@t.com', password: 'p', name: 'C2' });
+            const studentId = new Types.ObjectId();
+
+            const post1 = await postModel.create({
+                title: 'P1',
+                description: 'D1',
+                company: company1._id,
+                type: PostType.Presentiel,
+            });
+            const post2 = await postModel.create({
+                title: 'P2',
+                description: 'D2',
+                company: company2._id,
+                type: PostType.Presentiel,
+            });
+
+            // Company 1: 1 accepted / 2 total = 50%
+            await applicationModel.create([
+                { post: post1._id, student: studentId, status: 'Accepted', cv: '1.pdf' },
+                { post: post1._id, student: studentId, status: 'Pending', cv: '2.pdf' },
+            ]);
+
+            // Company 2: 1 accepted / 1 total = 100%
+            await applicationModel.create([{ post: post2._id, student: studentId, status: 'Accepted', cv: '3.pdf' }]);
+
+            const result = await service.getApplicationAcceptanceStatsByCompany();
+
+            expect(result[company1._id.toString()]).toEqual({ count: 1, rate: 50 });
+            expect(result[company2._id.toString()]).toEqual({ count: 1, rate: 100 });
+        });
+    });
+
+    describe('getApplicationAcceptanceStatsByStudent', () => {
+        it('should calculate correct acceptance count and rate per student', async () => {
+            const student1 = await studentModel.create({
+                email: 's1@t.com',
+                password: 'p',
+                firstName: 'S1',
+                lastName: 'U',
+                studentNumber: 'SN1',
+            });
+            const student2 = await studentModel.create({
+                email: 's2@t.com',
+                password: 'p',
+                firstName: 'S2',
+                lastName: 'U',
+                studentNumber: 'SN2',
+            });
+            const postId = new Types.ObjectId();
+
+            // Student 1: 1 accepted / 3 total = 33.33%
+            await applicationModel.create([
+                { post: postId, student: student1._id, status: 'Accepted', cv: '1.pdf' },
+                { post: postId, student: student1._id, status: 'Rejected', cv: '2.pdf' },
+                { post: postId, student: student1._id, status: 'Pending', cv: '3.pdf' },
+            ]);
+
+            // Student 2: 0 accepted / 1 total = 0%
+            await applicationModel.create([{ post: postId, student: student2._id, status: 'Rejected', cv: '4.pdf' }]);
+
+            const result = await service.getApplicationAcceptanceStatsByStudent();
+
+            expect(result[student1._id.toString()]).toEqual({ count: 1, rate: 33.33, total: 3 });
+        });
     });
 
     describe('getPublicStats', () => {
@@ -355,6 +458,31 @@ describe('StatsService (Integration)', () => {
             expect(stats.totalStudents).toBe('0');
         });
 
+        it('should return number as-is for counts less than 10', async () => {
+            const company = await companyModel.create({
+                email: 'small@test.com',
+                password: 'pwd',
+                name: 'Small Corp',
+                isValid: true,
+            });
+
+            // Create 5 visible posts (less than 10)
+            const postsPromises = Array.from({ length: 5 }, (_, i) =>
+                postModel.create({
+                    title: `Post ${i}`,
+                    description: 'Desc',
+                    company: company._id,
+                    type: PostType.Teletravail,
+                }),
+            );
+            await Promise.all(postsPromises);
+
+            const stats = await service.getPublicStats();
+
+            // 5 is less than 10, so it should be returned as-is
+            expect(stats.totalPosts).toBe('5');
+        });
+
         it('should return all counts simultaneously', async () => {
             const company = await companyModel.create({
                 email: 'multi@test.com',
@@ -385,6 +513,235 @@ describe('StatsService (Integration)', () => {
                 totalCompanies: '1',
                 totalStudents: '1',
             });
+        });
+
+        it('should format numbers between 10 and 99 as rounded to nearest 10', async () => {
+            const company = await companyModel.create({
+                email: 'format-test@test.com',
+                password: 'pwd',
+                name: 'Format Corp',
+                isValid: true,
+            });
+
+            // Create 25 visible posts
+            const postsPromises = Array.from({ length: 25 }, (_, i) =>
+                postModel.create({
+                    title: `Post ${i}`,
+                    description: 'Desc',
+                    company: company._id,
+                    type: PostType.Teletravail,
+                }),
+            );
+            await Promise.all(postsPromises);
+
+            const stats = await service.getPublicStats();
+
+            // 25 rounded to nearest 10 = 30
+            expect(stats.totalPosts).toBe('30');
+        });
+
+        it('should format numbers between 100 and 999 with k suffix', async () => {
+            const company = await companyModel.create({
+                email: 'format-k@test.com',
+                password: 'pwd',
+                name: 'Format K Corp',
+                isValid: true,
+            });
+
+            // Create 550 visible posts
+            const postsPromises = Array.from({ length: 550 }, (_, i) =>
+                postModel.create({
+                    title: `Post ${i}`,
+                    description: 'Desc',
+                    company: company._id,
+                    type: PostType.Teletravail,
+                }),
+            );
+            await Promise.all(postsPromises);
+
+            const stats = await service.getPublicStats();
+
+            // 550 rounded to nearest 10 = 550 = 0.55k -> "0.6k"
+            expect(stats.totalPosts).toBe('0.6k');
+        });
+
+        it('should format round thousands without decimal (e.g. 1000 -> 1k)', async () => {
+            const company = await companyModel.create({
+                email: 'round-k@test.com',
+                password: 'pwd',
+                name: 'Round K Corp',
+                isValid: true,
+            });
+
+            // Mock countDocuments to return exactly 1000
+            jest.spyOn(postModel, 'countDocuments').mockResolvedValueOnce(1000 as any);
+
+            const stats = await service.getPublicStats();
+
+            // 1000 rounded to nearest 100 = 1000 = 1k (integer, no decimal)
+            expect(stats.totalPosts).toBe('1k');
+        });
+
+        it('should format numbers between 1000 and 9999 with k suffix rounded to nearest 100', async () => {
+            const company = await companyModel.create({
+                email: 'format-k2@test.com',
+                password: 'pwd',
+                name: 'Format K2 Corp',
+                isValid: true,
+            });
+
+            // Mock countDocuments to avoid creating 5550 posts
+            jest.spyOn(postModel, 'countDocuments').mockResolvedValueOnce(5550 as any);
+
+            const stats = await service.getPublicStats();
+
+            // 5550 rounded to nearest 100 = 5600 = 5.6k
+            expect(stats.totalPosts).toBe('5.6k');
+        });
+
+        it('should format numbers >= 1M with M suffix', async () => {
+            const company = await companyModel.create({
+                email: 'format-m@test.com',
+                password: 'pwd',
+                name: 'Format M Corp',
+                isValid: true,
+            });
+
+            // Mock countDocuments to return >= 1M
+            jest.spyOn(postModel, 'countDocuments').mockResolvedValueOnce(1200000 as any);
+
+            const stats = await service.getPublicStats();
+
+            // 1200000 -> 1.2M
+            expect(stats.totalPosts).toBe('1.2M');
+        });
+
+        it('should format whole millions without decimals', async () => {
+            const company = await companyModel.create({
+                email: 'format-m2@test.com',
+                password: 'pwd',
+                name: 'Format M2 Corp',
+                isValid: true,
+            });
+
+            // Mock countDocuments to return exactly 2M
+            jest.spyOn(postModel, 'countDocuments').mockResolvedValueOnce(2000000 as any);
+
+            const stats = await service.getPublicStats();
+
+            // 2000000 -> 2M (no decimal)
+            expect(stats.totalPosts).toBe('2M');
+        });
+    });
+
+    describe('getLatestPublicPosts', () => {
+        it('should return visible posts with populated company', async () => {
+            const company = await companyModel.create({
+                email: 'latest@test.com',
+                password: 'pwd',
+                name: 'Latest Corp',
+                isValid: true,
+                address: '123 Main St',
+            });
+
+            await postModel.create({
+                title: 'Latest Post',
+                description: 'Desc',
+                company: company._id,
+                type: PostType.Teletravail,
+            });
+
+            const posts = await service.getLatestPublicPosts();
+
+            expect(posts).toHaveLength(1);
+            expect(posts[0].title).toBe('Latest Post');
+            expect((posts[0].company as any).name).toBe('Latest Corp');
+        });
+
+        it('should return limited number of posts', async () => {
+            const company = await companyModel.create({
+                email: 'limit@test.com',
+                password: 'pwd',
+                name: 'Limit Corp',
+                isValid: true,
+            });
+
+            // Create 10 posts
+            const postsPromises = Array.from({ length: 10 }, (_, i) =>
+                postModel.create({
+                    title: `Post ${i}`,
+                    description: 'Desc',
+                    company: company._id,
+                    type: PostType.Teletravail,
+                }),
+            );
+            await Promise.all(postsPromises);
+
+            const posts = await service.getLatestPublicPosts(3);
+
+            expect(posts).toHaveLength(3);
+        });
+
+        it('should not return invisible posts', async () => {
+            const company = await companyModel.create({
+                email: 'invisible@test.com',
+                password: 'pwd',
+                name: 'Invisible Corp',
+                isValid: true,
+            });
+
+            await postModel.create({
+                title: 'Visible Post',
+                description: 'Desc',
+                company: company._id,
+                type: PostType.Teletravail,
+                isVisible: true,
+            });
+
+            await postModel.create({
+                title: 'Invisible Post',
+                description: 'Desc',
+                company: company._id,
+                type: PostType.Teletravail,
+                isVisible: false,
+            });
+
+            const posts = await service.getLatestPublicPosts();
+
+            expect(posts).toHaveLength(1);
+            expect(posts[0].title).toBe('Visible Post');
+        });
+
+        it('should return posts sorted by createdAt descending', async () => {
+            const company = await companyModel.create({
+                email: 'sorted@test.com',
+                password: 'pwd',
+                name: 'Sorted Corp',
+                isValid: true,
+            });
+
+            const firstPost = await postModel.create({
+                title: 'First Post',
+                description: 'Desc',
+                company: company._id,
+                type: PostType.Teletravail,
+            });
+
+            // Wait a bit to ensure different timestamps
+            await new Promise((resolve) => setTimeout(resolve, 10));
+
+            await postModel.create({
+                title: 'Second Post',
+                description: 'Desc',
+                company: company._id,
+                type: PostType.Teletravail,
+            });
+
+            const posts = await service.getLatestPublicPosts();
+
+            expect(posts).toHaveLength(2);
+            expect(posts[0].title).toBe('Second Post');
+            expect(posts[1].title).toBe('First Post');
         });
     });
 });

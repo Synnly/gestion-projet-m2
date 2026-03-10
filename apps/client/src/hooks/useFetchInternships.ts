@@ -1,11 +1,10 @@
-import { useEffect } from 'react';
-import { useInternshipStore } from '../store/useInternshipStore';
+import { useEffect, useRef } from 'react';
+import { useInternshipStore } from '../stores/useInternshipStore';
 import type { PaginationResult, Internship } from '../types/internship.types';
 import { fetchPublicSignedUrl } from './useBlob';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
 import { UseAuthFetch } from './useAuthFetch';
-import { userStore } from '../store/userStore.ts';
+import { userStore } from '../stores/userStore';
 
 const API_URL = import.meta.env.VITE_APIURL;
 export type BaseFilterProps = {
@@ -13,7 +12,7 @@ export type BaseFilterProps = {
     limit: number;
 };
 
-export function buildQueryParams<T extends BaseFilterProps & Record<string,any>>(filters: T) {
+export function buildQueryParams<T extends BaseFilterProps & Record<string, any>>(filters: T) {
     const params = new URLSearchParams();
 
     const setParam = (key: string, value: any) => {
@@ -24,13 +23,13 @@ export function buildQueryParams<T extends BaseFilterProps & Record<string,any>>
             params.set(key, String(value));
         }
     };
-    const {page,limit,...rest} = filters    
+    const { page, limit, ...rest } = filters;
     params.set('page', String(page ?? 1));
     params.set('limit', String(limit ?? 10));
 
     Object.keys(rest).forEach((key) => {
-        setParam(key,filters[key])
-    })
+        setParam(key, filters[key]);
+    });
     /* setParam('searchQuery', filters.searchQuery);
     setParam('title', filters.title);
     setParam('description', filters.description);
@@ -112,6 +111,7 @@ export function useFetchInternships() {
     const filters = useInternshipStore((state) => state.filters);
     const setInternships = useInternshipStore((state) => state.setInternships);
     const showMyApplicationsOnly = useInternshipStore((state) => state.showMyApplicationsOnly);
+    const sync_last_post = useRef(false);
     const query = useQuery<PaginationResult<Internship>, Error>({
         queryKey: ['internships', filters],
 
@@ -131,13 +131,6 @@ export function useFetchInternships() {
             const validPosts = paginationResult.data.filter((p: any) => p.company && typeof p.company === 'object');
             const removedCount = originalLength - validPosts.length;
             if (removedCount > 0) {
-                try {
-                    toast.error(`Impossible d'afficher ${removedCount} stage(s)`, {
-                        toastId: 'fetch-company-internships',
-                    });
-                } catch (e) {
-                    // ignore if toast not available
-                }
                 paginationResult.data = validPosts;
             }
 
@@ -160,7 +153,14 @@ export function useFetchInternships() {
                 /** 6) Apply logos to posts */
                 applyLogosToPosts(paginationResult.data, profiles, signedMap);
             }
-
+            if (!sync_last_post.current) {
+                if (paginationResult.data.length > 0 && paginationResult.data[0]?.createdAt) {
+                    localStorage.setItem('last_post_sync', paginationResult.data[0].createdAt);
+                } else {
+                    localStorage.removeItem('last_post_sync');
+                }
+                sync_last_post.current = true;
+            }
             return paginationResult;
         },
 

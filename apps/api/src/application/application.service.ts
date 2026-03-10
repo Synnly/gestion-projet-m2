@@ -11,6 +11,7 @@ import { ApplicationQueryBuilder } from '../common/pagination/applicationQuery.b
 import { ApplicationPaginationDto } from 'src/common/pagination/dto/applicationPagination.dto';
 import { Post } from '../post/post.schema';
 import { NotificationService } from 'src/notification/notification.service';
+import { MailerService } from '../mailer/mailer.service';
 
 @Injectable()
 export class ApplicationService {
@@ -21,6 +22,8 @@ export class ApplicationService {
      * @param studentService - Injected StudentService for managing related students
      * @param s3Service - Injected S3Service for handling S3 operations
      * @param paginationService - Injected PaginationService for managing pagination
+     * @param notificationService - Injected NotificationService for managing notifications
+     * @param mailerService - Injected MailerService for sending emails
      */
     constructor(
         @InjectModel('Application') private readonly applicationModel: Model<ApplicationDocument>,
@@ -29,6 +32,7 @@ export class ApplicationService {
         private readonly s3Service: S3Service,
         private readonly paginationService: PaginationService,
         private readonly notificationService: NotificationService,
+        private readonly mailerService: MailerService,
     ) {}
 
     /** Fields to populate when retrieving related Post documents */
@@ -84,7 +88,7 @@ export class ApplicationService {
         studentId: Types.ObjectId,
         postId: Types.ObjectId,
         dto: CreateApplicationDto,
-    ): Promise<{ cvUrl: string; lmUrl: string | undefined }> {
+    ): Promise<{ cvUrl?: string; lmUrl?: string; cvFileName: string }> {
         // Validate existence of student
         const student = await this.studentService.findOne(studentId.toString());
         if (!student) throw new NotFoundException(`Student with id ${studentId.toString()} not found`);
@@ -106,14 +110,30 @@ export class ApplicationService {
             throw new ConflictException('Application already exists for this student and post');
         }
 
-        // Generate presigned URLs for CV and cover letter uploads
+        // Generate presigned URLs for CV and cover letter uploads (or reuse default CV)
         const objectname: string = `${studentId.toString()}`;
-        const cv = await this.s3Service.generatePresignedUploadUrl(
-            `${objectname}.${dto.cvExtension}`,
-            'cv',
-            studentId.toString(),
-            postId.toString(),
-        );
+        let cvUploadUrl: string | undefined;
+        let cvFileName: string;
+
+        if (dto.useDefaultCv) {
+            if (!student.defaultCv) {
+                throw new ConflictException('No default CV found on student profile');
+            }
+            cvFileName = student.defaultCv;
+        } else {
+            if (!dto.cvExtension) {
+                throw new ConflictException('CV extension is required when not using default CV');
+            }
+            const cv = await this.s3Service.generatePresignedUploadUrl(
+                `${objectname}.${dto.cvExtension}`,
+                'cv',
+                studentId.toString(),
+                postId.toString(),
+            );
+            cvUploadUrl = cv.uploadUrl;
+            cvFileName = cv.fileName;
+        }
+
         let lm: { fileName: string; uploadUrl?: string } | undefined = undefined;
         if (dto?.lmExtension) {
             lm = await this.s3Service.generatePresignedUploadUrl(
@@ -127,7 +147,7 @@ export class ApplicationService {
         const newApplication = await new this.applicationModel({
             student: student,
             post: post,
-            cv: cv.fileName,
+            cv: cvFileName,
             coverLetter: lm?.fileName,
         }).save();
         await this.postService.addApplication(postId.toString(), newApplication._id.toString());
@@ -142,12 +162,13 @@ export class ApplicationService {
             console.error('Failed to send notification for new application:', error);
         }
 
-        return { cvUrl: cv.uploadUrl, lmUrl: lm?.uploadUrl };
+        return { cvUrl: cvUploadUrl, lmUrl: lm?.uploadUrl, cvFileName };
     }
 
     /**
      * Update the status of an existing application.
      * Send a notification to the student about the status update.
+     * Send an email to the student if the application is accepted or rejected.
      * @param id The unique identifier of the application
      * @param status The new status to set for the application
      * @returns A promise that resolves when the update is complete
@@ -157,8 +178,8 @@ export class ApplicationService {
         const application = await this.applicationModel
             .findOne({ _id: id, deletedAt: { $exists: false } })
             .populate([
-                { path: 'post', select: 'title _id' },
-                { path: 'student', select: '_id' },
+                { path: 'post', select: 'title _id company', populate: { path: 'company', select: 'name' } },
+                { path: 'student', select: '_id firstName lastName email' },
             ])
             .exec();
         if (!application) throw new NotFoundException(`Application with id ${id} not found`);
@@ -169,10 +190,34 @@ export class ApplicationService {
         try {
             await this.notificationService.create({
                 userId: application.student._id,
-                message: `Le statut de votre candidature pour le poste : ${application.post.title} a été mis à jour.`
+                message: `Le statut de votre candidature pour le poste : ${application.post.title} a été mis à jour.`,
             });
         } catch (error) {
             console.error('Failed to send notification for application status update:', error);
+        }
+
+        // Send email to student if application is accepted or rejected
+        try {
+            const studentData = application.student as any; // Cast needed for discriminator type
+            if (status === ApplicationStatus.Accepted) {
+                await this.mailerService.sendApplicationAcceptedEmail(
+                    studentData.email,
+                    studentData.firstName,
+                    studentData.lastName,
+                    application.post.title,
+                    (application.post as any).company?.name || 'l\'entreprise',
+                );
+            } else if (status === ApplicationStatus.Rejected) {
+                await this.mailerService.sendApplicationRejectedEmail(
+                    studentData.email,
+                    studentData.firstName,
+                    studentData.lastName,
+                    application.post.title,
+                    (application.post as any).company?.name || 'l\'entreprise',
+                );
+            }
+        } catch (error) {
+            console.error('Failed to send email for application status update:', error);
         }
     }
 
@@ -316,5 +361,135 @@ export class ApplicationService {
             .find({ student: new Types.ObjectId(studentId) })
             .distinct('post')
             .exec();
+    }
+
+    /**
+     * Mark all applications for a specific post as "NoFollowUp" and send notifications to affected students.
+     * This method is called when a post is hidden (isVisible set to false).
+     * @param postId The id of the post whose applications should be marked as NoFollowUp
+     * @returns A promise that resolves when all updates and notifications are complete
+     */
+    async markApplicationsAsNoFollowUp(postId: Types.ObjectId): Promise<void> {
+        // Find all applications for this post that are not already marked as NoFollowUp
+        const applications = await this.applicationModel
+            .find({
+                post: postId,
+                deletedAt: { $exists: false },
+                status: { $ne: ApplicationStatus.NoFollowUp },
+            })
+            .populate([
+                { path: 'post', select: 'title _id' },
+                { path: 'student', select: '_id' },
+            ])
+            .exec();
+
+        // Update all applications to NoFollowUp status
+        if (applications.length > 0) {
+            await this.applicationModel.updateMany(
+                {
+                    post: postId,
+                    deletedAt: { $exists: false },
+                    status: { $ne: ApplicationStatus.NoFollowUp },
+                },
+                { $set: { status: ApplicationStatus.NoFollowUp } },
+            );
+
+            // Send notifications to affected students
+            for (const application of applications) {
+                try {
+                    await this.notificationService.create({
+                        userId: application.student._id,
+                        message: `L'annonce "${application.post.title}" pour laquelle vous avez candidaté a été masquée. Votre candidature est marquée "Sans suite".`,
+                    });
+                } catch (error) {
+                    console.error(
+                        `Failed to send notification to student ${application.student._id} for post ${postId}:`,
+                        error,
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Soft delete an application by its ID and send a notification to the student.
+     * @param id The unique identifier of the application
+     * @param message Optional custom message for the notification
+     * @returns A promise that resolves when the deletion and notification are complete
+     * @throws NotFoundException if the application does not exist
+     */
+    async deleteAndSendNotification(id: string, message?: string): Promise<void> {
+        const application = await this.applicationModel
+            .findOne({ _id: new Types.ObjectId(id), deletedAt: { $exists: false } })
+            .populate([
+                { path: 'student', select: '_id' },
+                { path: 'post', select: 'title _id' },
+            ])
+            .exec();
+
+        if (!application) {
+            throw new NotFoundException(`Application with id ${id} not found`);
+        }
+
+        await this.applicationModel.findOneAndUpdate(
+            { _id: new Types.ObjectId(id), deletedAt: { $exists: false } },
+            { $set: { deletedAt: new Date() } },
+        );
+
+        // Send notification to student about application deletion
+        try {
+            await this.notificationService.create({
+                userId: application.student._id,
+                message: message ?? `Votre candidature pour le poste : ${application.post.title} a été supprimée.`,
+            });
+        } catch (error) {
+            console.error('Failed to send notification for application deletion:', error);
+        }
+    }
+
+    /**
+     * Returns total and unread application counts for every post for a company.
+     * @param companyId The company ObjectId
+     * @returns An array of { postId, total, unread } objects
+     */
+    async getApplicationCountsByCompany(
+        companyId: Types.ObjectId,
+    ): Promise<{ postId: string; total: number; unread: number }[]> {
+        return this.applicationModel.aggregate([
+            {
+                $lookup: {
+                    from: 'posts',
+                    localField: 'post',
+                    foreignField: '_id',
+                    as: 'postData',
+                },
+            },
+            { $unwind: '$postData' },
+            {
+                $match: {
+                    'postData.company': companyId,
+                    deletedAt: { $exists: false },
+                },
+            },
+            {
+                $group: {
+                    _id: '$post',
+                    total: { $sum: 1 },
+                    unread: {
+                        $sum: {
+                            $cond: [{ $eq: ['$status', ApplicationStatus.Pending] }, 1, 0],
+                        },
+                    },
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    postId: { $toString: '$_id' },
+                    total: 1,
+                    unread: 1,
+                },
+            },
+        ]);
     }
 }

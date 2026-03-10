@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateStudentDto } from './dto/createStudent.dto';
@@ -14,6 +14,15 @@ import * as chardet from 'chardet';
 import * as iconv from 'iconv-lite';
 import { parse } from 'csv-parse/sync';
 import { ConfigService } from '@nestjs/config';
+import { PaginationDto } from '../common/pagination/dto/pagination.dto';
+import { PaginationResult } from '../common/pagination/dto/paginationResult';
+import { QueryBuilder } from '../common/pagination/query.builder';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { GeoService } from '../common/geography/geo.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Application } from 'src/application/application.schema';
+import { Notification } from '../notification/notification.schema';
+import { RefreshToken } from '../auth/refreshToken.schema';
 
 @Injectable()
 /**
@@ -22,18 +31,45 @@ import { ConfigService } from '@nestjs/config';
  * Provides methods to find, create, update and soft-delete student records in the database.
  */
 export class StudentService {
+    private readonly logger = new Logger(StudentService.name);
+
     constructor(
         @InjectModel(Student.name) private readonly studentModel: Model<StudentUserDocument>,
+        @InjectModel(Student.name) private readonly model: Model<Student>,
+        @InjectModel(Application.name) private readonly applicationModel: Model<Application>,
+        @InjectModel(Notification.name) private readonly notificationModel: Model<Notification>,
+        @InjectModel(RefreshToken.name) private readonly refreshTokenModel: Model<RefreshToken>,
         private readonly mailerService: MailerService,
         private readonly configService: ConfigService,
+        private readonly geoService: GeoService,
+        private readonly paginationService: PaginationService,
     ) {}
 
     /**
      * Find all students that are not soft-deleted.
-     * @returns A promise resolving to an array of `Student` documents.
+     * @returns A promise resolving to a paginated array of `Student` documents.
      */
-    async findAll(): Promise<Student[]> {
-        return this.studentModel.find({ deletedAt: { $exists: false } }).exec();
+    async findAll(query: PaginationDto): Promise<PaginationResult<Student>> {
+        const { page, limit, sort, ...filters } = query;
+        const qb = new QueryBuilder<Student>({ ...filters, showHidden: true } as any, this.geoService);
+        const filter = await qb.build();
+        filter.deletedAt = { $exists: false };
+        const sortQuery = qb.buildSort(sort);
+
+        return this.paginationService.paginate(this.model, filter, page, limit, [], sortQuery);
+    }
+
+    /**
+     * Find all students. Used for admin purposes.
+     * @returns A promise resolving to a paginated array of `Student` documents, including soft-deleted ones.
+     */
+    async findAllForAdmin(query: PaginationDto): Promise<PaginationResult<Student>> {
+        const { page, limit, sort, ...filters } = query;
+        const qb = new QueryBuilder<Student>({ ...filters, showHidden: true } as any, this.geoService);
+        const filter = await qb.build();
+        const sortQuery = qb.buildSort(sort);
+
+        return this.paginationService.paginate(this.model, filter, page, limit, [], sortQuery);
     }
 
     /**
@@ -150,20 +186,39 @@ export class StudentService {
      * @param dto The update payload or create payload.
      */
     async update(id: string, dto: UpdateStudentDto | CreateStudentDto): Promise<void> {
-        const student = await this.studentModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
+        const updatePayload = Object.fromEntries(
+            Object.entries(dto).filter(([, value]) => value !== undefined),
+        ) as Partial<UpdateStudentDto & CreateStudentDto>;
 
-        if (student) {
-            // Partial update: only the provided fields are assigned
-            // Triggers pre-save hooks (hashing), but disables full validation
-            student.set(dto);
+        if (Object.keys(updatePayload).length === 0) {
+            return;
+        }
+
+        // Only use save() when password is explicitly updated to keep hashing pre-save hook.
+        if ('password' in updatePayload) {
+            const student = await this.studentModel
+                .findOne({ _id: id, deletedAt: { $exists: false } })
+                .select('+password')
+                .exec();
+
+            if (!student) {
+                return;
+            }
+
+            student.set(updatePayload);
             await student.save({ validateBeforeSave: false });
             return;
         }
+
+        await this.studentModel
+            .findOneAndUpdate({ _id: id, deletedAt: { $exists: false } }, { $set: updatePayload })
+            .exec();
         return;
     }
 
     /**
-     * Soft-delete a student by setting `deletedAt`.
+     * Soft-delete a student by setting `deletedAt`. Soft-deletes all applications, notifications and refresh token
+     * related to the student.
      * @param id The student's id.
      * @throws NotFoundException if the student does not exist or is already deleted.
      */
@@ -173,7 +228,36 @@ export class StudentService {
             .exec();
 
         if (!updated) throw new NotFoundException('Student not found or already deleted');
+
+        await this.applicationModel.updateMany({ student: id }, { $set: { deletedAt: new Date() } }).exec();
+        await this.notificationModel.updateMany({ userId: id }, { $set: { deletedAt: new Date() } }).exec();
+        await this.refreshTokenModel.updateOne({ userId: id }, { $set: { expiresAt: new Date() } }).exec();
+
         return;
+    }
+
+    /**
+     * Soft-delete all students by setting `deletedAt`. Soft-deletes all applications and notifications related to students.
+     */
+    async removeAll(): Promise<void> {
+        await this.applicationModel.updateMany({}, { $set: { deletedAt: new Date() } }).exec();
+
+        // Removal of notifications and refresh tokens of all students
+        const students = await this.studentModel
+            .find({ deletedAt: { $exists: false } })
+            .select('_id')
+            .exec();
+        const studentIds = students.map((s) => s._id);
+        if (studentIds.length > 0) {
+            await this.notificationModel
+                .updateMany({ userId: { $in: studentIds } }, { $set: { deletedAt: new Date() } })
+                .exec();
+            await this.refreshTokenModel
+                .updateMany({ userId: { $in: studentIds } }, { $set: { expiresAt: new Date() } })
+                .exec();
+        }
+
+        await this.studentModel.updateMany({}, { $set: { deletedAt: new Date() } }).exec();
     }
 
     /**
@@ -251,5 +335,42 @@ export class StudentService {
 
         // If skipExistingRecords is true, we won't try to insert already existing emails
         return dtos.filter((dto) => !existingEmails.has(dto.email) && !existingStudentNumbers.has(dto.studentNumber));
+    }
+
+    /**
+     * Cron job that runs every day at midnight to permanently delete students that have been soft-deleted for more than 30 days.
+     */
+    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    async handleCron() {
+        this.logger.debug('Début du nettoyage des données orphelines...');
+
+        const dateLimite = new Date();
+        dateLimite.setDate(dateLimite.getDate() - 30);
+
+        const studentsToDelete = await this.studentModel
+            .find({
+                deletedAt: { $lte: dateLimite },
+            })
+            .select('_id');
+
+        const studentIds = studentsToDelete.map((s) => s._id);
+
+        if (studentIds.length === 0) {
+            this.logger.debug("Rien à nettoyer aujourd'hui.");
+            return;
+        }
+
+        this.logger.log(`Found ${studentIds.length} students to purge.`);
+
+        const deletedApps = await this.applicationModel.deleteMany({
+            student: { $in: studentIds },
+        });
+        this.logger.log(`- ${deletedApps.deletedCount} candidatures supprimées.`);
+
+        const deletedStudents = await this.studentModel.deleteMany({
+            _id: { $in: studentIds },
+        });
+
+        this.logger.log(`Nettoyage terminé : ${deletedStudents.deletedCount} étudiants supprimés définitivement.`);
     }
 }

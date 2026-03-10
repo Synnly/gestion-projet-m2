@@ -188,6 +188,40 @@ describe('AuthService', () => {
 
             await expect(service.login(company.email, 'wrongPassword')).rejects.toThrow(InvalidCredentialsException);
         });
+
+        it('should send verification email when user is not verified and login is called', async () => {
+            const company = await createMockCompany({ isVerified: false });
+            mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
+
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            await service.login(company.email, company.plainPassword);
+
+            expect(mockMailerService.sendVerificationEmail).toHaveBeenCalledWith(company.email);
+        });
+
+        it('should not send verification email when user is already verified and login is called', async () => {
+            const company = await createMockCompany({ isVerified: true });
+            mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
+
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            await service.login(company.email, company.plainPassword);
+
+            expect(mockMailerService.sendVerificationEmail).not.toHaveBeenCalled();
+        });
     });
 
     describe('generateAccessToken', () => {
@@ -242,7 +276,7 @@ describe('AuthService', () => {
             const tokenId = new Types.ObjectId();
             const validToken = createMockRefreshToken(userId);
             refreshTokenModel.findById.mockResolvedValue(validToken);
-            mockUserModel.findById.mockResolvedValue(null);
+            mockUserModel.findOne.mockResolvedValue(null);
 
             await expect((service as any).generateAccessToken(userId, 'email@test.com', tokenId)).rejects.toThrow(
                 InvalidCredentialsException,
@@ -421,6 +455,190 @@ describe('AuthService', () => {
             const result = await service.login(company.email, company.plainPassword);
 
             expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+        });
+    });
+
+    describe('login - account pending deletion check', () => {
+        it('should generate tokens with deletedAt when company account is soft-deleted within 30 days', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            const deletedAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000); // 10 days ago
+            company.deletedAt = deletedAt;
+            mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
+
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(company.email, company.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+            // Verify that the JWT was signed with deletedAt in the payload
+            expect(mockJwtService.signAsync).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    deletedAt: deletedAt,
+                }),
+            );
+        });
+
+        it('should generate tokens with deletedAt when account deleted 5 days ago', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            const deletedAt = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000); // 5 days ago
+            company.deletedAt = deletedAt;
+            mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
+
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(company.email, company.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+            expect(mockJwtService.signAsync).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    deletedAt: deletedAt,
+                }),
+            );
+        });
+
+        it('should generate tokens with deletedAt when account deleted 29 days ago', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            const deletedAt = new Date(Date.now() - 29 * 24 * 60 * 60 * 1000); // 29 days ago
+            company.deletedAt = deletedAt;
+            mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
+
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(company.email, company.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+            expect(mockJwtService.signAsync).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    deletedAt: deletedAt,
+                }),
+            );
+        });
+
+        it('should throw ForbiddenException when company account is soft-deleted more than 30 days ago and login is called', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            const deletedAt = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000); // 31 days ago
+            company.deletedAt = deletedAt;
+            mockUserModel.findOne.mockResolvedValue(company);
+
+            try {
+                await service.login(company.email, company.plainPassword);
+                fail('Should have thrown ForbiddenException');
+            } catch (error) {
+                expect(error).toBeInstanceOf(ForbiddenException);
+                expect(error.message).toContain('définitivement supprimé');
+            }
+        });
+
+        it('should throw ForbiddenException when company account deleted exactly 30 days ago', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            const deletedAt = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+            company.deletedAt = deletedAt;
+            mockUserModel.findOne.mockResolvedValue(company);
+
+            try {
+                await service.login(company.email, company.plainPassword);
+                fail('Should have thrown ForbiddenException');
+            } catch (error) {
+                expect(error).toBeInstanceOf(ForbiddenException);
+                expect(error.message).toContain('définitivement supprimé');
+            }
+        });
+
+        it('should not throw AccountPendingDeletionException when company account is not soft-deleted and login is called', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            company.deletedAt = null;
+            mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
+
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(company.email, company.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+        });
+
+        it('should not check deletion status for STUDENT role and login successfully', async () => {
+            const student = await createMockCompany({ role: Role.STUDENT });
+            student.deletedAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000); // Has deletedAt but not a company
+            mockUserModel.findOne.mockResolvedValue(student);
+            mockUserModel.findById.mockResolvedValue(student);
+
+            const savedToken = createMockRefreshToken(student._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(student.email, student.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+        });
+
+        it('should not check deletion status for ADMIN role and login successfully', async () => {
+            const admin = await createMockCompany({ role: Role.ADMIN });
+            admin.deletedAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+            mockUserModel.findOne.mockResolvedValue(admin);
+            mockUserModel.findById.mockResolvedValue(admin);
+
+            const savedToken = createMockRefreshToken(admin._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(admin.email, admin.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+        });
+
+        it('should generate tokens with deletedAt for edge case of 29.5 days ago', async () => {
+            const company = await createMockCompany({ role: Role.COMPANY });
+            // Set deletedAt to exactly 29.5 days ago (should round to 29 days, leaving 1 day)
+            const deletedAt = new Date(Date.now() - 29.5 * 24 * 60 * 60 * 1000);
+            company.deletedAt = deletedAt;
+            mockUserModel.findOne.mockResolvedValue(company);
+            mockUserModel.findById.mockResolvedValue(company);
+
+            const savedToken = createMockRefreshToken(company._id, 1000 * 60 * REFRESH_LIFESPAN);
+            refreshTokenModel.create.mockResolvedValue(savedToken);
+            refreshTokenModel.findById.mockResolvedValue(savedToken);
+
+            mockRefreshJwtService.signAsync.mockResolvedValue('refresh-token');
+            mockJwtService.signAsync.mockResolvedValue('access-token');
+
+            const result = await service.login(company.email, company.plainPassword);
+
+            expect(result).toEqual({ access: 'access-token', refresh: 'refresh-token' });
+            expect(mockJwtService.signAsync).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    deletedAt: deletedAt,
+                }),
+            );
         });
     });
 });

@@ -1,11 +1,12 @@
 import { useLayoutEffect } from 'react';
-import { CreatePostForm } from '../../components/posts/CreatePostForm';
-import { PostPreview } from '../../components/posts/PostPreview';
-import { profileStore } from '../../store/profileStore';
-import { useCreatePostStore } from '../../store/CreatePostStore';
-import { Navbar } from '../../components/navbar/Navbar';
-import type { CompanyInInternship } from '../../types/internship.types.ts';
-import Spinner from '../../components/Spinner/Spinner.tsx';
+import { CreatePostForm } from './CreatePostForm';
+import { PostPreview } from './PostPreview';
+
+import type { CompanyInInternship } from '../../types/internship.types';
+import Spinner from '../common/Spinner/Spinner';
+import { useCreatePostStore } from '../../stores/CreatePostStore';
+import { profileStore } from '../../stores/profileStore';
+import { Navbar } from '../common/navbar/Navbar';
 
 export default function CreatePostPage() {
     const profile = profileStore((state) => state.profile);
@@ -21,6 +22,7 @@ export default function CreatePostPage() {
         email: profile.email ?? '',
         name: profile.name ?? '',
         logo: profile.logo,
+        address: profile.address ?? '',
     };
 
     return (

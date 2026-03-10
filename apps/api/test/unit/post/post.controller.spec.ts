@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PostController } from '../../../src/post/post.controller';
 import { PostService } from '../../../src/post/post.service';
+import { ApplicationService } from '../../../src/application/application.service';
 import { NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { CreatePostDto } from '../../../src/post/dto/createPost.dto';
@@ -11,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 describe('PostController', () => {
     let controller: PostController;
     let service: PostService;
+    let applicationService: ApplicationService;
 
     const mockPostService = {
         findAll: jest.fn(),
@@ -18,6 +20,11 @@ describe('PostController', () => {
         create: jest.fn(),
         update: jest.fn(),
         findAllByStudent: jest.fn(),
+        delete: jest.fn(),
+    };
+
+    const mockApplicationService = {
+        getApplicationCountsByCompany: jest.fn(),
     };
 
     const mockJwtService = {
@@ -53,6 +60,10 @@ describe('PostController', () => {
                     useValue: mockPostService,
                 },
                 {
+                    provide: ApplicationService,
+                    useValue: mockApplicationService,
+                },
+                {
                     provide: JwtService,
                     useValue: mockJwtService,
                 },
@@ -65,6 +76,7 @@ describe('PostController', () => {
 
         controller = module.get<PostController>(PostController);
         service = module.get<PostService>(PostService);
+        applicationService = module.get<ApplicationService>(ApplicationService);
 
         jest.clearAllMocks();
     });
@@ -146,6 +158,88 @@ describe('PostController', () => {
             expect(result.data[1].title).toBe('Développeur Backend');
             expect(result.total).toBe(2);
             expect(service.findAll).toHaveBeenCalledTimes(1);
+        });
+
+        it('should set showHidden to true when user is COMPANY and matches query.company', async () => {
+            const companyId = '507f1f77bcf86cd799439099';
+            const mockCompanyRequest = {
+                user: {
+                    sub: companyId,
+                    role: 'COMPANY',
+                },
+            };
+            const paginationResult = {
+                data: [mockPost],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPostService.findAll.mockResolvedValue(paginationResult);
+
+            await controller.findAll({ page: 1, limit: 10, company: companyId } as any, mockCompanyRequest as any);
+
+            expect(service.findAll).toHaveBeenCalledWith({ page: 1, limit: 10, company: companyId }, true);
+        });
+
+        it('should set showHidden to false when user is COMPANY but does not match query.company', async () => {
+            const mockCompanyRequest = {
+                user: {
+                    sub: '507f1f77bcf86cd799439099',
+                    role: 'COMPANY',
+                },
+            };
+            const paginationResult = {
+                data: [mockPost],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPostService.findAll.mockResolvedValue(paginationResult);
+
+            await controller.findAll(
+                { page: 1, limit: 10, company: 'different-company-id' } as any,
+                mockCompanyRequest as any,
+            );
+
+            expect(service.findAll).toHaveBeenCalledWith(
+                { page: 1, limit: 10, company: 'different-company-id' },
+                false,
+            );
+        });
+
+        it('should set showHidden to false when user is not COMPANY', async () => {
+            const mockStudentRequest = {
+                user: {
+                    sub: '507f1f77bcf86cd799439099',
+                    role: 'STUDENT',
+                },
+            };
+            const paginationResult = {
+                data: [mockPost],
+                total: 1,
+                page: 1,
+                limit: 10,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            };
+            mockPostService.findAll.mockResolvedValue(paginationResult);
+
+            await controller.findAll(
+                { page: 1, limit: 10, company: '507f1f77bcf86cd799439099' } as any,
+                mockStudentRequest as any,
+            );
+
+            expect(service.findAll).toHaveBeenCalledWith(
+                { page: 1, limit: 10, company: '507f1f77bcf86cd799439099' },
+                false,
+            );
         });
     });
 
@@ -268,6 +362,27 @@ describe('PostController', () => {
             await expect(controller.update(companyId, postId, { title: 'x' } as any)).rejects.toThrow(
                 NotFoundException,
             );
+        });
+    });
+
+    describe('delete', () => {
+        const companyId = '507f1f77bcf86cd799439099';
+        const postId = '507f1f77bcf86cd799439011';
+
+        it('should call service delete with correct id', async () => {
+            mockPostService.delete.mockResolvedValue(undefined);
+
+            await controller.delete(companyId, postId);
+
+            expect(service.delete).toHaveBeenCalledWith(postId);
+            expect(service.delete).toHaveBeenCalledTimes(1);
+        });
+
+        it('should propagate NotFoundException from service', async () => {
+            mockPostService.delete.mockRejectedValue(new NotFoundException(`Post with id ${postId} not found`));
+
+            await expect(controller.delete(companyId, postId)).rejects.toThrow(NotFoundException);
+            expect(service.delete).toHaveBeenCalledWith(postId);
         });
     });
 
@@ -438,6 +553,59 @@ describe('PostController', () => {
             expect(result.totalPages).toBe(3);
             expect(result.hasNext).toBe(true);
             expect(result.hasPrev).toBe(true);
+        });
+    });
+
+    describe('getApplicationCounts', () => {
+        const companyId = new Types.ObjectId();
+
+        it('should return counts from applicationService.getApplicationCountsByCompany', async () => {
+            const expectedCounts = [
+                { postId: new Types.ObjectId().toString(), total: 4, unread: 2 },
+                { postId: new Types.ObjectId().toString(), total: 1, unread: 0 },
+            ];
+            mockApplicationService.getApplicationCountsByCompany.mockResolvedValue(expectedCounts);
+
+            const result = await controller.getApplicationCounts(companyId);
+
+            expect(result).toEqual(expectedCounts);
+        });
+
+        it('should call applicationService.getApplicationCountsByCompany with the provided companyId', async () => {
+            mockApplicationService.getApplicationCountsByCompany.mockResolvedValue([]);
+
+            await controller.getApplicationCounts(companyId);
+
+            expect(mockApplicationService.getApplicationCountsByCompany).toHaveBeenCalledWith(companyId);
+            expect(mockApplicationService.getApplicationCountsByCompany).toHaveBeenCalledTimes(1);
+        });
+
+        it('should return an empty array when the service returns no counts', async () => {
+            mockApplicationService.getApplicationCountsByCompany.mockResolvedValue([]);
+
+            const result = await controller.getApplicationCounts(companyId);
+
+            expect(result).toEqual([]);
+        });
+
+        it('should return objects with the expected shape { postId, total, unread }', async () => {
+            const postId = new Types.ObjectId().toString();
+            mockApplicationService.getApplicationCountsByCompany.mockResolvedValue([
+                { postId, total: 7, unread: 3 },
+            ]);
+
+            const result = await controller.getApplicationCounts(companyId);
+
+            expect(result).toHaveLength(1);
+            expect(result[0]).toHaveProperty('postId', postId);
+            expect(result[0]).toHaveProperty('total', 7);
+            expect(result[0]).toHaveProperty('unread', 3);
+        });
+
+        it('should propagate errors thrown by the service', async () => {
+            mockApplicationService.getApplicationCountsByCompany.mockRejectedValue(new Error('Service error'));
+
+            await expect(controller.getApplicationCounts(companyId)).rejects.toThrow('Service error');
         });
     });
 });

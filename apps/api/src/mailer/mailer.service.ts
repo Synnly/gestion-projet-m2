@@ -129,7 +129,7 @@ export class MailerService {
 
         await this.mailerProvider.sendMail({
             to: normalized,
-            subject: 'Confirm your account',
+            subject: 'Confirmez votre compte',
             template: 'signupConfirmation',
             from,
             context: { otp, fromName: name },
@@ -167,7 +167,7 @@ export class MailerService {
 
         await this.mailerProvider.sendMail({
             to: normalized,
-            subject: 'Password reset request',
+            subject: 'Demande de réinitialisation du mot de passe',
             template: 'resetPassword',
             from,
             context: { otp, fromName: name },
@@ -211,7 +211,7 @@ export class MailerService {
 
         await this.mailerProvider.sendMail({
             to: normalized,
-            subject: `Notification from ${name}`,
+            subject: `Notification de ${name}`,
             template: templateName,
             from,
             context: { fromName: name },
@@ -227,7 +227,13 @@ export class MailerService {
      * @param firstName Optional first name for personalization
      * @param customMessage Optional custom welcome message
      */
-    async sendAccountCreationEmail(email: string, rawPassword: string, firstName: string = 'Étudiant', lastName: string = "", customMessage: string = '') {
+    async sendAccountCreationEmail(
+        email: string,
+        rawPassword: string,
+        firstName: string = 'Étudiant',
+        lastName: string = '',
+        customMessage: string = '',
+    ) {
         const normalized = email.toLowerCase();
         const { from, name } = this.getFromAddress();
 
@@ -428,5 +434,77 @@ export class MailerService {
         await user.save();
 
         return user;
+    }
+
+    /**
+     * Send application acceptance email to student
+     * @param email Student's email address
+     * @param firstName Student's first name
+     * @param lastName Student's last name
+     * @param postTitle Title of the post
+     * @param companyName Name of the company
+     * @returns True if email was sent successfully
+     */
+    async sendApplicationAcceptedEmail(
+        email: string,
+        firstName: string,
+        lastName: string,
+        postTitle: string,
+        companyName: string,
+    ): Promise<boolean> {
+        const normalized = email.toLowerCase();
+        const { from, name } = this.getFromAddress();
+
+        await this.mailerProvider.sendMail({
+            to: normalized,
+            subject: `Candidature acceptée - ${postTitle}`,
+            template: 'applicationAccepted',
+            from,
+            context: {
+                firstName,
+                lastName,
+                postTitle,
+                companyName,
+                fromName: name,
+            },
+        });
+
+        return true;
+    }
+
+    /**
+     * Send application rejection email to student
+     * @param email Student's email address
+     * @param firstName Student's first name
+     * @param lastName Student's last name
+     * @param postTitle Title of the post
+     * @param companyName Name of the company
+     * @returns True if email was sent successfully
+     */
+    async sendApplicationRejectedEmail(
+        email: string,
+        firstName: string,
+        lastName: string,
+        postTitle: string,
+        companyName: string,
+    ): Promise<boolean> {
+        const normalized = email.toLowerCase();
+        const { from, name } = this.getFromAddress();
+
+        await this.mailerProvider.sendMail({
+            to: normalized,
+            subject: `Mise à jour de votre candidature - ${postTitle}`,
+            template: 'applicationRejected',
+            from,
+            context: {
+                firstName,
+                lastName,
+                postTitle,
+                companyName,
+                fromName: name,
+            },
+        });
+
+        return true;
     }
 }

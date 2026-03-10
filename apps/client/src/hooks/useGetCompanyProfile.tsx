@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { userStore } from '../store/userStore';
-import type { companyProfile } from '../types';
+import { userStore } from '../stores/userStore';
+import type { companyProfile } from '../types/CompanyProfile.types';
 import { UseAuthFetch } from './useAuthFetch';
 
 /**

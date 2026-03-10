@@ -42,20 +42,26 @@ export class CompanyController {
 
     /**
      * Retrieves all companies
-     * @returns An array of all companies
+     * @param query Pagination parameters
+     * @returns A paginated array of all companies
      */
     @Get('')
     @HttpCode(HttpStatus.OK)
-    async findAll(): Promise<CompanyDto[]> {
-        const companies = await this.companyService.findAll();
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async findAll(
+        @Query(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }))
+        query: PaginationDto,
+    ): Promise<PaginationResult<CompanyDto>> {
+        const companies = await this.companyService.findAll(query);
 
-        return companies.map((company) =>
-            plainToInstance(CompanyDto, company, {
-                excludeExtraneousValues: true,
-            }),
-        );
+        return {
+            ...companies,
+            data: companies.data.map((company) =>
+                plainToInstance(CompanyDto, company, { excludeExtraneousValues: true }),
+            ),
+        };
     }
-
 
     /**
      * Retrieves companies pending validation with pagination
@@ -117,7 +123,12 @@ export class CompanyController {
     ) {
         await this.companyService.update(companyId, {
             isValid: false,
-            rejected: { isRejected: true, rejectionReason: dto.rejectionReason, rejectedAt: new Date(), modifiedAt: undefined },
+            rejected: {
+                isRejected: true,
+                rejectionReason: dto.rejectionReason,
+                rejectedAt: new Date(),
+                modifiedAt: undefined,
+            },
         });
     }
 
@@ -142,6 +153,7 @@ export class CompanyController {
      * @throws {NotFoundException} if no company exists with the given ID
      */
     @Get('/:companyId')
+    @UseGuards(AuthGuard)
     @HttpCode(HttpStatus.OK)
     async findOne(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyDto> {
         const company = await this.companyService.findOne(companyId);
@@ -204,6 +216,44 @@ export class CompanyController {
     }
 
     /**
+     * Restores a soft-deleted company account
+     * Requires authentication and COMPANY or ADMIN role
+     * Can only restore within 30 days of deletion
+     * @param companyId The company identifier to restore
+     */
+    @Post('/:companyId/restore')
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async restore(@Param('companyId', ParseObjectIdPipe) companyId: string) {
+        await this.companyService.restore(companyId);
+    }
+
+    /**
+     * Checks the deletion status of a company account
+     * Returns information about pending deletion and days remaining
+     * Requires authentication and COMPANY or ADMIN role
+     * @param companyId The company identifier to check
+     */
+    @Get('/:companyId/deletion-status')
+    @UseGuards(AuthGuard, RolesGuard, CompanyOwnerGuard)
+    @Roles(Role.COMPANY, Role.ADMIN)
+    @HttpCode(HttpStatus.OK)
+    async getDeletionStatus(@Param('companyId', ParseObjectIdPipe) companyId: string) {
+        return this.companyService.checkDeletionStatus(companyId);
+    }
+    /**
+     * Soft deletes all companies.
+     */
+    @Delete('')
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    @HttpCode(HttpStatus.NO_CONTENT)
+    async removeAll() {
+        await this.companyService.removeAll();
+    }
+
+    /**
      * Maps a Company entity to a CompanyDto with nested PostDtos
      * @param company The company entity to map
      * @returns The mapped CompanyDto
@@ -212,10 +262,12 @@ export class CompanyController {
         const posts = company.posts ?? [];
         return new CompanyDto({
             ...company,
-            rejected: company.rejected ? {
-                ...company.rejected,
-                rejectionReason: company.rejected.rejectionReason ?? '',
-            } : { isRejected: false, rejectionReason: undefined, rejectedAt: undefined },
+            rejected: company.rejected
+                ? {
+                      ...company.rejected,
+                      rejectionReason: company.rejected.rejectionReason ?? '',
+                  }
+                : { isRejected: false, rejectionReason: undefined, rejectedAt: undefined },
             posts: posts.map((post: PostDocument) => new PostDto(post)),
         });
     }
@@ -226,11 +278,13 @@ export class CompanyController {
      * @returns The public profile data of the company
      * @throws {NotFoundException} if no company exists with the given ID
      */
-    @UseGuards(AuthGuard)
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.STUDENT, Role.COMPANY, Role.ADMIN)
     @Get('/:companyId/public-profile')
     @HttpCode(HttpStatus.OK)
     async getPublicProfile(@Param('companyId', ParseObjectIdPipe) companyId: string): Promise<CompanyDto> {
-        const company = this.companyService.findOne(companyId);
+        const company = await this.companyService.findOne(companyId);
+        if (!company) throw new NotFoundException(`Company with id ${companyId} not found`);
         return plainToInstance(CompanyDto, company, {
             excludeExtraneousValues: true,
         });

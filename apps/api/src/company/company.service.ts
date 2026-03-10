@@ -1,16 +1,26 @@
-import { BadRequestException, Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, Inject, forwardRef, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { UpdateCompanyDto } from './dto/updateCompany.dto';
 import { Company } from './company.schema';
-import { CompanyUserDocument } from '../user/user.schema';
 import { PostService } from '../post/post.service';
 import { Post } from '../post/post.schema';
+import { Application } from '../application/application.schema';
+import { Forum } from '../forum/forum.schema';
+import { Topic } from '../forum/topic/topic.schema';
+import { Message } from '../forum/message/message.schema';
 import { ForumService } from '../forum/forum.service';
+import { NotificationService } from '../notification/notification.service';
 import { PaginationService } from '../common/pagination/pagination.service';
 import { PaginationResult } from '../common/pagination/dto/paginationResult';
 import { PaginationDto } from '../common/pagination/dto/pagination.dto';
+import { QueryBuilder } from '../common/pagination/query.builder';
+import { GeoService } from '../common/geography/geo.service';
+import { RefreshToken } from '../auth/refreshToken.schema';
+import { Notification } from '../notification/notification.schema';
+import { Report } from '../forum/report/report.schema';
 
 /**
  * Service handling business logic for company operations
@@ -29,40 +39,64 @@ import { PaginationDto } from '../common/pagination/dto/pagination.dto';
  */
 @Injectable()
 export class CompanyService {
+    private readonly logger = new Logger(CompanyService.name);
+
     /**
      * Creates a new CompanyService instance
      * @param companyModel - Injected Mongoose model for Company operations
+     * @param postModel - Injected Mongoose model for Post operations
+     * @param applicationModel - Injected Mongoose model for Application operations
+     * @param forumModel - Injected Mongoose model for Forum operations
+     * @param topicModel - Injected Mongoose model for Topic operations
+     * @param messageModel - Injected Mongoose model for Message operations
      * @param postService - Injected PostService for managing related posts
      * @param forumService - Injected ForumService for managing related forums
+     * @param paginationService - Injected PaginationService for handling pagination logic
+     * @param geoService - Injected GeoService for geocoding addresses when needed
      */
     constructor(
-        @InjectModel(Company.name) private readonly companyModel: Model<CompanyUserDocument>,
+        @InjectModel(Post.name) private readonly postModel: Model<Post>,
+        @InjectModel(Application.name) private readonly applicationModel: Model<Application>,
+        @InjectModel(Forum.name) private readonly forumModel: Model<Forum>,
+        @InjectModel(Topic.name) private readonly topicModel: Model<Topic>,
+        @InjectModel(Message.name) private readonly messageModel: Model<Message>,
+        @InjectModel(Company.name) private readonly companyModel: Model<Company>,
         @Inject(forwardRef(() => PostService)) private readonly postService: PostService,
         @Inject(forwardRef(() => ForumService)) private readonly forumService: ForumService,
+        private readonly notificationService: NotificationService,
+        @InjectModel(Notification.name) private readonly notificationModel: Model<Notification>,
+        @InjectModel(RefreshToken.name) private readonly refreshTokenModel: Model<RefreshToken>,
+        @InjectModel(Report.name) private readonly reportModel: Model<Report>,
         private readonly paginationService: PaginationService,
+        private readonly geoService: GeoService,
     ) {}
     populateField = '_id title description duration startDate minSalary maxSalary sector keySkills adress type';
+
     /**
-     * Retrieves all active (non-deleted) companies
+     * Retrieves all companies, even those that are soft-deleted, with pagination and optional filtering
      *
-     * Uses soft-delete pattern, only returning companies where deletedAt field does not exist.
-     *
-     * @returns Promise resolving to an array of all active companies
-     *
-     * @example
-     * ```typescript
-     * const companies = await companyService.findAll();
-     * console.log(`Found ${companies.length} active companies`);
+     * @returns Promise resolving to a paginated array of all active companies
      * ```
      */
-    async findAll(): Promise<Company[]> {
-        return this.companyModel
-            .find({ deletedAt: { $exists: false } })
-            .populate({
-                path: 'posts',
-                select: this.populateField,
-            })
-            .exec();
+    async findAll(query: PaginationDto): Promise<PaginationResult<Company>> {
+        const { page, limit, sort, ...filters } = query;
+        const qb = new QueryBuilder<Company>({ ...filters, showHidden: true } as any, this.geoService);
+        const filter = await qb.build();
+        const sortQuery = qb.buildSort(sort);
+
+        return this.paginationService.paginate(
+            this.companyModel,
+            filter,
+            page,
+            limit,
+            [
+                {
+                    path: 'posts',
+                    select: this.populateField,
+                },
+            ],
+            sortQuery,
+        );
     }
 
     /**
@@ -92,7 +126,7 @@ export class CompanyService {
     }
 
     /**
-     * Creates a new company in the database with it's associated forum.
+     * Creates a new company in the database.
      *
      * The password provided in the DTO will be automatically hashed by the User schema
      * pre-save hook before storage. Email and SIRET number are set during creation
@@ -115,8 +149,7 @@ export class CompanyService {
      * ```
      */
     async create(dto: CreateCompanyDto): Promise<void> {
-        const company = await this.companyModel.create({ ...dto });
-        await this.forumService.create(company._id);
+        await this.companyModel.create({ ...dto });
         return;
     }
 
@@ -152,6 +185,9 @@ export class CompanyService {
         const company = await this.companyModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
 
         if (company) {
+            const dateNow = new Date();
+            const wasValid = company.isValid ?? false;
+
             // Validate that all provided post IDs exist
             for (const postId of dto.posts ?? []) {
                 let post: Post | null | undefined = undefined;
@@ -163,10 +199,26 @@ export class CompanyService {
                 if (post === null) throw new NotFoundException('Post with id ' + postId + ' not found');
             }
 
-            // Update existing active company
+            // This company was updated after being rejected
+            const modifiedAfterRejection =
+                !(dto instanceof CreateCompanyDto) && !dto.rejected && company.rejected?.isRejected;
             Object.assign(company, dto);
+            if (modifiedAfterRejection && company.rejected) {
+                company.rejected.modifiedAt = dateNow;
+                company.markModified('rejected');
+            }
+
+            // Update existing active company
             // keep previous behavior: trigger pre-save hooks, but skip full validation to avoid discriminator issues
             await company.save({ validateBeforeSave: false });
+
+            if (!wasValid && company.isValid === true) {
+                const existingForum = await this.forumService.findOneByCompanyId(company._id.toString());
+                if (!existingForum) {
+                    await this.forumService.create(company._id);
+                }
+            }
+
             return;
         }
 
@@ -176,10 +228,8 @@ export class CompanyService {
     }
 
     /**
-     * Permanently removes a company from the database
-     *
-     * This performs a hard delete operation, removing the company document entirely.
-     * Only affects companies that have not been previously soft-deleted.
+     * Soft deletes a company from the database. Also marks related notifications and refresh tokens as deleted, and
+     * deletes associated posts. May be slow for companies with many posts due to sequential deletion of posts
      *
      * @param id - The MongoDB ObjectId of the company to delete
      * @returns Promise resolving to void upon successful deletion
@@ -201,7 +251,139 @@ export class CompanyService {
         if (!updated) {
             throw new NotFoundException('Company not found or already deleted');
         }
+
+        await this.notificationModel.updateMany({ userId: id }, { $set: { deletedAt: new Date() } }).exec();
+        await this.refreshTokenModel.updateOne({ userId: id }, { $set: { expiresAt: new Date() } }).exec();
+        for (const postId of updated.posts ?? []) {
+            await this.postService.delete(postId.toString());
+        }
         return;
+    }
+
+    /**
+     * Soft deletes all companies from the database. Also marks all notifications and refresh tokens as deleted, and
+     * deletes all associated posts. May be slow due to sequential deletion of posts
+     *
+     * @remarks This method may be very slow if there are many companies and posts, as it deletes posts sequentially.
+     * Use with caution in production environments. Consider removing students BEFORE companies to avoid sending mails
+     * and improve performance.
+     *
+     * @returns Promise resolving to void upon successful deletion of all companies
+     */
+    async removeAll(): Promise<void> {
+        const companies = await this.companyModel.find({ deletedAt: { $exists: false } }).exec();
+        const companyIds = companies.map((company) => company._id.toString());
+        const companyPosts = companies.reduce(
+            (acc, company) => {
+                acc[company._id.toString()] = company.posts?.map((post) => post.toString()) ?? [];
+                return acc;
+            },
+            {} as Record<string, string[]>,
+        );
+
+        if (Object.values(companyPosts).some((posts) => posts.length > 0)) {
+            await this.notificationModel
+                .updateMany({ userId: { $in: companyIds } }, { $set: { deletedAt: new Date() } })
+                .exec();
+            await this.refreshTokenModel
+                .updateMany({ userId: { $in: companyIds } }, { $set: { expiresAt: new Date() } })
+                .exec();
+        }
+
+        for (const companyId in companyPosts) {
+            for (const postId of companyPosts[companyId]) {
+                await this.postService.delete(postId);
+            }
+        }
+        await this.companyModel
+            .updateMany({ deletedAt: { $exists: false } }, { $set: { deletedAt: new Date() } })
+            .exec();
+        return;
+    }
+
+    /**
+     * Restores a soft-deleted company account
+     *
+     * This method removes the deletedAt timestamp, effectively restoring the company account,
+     * restores all the company's soft-deleted posts, and creates a fresh company forum.
+     * The company can only be restored if it was soft-deleted within the last 30 days.
+     *
+     * @param id - The MongoDB ObjectId of the company to restore
+     * @returns Promise resolving to void upon successful restoration
+     * @throws NotFoundException if the company doesn't exist or wasn't soft-deleted
+     * @throws BadRequestException if the 30-day restoration period has expired
+     *
+     * @example
+     * ```typescript
+     * await companyService.restore('507f1f77bcf86cd799439011');
+     * ```
+     */
+    async restore(id: string): Promise<void> {
+        const company = await this.companyModel.findOne({ _id: id, deletedAt: { $exists: true } }).exec();
+
+        if (!company) {
+            throw new NotFoundException('Company not found or not deleted');
+        }
+
+        // Check if the company was deleted more than 30 days ago
+        const deletedAt = company.deletedAt;
+        if (!deletedAt) {
+            throw new NotFoundException('Company not found or not deleted');
+        }
+
+        const now = new Date();
+        const daysSinceDeletion = Math.floor((now.getTime() - deletedAt.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (daysSinceDeletion >= 30) {
+            throw new BadRequestException(
+                'La période de restauration de 30 jours a expiré. Votre compte sera définitivement supprimé prochainement.',
+            );
+        }
+
+        await this.companyModel.updateOne({ _id: id }, { $unset: { deletedAt: 1 } }).exec();
+
+        await this.postModel
+            .updateMany({ company: company._id, deletedAt: { $exists: true } }, { $unset: { deletedAt: 1 } })
+            .exec();
+
+        const existingForum = await this.forumService.findOneByCompanyId(id);
+        if (!existingForum) {
+            await this.forumService.create(company._id);
+        } else {
+            await this.forumModel.updateOne({ _id: existingForum._id }, { $unset: { deletedAt: 1 } }).exec();
+        }
+
+        this.logger.log(`Company ${company.name} (${id}) restored successfully`);
+        return;
+    }
+
+    /**
+     * Checks if a company account is pending deletion
+     * Returns deletion info if the account is soft-deleted
+     *
+     * @param id - The MongoDB ObjectId of the company
+     * @returns Object with deletion status and days remaining, or null if not deleted
+     */
+    async checkDeletionStatus(id: string): Promise<{ isDeleted: boolean; daysRemaining?: number; deletedAt?: Date }> {
+        const company = await this.companyModel.findOne({ _id: id }).exec();
+
+        if (!company) {
+            throw new NotFoundException('Company not found');
+        }
+
+        if (!company.deletedAt) {
+            return { isDeleted: false };
+        }
+
+        const now = new Date();
+        const daysSinceDeletion = Math.floor((now.getTime() - company.deletedAt.getTime()) / (1000 * 60 * 60 * 24));
+        const daysRemaining = Math.max(0, 30 - daysSinceDeletion);
+
+        return {
+            isDeleted: true,
+            daysRemaining,
+            deletedAt: company.deletedAt,
+        };
     }
 
     /**
@@ -233,11 +415,11 @@ export class CompanyService {
      * ```
      */
     async updatePublicProfile(companyId: string, dto: UpdateCompanyDto): Promise<void> {
-        const result = await this.companyModel.findOne({ _id: companyId });
+        const result = await this.companyModel.findOne({ _id: companyId, deletedAt: { $exists: false } });
         if (!result) {
             throw new NotFoundException('Company not found');
         }
-        await this.companyModel.updateOne({ _id: companyId }, { $set: dto }).exec();
+        await this.companyModel.updateOne({ _id: companyId, deletedAt: { $exists: false } }, { $set: dto }).exec();
     }
 
     /**
@@ -278,4 +460,191 @@ export class CompanyService {
         }
         return company.isValid ?? false;
     }
+
+    /**
+     * Recomputes the topic and message counters for a list of forum IDs
+     * @param forumIds Array of forum ObjectIds to recompute counters
+     * @returns Promise resolving to void after counters have been updated
+     */
+    private async recomputeForumCounters(forumIds: Types.ObjectId[]): Promise<void> {
+        const uniqueForumIds = [...new Set(forumIds.map((id) => id.toString()))].map((id) => new Types.ObjectId(id));
+
+        for (const forumId of uniqueForumIds) {
+            const topics = await this.topicModel.find({ forumId }).select('_id');
+            const topicIds = topics.map((topic) => topic._id);
+            const nbMessages =
+                topicIds.length > 0
+                    ? await this.messageModel.countDocuments({ topicId: { $in: topicIds } })
+                    : 0;
+
+            await this.forumModel.updateOne(
+                { _id: forumId },
+                {
+                    $set: {
+                        topics: topicIds,
+                        nbTopics: topicIds.length,
+                        nbMessages,
+                    },
+                },
+            );
+        }
+    }
+
+    /**
+     * Cron job that runs every day at 0:00 AM to permanently delete companies that have been soft-deleted for more than 30 days.
+     * Also deletes all related data: posts, applications, forums, topics, and messages.
+     */
+    @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+    async handleCompanyCleanupCron() {
+        this.logger.debug('Starting company cleanup cron job');
+
+        const dateLimite = new Date();
+        dateLimite.setDate(dateLimite.getDate() - 30);
+        const companiesToDelete = await this.companyModel
+            .find({
+                deletedAt: { $lte: dateLimite },
+            })
+            .select('_id name');
+
+        const companyIds = companiesToDelete.map((c) => c._id);
+
+        if (companyIds.length === 0) {
+            this.logger.debug('No companies to clean up');
+            return;
+        }
+
+        const deletedNotifications = await this.notificationModel.deleteMany({ userId: { $in: companyIds } });
+        const deletedRefreshTokens = await this.refreshTokenModel.deleteMany({ userId: { $in: companyIds } });
+        this.logger.log(
+            `${deletedNotifications.deletedCount} notifications and ${deletedRefreshTokens.deletedCount} refresh tokens deleted for companies`,
+        );
+
+        const postsToDelete = await this.postModel.find({ company: { $in: companyIds } }).select('_id title');
+        const postIds = postsToDelete.map((p) => p._id);
+
+        if (postIds.length > 0) {
+            const applicationsToDelete = await this.applicationModel
+                .find({ post: { $in: postIds } })
+                .populate('student', '_id')
+                .populate('post', 'title')
+                .select('student post')
+                .lean()
+                .exec();
+
+            for (const application of applicationsToDelete) {
+                try {
+                    await this.notificationService.create({
+                        userId: application.student._id,
+                        message: `Votre candidature pour le poste "${application.post.title}" a été supprimée car l'entreprise a été définitivement supprimée.`,
+                    });
+                } catch (error) {
+                    this.logger.error(
+                        `Failed to send notification to student ${application.student._id} for deleted application`,
+                        error,
+                    );
+                }
+            }
+
+            const deletedApplications = await this.applicationModel.deleteMany({
+                post: { $in: postIds },
+            });
+            this.logger.log(
+                `${deletedApplications.deletedCount} deleted applications (${applicationsToDelete.length} notifications sent)`,
+            );
+        }
+
+        if (postIds.length > 0) {
+            const deletedPosts = await this.postModel.deleteMany({ _id: { $in: postIds } });
+            this.logger.log(`${deletedPosts.deletedCount} deleted posts`);
+        }
+
+        const forumsToDelete = await this.forumModel.find({ company: { $in: companyIds } }).select('_id');
+        const forumIds = forumsToDelete.map((f) => f._id);
+
+        if (forumIds.length > 0) {
+            const topicsToDelete = await this.topicModel.find({ forumId: { $in: forumIds } }).select('_id');
+            const topicIds = topicsToDelete.map((t) => t._id);
+
+            if (topicIds.length > 0) {
+                const messagesInCompanyForums = await this.messageModel.find({ topicId: { $in: topicIds } }).select('_id');
+                const messageIdsInCompanyForums = messagesInCompanyForums.map((message) => message._id);
+
+                if (messageIdsInCompanyForums.length > 0) {
+                    const deletedReports = await this.reportModel.deleteMany({
+                        messageId: { $in: messageIdsInCompanyForums },
+                    });
+                    this.logger.log(`${deletedReports.deletedCount} deleted reports linked to company forums`);
+                }
+
+                const deletedMessages = await this.messageModel.deleteMany({ topicId: { $in: topicIds } });
+                this.logger.log(`${deletedMessages.deletedCount} deleted messages`);
+
+                const deletedTopics = await this.topicModel.deleteMany({ _id: { $in: topicIds } });
+                this.logger.log(`${deletedTopics.deletedCount} deleted topics`);
+            }
+
+            const deletedForums = await this.forumModel.deleteMany({ _id: { $in: forumIds } });
+            this.logger.log(`${deletedForums.deletedCount} deleted forums`);
+        }
+
+        const topicsAuthoredByCompanies = await this.topicModel.find({ author: { $in: companyIds } }).select('_id forumId');
+        const topicIdsAuthoredByCompanies = topicsAuthoredByCompanies.map((topic) => topic._id);
+
+        if (topicIdsAuthoredByCompanies.length > 0) {
+            const messagesInTopicsAuthoredByCompanies = await this.messageModel
+                .find({ topicId: { $in: topicIdsAuthoredByCompanies } })
+                .select('_id');
+            const messageIdsInTopicsAuthoredByCompanies = messagesInTopicsAuthoredByCompanies.map((message) => message._id);
+
+            if (messageIdsInTopicsAuthoredByCompanies.length > 0) {
+                const deletedReports = await this.reportModel.deleteMany({
+                    messageId: { $in: messageIdsInTopicsAuthoredByCompanies },
+                });
+                this.logger.log(
+                    `${deletedReports.deletedCount} deleted reports linked to topics authored by companies`,
+                );
+
+                const deletedMessages = await this.messageModel.deleteMany({
+                    _id: { $in: messageIdsInTopicsAuthoredByCompanies },
+                });
+                this.logger.log(`${deletedMessages.deletedCount} deleted messages in topics authored by companies`);
+            }
+
+            const deletedTopics = await this.topicModel.deleteMany({ _id: { $in: topicIdsAuthoredByCompanies } });
+            this.logger.log(`${deletedTopics.deletedCount} deleted topics authored by companies`);
+
+            await this.recomputeForumCounters(topicsAuthoredByCompanies.map((topic) => topic.forumId));
+        }
+
+        const companyMessages = await this.messageModel.find({ authorId: { $in: companyIds } }).select('_id topicId');
+        if (companyMessages.length > 0) {
+            const companyMessageIds = companyMessages.map((message) => message._id);
+            const topicIdsWithCompanyMessages = [...new Set(companyMessages.map((message) => message.topicId.toString()))].map(
+                (id) => new Types.ObjectId(id),
+            );
+
+            const deletedReports = await this.reportModel.deleteMany({ messageId: { $in: companyMessageIds } });
+            this.logger.log(`${deletedReports.deletedCount} deleted reports linked to company messages`);
+
+            const deletedMessages = await this.messageModel.deleteMany({ _id: { $in: companyMessageIds } });
+            this.logger.log(`${deletedMessages.deletedCount} company-authored messages deleted`);
+
+            await this.topicModel.updateMany(
+                { _id: { $in: topicIdsWithCompanyMessages } },
+                { $pull: { messages: { $in: companyMessageIds } } },
+            );
+
+            const impactedTopics = await this.topicModel.find({ _id: { $in: topicIdsWithCompanyMessages } }).select('forumId');
+            await this.recomputeForumCounters(impactedTopics.map((topic) => topic.forumId));
+        }
+
+        const deletedReportsByCompanyUsers = await this.reportModel.deleteMany({ reporterId: { $in: companyIds } });
+        this.logger.log(`${deletedReportsByCompanyUsers.deletedCount} reports created by companies deleted`);
+
+        const deletedCompanies = await this.companyModel.deleteMany({ _id: { $in: companyIds } });
+        this.logger.log(`Company cleanup completed: ${deletedCompanies.deletedCount} companies deleted`);
+    }
 }
+
+
+

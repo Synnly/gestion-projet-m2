@@ -1,32 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { UseAuthFetch } from './useAuthFetch';
+import type { Stats } from '../types/stats.ts';
 
 const API_URL = import.meta.env.VITE_APIURL;
-
-export interface ChartData {
-    name: string;
-    value?: number; 
-    count?: number;
-}
-
-export interface TopCompany {
-    name: string;
-    offersCount: number;
-    responseRate: number;
-}
-
-export interface Stats {
-    totalUsers: number;
-    totalCompanies: number;
-    totalStudents: number;
-    totalApplications: number;
-    totalPosts: number;
-
-    applicationsByStatus: ChartData[];
-    applicationsOverTime: ChartData[];
-    topCompanies: TopCompany[];
-    orphanOffersCount: number;
-}
 
 export function useFetchStats() {
     const authFetch = UseAuthFetch();

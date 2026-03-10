@@ -139,7 +139,7 @@ describe('NotificationController', () => {
 
             await expect(controller.findOne(notificationId)).rejects.toThrow(NotFoundException);
             await expect(controller.findOne(notificationId)).rejects.toThrow(
-                `Notification with id ${notificationId} not found`
+                `Notification with id ${notificationId} not found`,
             );
         });
     });

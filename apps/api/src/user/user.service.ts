@@ -4,6 +4,8 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
 import { MailerService } from '../mailer/mailer.service';
 import { RefreshToken, RefreshTokenDocument } from 'src/auth/refreshToken.schema';
+import { Message, MessageDocument } from '../forum/message/message.schema';
+import { Report, ReportDocument } from '../forum/report/report.schema';
 
 @Injectable()
 /**
@@ -15,6 +17,8 @@ export class UserService {
     constructor(
         @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
         @InjectModel(RefreshToken.name) private readonly refreshTokenModel: Model<RefreshTokenDocument>,
+        @InjectModel(Message.name) private readonly messageModel: Model<MessageDocument>,
+        @InjectModel(Report.name) private readonly reportModel: Model<ReportDocument>,
         private readonly mailerService: MailerService,
     ) {}
 
@@ -27,7 +31,6 @@ export class UserService {
         return this.userModel.findOne({ _id: id, deletedAt: { $exists: false }, ban: { $exists: false } }).exec();
     }
 
-
     /**
      * Ban a user by setting a `ban` object.
      * @param userId The user's id.
@@ -38,13 +41,33 @@ export class UserService {
         const bannedUser = await this.userModel
             .findOneAndUpdate(
                 { _id: userId, ban: { $exists: false }, deletedAt: { $exists: false } },
-                { $set: { ban: { date: new Date(), reason: reason } } })
+                { $set: { ban: { date: new Date(), reason: reason } } },
+            )
             .exec();
 
         if (!bannedUser) throw new NotFoundException('User not found or already banned / deleted');
 
         // Deletes all refresh tokens linked to the user
         await this.refreshTokenModel.deleteMany({ userId: userId });
+
+        // Get all messages from this user
+        const userMessages = await this.messageModel
+            .find({ authorId: userId.toString() })
+            .select('_id')
+            .exec();
+
+        if (userMessages.length > 0) {
+            const messageIds = userMessages.map(msg => msg._id);
+            
+            // Update all reports related to this user's messages to "resolved"
+            await this.reportModel.updateMany(
+                { 
+                    messageId: { $in: messageIds },
+                    status: { $ne: 'resolved' }
+                },
+                { $set: { status: 'resolved' } }
+            ).exec();
+        }
 
         // Send an email to the banned user
         try {

@@ -1,0 +1,355 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm, type Resolver } from 'react-hook-form';
+import { useMutation } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { useFile } from '../../hooks/useFile';
+import { useBlob } from '../../hooks/useBlob';
+import { useUploadFile } from '../../hooks/useUploadFile';
+import { useEffect, useState } from 'react';
+import { UseAuthFetch } from '../../hooks/useAuthFetch';
+import { userStore } from '../../stores/userStore';
+import { profileStore } from '../../stores/profileStore';
+import { useGetCompanyProfile } from '../../hooks/useGetCompanyProfile';
+import {
+    editProfilForm,
+    LegalStatus,
+    nafCode,
+    StructureType,
+    type editProfilFormType,
+    type SignedUrlResponse,
+} from '../../types/CompleteProfil.types';
+import type { companyProfile } from '../../types/CompanyProfile.types';
+import { Navbar } from '../common/navbar/Navbar';
+import { FormSection } from '../common/form/FormSection';
+import { ProfilePicture } from '../common/profile/profilPicture';
+import { CustomSelect } from '../common/inputs/select/select';
+import { GenericAutocomplete } from '../common/inputs/textInput/genericAutoComplete';
+import type { GeoapifyFeature } from '../../apis/autoCompleteAddress';
+import { FormSubmit } from '../common/form/FormSubmit';
+import { FormInputEdit } from '../common/form/FormInputEdit';
+import { addressFetcher, getAddressLabel } from '../../apis/autoCompleteAddress';
+export function EditCompanyProfile() {
+    const navigate = useNavigate();
+    const API_URL = import.meta.env.VITE_APIURL;
+
+    // Récupérer les informations utilisateur
+    const access = userStore((state) => state.access);
+    const getUserInfo = userStore((state) => state.get);
+    const userInfo = access ? getUserInfo(access) : null;
+
+    // Récupérer et mettre à jour le profil
+    const updateProfileStore = profileStore((state) => state.updateProfil);
+    const { data: profile, isLoading } = useGetCompanyProfile(userInfo?.id || '');
+
+    // Gestion du logo
+    const logoBlob = useBlob(profile?.logo ?? '');
+    const logoFile = useFile(logoBlob, profile?.logo);
+    const [logoUrl, setLogoUrl] = useState<string | null>(null);
+    const upload = useUploadFile();
+    const authFetch = UseAuthFetch();
+
+    useEffect(() => {
+        if (!logoBlob) {
+            setLogoUrl(null);
+            return;
+        }
+        const objectUrl = URL.createObjectURL(logoBlob);
+        setLogoUrl(objectUrl);
+        return () => {
+            URL.revokeObjectURL(objectUrl);
+        };
+    }, [logoBlob]);
+
+    const {
+        register,
+        control,
+        handleSubmit,
+        clearErrors,
+        formState: { errors },
+        reset,
+    } = useForm<editProfilFormType>({
+        resolver: zodResolver(editProfilForm) as Resolver<editProfilFormType>,
+    });
+
+    // Réinitialiser le formulaire avec les données du profil
+    useEffect(() => {
+        if (profile) {
+            reset({
+                address: profile.address,
+                nafCode: profile.nafCode,
+                structureType: profile.structureType,
+                legalStatus: profile.legalStatus,
+                description: profile.description ?? '',
+                telephone: profile.telephone ?? '',
+                website: profile.website ?? '',
+                emailContact: profile.emailContact ?? '',
+                logo: logoFile ?? undefined,
+            });
+        }
+    }, [profile, reset]);
+
+    const { isPending, isError, error, mutateAsync } = useMutation({
+        mutationFn: async (data: Omit<editProfilFormType, 'logo'> & { logo?: string }) => {
+            const res = await authFetch(`${API_URL}/api/companies/${userInfo?.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${access}`,
+                },
+                data: JSON.stringify(data),
+            });
+            if (!res.ok) {
+                throw new Error('Erreur lors de la mise à jour du profil');
+            }
+            return res;
+        },
+        onSuccess: (_data, variables) => {
+            const payload: Partial<companyProfile> = {
+                ...variables,
+                nafCode: variables.nafCode ?? undefined,
+                structureType: variables.structureType ?? undefined,
+                legalStatus: variables.legalStatus ?? undefined,
+                description: variables.description ?? undefined,
+                telephone: variables.telephone ?? undefined,
+                website: variables.website ?? undefined,
+                emailContact: variables.emailContact ?? undefined,
+                address: variables.address ?? undefined,
+            };
+            updateProfileStore(payload);
+            navigate('/company/profile');
+        },
+    });
+
+    const onSubmit = async (data: editProfilFormType) => {
+        const { logo: fileLogo, ...rest } = data;
+        const base: Omit<editProfilFormType, 'logo'> = rest;
+        const dataToSend: Omit<editProfilFormType, 'logo'> & { logo?: string } = { ...base };
+
+        if (fileLogo instanceof FileList && fileLogo.length > 0) {
+            const file = fileLogo[0];
+            const response = await authFetch(`${API_URL}/api/files/signed/logo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                data: JSON.stringify({ originalFilename: file.name }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération du lien signé');
+            }
+
+            const { fileName: logo, uploadUrl }: SignedUrlResponse = await response.json();
+            await upload(file, uploadUrl);
+            dataToSend.logo = logo;
+        } else if (typeof fileLogo === 'string' && fileLogo) {
+            dataToSend.logo = fileLogo;
+        }
+
+        await mutateAsync(dataToSend);
+    };
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-base-100">
+                <Navbar />
+                <div className="p-8 max-w-7xl mx-auto">
+                    <p className="text-base-500">Chargement...</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-base-100">
+            <Navbar />
+            <div className="p-8">
+                <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center bg-base-200 rounded-lg shadow">
+                    <h1 className="text-3xl font-bold">Modifier le profil de votre entreprise</h1>
+                    <p className="text-sm mt-2 italic text-base-600">
+                        Mettez à jour les informations de votre entreprise
+                    </p>
+
+                    <form className="mt-8 w-full max-w-3xl flex flex-col flex-1" onSubmit={handleSubmit(onSubmit)}>
+                        <FormSection title="Logo de l'entreprise" className="mb-8">
+                            <div className="flex">
+                                <ProfilePicture
+                                    src={logoUrl!}
+                                    overlay
+                                    register={register('logo')}
+                                    error={errors.logo}
+                                />
+                                <div className="flex flex-col justify-center ml-4">
+                                    <span className="font-stretch-105% italic mb-1">
+                                        Téléchargez le logo de votre entreprise, il sera visible publiquement.
+                                    </span>
+                                    <span className="text-sm text-base-600 italic">PNG, JPG jusqu'à 5MB.</span>
+                                </div>
+                            </div>
+                        </FormSection>
+
+                        <FormSection title="Informations non modifiables" className="mb-8">
+                            <div className="space-y-3">
+                                {/* EMAIL */}
+                                <div>
+                                    <label className="text-sm font-medium">Email</label>
+                                    <input
+                                        type="text"
+                                        value={profile?.email || ''}
+                                        readOnly
+                                        className="input input-primary w-full cursor-not-allowed"
+                                    />
+                                    <span className="text-xs text-base-500 italic">
+                                        L'email ne peut pas être modifié
+                                    </span>
+                                </div>
+
+                                {/* SIRET */}
+                                {profile?.siretNumber && (
+                                    <div>
+                                        <label className="text-sm font-medium">SIRET</label>
+                                        <input
+                                            type="text"
+                                            value={profile?.siretNumber || ''}
+                                            readOnly
+                                            className="input input-primary w-full cursor-not-allowed"
+                                        />
+                                        <span className="text-xs text-base-500 italic">
+                                            Le SIRET ne peut pas être modifié
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </FormSection>
+
+                        <FormSection title="Informations légales" className="mb-8 space-y-4">
+                            <div className="grid grid-cols-2 gap-6">
+                                <CustomSelect
+                                    label="Code NAF"
+                                    data={Object.values(nafCode)}
+                                    defaultText="Sélectionnez un code NAF"
+                                    {...register('nafCode')}
+                                    error={errors.nafCode}
+                                    className="input input-primary w-full"
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-6">
+                                <CustomSelect
+                                    label="Type de structure"
+                                    data={Object.values(StructureType)}
+                                    defaultText="Sélectionnez un type"
+                                    {...register('structureType')}
+                                    error={errors.structureType}
+                                    className="input input-primary w-full"
+                                />
+                                <CustomSelect
+                                    label="Statut juridique"
+                                    data={Object.values(LegalStatus)}
+                                    defaultText="Sélectionnez un statut"
+                                    {...register('legalStatus')}
+                                    error={errors.legalStatus}
+                                    className="input input-primary w-full"
+                                />
+                            </div>
+                        </FormSection>
+
+                        <FormSection title="Adresse" className="mb-8 space-y-4">
+                            <div className="flex-1">
+                                <Controller
+                                    name="address"
+                                    control={control}
+                                    render={({ field, fieldState }) => (
+                                        <GenericAutocomplete<GeoapifyFeature>
+                                            {...field}
+                                            key={field.value ? 'loaded' : 'loading'}
+                                            label="Adresse complète"
+                                            placeholder="Tapez votre adresse..."
+                                            isAutocompleteEnabled={true}
+                                            fetcher={addressFetcher}
+                                            getLabel={getAddressLabel}
+                                            error={fieldState.error?.message}
+                                        />
+                                    )}
+                                />
+                            </div>
+                        </FormSection>
+
+                        <FormSection title="Profil public visible par les étudiants" className="mb-8 space-y-4">
+                            <div className="flex gap-4">
+                                <FormInputEdit<editProfilFormType>
+                                    label="Téléphone"
+                                    type="text"
+                                    placeholder="+33 1 23 45 67 89"
+                                    register={register('telephone', {
+                                        onChange: () => clearErrors('telephone'),
+                                    })}
+                                    error={errors.telephone}
+                                    className="input input-primary"
+                                />
+                                <FormInputEdit<editProfilFormType>
+                                    label="Site web"
+                                    type="text"
+                                    placeholder="https://www.entreprise.fr"
+                                    register={register('website', {
+                                        onChange: () => clearErrors('website'),
+                                    })}
+                                    error={errors.website}
+                                    className="input input-primary"
+                                />
+                            </div>
+                            <div className="flex gap-4">
+                                <FormInputEdit<editProfilFormType>
+                                    label="Email de contact"
+                                    type="email"
+                                    placeholder="contact@entreprise.fr"
+                                    register={register('emailContact', {
+                                        onChange: () => clearErrors('emailContact'),
+                                    })}
+                                    error={errors.emailContact}
+                                    className="input input-primary"
+                                />
+                            </div>
+                            <div className="flex flex-col w-full">
+                                <label className="font-bold text-sm pb-2" htmlFor="description">
+                                    Description
+                                </label>
+                                <textarea
+                                    id="description"
+                                    rows={4}
+                                    placeholder="Présentez votre entreprise, vos valeurs et vos activités..."
+                                    {...register('description', {
+                                        onChange: () => clearErrors('description'),
+                                    })}
+                                    className="textarea textarea-primary w-full"
+                                />
+                                {errors.description && (
+                                    <span className="text-red-500 mt-1 text-sm italic">
+                                        {errors.description.message}
+                                    </span>
+                                )}
+                            </div>
+                        </FormSection>
+
+                        {isError && (
+                            <div className="bg-error border border-error-content rounded-lg p-4 mb-4">
+                                <p className="text-error-content">Erreur: {error?.message}</p>
+                            </div>
+                        )}
+
+                        <div className="flex gap-4 mt-6 justify-end">
+                            <button type="button" onClick={() => navigate('/company/profile')} className="btn btn-base">
+                                Annuler
+                            </button>
+                            <FormSubmit
+                                isPending={isPending}
+                                title="Enregistrer les modifications"
+                                pendingTitle="Enregistrement..."
+                                isError={isError}
+                                error={error}
+                                className="btn btn-primary"
+                            />
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+}

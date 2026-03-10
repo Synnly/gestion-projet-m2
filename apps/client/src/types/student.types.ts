@@ -1,5 +1,5 @@
 import z from 'zod';
-import { IMAGE_SIZE_MAX } from '../utils/constantes.ts';
+import { IMAGE_SIZE_MAX } from '../utils/constantes';
 
 export type studentProfile = {
     _id: string;
@@ -30,6 +30,8 @@ export type studentProfile = {
 
     /** Student's default cv object in the storage service. */
     defaultCv?: string;
+
+    deletedAt: string;
 };
 
 export const editProfilForm = z.object({
@@ -50,14 +52,16 @@ export const editProfilForm = z.object({
         .custom<FileList | null | undefined>()
         .refine(
             (file) => {
-                if (!file || !(file[0] instanceof File)) return false;
+                if (!file || !(file instanceof FileList) || file.length === 0) return true;
+                if (!(file[0] instanceof File)) return false;
                 return file[0].size <= IMAGE_SIZE_MAX;
             },
             { message: 'Le fichier doit faire moins de 5MB' },
         )
         .refine(
             (file) => {
-                if (!file || !(file[0] instanceof File)) return false;
+                if (!file || !(file instanceof FileList) || file.length === 0) return true;
+                if (!(file[0] instanceof File)) return false;
                 return ['image/png', 'image/jpeg', 'image/jpg', 'image/svg+xml'].includes(file[0].type);
             },
             { message: 'Format non supporté : PNG, JPG, JPEG uniquement' },
@@ -67,14 +71,16 @@ export const editProfilForm = z.object({
         .custom<FileList | null | undefined>()
         .refine(
             (file) => {
-                if (!file || !(file[0] instanceof File)) return false;
+                if (!file || !(file instanceof FileList) || file.length === 0) return true;
+                if (!(file[0] instanceof File)) return false;
                 return file[0].size <= IMAGE_SIZE_MAX;
             },
             { message: 'Le fichier doit faire moins de 5MB' },
         )
         .refine(
             (file) => {
-                if (!file || !(file[0] instanceof File)) return false;
+                if (!file || !(file instanceof FileList) || file.length === 0) return true;
+                if (!(file[0] instanceof File)) return false;
                 return [
                     'application/pdf',
                     'application/msword',

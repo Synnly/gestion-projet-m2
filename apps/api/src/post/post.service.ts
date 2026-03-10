@@ -44,16 +44,8 @@ export class PostService {
         let location: { type: 'Point'; coordinates: [number, number] } | null = null;
         const company = await this.companyService.findOne(companyId);
         if (!dto.adress) {
-            const addressParts = [
-                company?.streetNumber,
-                company?.streetName,
-                company?.postalCode,
-                company?.city,
-                company?.country,
-            ].filter(Boolean);
-            dto.adress = addressParts.join(' ');
+            dto.adress = company?.address ?? '';
         }
-
         const coordinates = await this.geoService.geocodeAddress(dto.adress);
 
         if (coordinates) {
@@ -76,7 +68,7 @@ export class PostService {
             .findById(saved._id)
             .populate({
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus address logo',
             })
             .exec();
 
@@ -112,7 +104,8 @@ export class PostService {
 
         const companyPopulate = {
             path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+            select: '_id name siretNumber nafCode structureType legalStatus address logo location',
+            match: { deletedAt: { $exists: false } },
         };
 
         // Ensure sensible defaults if the DTO omitted values
@@ -149,7 +142,8 @@ export class PostService {
 
         const companyPopulate = {
             path: 'company',
-            select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo location',
+            select: '_id name siretNumber nafCode structureType legalStatus address logo location',
+            match: { deletedAt: { $exists: false } },
         };
 
         return this.paginationService.paginate(
@@ -165,6 +159,7 @@ export class PostService {
     /**
      * Updates an existing post for a given company.
      * Ensures the post belongs to the company before updating.
+     * If the post is being hidden (isVisible set to false), marks all applications as "NoFollowUp".
      *
      * @param dto - Partial post data for update
      * @param companyId - Company id as a string (MongoDB ObjectId)
@@ -172,16 +167,35 @@ export class PostService {
      * @returns The updated post populated with its company
      */
     async update(dto: UpdatePostDto, companyId: string, postId: string): Promise<Post> {
+        // First, retrieve the current post to check its isVisible status
+        const currentPost = await this.postModel
+            .findOne({ _id: postId, company: new Types.ObjectId(companyId) })
+            .exec();
+
+        if (!currentPost) {
+            throw new NotFoundException('Post not found or does not belong to this company');
+        }
+
+        // Check if the post is being hidden (isVisible changing from true to false)
+        const wasVisible = currentPost.isVisible;
+        const willBeHidden = dto.isVisible === false;
+        const isBeingHidden = wasVisible && willBeHidden;
+
         const updated = await this.postModel
             .findOneAndUpdate({ _id: postId, company: new Types.ObjectId(companyId) }, { $set: dto }, { new: true })
             .populate({
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus address logo',
             })
             .exec();
 
         if (!updated) {
             throw new NotFoundException('Post not found or does not belong to this company');
+        }
+
+        // If the post was hidden, mark all applications as NoFollowUp and notify students
+        if (isBeingHidden) {
+            await this.applicationService.markApplicationsAsNoFollowUp(new Types.ObjectId(postId));
         }
 
         return updated;
@@ -201,7 +215,7 @@ export class PostService {
             .findById(id)
             .populate({
                 path: 'company',
-                select: '_id name siretNumber nafCode structureType legalStatus streetNumber streetName postalCode city country logo',
+                select: '_id name siretNumber nafCode structureType legalStatus address logo',
             })
             .exec();
     }
@@ -219,5 +233,31 @@ export class PostService {
                 { new: true },
             )
             .exec();
+    }
+
+    /**
+     * Delete a post by id and all its associated applications. Notify applicants about the deletion.
+     * @param postId Post id
+     * @returns A promise that resolves when the operation is complete
+     * @throws NotFoundException if the post does not exist
+     */
+    async delete(postId: string): Promise<void> {
+        const post = await this.postModel.findById(postId).exec();
+        if (!post) {
+            throw new NotFoundException(`Post with id ${postId} not found`);
+        }
+
+        await this.postModel.findOneAndUpdate(
+            { _id: new Types.ObjectId(postId), deletedAt: { $exists: false } },
+            { $set: { deletedAt: new Date() } },
+        );
+
+        // Delete all applications associated with this post
+        for (const applicationId of post.applications) {
+            await this.applicationService.deleteAndSendNotification(
+                applicationId.toString(),
+                `L'annonce ${post.title} pour laquelle vous avez postulé a été supprimée.`,
+            );
+        }
     }
 }

@@ -1,4 +1,14 @@
-import { IsOptional, IsString, IsEnum, IsBoolean, IsStrongPassword, IsMongoId, ValidateNested } from 'class-validator';
+import {
+    IsOptional,
+    IsString,
+    IsEnum,
+    IsBoolean,
+    IsStrongPassword,
+    IsMongoId,
+    ValidateNested,
+    IsEmail,
+    IsUrl,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { StructureType, LegalStatus, type RejectionStatus } from '../company.schema';
 import { NafCode } from '../nafCodes.enum';
@@ -67,45 +77,9 @@ export class UpdateCompanyDto {
     @IsEnum(LegalStatus)
     legalStatus?: LegalStatus;
 
-    /**
-     * Street number of the company's physical address
-     * Example: "123", "45 bis"
-     */
     @IsOptional()
     @IsString()
-    streetNumber?: string;
-
-    /**
-     * Street name of the company's physical address
-     * Example: "Avenue des Champs-Élysées", "Rue de la Paix"
-     */
-    @IsOptional()
-    @IsString()
-    streetName?: string;
-
-    /**
-     * Postal code of the company's physical address
-     * Example: "75008", "69001"
-     */
-    @IsOptional()
-    @IsString()
-    postalCode?: string;
-
-    /**
-     * City where the company is located
-     * Example: "Paris", "Lyon", "Marseille"
-     */
-    @IsOptional()
-    @IsString()
-    city?: string;
-
-    /**
-     * Country where the company is located
-     * Example: "France", "Belgique"
-     */
-    @IsOptional()
-    @IsString()
-    country?: string;
+    address?: string;
 
     /**
      * Account validation status
@@ -134,6 +108,18 @@ export class UpdateCompanyDto {
     @IsOptional()
     @IsString()
     description?: string;
+
+    @IsOptional()
+    @IsString()
+    telephone?: string;
+
+    @IsOptional()
+    @IsUrl()
+    website?: string;
+
+    @IsOptional()
+    @IsEmail()
+    emailContact?: string;
 
     /**
      * Rejection status object containing whether the company is rejected

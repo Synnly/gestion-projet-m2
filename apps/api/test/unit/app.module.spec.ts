@@ -9,8 +9,8 @@ describe('AppModule import (mongoose factory executed)', () => {
             jest.doMock('../../src/auth/auth.module', () => ({ AuthModule: {} }));
             jest.doMock('../../src/mailer/mailer.module', () => ({
                 MailerModule: {
-                    register: () => ({})
-                }
+                    register: () => ({}),
+                },
             }));
 
             jest.doMock('@nestjs/mongoose', () => {

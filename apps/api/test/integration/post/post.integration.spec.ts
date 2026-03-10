@@ -18,6 +18,7 @@ import { Application, ApplicationDocument, ApplicationStatus } from '../../../sr
 import { ApplicationModule } from '../../../src/application/application.module';
 import { Student, StudentDocument } from '../../../src/student/student.schema';
 import { StudentModule } from '../../../src/student/student.module';
+import { MailerService } from '../../../src/mailer/mailer.service';
 
 describe('Post Integration Tests', () => {
     let app: INestApplication;
@@ -35,6 +36,14 @@ describe('Post Integration Tests', () => {
     const REFRESH_TOKEN_SECRET = 'test-refresh-secret';
     const ACCESS_TOKEN_LIFESPAN_MINUTES = 60;
     const REFRESH_TOKEN_LIFESPAN_MINUTES = 1440;
+
+    const mockMailerService = {
+        sendVerificationEmail: jest.fn().mockResolvedValue(true),
+        sendAccountCreationEmail: jest.fn().mockResolvedValue(true),
+        sendPasswordResetEmail: jest.fn().mockResolvedValue(true),
+        sendApplicationNotification: jest.fn().mockResolvedValue(true),
+        sendApplicationStatusUpdate: jest.fn().mockResolvedValue(true),
+    };
 
     beforeAll(async () => {
         mongod = await MongoMemoryServer.create();
@@ -83,6 +92,8 @@ describe('Post Integration Tests', () => {
                     }
                 },
             })
+            .overrideProvider(MailerService)
+            .useValue(mockMailerService)
             .compile();
 
         app = moduleFixture.createNestApplication();
@@ -141,7 +152,7 @@ describe('Post Integration Tests', () => {
         }
 
         studentAccessToken = studentLoginRes.text;
-    });
+    }, 30000);
 
     afterEach(async () => {
         await postModel.deleteMany({}).exec();
@@ -153,7 +164,7 @@ describe('Post Integration Tests', () => {
         await studentModel.deleteMany({}).exec();
         await app.close();
         if (mongod) await mongod.stop();
-    });
+    }, 30000);
 
     const createPost = async (data: any) => {
         return await postModel.create({
@@ -590,6 +601,7 @@ describe('Post Integration Tests', () => {
                 title: 'Poste Présentiel',
                 description: 'Description',
                 keySkills: ['Skill1'],
+                adress: 'toto',
                 type: PostType.Presentiel,
                 isCoverLetterRequired: false,
             };
@@ -888,6 +900,149 @@ describe('Post Integration Tests', () => {
 
             expect(res.body.data).toHaveLength(1);
             expect(res.body.total).toBe(1);
+        });
+    });
+
+    describe('GET /api/company/:companyId/posts/application-counts - Application Counts', () => {
+        it('should return an empty array when the company has no applications', async () => {
+            await createPost({ title: 'Post', description: 'Desc', keySkills: ['Skill'] });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts'))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(200);
+
+            expect(res.body).toEqual([]);
+        });
+
+        it('should return correct total and unread counts per post', async () => {
+            const post = await createPost({ title: 'Post', description: 'Desc', keySkills: ['Skill'] });
+
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Pending, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Pending, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Read, cv: 'http://cv.pdf' });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts'))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(200);
+
+            expect(res.body).toHaveLength(1);
+            expect(res.body[0].postId).toBe(post._id.toString());
+            expect(res.body[0].total).toBe(3);
+            expect(res.body[0].unread).toBe(2);
+        });
+
+        it('should count only Pending status as unread', async () => {
+            const post = await createPost({ title: 'Post', description: 'Desc', keySkills: ['Skill'] });
+
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Accepted, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Rejected, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Read, cv: 'http://cv.pdf' });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts'))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(200);
+
+            expect(res.body).toHaveLength(1);
+            expect(res.body[0].total).toBe(3);
+            expect(res.body[0].unread).toBe(0);
+        });
+
+        it('should exclude soft-deleted applications from the counts', async () => {
+            const post = await createPost({ title: 'Post', description: 'Desc', keySkills: ['Skill'] });
+
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Pending, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post._id, company: companyId, status: ApplicationStatus.Pending, cv: 'http://cv.pdf', deletedAt: new Date() });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts'))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(200);
+
+            expect(res.body).toHaveLength(1);
+            expect(res.body[0].total).toBe(1);
+            expect(res.body[0].unread).toBe(1);
+        });
+
+        it('should return separate entries per post', async () => {
+            const post1 = await createPost({ title: 'Post 1', description: 'Desc', keySkills: ['Skill'] });
+            const post2 = await createPost({ title: 'Post 2', description: 'Desc', keySkills: ['Skill'] });
+
+            await applicationModel.create({ student: studentId, post: post1._id, company: companyId, status: ApplicationStatus.Pending, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post2._id, company: companyId, status: ApplicationStatus.Read, cv: 'http://cv.pdf' });
+            await applicationModel.create({ student: studentId, post: post2._id, company: companyId, status: ApplicationStatus.Pending, cv: 'http://cv.pdf' });
+
+            const res = await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts'))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(200);
+
+            expect(res.body).toHaveLength(2);
+
+            const counts1 = res.body.find((c: any) => c.postId === post1._id.toString());
+            const counts2 = res.body.find((c: any) => c.postId === post2._id.toString());
+
+            expect(counts1).toBeDefined();
+            expect(counts1.total).toBe(1);
+            expect(counts1.unread).toBe(1);
+
+            expect(counts2).toBeDefined();
+            expect(counts2.total).toBe(2);
+            expect(counts2.unread).toBe(1);
+        });
+
+        it('should return 401 when no authorization is provided', async () => {
+            await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts'))
+                .expect(401);
+        });
+
+        it('should return 403 when the token belongs to a different company', async () => {
+            const otherCompanyId = new Types.ObjectId();
+
+            await request(app.getHttpServer())
+                .get(buildPostsPath('/application-counts', otherCompanyId))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(403);
+        });
+    });
+
+    describe('DELETE /api/company/:companyId/posts/:id - Delete Post', () => {
+        
+        it('should return 404 when trying to delete a non-existent post', async () => {
+            const nonExistentId = new Types.ObjectId();
+            await request(app.getHttpServer())
+                .delete(buildPostsPath(`/${nonExistentId}`))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(404);
+        });
+
+        it('should return 403 when trying to delete in context of another company', async () => {
+            const otherCompanyId = new Types.ObjectId();
+            const post = await createPost({
+                title: 'Post',
+                description: 'Desc',
+                keySkills: ['None'],
+            });
+
+            await request(app.getHttpServer())
+                .delete(buildPostsPath(`/${post._id}`, otherCompanyId))
+                .set('Authorization', `Bearer ${accessToken}`)
+                .expect(403);
+        });
+
+        it('should return 401 when no authorization provided', async () => {
+            const post = await createPost({
+                title: 'Post',
+                description: 'Desc',
+                keySkills: ['None'],
+            });
+
+            await request(app.getHttpServer())
+                .delete(buildPostsPath(`/${post._id}`))
+                .expect(401);
         });
     });
 });

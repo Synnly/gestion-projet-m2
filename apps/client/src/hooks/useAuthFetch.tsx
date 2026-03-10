@@ -1,5 +1,5 @@
 import { redirect } from 'react-router-dom';
-import { userStore } from '../store/userStore'; // ton zustand store
+import { userStore } from '../stores/userStore'; // ton zustand store
 
 interface FetchOptions<TData = unknown> {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
@@ -20,7 +20,7 @@ interface FetchOptions<TData = unknown> {
  */
 export const UseAuthFetch = () => {
     const setUserToken = userStore.getState().set;
-
+    const clearUser = userStore.getState().logout;
     const authFetch = async <TData = unknown,>(url: string, options?: FetchOptions<TData>): Promise<Response> => {
         const doFetch = async (): Promise<Response> => {
             const accessToken = userStore.getState().access;
@@ -68,9 +68,8 @@ export const UseAuthFetch = () => {
                     });
 
                     if (!refreshRes.ok) {
-                        setUserToken(''); // empty the token locally
-                        redirect('/signin');
-                        throw new Error('Redirection vers signin');
+                        clearUser();
+                        throw redirect('/signin');
                     }
 
                     // refresh renvoie le token en texte
@@ -80,8 +79,8 @@ export const UseAuthFetch = () => {
                     // Retente la requête initiale avec le nouveau token
                     return await doFetch();
                 } catch (refreshErr) {
-                    redirect('/signin');
-                    throw refreshErr;
+                    clearUser();
+                    throw redirect('/signin');
                 }
             }
 

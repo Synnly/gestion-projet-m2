@@ -1,16 +1,29 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MailerModule } from '../mailer/mailer.module';
 import { UsersModule } from '../user/user.module';
 import { StudentController } from './student.controller';
 import { StudentService } from './student.service';
+import { GeoService } from '../common/geography/geo.service';
+import { PaginationService } from '../common/pagination/pagination.service';
+import { MongooseModule } from '@nestjs/mongoose';
+import { Application, ApplicationSchema } from 'src/application/application.schema';
+import { Message, MessageSchema } from 'src/forum/message/message.schema';
+import { NotificationModule } from '../notification/notification.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
+        MongooseModule.forFeature([
+            { name: Application.name, schema: ApplicationSchema },
+            { name: Message.name, schema: MessageSchema },
+        ]),
         UsersModule,
         MailerModule.register(),
+        NotificationModule,
+        forwardRef(() => AuthModule),
     ],
     controllers: [StudentController],
-    providers: [StudentService],
+    providers: [StudentService, GeoService, PaginationService],
     exports: [StudentService],
 })
 /**

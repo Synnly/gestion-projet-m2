@@ -12,6 +12,7 @@ import {
     ValidationPipe,
     Put,
     Req,
+    Delete,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import type { Request } from 'express';
@@ -33,9 +34,9 @@ import { ForumService } from './forum.service';
 import { ForumDto } from './dto/forum.dto';
 import { ForumAccessGuard } from './guards/forum-access.guard';
 import { TopicService } from './topic/topic.service';
-import { Topic } from './topic/topic.schema';
 import { CreateTopicDto } from './topic/dto/createTopic.dto';
 import { UpdateTopicDto } from './topic/dto/updateTopic.dto';
+import { TopicDto } from './topic/dto/topic.dto';
 
 @UseGuards(AuthGuard)
 @Controller('/api/forum')
@@ -112,6 +113,21 @@ export class ForumController {
             data: messages.data.map((message) => plainToInstance(MessageDto, message)),
         };
     }
+
+    /**
+     * Soft delete a message (Admin only).
+     * @param messageId - The message id to delete
+     * @returns The deleted message
+     */
+    @Delete('message/:messageId')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async deleteMessage(@Param('messageId', ParseObjectIdPipe) messageId: string): Promise<MessageDto> {
+        const message = await this.messageService.deleteMessage(messageId);
+        return plainToInstance(MessageDto, message);
+    }
+
     /**
      * Find all topics in a forum with pagination.
      * @param forumId - The forum id
@@ -122,8 +138,12 @@ export class ForumController {
     async findAll(
         @Param('forumId') forumId: string,
         @Query() pagination: PaginationDto,
-    ): Promise<PaginationResult<Topic>> {
-        return this.topicService.findAll(forumId, pagination);
+    ): Promise<PaginationResult<TopicDto>> {
+        const topics = await this.topicService.findAll(forumId, pagination);
+        return {
+            ...topics,
+            data: topics.data.map((topic) => plainToInstance(TopicDto, topic, { excludeExtraneousValues: true } )),
+        };
     }
 
     /**
@@ -133,8 +153,10 @@ export class ForumController {
      * @returns The topic if found, otherwise null
      */
     @Get(':forumId/topics/:id')
-    async findOne(@Param('forumId') forumId: string, @Param('id') id: string): Promise<Topic | null> {
-        return this.topicService.findOne(forumId, id);
+    async findOne(@Param('forumId') forumId: string, @Param('id') id: string): Promise<TopicDto | null> {
+        const topic = await this.topicService.findOne(forumId, id);
+        if (!topic) return null;
+        return plainToInstance(TopicDto, topic, { excludeExtraneousValues: true });
     }
 
     /**
