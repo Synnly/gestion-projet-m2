@@ -24,13 +24,13 @@ Forum stages
 │   │   ├── .env
 │   │   ├── package.json
 │   │   ├── src/
-│   │   │   └── module/
-│   │   │       ├── module.service
-│   │   │       ├── module.controller
-│   │   │       ├── module.module
-│   │   │       ├── module.schema
+│   │   │   └── <module>/
+│   │   │       ├── <module>.service
+│   │   │       ├── <module>.controller
+│   │   │       ├── <module>.module
+│   │   │       ├── <module>.schema
 │   │   │       └── dto/
-│   │   │           ├── module.dto
+│   │   │           ├── <module>.dto
 │   │   │           └── createModule.dto
 │   │   └── test/
 │   │       ├── unit/
@@ -72,20 +72,25 @@ Forum stages
 
 ### API
 
-- `module.controller` : gestion des requêtes entrantes
-- `module.service` : logique métier
-- `module.schema` : schéma de la base de données
-- `module.module` : gestion des dépendances et exports
-- `dto/` : objets de transfert de données pour valider les entrées utilisateur
+- `<module>/<module>.controller` : gestion des requêtes entrantes
+- `<module>/<module>.service` : logique métier
+- `<module>/<module>.schema` : schéma de la base de données
+- `<module>/<module>.module` : gestion des dépendances et exports
+- `<module>/dto/` : objets de transfert de données pour valider les entrées utilisateur
 - `test/unit/` : tests unitaires des modules
 - `test/integration/` : tests d'intégration des modules
 
 ### Client
 
-- `components/` : composants réutilisables des pages
-- `hooks/` : hooks réutilisables des pages
-- `modules/` : modules de l'application (ex: auth, profile, forum, etc) contenant la logique métier
-- `pages/` : pages de l'application assemblant les composants et modules
+- `apis` : fonctions d’appel au backend
+- `components` : composants génériques
+- `hooks` : fonctions de chargement des données
+- `middlewares` : fonctions se déclenchant avant le chargement des pages
+- `pages` : composition des composants en pages
+- `routing` : types de routes
+- `stores` : magasins de données
+- `types` : types utilisés
+- `utils` : fonctions utilitaires diverses
 
 ## Branches
 
