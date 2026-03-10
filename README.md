@@ -136,6 +136,7 @@ Description courte des changements
 - Node.js (version 22 ou supérieure recommandée)
 - npm (généralement installé avec Node.js)
 - MongoDB (pour la base de données)
+- Clé API Geoapify
 
 ### Installation
 
@@ -193,12 +194,20 @@ Description courte des changements
     MAIL_PASS="your-specific-password-for-this"
     MAIL_FROM_NAME=Stagora
     MAIL_FROM_EMAIL="display-this-name-in-the-mail@example.com" #Don't work with all mailer like Gmail.
+
+    # Import Limits
+    IMPORT_MAX_ROWS=1000
+    IMPORT_MAX_SIZE_BYTES=2097152 # 2 * 1024 * 1024 (2 Mo)
     ```
 
     **Pour le client** (`apps/client/.env`) :
 
     ```env
-    VITE_API_URL=http://localhost:3000
+    VITE_APIURL="http://localhost:3000"
+    VITE_CONTACT_EMAIL="contact@example.com"
+    VITE_SUPPORT_EMAIL="support@example.com"
+    VITE_LEGAL_EMAIL="legal@example.com"
+    VITE_GEOAPIFY_KEY="la clé de votre compte Geoapify"
     ```
 
 ### Lancement
